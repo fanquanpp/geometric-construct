@@ -638,7 +638,8 @@ func _run_tour_shot() -> void:
 	var tours := {
 		4: [["spawn", Vector2(300, 2700)],
 			["terraces", Vector2(2400, 2000)],
-			["underpass", Vector2(4500, 2730)],
+			["ramp", Vector2(3900, 2680)],
+			["hollow", Vector2(4500, 2520)],
 			["beam", Vector2(5600, 330)],
 			["bridge", Vector2(5900, 900)],
 			["gap", Vector2(6900, 800)],
