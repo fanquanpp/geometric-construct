@@ -2,14 +2,16 @@ class_name MenuLayer
 extends CanvasLayer
 ## 标题菜单:构成主义海报式排版。
 ## 右下:开始/继续、几何档案、序幕剧情(Konado 剧本 story/prologue.ks)。
-## 左侧:动态大字标题(TitleMark)+ 定位语;右侧:章节行列表 + 主按钮。
+## 左侧:动态大字标题(TitleMark)+ 定位语;右侧:剧目行(序章 + 三幕)+ 主按钮。
 ## 细线外框 + 角部刻度 + 版本号,一切直角、平面、锐利;
 ## 入场为分层 stagger 演出,常驻动效遵循 art-style.md §3(M5 呼吸 / M6 打点)。
 
 var m: Main
 
-var _chapter_btns: Array = []
+var _act_btns: Array = []
 var _chapter_hint: Label
+var _toast: Label
+var _toast_tw: Tween
 var _unlocked := 0
 var _title_mark: TitleMark
 var _floaters: Array = []          # 漂浮几何徽标(常驻慢速旋转 + 浮动)
@@ -77,9 +79,9 @@ func _ready() -> void:
 	left.add_child(intro)
 
 	# 左下:操作提示(触屏设备无键盘,改为触摸指引)
-	var keys_text := "1–4 选择章节    C 几何档案    Esc 退出" \
+	var keys_text := "1–4 选择剧目    C 几何档案    Esc 退出" \
 		if not DisplayServer.is_touchscreen_available() \
-		else "点按章节进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
+		else "点按剧目进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
 	var keys := Ui.l(keys_text, 13, Ui.LIGHT, Color(Ui.DIM, 0.9))
 	keys.position = Vector2(4, 618)
 	keys.modulate.a = 0.0
@@ -90,13 +92,13 @@ func _ready() -> void:
 	ver_left.modulate.a = 0.0
 	left.add_child(ver_left)
 
-	# —— 右栏:章节行 ——
+	# —— 右栏:剧目行(序章 + 三幕) ——
 	var right := Control.new()
 	right.position = Vector2(640, 0)
 	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(right)
 
-	var sec := Ui.l("章节 SELECTION", 14, Ui.HEAD, Ui.DIM)
+	var sec := Ui.l("剧目 REPERTOIRE", 14, Ui.HEAD, Ui.DIM)
 	sec.position = Vector2(30, 128)
 	right.add_child(sec)
 	right.add_child(_place(Ui.rule(490, 1), Vector2(30, 156)))
@@ -106,33 +108,37 @@ func _ready() -> void:
 	list.add_theme_constant_override("separation", 10)
 	right.add_child(list)
 
-	for i in LevelData.LEVELS.size():
+	for i in LevelData.ACTS.size():
 		var idx := i
-		var def: LevelDef = LevelData.LEVELS[idx]
-		var ch: GeometryDef = Geometries.get_def(def.focus)
+		var act: Dictionary = LevelData.ACTS[idx]
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(490, 62)
-		b.text = "%02d   %s" % [idx + 1, def.name]
+		b.text = "%02d   %s · %s" % [idx, act["name"], act["title"]]
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.add_theme_font_override("font", Ui.HEAD)
 		b.add_theme_font_size_override("font_size", 21)
 		b.add_theme_constant_override("icon_max_width", 30)
 		b.add_theme_constant_override("h_separation", 14)
-		b.icon = Ui.icon("characters/%s-flat.svg" % ch.slug)
+		b.icon = Ui.icon(act["icon"])
 		b.pivot_offset = Vector2(12, 31)
-		b.pressed.connect(func() -> void:
-			Sfx.play("ui_click")
-			m.start_chapter(idx))
+		Ui.wire_button(b)
+		b.pressed.connect(func() -> void: try_open_act(idx))
 		b.mouse_entered.connect(func() -> void:
-			show_chapter_hint(idx)
-			_bump_button(b))
-		b.focus_entered.connect(func() -> void: show_chapter_hint(idx))
+			Sfx.play("ui_hover")
+			show_act_hint(idx))
+		b.focus_entered.connect(func() -> void: show_act_hint(idx))
 		list.add_child(b)
-		_chapter_btns.append(b)
+		_act_btns.append(b)
 
 	_chapter_hint = Ui.l("", 14, Ui.LIGHT, Ui.DIM)
 	_chapter_hint.position = Vector2(30, 480)
 	right.add_child(_chapter_hint)
+
+	# 轻提示行:未上演幕的点击反馈(红色,短暂停留后自行淡出)
+	_toast = Ui.l("", 15, Ui.HEAD, Ui.RED)
+	_toast.position = Vector2(30, 512)
+	_toast.modulate.a = 0.0
+	right.add_child(_toast)
 
 	# —— 右下:主按钮 ——
 	var start := Button.new()
@@ -145,8 +151,8 @@ func _ready() -> void:
 	start.add_theme_stylebox_override("hover", Ui.sb(Color(Ui.RED, 0.82), 0, null, 0, 20, 9))
 	start.add_theme_stylebox_override("pressed", Ui.sb(Color(Ui.RED, 0.65), 0, null, 0, 20, 9))
 	start.add_theme_color_override("font_color", Color.WHITE)
-	start.pivot_offset = Vector2(120, 26)
-	start.mouse_entered.connect(func() -> void: _bump_button(start))
+	Ui.wire_button(start)
+	start.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 	start.pressed.connect(func() -> void:
 		Sfx.play("ui_click")
 		m.start_game())
@@ -157,8 +163,8 @@ func _ready() -> void:
 	panel_btn.custom_minimum_size = Vector2(240, 52)
 	panel_btn.position = Vector2(930, 560)
 	panel_btn.add_theme_font_size_override("font_size", 20)
-	panel_btn.pivot_offset = Vector2(120, 26)
-	panel_btn.mouse_entered.connect(func() -> void: _bump_button(panel_btn))
+	Ui.wire_button(panel_btn)
+	panel_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 	panel_btn.pressed.connect(func() -> void:
 		Sfx.play("ui_click")
 		m.open_geometry_panel())
@@ -169,8 +175,8 @@ func _ready() -> void:
 	story_btn.custom_minimum_size = Vector2(240, 52)
 	story_btn.position = Vector2(930, 624)
 	story_btn.add_theme_font_size_override("font_size", 20)
-	story_btn.pivot_offset = Vector2(120, 26)
-	story_btn.mouse_entered.connect(func() -> void: _bump_button(story_btn))
+	Ui.wire_button(story_btn)
+	story_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 	story_btn.pressed.connect(func() -> void:
 		Sfx.play("ui_click")
 		m.open_prologue())
@@ -218,9 +224,9 @@ func _play_entrance(kicker: Label, intro: Label, keys: Label, ver: Label,
 		var ctl := item as Control
 		ctl.modulate.a = 0.0
 		tw.tween_property(ctl, "modulate:a", 1.0, 0.22).set_delay(0.55)
-	# 章节行逐项浮现(M7:自上而下 stagger 0.06s)
-	for i in _chapter_btns.size():
-		var b: Button = _chapter_btns[i]
+	# 剧目行逐项浮现(M7:自上而下 stagger 0.06s)
+	for i in _act_btns.size():
+		var b: Button = _act_btns[i]
 		b.modulate.a = 0.0
 		tw.tween_property(b, "modulate:a", 1.0, 0.22).set_delay(0.55 + i * 0.06)
 	tw.tween_property(keys, "modulate:a", 1.0, 0.25).set_delay(1.30)
@@ -239,13 +245,34 @@ func _process(delta: float) -> void:
 		tr.position.y = seed_d["base_y"] + sin(_t * 1.4 + seed_d["phase"]) * 6.0
 
 
-## 悬停微抬:按钮向自身左上轴点放大 3%(M2 微交互档 0.12s),移出由 pressed/焦点复位。
-func _bump_button(b: Button) -> void:
-	if not b.disabled:
-		Sfx.play("ui_hover")
-	var tw := create_tween()
-	tw.tween_property(b, "scale", Vector2(1.03, 1.03), 0.12) \
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+## 打开剧目:序章(有内容的幕)直接开演;未上演的幕响错误音 + toast,
+## 入口不做成哑按钮 —— 点了必有回应。
+func try_open_act(idx: int) -> void:
+	var act: Dictionary = LevelData.ACTS[idx]
+	var levels: Array = act["levels"]
+	if not levels.is_empty():
+		Sfx.play("ui_click")
+		show_act_hint(idx)
+		m.start_chapter(levels[0])
+	else:
+		Sfx.play("ui_error")
+		toast("%s · %s — %s,敬请期待" % [act["name"], act["title"],
+			"开发中" if String(act["hint"]).begins_with("开发中") else "未开演"])
+
+
+## 轻提示:红色一行,短暂停留后自行淡出。
+func toast(msg: String) -> void:
+	_toast.text = "» " + msg
+	if _toast_tw != null and _toast_tw.is_valid():
+		_toast_tw.kill()
+	_toast_tw = create_tween()
+	_toast_tw.tween_property(_toast, "modulate:a", 1.0, 0.12)
+	_toast_tw.tween_interval(1.6)
+	_toast_tw.tween_property(_toast, "modulate:a", 0.0, 0.45)
+
+
+func show_act_hint(idx: int) -> void:
+	_chapter_hint.text = LevelData.ACTS[idx]["hint"]
 
 
 func _outline_rect(pos: Vector2, size_: Vector2, parent: Control) -> Control:
@@ -263,20 +290,15 @@ func _place(c: Control, pos: Vector2) -> Control:
 	return c
 
 
-func show_chapter_hint(idx: int) -> void:
-	if idx <= _unlocked:
-		_chapter_hint.text = "第 %d 章 · %s" % [idx + 1, LevelData.LEVELS[idx].name]
-	else:
-		_chapter_hint.text = "第 %d 章 · 尚未解锁" % (idx + 1)
-
-
 func set_unlocked(unlocked: int) -> void:
 	_unlocked = unlocked
-	for i in _chapter_btns.size():
-		var ok := i <= unlocked
-		var b: Button = _chapter_btns[i]
-		b.disabled = not ok
-		b.tooltip_text = LevelData.LEVELS[i].name if ok else "%s(未解锁)" % LevelData.LEVELS[i].name
-	if unlocked >= 0 and unlocked < _chapter_btns.size():
-		_chapter_btns[unlocked].grab_focus()
-	_chapter_hint.text = "已解锁 %d / %d 章" % [unlocked + 1, LevelData.LEVELS.size()]
+	for i in _act_btns.size():
+		var act: Dictionary = LevelData.ACTS[i]
+		var playable: bool = not (act["levels"] as Array).is_empty()
+		var b: Button = _act_btns[i]
+		# 未上演的幕压暗内容(入口保留、可点、有反馈;不使用 disabled 哑按钮)
+		b.self_modulate = Color(1, 1, 1, 1.0 if playable else 0.5)
+		b.tooltip_text = act["hint"]
+	if _act_btns.size() > 0:
+		_act_btns[0].grab_focus()
+	_chapter_hint.text = "序章进度 · 已解锁 %d / %d 场" % [unlocked + 1, LevelData.LEVELS.size()]

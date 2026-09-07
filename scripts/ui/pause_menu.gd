@@ -99,6 +99,8 @@ func _make_button(text: String, on_click: Callable) -> Button:
 	b.text = text
 	b.custom_minimum_size = Vector2(0, 46)
 	b.add_theme_font_size_override("font_size", 18)
+	Ui.wire_button(b)
+	b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 	b.pressed.connect(func() -> void:
 		Sfx.play("ui_click")
 		on_click.call())

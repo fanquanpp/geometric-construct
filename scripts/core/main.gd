@@ -124,6 +124,8 @@ func start_level(index: int, intro := true) -> void:
 	geometry_panel.close()
 	_hud.visible = true
 	touch_controls.set_in_game(true)
+	# 单人阵容没有"切换"可言:隐藏左侧切换钮,避免无效按键
+	touch_controls.set_switch_available(LevelData.LEVELS[_current].roster.size() > 1)
 	_hud.show_win(false)
 	_hud.set_level_info(_current, LevelData.LEVELS[_current])
 	_refresh_roster()
@@ -230,12 +232,15 @@ func _physics_process(_delta: float) -> void:
 	elif _state == State.MENU:
 		if debug_solo:
 			return
-		# 数字键快速选章;C 打开几何档案
-		for i in LevelData.LEVELS.size():
-			if _key_pressed(KEY_1 + i) and i <= _unlocked:
-				start_level(i)
+		# 数字键快速选剧目(1=序章开演,2-4 未上演幕同样给出 toast 反馈);
+		# C 打开几何档案;Esc 退出游戏
+		for i in LevelData.ACTS.size():
+			if _key_pressed(KEY_1 + i):
+				_menu.try_open_act(i)
 		if _key_pressed(KEY_C):
 			open_geometry_panel()
+		if Input.is_action_just_pressed("ui_cancel"):
+			get_tree().quit()
 	elif _state == State.WIN:
 		if debug_solo:
 			return

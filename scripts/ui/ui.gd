@@ -205,6 +205,32 @@ static func make_theme(size := 18) -> Theme:
 	return th
 
 
+# ———— 按钮微交互 ————
+
+## 统一按钮反馈:悬停/聚焦微抬 3%,按下压 97%,松开回弹;pivot 始终跟随尺寸居中。
+## 纯视觉(声音由调用方接 ui_click / ui_hover),移动端按下另有触感反馈。
+static func wire_button(b: Button) -> void:
+	b.pivot_offset = b.size / 2.0
+	b.resized.connect(func() -> void: b.pivot_offset = b.size / 2.0)
+	b.mouse_entered.connect(func() -> void: _button_scale(b, 1.03))
+	b.mouse_exited.connect(func() -> void: _button_scale(b, 1.0))
+	b.focus_entered.connect(func() -> void: _button_scale(b, 1.03))
+	b.focus_exited.connect(func() -> void: _button_scale(b, 1.0))
+	b.button_down.connect(func() -> void: _button_scale(b, 0.97))
+	b.button_up.connect(func() -> void: _button_scale(b, 1.0))
+
+
+static func _button_scale(b: Button, target: float) -> void:
+	if b.has_meta("bump_tw"):
+		var old: Tween = b.get_meta("bump_tw")
+		if old != null and old.is_valid():
+			old.kill()
+	var tw := b.create_tween()
+	b.set_meta("bump_tw", tw)
+	tw.tween_property(b, "scale", Vector2.ONE * target, 0.10) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
 # ———— 纹理小工具 ————
 
 static func icon(rel: String) -> Texture2D:

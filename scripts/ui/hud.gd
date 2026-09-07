@@ -236,7 +236,7 @@ func _ready() -> void:
 	wvb.alignment = BoxContainer.ALIGNMENT_CENTER
 	wvb.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	wvb.add_theme_constant_override("separation", 14)
-	var win_kicker := Ui.l("GEOMETRIC CONSTRUCT · DEMO CLEAR", 15, Ui.LIGHT, Ui.DIM,
+	var win_kicker := Ui.l("GEOMETRIC CONSTRUCT · 序章剧目 完演", 15, Ui.LIGHT, Ui.DIM,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	var win_title := Ui.l("全 员 归 位", 72, Ui.TITLE, Ui.PAPER, HORIZONTAL_ALIGNMENT_CENTER)
 	wvb.add_child(win_kicker)
@@ -384,6 +384,7 @@ func _rebuild_touch_hints(def: LevelDef) -> void:
 		var c := Control.new()
 		c.custom_minimum_size = Vector2(10, 0)
 		_hint_row.add_child(c)
+	# 切换 / 重来 / 暂停都有实体按钮(左上 / 右上),提示条不再重复
 	add_text.call("轮盘 · 移动")
 	add_sep.call()
 	if can_jump:
@@ -394,11 +395,6 @@ func _rebuild_touch_hints(def: LevelDef) -> void:
 		add_sep.call()
 	if can_sprint:
 		add_text.call("轮盘拉满 · 自动加速")
-		add_sep.call()
-	if def.roster.size() > 1:
-		add_text.call("切换")
-		add_sep.call()
-	add_text.call("重来")
 
 
 func set_level_info(num: int, def: LevelDef) -> void:
@@ -461,7 +457,7 @@ func narration(text: String, color: Color, dur := 3.2) -> void:
 
 
 func show_intro(num: int, def: LevelDef) -> void:
-	_intro_num.text = "第 %d 章 · %s" % [num + 1, Geometries.get_def(def.focus).full_name]
+	_intro_num.text = "序章 · 第 %d 场 · %s" % [num + 1, Geometries.get_def(def.focus).full_name]
 	for n in _intro_title.get_children():
 		if n is Label:
 			(n as Label).text = def.name

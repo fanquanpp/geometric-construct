@@ -12,6 +12,9 @@ extends CanvasLayer
 ## 布局锚定可见区四角并内避安全区,旋转 / 改变窗口时自动重排。
 
 const ICON_SIZE_SMALL := 56.0
+## 触控热区外扩:视觉图标之外保留一圈余量(Material 建议目标 ≥48dp,
+## 热区应大于视觉元素,减少误触/空点)。
+const HIT_MARGIN := 18.0
 
 var forced := false
 var in_game := false
@@ -34,9 +37,10 @@ func _ready() -> void:
 	_root.resized.connect(_relayout)
 	get_viewport().size_changed.connect(_relayout)
 
-	# —— 右上:切换 / 重来 / 暂停(方盘按钮行,图标 + 文字标签) ——
+	# —— 左上:切换(队伍 chips 下方,贴左边缘;单人阵容由 set_switch_available 隐藏) ——
 	_add_button("buttons/switch-flat.svg", "buttons/switch-flat-on.svg",
 		"switch_next", "切换")
+	# —— 右上:重来 / 暂停(方盘按钮行,图标 + 文字标签) ——
 	_add_button("buttons/restart-flat.svg", "buttons/restart-flat-on.svg",
 		"restart", "重来")
 	_add_button("buttons/pause-flat.svg", "buttons/pause-flat-on.svg",
@@ -68,11 +72,13 @@ func _input(event: InputEvent) -> void:
 		Input.action_release("jump")
 
 
-## 该位置已被其他控件占用(轮盘触控区 / 右上小按钮)。
+## 该位置已被其他控件占用(轮盘触控区 / 小按钮);隐藏的按钮不占热区。
 func _pos_reserved(pos: Vector2) -> bool:
 	for action in _buttons:
 		var b: Dictionary = _buttons[action]
-		if (b.rect as Rect2).grow(12.0).has_point(pos):
+		if not (b.btn as TouchScreenButton).is_visible_in_tree():
+			continue
+		if (b.rect as Rect2).grow(HIT_MARGIN).has_point(pos):
 			return true
 	return _wheel != null and _wheel.holds_point(pos)
 
@@ -138,8 +144,17 @@ func _relayout() -> void:
 	var wheel_center := Vector2(left + 26.0 + half_w, vis.y - bottom - 18.0 - half_h)
 	_wheel.setup(half_w, half_h, wheel_center)
 
-	# 右上小按钮行:切换 / 重来 / 暂停
-	var order := ["switch_next", "restart", "pause"]
+	# 左侧:切换按钮 —— 队伍 chips(左上)下方一段距离,左缘与 chips 对齐
+	var sw: Dictionary = _buttons["switch_next"]
+	var sw_sz := Vector2(sw.icon_px, sw.icon_px)
+	var sw_pos := Vector2(left + 24.0, top + 84.0)
+	sw.btn.position = sw_pos
+	sw.rect = Rect2(sw_pos, sw_sz)
+	var sw_label: Label = sw.label
+	sw_label.position = Vector2(sw_pos.x + sw_sz.x / 2.0 - 40.0, sw_pos.y + sw_sz.y + 4.0)
+
+	# 右上小按钮行:重来 / 暂停
+	var order := ["restart", "pause"]
 	var spacing := ICON_SIZE_SMALL + 14.0
 	for k in order.size():
 		var action: String = order[k]
@@ -171,6 +186,8 @@ func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 	btn.scale = Vector2(s, s)
 	btn.modulate = Color(1, 1, 1, 0.66)
 	btn.passby_press = true
+	# 触感反馈:按下瞬间轻震(桌面为无害空操作)
+	btn.pressed.connect(func() -> void: Input.vibrate_handheld(24))
 	_root.add_child(btn)
 	var label := Ui.l(label_text, 12, Ui.LIGHT, Color(Ui.PAPER, 0.8),
 		HORIZONTAL_ALIGNMENT_CENTER)
@@ -179,6 +196,15 @@ func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 	_root.add_child(label)
 	_buttons[action] = {"btn": btn, "label": label, "icon_px": ICON_SIZE_SMALL,
 		"rect": Rect2()}
+
+
+## 单人阵容没有切换可言:隐藏/恢复左侧切换钮(热区一并失效)。
+func set_switch_available(on: bool) -> void:
+	if not _buttons.has("switch_next"):
+		return
+	var b: Dictionary = _buttons["switch_next"]
+	(b.btn as TouchScreenButton).visible = on
+	(b.label as Label).visible = on
 
 
 func _process(_delta: float) -> void:

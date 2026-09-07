@@ -5,8 +5,41 @@ class_name LevelData
 
 static var LEVELS: Array[LevelDef] = []
 
+## 幕目录:主页剧目行按此渲染。levels 为空 = 尚未上演的占位幕
+## (入口保留、点击有反馈,但不可开演)。
+static var ACTS: Array[Dictionary] = []
+
 
 static func _static_init() -> void:
+	ACTS.append({
+		"name": "序章剧目",
+		"title": "四场连演",
+		"hint": "疾·跳跃 → 跃·攀高 → 逆·突破 → 圆·过山车,四场连演",
+		"icon": "buttons/play-flat.svg",
+		"levels": [0, 1, 2, 3],
+	})
+	ACTS.append({
+		"name": "第一幕",
+		"title": "引力排练",
+		"hint": "开发中 — 三段重力的排练场,敬请期待",
+		"icon": "icons/clock-flat.svg",
+		"levels": [],
+	})
+	ACTS.append({
+		"name": "第二幕",
+		"title": "碎裂舞台",
+		"hint": "未开演 — 碎裂与重拼的舞台,敬请期待",
+		"icon": "icons/lock-flat.svg",
+		"levels": [],
+	})
+	ACTS.append({
+		"name": "第三幕",
+		"title": "终局构成",
+		"hint": "未开演 — 终局构成,敬请期待",
+		"icon": "icons/lock-flat.svg",
+		"levels": [],
+	})
+
 	# 01 · 疾 — 跳跃:速度越快跳得越远
 	LEVELS.append(_make("疾 · 跳跃", 0,
 		"空格跳跃,空中再按一次即是二段跳。\n速度越快跳得越远——最后的缺口,要用二段跳。",
