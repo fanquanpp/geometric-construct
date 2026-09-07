@@ -18,4 +18,7 @@ var exits: Array = []      # Array[[角色下标, Vector2 门中心]]
 ## 移动构件(docs/design/structures.md §4):
 ##   Array[{rect: Rect2 基准位置, offset: Vector2 单轴往返向量, period: float 秒/程, phase: float 相位}]
 var movers: Array = []
+## 教学悬浮提示(地图内世界坐标,靠近渐显):
+##   Array[{pos: Vector2 锚点, text: String 键盘文案, touch: String 触屏文案(缺省同 text)}]
+var hints: Array = []
 var spawns: Array = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]

@@ -1,8 +1,10 @@
 class_name MenuLayer
 extends CanvasLayer
 ## 标题菜单:构成主义海报式排版。
-## 右下:开始/继续、几何档案、序幕剧情(Konado 剧本 story/prologue.ks)。
+## 右下:开始/继续、几何档案、设置、序幕剧情(Konado 剧本 story/prologue.ks)。
 ## 左侧:动态大字标题(TitleMark)+ 定位语;右侧:剧目行(序章 + 三幕)+ 主按钮。
+## 剧目行是"一级目录":点开剧目进入二级菜单(关卡列),再选场开演;
+## 未上演的幕没有二级菜单,点击给错误音 + toast 反馈。
 ## 细线外框 + 角部刻度 + 版本号,一切直角、平面、锐利;
 ## 入场为分层 stagger 演出,常驻动效遵循 art-style.md §3(M5 呼吸 / M6 打点)。
 
@@ -17,6 +19,18 @@ var _title_mark: TitleMark
 var _floaters: Array = []          # 漂浮几何徽标(常驻慢速旋转 + 浮动)
 var _floater_seed: Array = []      # 每枚徽标的相位/方向
 var _t := 0.0
+
+# —— 剧目二级菜单(关卡列) ——
+var _act_root: Control
+var _act_shade: ColorRect
+var _act_card: PanelContainer
+var _act_title: Label
+var _act_sub: Label
+var _act_rows: VBoxContainer
+var _act_level_hint: Label
+var _act_open := false
+var _act_idx := -1
+var _act_tween: Tween
 
 
 func _ready() -> void:
@@ -182,10 +196,24 @@ func _ready() -> void:
 		m.open_prologue())
 	content.add_child(story_btn)
 
+	var settings_btn := Button.new()
+	settings_btn.text = "设 置"
+	settings_btn.custom_minimum_size = Vector2(240, 52)
+	settings_btn.position = Vector2(670, 624)
+	settings_btn.add_theme_font_size_override("font_size", 20)
+	Ui.wire_button(settings_btn)
+	settings_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
+	settings_btn.pressed.connect(func() -> void:
+		Sfx.play("ui_click")
+		m.open_settings())
+	content.add_child(settings_btn)
+
 	# 剧情内容仍在扩充:右上角"开发中"角标(构成红小块,与定位标签同语言)
 	var story_tag := Ui.tag("开发中", Ui.RED, Color.WHITE, 12, 8, 3)
 	story_tag.position = Vector2(1104, 612)
 	content.add_child(story_tag)
+
+	_build_act_panel(root)
 
 	# —— 漂浮几何徽标(常驻慢速旋转 + 浮动,方向/速率各异) ——
 	var xs := [0.05, 0.42, 0.95, 0.80]
@@ -210,7 +238,8 @@ func _ready() -> void:
 	Adaptive.fit_design(content)
 	root.resized.connect(func() -> void: Adaptive.fit_design(content))
 
-	_play_entrance(kicker, intro, keys, ver_left, [sec, _chapter_hint, start, panel_btn])
+	_play_entrance(kicker, intro, keys, ver_left,
+		[sec, _chapter_hint, start, panel_btn, story_btn, settings_btn])
 
 
 ## 入场演出:标题逐字落位(TitleMark)→ 定位语 / 简介浮现 → 右栏与按钮逐项浮现(M7)。
@@ -245,19 +274,216 @@ func _process(delta: float) -> void:
 		tr.position.y = seed_d["base_y"] + sin(_t * 1.4 + seed_d["phase"]) * 6.0
 
 
-## 打开剧目:序章(有内容的幕)直接开演;未上演的幕响错误音 + toast,
-## 入口不做成哑按钮 —— 点了必有回应。
+## 打开剧目:先进入二级菜单(关卡列)选场,不直接开演;
+## 未上演的幕没有二级菜单 —— 响错误音 + toast,入口不做成哑按钮。
 func try_open_act(idx: int) -> void:
 	var act: Dictionary = LevelData.ACTS[idx]
 	var levels: Array = act["levels"]
 	if not levels.is_empty():
 		Sfx.play("ui_click")
 		show_act_hint(idx)
-		m.start_chapter(levels[0])
+		_open_act_panel(idx)
 	else:
 		Sfx.play("ui_error")
 		toast("%s · %s — %s,敬请期待" % [act["name"], act["title"],
 			"开发中" if String(act["hint"]).begins_with("开发中") else "未开演"])
+
+
+# ———————————————— 剧目二级菜单(关卡列) ————————————————
+
+## 组建二级菜单:整层 Control(压暗层 + 居中卡片,容器排版自适应任意宽高比)。
+## 层内顺序 压暗层 → 卡片,卡片不会被遮罩盖住。默认隐藏。
+func _build_act_panel(root: Control) -> void:
+	_act_root = Control.new()
+	_act_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_act_root.theme = Ui.make_theme()
+	_act_root.visible = false
+	_act_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(_act_root)
+
+	_act_shade = ColorRect.new()
+	_act_shade.color = Color(Ui.INK, 0.92)
+	_act_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_act_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_act_root.add_child(_act_shade)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_act_root.add_child(center)
+
+	_act_card = PanelContainer.new()
+	_act_card.custom_minimum_size = Vector2(780, 0)
+	_act_card.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+	_act_card.mouse_filter = Control.MOUSE_FILTER_STOP
+	_act_card.draw.connect(func() -> void:
+		var r := Rect2(Vector2.ZERO, _act_card.size)
+		_act_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.30))
+		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
+				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
+			var sx := -1.0 if corner.x == 0.0 else 1.0
+			var sy := -1.0 if corner.y == 0.0 else 1.0
+			_act_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Ui.RED, 3.0)
+			_act_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Ui.RED, 3.0))
+	_act_card.resized.connect(func() -> void:
+		_act_card.pivot_offset = _act_card.size / 2.0)
+	center.add_child(_act_card)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 10)
+	_act_card.add_child(vb)
+
+	var title_bar := PanelContainer.new()
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 12))
+	var title_vb := VBoxContainer.new()
+	_act_title = Ui.l("", 32, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	title_vb.add_child(_act_title)
+	_act_sub = Ui.l("SELECT A SCENE · 选一场开演", 13, Ui.LIGHT,
+		Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER)
+	title_vb.add_child(_act_sub)
+	title_bar.add_child(title_vb)
+	vb.add_child(title_bar)
+
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 8)
+	var body_wrap := PanelContainer.new()
+	body_wrap.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 22, 16))
+	body_wrap.add_child(body)
+	vb.add_child(body_wrap)
+
+	_act_rows = VBoxContainer.new()
+	_act_rows.add_theme_constant_override("separation", 8)
+	body.add_child(_act_rows)
+
+	_act_level_hint = Ui.l("", 13, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_LEFT, false, 4)
+	_act_level_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_act_level_hint.custom_minimum_size = Vector2(700, 44)
+	body.add_child(_act_level_hint)
+
+	var back_row := HBoxContainer.new()
+	back_row.add_theme_constant_override("separation", 12)
+	var back := Button.new()
+	back.text = "«  返回剧目"
+	back.custom_minimum_size = Vector2(170, 42)
+	back.add_theme_font_size_override("font_size", 16)
+	Ui.wire_button(back)
+	back.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
+	back.pressed.connect(func() -> void:
+		Sfx.play("ui_click")
+		close_act_panel())
+	back_row.add_child(back)
+	var keys_hint := "1-%d 直达 · Esc 返回" % LevelData.ACTS[0]["levels"].size()
+	back_row.add_child(Ui.l(keys_hint, 12, Ui.LIGHT, Color(Ui.DIM, 0.9)))
+	vb.add_child(back_row)
+
+
+func is_act_panel_open() -> bool:
+	return _act_open
+
+
+## 进入某剧目的二级菜单:重排关卡行(解锁状态逐次刷新)。
+func _open_act_panel(idx: int) -> void:
+	_act_idx = idx
+	var act: Dictionary = LevelData.ACTS[idx]
+	_act_title.text = "%s · %s" % [act["name"], act["title"]]
+	_populate_act_rows(idx)
+	_act_open = true
+	Sfx.play("ui_open")
+	_act_root.visible = true
+	if _act_tween != null:
+		_act_tween.kill()
+	_act_shade.modulate.a = 0.0
+	_act_card.modulate.a = 0.0
+	_act_tween = create_tween()
+	_act_tween.set_parallel(true)
+	_act_tween.tween_property(_act_shade, "modulate:a", 1.0, 0.16)
+	_act_tween.tween_property(_act_card, "modulate:a", 1.0, 0.18)
+	_act_tween.tween_property(_act_card, "scale", Vector2.ONE, 0.26) \
+		.from(Vector2(0.95, 0.95)).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func close_act_panel() -> void:
+	if not _act_open:
+		return
+	_act_open = false
+	_act_idx = -1
+	_act_root.visible = false
+
+
+## 关卡行:编号 + 几何体徽标 + 场次名 + 右侧状态(已通关 / 下一场 / 未解锁)。
+## 悬停 / 聚焦在行下方显示该场的特性讲解;锁定场可点但只给反馈。
+func _populate_act_rows(idx: int) -> void:
+	for c in _act_rows.get_children():
+		c.queue_free()
+	var act: Dictionary = LevelData.ACTS[idx]
+	var levels: Array = act["levels"]
+	for k in levels.size():
+		var li: int = levels[k]
+		var def: LevelDef = LevelData.LEVELS[li]
+		var unlocked := li <= _unlocked
+		var cleared := li < _unlocked
+		var is_next := li == _unlocked
+
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(700, 54)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.add_theme_font_override("font", Ui.HEAD)
+		b.add_theme_font_size_override("font_size", 19)
+		b.add_theme_constant_override("h_separation", 14)
+		b.icon = Ui.icon("characters/%s-flat.svg" % Geometries.get_def(def.focus).slug)
+		b.text = "%02d   %s" % [k + 1, def.name]
+		b.pivot_offset = Vector2(12, 27)
+		b.self_modulate = Color(1, 1, 1, 1.0 if unlocked else 0.45)
+		Ui.wire_button(b)
+		b.mouse_entered.connect(func() -> void:
+			Sfx.play("ui_hover")
+			_act_level_hint.text = def.intro.replace("\n", "  "))
+		b.focus_entered.connect(func() -> void:
+			_act_level_hint.text = def.intro.replace("\n", "  "))
+		b.pressed.connect(func() -> void:
+			if not unlocked:
+				Sfx.play("ui_error")
+				toast("%02d %s — 先通关前一场" % [k + 1, def.name])
+				return
+			Sfx.play("ui_click")
+			close_act_panel()
+			m.start_chapter(li))
+		_act_rows.add_child(b)
+
+		# 右侧状态角标(钉在按钮右缘,不参与点击)。
+		# 用色纪律:红色只给"下一场"这一个行动焦点,已通关/未解锁走灰阶
+		var status := Ui.tag(
+			"已通关" if cleared else ("下一场" if is_next else "未解锁"),
+			Color(Ui.PAPER, 0.10) if cleared
+				else (Ui.RED if is_next else Color(Ui.PAPER, 0.05)),
+			Color(Ui.PAPER, 0.62) if cleared
+				else (Color.WHITE if is_next else Color(Ui.DIM, 0.8)), 12, 8, 3)
+		b.add_child(status)
+		status.anchor_left = 1.0
+		status.anchor_right = 1.0
+		status.offset_left = -96
+		status.offset_right = -14
+		status.offset_top = (54.0 - 24.0) / 2.0
+	_act_level_hint.text = ""
+
+
+## 二级菜单开着时的数字键直达(Main 的 MENU 分支转发)。
+func act_level_digit(digit: int) -> void:
+	if not _act_open or _act_idx < 0:
+		return
+	var levels: Array = LevelData.ACTS[_act_idx]["levels"]
+	if digit < 1 or digit > levels.size():
+		return
+	var li: int = levels[digit - 1]
+	if li > _unlocked:
+		Sfx.play("ui_error")
+		toast("%02d — 先通关前一场" % digit)
+		return
+	Sfx.play("ui_click")
+	close_act_panel()
+	m.start_chapter(li)
 
 
 ## 轻提示:红色一行,短暂停留后自行淡出。

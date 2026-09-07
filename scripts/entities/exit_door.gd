@@ -102,11 +102,6 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var r := Rect2(-size / 2.0, size)
 
-	# 底部硬投影
-	draw_set_transform(Vector2(0, size.y / 2.0 + 4.0), 0.0, Vector2(size.x * 1.15, 9.0))
-	draw_rect(Rect2(-1.0, -1.0, 2.0, 2.0), Color(0, 0, 0, 0.32))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
 	# 门腔(墨色) + 几何体色内框
 	draw_rect(r, Color(Ui.INK, 0.94))
 	var inner := r.grow(-5.0)

@@ -10,6 +10,11 @@ extends CanvasLayer
 ## 通路(player.gd 只读动作,不区分来源)。
 ## 轮盘为扁平六边形轮廓:只暗示左右滑动,不产生纵向拖拽的错觉。
 ## 布局锚定可见区四角并内避安全区,旋转 / 改变窗口时自动重排。
+##
+## 轮盘位置(设置面板可调,SettingsManager 持久化):
+##   fixed —— 固定在左下角;
+##   float —— 按下位置展开:按住左半屏任意空白处,轮盘就在那里出现,
+##            松手后回到左下角待位。左半屏 = 可见区 x ≤ 50%。
 
 const ICON_SIZE_SMALL := 56.0
 ## 触控热区外扩:视觉图标之外保留一圈余量(Material 建议目标 ≥48dp,
@@ -49,6 +54,7 @@ func _ready() -> void:
 	# —— 左下:左右方向轮盘(拉满自动加速) ——
 	_wheel = WheelPad.new()
 	_root.add_child(_wheel)
+	_wheel.wheel_mode = SettingsManager.wheel_mode
 
 	# 游戏初始在标题菜单;进入关卡时由 Main 开启
 	visible = false
@@ -62,6 +68,11 @@ func _input(event: InputEvent) -> void:
 	if t == null:
 		return
 	if t.pressed:
+		# 浮动轮盘:左半屏空白处按下 = 轮盘在那里展开(优先于跳跃)
+		if _wheel != null and _wheel.wheel_mode == WheelPad.MODE_FLOAT \
+				and _wheel.float_begin(t.index, t.position):
+			get_viewport().set_input_as_handled()
+			return
 		# 空白处按下 = 跳跃;轮盘触控区与小按钮各自处理,不抢占
 		if _jump_finger == -1 and not _pos_reserved(t.position):
 			_jump_finger = t.index
@@ -114,6 +125,23 @@ func toggle() -> void:
 
 func is_forced() -> bool:
 	return forced
+
+
+## 单人阵容没有切换可言:隐藏/恢复左侧切换钮(热区一并失效)。
+func set_switch_available(on: bool) -> void:
+	if not _buttons.has("switch_next"):
+		return
+	var b: Dictionary = _buttons["switch_next"]
+	(b.btn as TouchScreenButton).visible = on
+	(b.label as Label).visible = on
+
+
+## 设置面板改了轮盘模式后同步(切回固定时收拢浮动状态)。
+func refresh_settings() -> void:
+	if _wheel != null:
+		_wheel.wheel_mode = SettingsManager.wheel_mode
+		_wheel.force_release()
+		_relayout()
 
 
 func _exit_tree() -> void:
@@ -186,8 +214,8 @@ func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 	btn.scale = Vector2(s, s)
 	btn.modulate = Color(1, 1, 1, 0.66)
 	btn.passby_press = true
-	# 触感反馈:按下瞬间轻震(桌面为无害空操作)
-	btn.pressed.connect(func() -> void: Input.vibrate_handheld(24))
+	# 触感反馈:按下瞬间轻震(受设置开关控制;桌面为无害空操作)
+	btn.pressed.connect(func() -> void: buzz(24))
 	_root.add_child(btn)
 	var label := Ui.l(label_text, 12, Ui.LIGHT, Color(Ui.PAPER, 0.8),
 		HORIZONTAL_ALIGNMENT_CENTER)
@@ -198,13 +226,10 @@ func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 		"rect": Rect2()}
 
 
-## 单人阵容没有切换可言:隐藏/恢复左侧切换钮(热区一并失效)。
-func set_switch_available(on: bool) -> void:
-	if not _buttons.has("switch_next"):
-		return
-	var b: Dictionary = _buttons["switch_next"]
-	(b.btn as TouchScreenButton).visible = on
-	(b.label as Label).visible = on
+## 触感反馈(受设置开关控制;桌面无振动硬件时为无害空操作)。
+static func buzz(ms := 24) -> void:
+	if SettingsManager.vibration:
+		Input.vibrate_handheld(ms)
 
 
 func _process(_delta: float) -> void:
@@ -221,37 +246,71 @@ func _process(_delta: float) -> void:
 
 ## 左右方向轮盘:扁平六边形底盘,滑钮仅沿横轴移动。
 ## 触控区为轮廓外扩的扁长条;死区内回中;拉到最大自动加速(带滞回防抖)。
+## 两种位置模式(设置面板切换):
+##   MODE_FIXED —— 底盘钉在左下角,触控区固定;
+##   MODE_FLOAT —— 待位时画在左下角(半透明提示),按住左半屏任意空白处
+##                  就地展开,松手滑回待位点。
 class WheelPad extends Control:
+	const MODE_FIXED := "fixed"
+	const MODE_FLOAT := "float"
 	const DEADZONE := 0.14
 	const SPRINT_ON := 0.96      # 拉到最大 → 自动加速
 	const SPRINT_OFF := 0.86     # 滞回:低于此才退出加速,避免边缘抖动
 
-	var half_w := 120.0          # 六边形半宽
-	var half_h := 36.0           # 六边形半高(刻意压扁)
+	var wheel_mode := MODE_FIXED
 	var strength := 0.0          # 死区处理后的输出 -1..1
 	var sprinting := false       # 轮盘拉满触发的自动加速
-	var _center := Vector2(160, 160)
+	var half_w := 120.0          # 六边形半宽
+	var half_h := 36.0           # 六边形半高(刻意压扁)
+	var _center := Vector2(160, 160)   # 待位点(固定模式 = 使用位置)
+	var _home := Vector2(160, 160)     # 左下角待位锚点(_relayout 刷新)
 	var _travel := 90.0          # 滑钮最大偏移
 	var _knob_r := 26.0
 	var _knob_x := 0.0           # 原始滑钮偏移(画布 px)
 	var _finger := -1
+	var _returning := false      # 浮动模式:松手后滑回待位点的过渡
 
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	## 布局:半宽 / 半高与圆心(画布坐标)。
+	## 布局:半宽 / 半高与待位圆心(画布坐标)。
 	func setup(p_half_w: float, p_half_h: float, center: Vector2) -> void:
 		half_w = p_half_w
 		half_h = p_half_h
-		_center = center
+		_home = center
+		if _finger == -1 and not _returning:
+			_center = center
 		_knob_r = clampf(half_h * 0.72, 18.0, 30.0)
 		_travel = half_w - _knob_r - 12.0
 		size = Vector2(half_w, half_h) * 2.0 + Vector2(12, 12)
-		position = center - size / 2.0
+		position = _center - size / 2.0
 		queue_redraw()
 
-	## 是否落在轮盘触控区(轮廓外扩的扁长条)。
+	## 浮动模式:左半屏空白处按下 → 轮盘就地展开。返回是否接管了这次按下。
+	func float_begin(finger: int, pos: Vector2) -> bool:
+		if wheel_mode != MODE_FLOAT or _finger != -1:
+			return false
+		var vis := Adaptive.visible_size(get_viewport())
+		if pos.x > vis.x * 0.5:
+			return false
+		_finger = finger
+		_returning = false
+		# 展开圆心:按下点,内避屏幕边缘与安全区(留出半盘空间)
+		var ins := Adaptive.safe_insets(get_viewport())
+		_center = Vector2(
+			clampf(pos.x, ins.x + half_w + 10.0, vis.x * 0.5 - 6.0),
+			clampf(pos.y, ins.y + half_h * 2.0 + 10.0,
+				vis.y - ins.w - half_h * 2.0 - 10.0))
+		position = _center - size / 2.0
+		_follow(pos)
+		TouchControls.buzz(12)
+		return true
+
+	## 是否落在轮盘触控区(固定模式:轮廓外扩的扁长条;
+	## 浮动模式:未激活时不占热区,接管逻辑走 float_begin)。
 	func holds_point(pos: Vector2) -> bool:
+		if wheel_mode == MODE_FLOAT:
+			return _finger != -1
 		var d := pos - _center
 		return absf(d.x) <= half_w * 1.28 + 16.0 \
 			and absf(d.y) <= half_h * 2.2 + 16.0
@@ -269,10 +328,24 @@ class WheelPad extends Control:
 			elif t.index == _finger:
 				_finger = -1
 				_follow(Vector2(_center.x, t.position.y))
+				_float_return()
 		else:
 			var d := event as InputEventScreenDrag
 			if d != null and d.index == _finger:
 				_follow(d.position)
+
+	## 浮动模式松手:滑钮归零后,底盘滑回左下角待位点(0.16s)。
+	func _float_return() -> void:
+		if wheel_mode != MODE_FLOAT:
+			return
+		_returning = true
+		var tw := create_tween()
+		tw.tween_property(self, "position", _home - size / 2.0, 0.16) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_callback(func() -> void:
+			_returning = false
+			_center = _home
+			queue_redraw())
 
 	## 滑钮跟随手指(仅水平),并注入移动 / 加速动作。
 	func _follow(pos: Vector2) -> void:
@@ -312,6 +385,9 @@ class WheelPad extends Control:
 		strength = 0.0
 		_knob_x = 0.0
 		sprinting = false
+		_returning = false
+		_center = _home
+		position = _center - size / 2.0
 		_release_move()
 		Input.action_release("sprint")
 		queue_redraw()
@@ -322,8 +398,10 @@ class WheelPad extends Control:
 
 	func _draw() -> void:
 		var c := size / 2.0
+		# 浮动模式待位时更淡(提示"可以在这里按住"),激活 / 固定时常态
+		var idle_a := 0.18 if (wheel_mode == MODE_FLOAT and _finger == -1) else 1.0
 		# 扁六边形轮廓(拉满加速时描红)
-		var edge := Color(Ui.RED, 0.9) if sprinting else Color(Ui.PAPER, 0.34)
+		var edge := Color(Ui.RED, 0.9) if sprinting else Color(Ui.PAPER, 0.34 * idle_a)
 		var hex := PackedVector2Array([
 			c + Vector2(-half_w, 0), c + Vector2(-half_w * 0.46, -half_h),
 			c + Vector2(half_w * 0.46, -half_h), c + Vector2(half_w, 0),
@@ -333,8 +411,8 @@ class WheelPad extends Control:
 		draw_polyline(hex, edge, 2.0, true)
 		# 水平中线 + 中心刻度:强调只有左右一个维度
 		draw_line(c + Vector2(-half_w * 0.7, 0), c + Vector2(half_w * 0.7, 0),
-			Color(Ui.PAPER, 0.10), 1.5)
-		draw_circle(c, 2.5, Color(Ui.PAPER, 0.35))
+			Color(Ui.PAPER, 0.10 * idle_a), 1.5)
+		draw_circle(c, 2.5, Color(Ui.PAPER, 0.35 * idle_a))
 		# 左右方向箭头(沿中线,随方向点亮)
 		for dir: int in [-1, 1]:
 			var tip := c + Vector2(dir * (half_w - 13.0), 0)
@@ -345,17 +423,17 @@ class WheelPad extends Control:
 				tip + Vector2(-dir * wing * 0.5, wing),
 			])
 			var lit := signf(strength) == dir
-			var col := Ui.PAPER if lit else Color(Ui.PAPER, 0.4)
+			var col := Ui.PAPER if lit else Color(Ui.PAPER, 0.4 * idle_a)
 			if lit and sprinting:
 				col = Ui.RED
 			draw_colored_polygon(tri, col)
 		# 滑钮(仅沿横轴;拉满加速时描红)
 		var knob := c + Vector2(_knob_x, 0)
-		var ring := Color(Ui.PAPER, 0.85)
+		var ring := Color(Ui.PAPER, 0.85 * idle_a)
 		if sprinting:
 			ring = Ui.RED
 		elif strength != 0.0:
 			ring = Color(Ui.PAPER, 0.95)
-		draw_circle(knob, _knob_r, Color(Ui.INK_2, 0.80))
+		draw_circle(knob, _knob_r, Color(Ui.INK_2, 0.80 * idle_a))
 		draw_arc(knob, _knob_r, 0.0, TAU, 40, ring, 2.0, true)
-		draw_circle(knob, 3.5, Color(Ui.PAPER, 0.9))
+		draw_circle(knob, 3.5, Color(Ui.PAPER, 0.9 * idle_a))

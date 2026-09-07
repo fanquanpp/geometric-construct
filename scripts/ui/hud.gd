@@ -277,10 +277,7 @@ func _ready() -> void:
 
 ## 触屏模式:真触摸屏,或桌面用 --touch 强制开启(截图 / 调试一致)。
 func _touch_mode() -> bool:
-	if DisplayServer.is_touchscreen_available():
-		return true
-	var m = Main.I
-	return m != null and m.touch_controls != null and m.touch_controls.is_forced()
+	return Adaptive.is_touch_mode()
 
 
 ## 文案自适应:触屏设备把关卡提示里的键位词换成触屏说法。

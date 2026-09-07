@@ -68,6 +68,11 @@ func height_units() -> float:
 
 
 ## 档案页属性行:{label, value, hint} 或 {label, text}。value 为 0.0 – 2.0 标尺读数。
+## 派生量一律按真实物理式换算:
+##   速度 → v = 倍率 × RUN_SPEED(3.0 格/秒 = 300 px/s);
+##   跳高 → h = v₀² / 2g(起跳速度按能量守恒反推);
+##   弹性 → 反弹率 e = bounce × 0.5(牛顿碰撞定律 v′ = e·v);
+##   摩擦 → 减速度 a = μ·g(库伦摩擦,重量项视作材质差异)。
 func stat_rows() -> Array:
 	var speed_hint := "固定极速"
 	if can_sprint and sprint_speed > base_speed:
@@ -78,19 +83,24 @@ func stat_rows() -> Array:
 		speed_hint = "不可加速"
 		if buff_sprint_speed > base_speed:
 			speed_hint += " · 加速门 %.1f" % buff_sprint_speed
+	speed_hint += " · ≈%.0f 格/秒" % roundf(base_speed * 3.0)
 
 	var jump_hint := ""
 	if can_swap:
-		jump_hint = "置换:按跳跃键翻转上下平台"
+		jump_hint = "置换:按跳跃键翻转上下平台,水平惯性完整保留"
 	elif can_jump:
-		jump_hint = "二段跳 · 每次跳高 %.1f 格" % jump_units
+		jump_hint = "二段跳 · 每次跳高 %.1f 格(h = v₀²/2g)" % jump_units
 	else:
 		jump_hint = "不可跳跃"
 
 	var climb_hint := "贴墙按住方向缓降 · 按住跳跃键爬升(单次 %.1f 格)" % CLIMB_UNITS \
 		if can_climb else "不可攀墙"
 
-	var bounce_hint := "固定 · 落地反弹约 %.0f%%" % roundf(bounce * 50.0)
+	var bounce_hint := "反弹率约 %.0f%%(v′ = e·v)" % roundf(bounce * 50.0)
+
+	var weight_hint := _band_hint(weight, "极轻 · 起步快、滑行远", "标准",
+		"沉重 · 起步慢、惯性大")
+	weight_hint += " · 摩擦 a = μ·g"
 
 	return [
 		{"label": "速度", "value": base_speed, "hint": speed_hint},
@@ -99,7 +109,7 @@ func stat_rows() -> Array:
 			"hint": jump_hint},
 		{"label": "攀墙", "value": CLIMB_UNITS if can_climb else 0.0,
 			"hint": climb_hint},
-		{"label": "重量", "value": weight, "hint": _band_hint(weight, "极轻", "标准", "沉重")},
+		{"label": "重量", "value": weight, "hint": weight_hint},
 		{"label": "负重力", "value": carry, "hint":
 			"头顶超载:跳跃高度减半" if carry <= 0.05
 			else _band_hint(carry, "仅轻量", "标准", "强力承载")},

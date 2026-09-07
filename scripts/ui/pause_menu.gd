@@ -68,6 +68,7 @@ func _ready() -> void:
 	body.add_child(_resume)
 	body.add_child(_make_button("重 新 开 始", func() -> void: m.restart_from_pause()))
 	body.add_child(_make_button("几 何 档 案", func() -> void: m.open_geometry_panel()))
+	body.add_child(_make_button("设 置", func() -> void: m.open_settings()))
 	body.add_child(_make_button("返 回 标 题", func() -> void: m.quit_to_menu()))
 	var touch_btn := _make_button("虚拟按键 · 关", func() -> void: pass)
 	touch_btn.pressed.connect(func() -> void: _toggle_touch(touch_btn))
@@ -141,9 +142,12 @@ func _input(ev: InputEvent) -> void:
 		return
 	if ev is InputEventKey:
 		if ev.pressed and (ev.keycode == KEY_ESCAPE or ev.keycode == KEY_P):
-			# 角色档案打开时,Esc 交给档案面板处理
+			# 几何档案 / 设置面板打开时,Esc 交给对应面板处理
 			if Main.I != null and Main.I.geometry_panel != null \
 					and Main.I.geometry_panel.is_open:
+				return
+			if Main.I != null and Main.I.settings_panel != null \
+					and Main.I.settings_panel.is_open:
 				return
 			get_viewport().set_input_as_handled()
 			m.resume_game()

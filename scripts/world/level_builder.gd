@@ -73,6 +73,14 @@ static func build(def: LevelDef) -> Node2D:
 		door.center = e[1]
 		root.add_child(door)
 
+	# —— 教学悬浮提示(世界坐标,靠近渐显) ——
+	var touch := Adaptive.is_touch_mode()
+	for h in def.hints:
+		var hm := HintMarker.new()
+		hm.position = h["pos"]
+		hm.text = str(h.get("touch", h["text"]) if touch else h["text"])
+		root.add_child(hm)
+
 	# —— 几何体 ——
 	for idx in def.roster:
 		var cd: GeometryDef = Geometries.ALL[idx]
@@ -94,6 +102,11 @@ static func build(def: LevelDef) -> Node2D:
 
 
 ## 绘制全部平台:硬投影 + 平面石板 + 顶缘亮线,全部直角。
+## 组块连接和谐化:
+##   1. 投影先全部画完、主体后画 —— 相邻组块的投影不再互相裁切出暗色缝线;
+##   2. 坐落在其他组块上的立块,投影只做横向偏移 —— 不在承接面顶缘拖出暗带;
+##   3. 立块底缘两侧补 45° 裙角(主体同色的硬折线,非圆角),
+##      让"立块 ↔ 承接面"的过渡融为一体。
 class PlatformRenderer extends Node2D:
 	var rects: Array = []
 	var _base: StyleBoxFlat
@@ -106,25 +119,58 @@ class PlatformRenderer extends Node2D:
 		_slab = StyleBoxFlat.new()
 		_slab.bg_color = Color("313845")
 
+	## r 是否坐落在另一个组块上(底缘贴着对方顶缘,水平方向有实质搭接)。
+	func _rests_on(r: Rect2) -> bool:
+		for u0 in rects:
+			var u: Rect2 = u0
+			if u == r or u.position.y <= r.position.y:
+				continue
+			if absf(r.end.y - u.position.y) > 6.0:
+				continue
+			var overlap := minf(r.end.x, u.end.x) - maxf(r.position.x, u.position.x)
+			if overlap >= 6.0:
+				return true
+		return false
+
 	func _draw() -> void:
-		for r in rects:
-			# 硬投影:整体位移的实心暗块,无模糊
-			draw_rect(Rect2(r.position + Vector2(7, 8), r.size), Color(0, 0, 0, 0.38))
-			# 主体
+		# —— 第一遍:硬投影(整体位移的实心暗块,无模糊) ——
+		for r0 in rects:
+			var r: Rect2 = r0
+			var off := Vector2(7, 8)
+			if _rests_on(r):
+				off.y = 0.0    # 有承接面:只横向投影,不在对方顶缘留暗带
+			draw_rect(Rect2(r.position + off, r.size), Color(0, 0, 0, 0.38))
+		# —— 第二遍:主体 + 上层亮面板 + 顶缘亮线(大块先画,小块的顶线不被吞) ——
+		var ordered := rects.duplicate()
+		ordered.sort_custom(func(a: Rect2, b: Rect2) -> bool:
+			return a.size.x * a.size.y > b.size.x * b.size.y)
+		for r0 in ordered:
+			var r: Rect2 = r0
 			draw_style_box(_base, r)
-			# 上层亮面板
 			var slab := minf(r.size.y * 0.4, 22.0)
 			if slab > 2.0:
 				draw_style_box(_slab, Rect2(r.position, Vector2(r.size.x, slab)))
-			# 顶缘亮线(锐利 1px)
-			draw_rect(Rect2(r.position + Vector2(0, 0), Vector2(r.size.x, 2)),
-				Color(Ui.PAPER, 0.30))
+			draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.30))
 			# 左缘红色刻度块(构成主义强调点,每 480px 一处)
 			var mark_x := 40.0
 			while mark_x < r.size.x - 20.0:
 				draw_rect(Rect2(r.position + Vector2(mark_x, 0), Vector2(14, 3)),
 					Color(Ui.RED, 0.55))
 				mark_x += 480.0
+		# —— 第三遍:接触裙角 —— 立块底缘两侧的 45° 硬折线小裙边(主体同色),
+		# 把立块"种"进承接面,消除生硬的竖直接缝
+		for r0 in rects:
+			var r: Rect2 = r0
+			if not _rests_on(r):
+				continue
+			var f := 16.0
+			var by := r.end.y
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(r.position.x, by - f), Vector2(r.position.x, by),
+				Vector2(r.position.x - f, by)]), _base.bg_color)
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(r.end.x, by - f), Vector2(r.end.x, by),
+				Vector2(r.end.x + f, by)]), _base.bg_color)
 
 
 ## 曲面跳跃板:折线曲面(碰撞 = 逐段实心凸四边形),几何体沿面滑行,末端沿切线飞出。
@@ -153,12 +199,18 @@ class Ramp extends StaticBody2D:
 	func _draw() -> void:
 		if pts.size() < 2:
 			return
-		# 硬投影
+		# 硬投影(坐落在平台上的曲面只横向偏移,不在承接面顶缘拖出暗带)
+		var contact := false
+		for p in pts:
+			if _over_platform(p.x, base_y):
+				contact = true
+				break
+		var soff := Vector2(7, 0) if contact else Vector2(7, 8)
 		var shadow := PackedVector2Array()
 		for p in pts:
-			shadow.append(p + Vector2(7, 8))
-		shadow.append(Vector2(pts[pts.size() - 1].x + 7, base_y + 8))
-		shadow.append(Vector2(pts[0].x + 7, base_y + 8))
+			shadow.append(p + soff)
+		shadow.append(Vector2(pts[pts.size() - 1].x + soff.x, base_y + soff.y))
+		shadow.append(Vector2(pts[0].x + soff.x, base_y + soff.y))
 		draw_colored_polygon(shadow, Color(0, 0, 0, 0.38))
 		# 主体填充(曲面到基线)
 		var poly := PackedVector2Array(pts)
@@ -176,6 +228,18 @@ class Ramp extends StaticBody2D:
 		for i in pts.size() - 1:
 			var mid := (pts[i] + pts[i + 1]) * 0.5
 			draw_rect(Rect2(mid - Vector2(7, 8), Vector2(14, 3)), Color(Ui.RED, 0.55))
+
+	## 曲面是否搭在某块平台之上(x 落在平台范围内,且平台顶缘就在基线附近)。
+	func _over_platform(x: float, y: float) -> bool:
+		var m = Main.I
+		if m == null or m._current < 0:
+			return false
+		for r0 in LevelData.LEVELS[m._current].platforms:
+			var r: Rect2 = r0
+			if x >= r.position.x and x <= r.end.x \
+					and y >= r.position.y - 8.0 and y <= r.position.y + 60.0:
+				return true
+		return false
 
 
 ## 移动构件:单轴往返的动平台(AnimatableBody2D + sync_to_physics,
@@ -350,3 +414,41 @@ class GridLayer extends Node2D:
 		# 原点十字
 		draw_line(Vector2(0, 0), Vector2(26, 0), Color(Ui.RED, 0.55), 2.0)
 		draw_line(Vector2(0, 0), Vector2(0, 26), Color(Ui.RED, 0.55), 2.0)
+
+
+## 地图内悬浮文本提示(新手教程):世界坐标里的教学牌 ——
+## 一枚红色刻度块 + 基线细线 + 一行说明文字。
+## 靠近渐显、远离渐隐(透明度跟随受控几何体的距离);
+## 文字自身不做位移动画(物理像素取整会呈不规则 1px 跳步,真机可见卡顿),
+## 只做透明度呼吸,动效法则见 docs/design/art-style.md §3。
+class HintMarker extends Node2D:
+	var text := ""
+	var _label: Label
+	var _t := randf() * TAU
+
+	func _ready() -> void:
+		z_index = 4
+		_label = Ui.l(text, 15, Ui.HEAD, Color(Ui.PAPER, 0.92),
+			HORIZONTAL_ALIGNMENT_CENTER, true, 0)
+		add_child(_label)
+
+	func _process(delta: float) -> void:
+		_t += delta
+		# 文字水平居中于锚点(每帧校正,宽度随文本/字号缓存而稳)
+		var w := _label.get_minimum_size().x
+		_label.position = Vector2(-w / 2.0, -36.0)
+		# 距离渐显:620px 内线性升到 1.0
+		var alpha := 0.0
+		var m = Main.I
+		if m != null and not m.players.is_empty() \
+				and m._active_slot >= 0 and m._active_slot < m.players.size():
+			var d: float = m.players[m._active_slot].position.distance_to(global_position)
+			alpha = clampf(1.35 - d / 620.0, 0.0, 1.0)
+		# 呼吸:透明度 ±8% 波动(周期 ≈2.2s,幅度 ≤10%,M5 动效法则)
+		var breathe := 0.92 + 0.08 * sin(_t * 2.85)
+		modulate = Color(1, 1, 1, alpha * breathe)
+
+	func _draw() -> void:
+		# 锚点刻度:红色小方块 + 基线细线(标注的"落点",与网格刻度同语言)
+		draw_rect(Rect2(-5, 0, 10, 10), Color(Ui.RED, 0.9))
+		draw_line(Vector2(-52, 18), Vector2(52, 18), Color(Ui.PAPER, 0.22), 1.5)

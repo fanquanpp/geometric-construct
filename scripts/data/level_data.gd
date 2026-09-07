@@ -52,7 +52,15 @@ static func _static_init() -> void:
 		],
 		[], [],
 		[[0, Vector2(2200, 874)]],
-		[Vector2(140, 892), Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]))
+		[Vector2(140, 892), Vector2.ZERO, Vector2.ZERO, Vector2.ZERO], [],
+		[
+			{pos = Vector2(240, 800), text = "空格 · 跳跃,空中再按一次 = 二段跳",
+				touch = "轻点屏幕 · 跳跃,空中再点 = 二段跳"},
+			{pos = Vector2(1040, 800), text = "助跑越快,跳得越远",
+				touch = "轮盘拉满加速 · 跳得更远"},
+			{pos = Vector2(1700, 800), text = "2.6 格缺口 · 二段跳(冲刺更稳)",
+				touch = "2.6 格缺口 · 二段跳(拉满更稳)"},
+		]))
 
 	# 02 · 跃 — 攀高:几何体切换 + 踩头合作 + 二段跳
 	LEVELS.append(_make("跃 · 攀高", 0,
@@ -69,7 +77,17 @@ static func _static_init() -> void:
 		[Vector2(140, 892), Vector2(260, 870), Vector2.ZERO, Vector2.ZERO],
 		# 高台 B 侧的垂直移动平台:慢路(可等待),合作攀爬仍是快路
 		[{"rect": Rect2(1360, 856, 130, 24), "offset": Vector2(0, -240),
-			"period": 3.2, "phase": 0.0}]))
+			"period": 3.2, "phase": 0.0}],
+		[
+			{pos = Vector2(140, 780), text = "Tab / Q · 切换操控另一位同伴",
+				touch = "左上「切换」· 操控另一位同伴"},
+			{pos = Vector2(430, 760), text = "踩上同伴头顶 · 接力登高",
+				touch = "踩上同伴头顶 · 接力登高"},
+			{pos = Vector2(850, 600), text = "贴住侧壁缓降 · 按住跳跃键上攀",
+				touch = "贴住侧壁 · 按住屏幕上攀"},
+			{pos = Vector2(1450, 420), text = "3.2 格高台 · 二段跳可直达",
+				touch = "3.2 格高台 · 二段跳可直达"},
+		]))
 
 	# 03 · 逆 — 突破:置换 + 加速门
 	LEVELS.append(_make("逆 · 突破", 2,
@@ -88,7 +106,17 @@ static func _static_init() -> void:
 		[Vector2.ZERO, Vector2.ZERO, Vector2(140, 880), Vector2.ZERO],
 		# 天花板断口内的水平接驳台:置换失误不再坠亡,惩罚降级为"等一个周期"
 		[{"rect": Rect2(1790, 216, 130, 24), "offset": Vector2(130, 0),
-			"period": 2.8, "phase": 0.0}]))
+			"period": 2.8, "phase": 0.0}],
+		[
+			{pos = Vector2(280, 700), text = "空格 = 置换 · 在天与地之间翻转",
+				touch = "点屏 = 置换 · 在天与地之间翻转"},
+			{pos = Vector2(500, 660), text = "矮墙跳不了 · 翻个面走上天花板",
+				touch = "矮墙跳不了 · 翻个面走上天花板"},
+			{pos = Vector2(1000, 420), text = "加速门 · 速度上限永久提升",
+				touch = "加速门 · 速度上限永久提升"},
+			{pos = Vector2(1870, 480), text = "断口有接驳台 · 等它靠过来",
+				touch = "断口有接驳台 · 等它靠过来"},
+		]))
 
 	# 04 · 圆 — 过山车:曲面滑行 + 飞跃断路
 	LEVELS.append(_make("圆 · 过山车", 3,
@@ -113,14 +141,24 @@ static func _static_init() -> void:
 				"base": 940.0,
 			},
 		],
-		[[Vector2(1450, 830), Vector2(120, 180)]],
-		[[3, Vector2(3140, 874)]],
-		[Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2(140, 894)]))
+			[[Vector2(1450, 830), Vector2(120, 180)]],
+			[[3, Vector2(3140, 874)]],
+			[Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2(140, 894)], [],
+			[
+				{pos = Vector2(240, 780), text = "Shift · 冲刺(轮盘拉满同效)",
+					touch = "轮盘拉满 · 冲刺加速"},
+				{pos = Vector2(830, 640), text = "沿曲面滑行 · 板端沿切线飞出",
+					touch = "沿曲面滑行 · 板端沿切线飞出"},
+				{pos = Vector2(1450, 600), text = "加速门 2.5× · 速度越大飞得越远",
+					touch = "加速门 2.5× · 速度越大飞得越远"},
+				{pos = Vector2(2400, 740), text = "7.8 格大断路 · 全速飞跃!",
+					touch = "7.8 格大断路 · 全速飞跃!"},
+			]))
 
 
 static func _make(name: String, focus: int, intro: String, size: Vector2,
 		roster: Array, platforms: Array, ramps: Array, gates: Array, exits: Array,
-		spawns: Array, movers: Array = []) -> LevelDef:
+		spawns: Array, movers: Array = [], hints: Array = []) -> LevelDef:
 	var def := LevelDef.new()
 	def.name = name
 	def.focus = focus
@@ -133,4 +171,5 @@ static func _make(name: String, focus: int, intro: String, size: Vector2,
 	def.exits = exits
 	def.spawns = spawns
 	def.movers = movers
+	def.hints = hints
 	return def

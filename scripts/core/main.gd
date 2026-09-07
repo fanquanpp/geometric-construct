@@ -13,6 +13,7 @@ var _hud: Hud
 var _menu: MenuLayer
 var _pause: PauseMenu
 var geometry_panel: GeometryPanel
+var settings_panel: SettingsPanel
 var touch_controls: TouchControls
 var _save: SaveManager
 var _current := -1
@@ -39,6 +40,9 @@ var _shot_level := 0
 var _shot_dir := ""
 var _door_shot := false
 var _panel_shot := false
+var _set_shot := false
+var _act_shot := false
+var _boot_shot := false
 var _intro_shot := false
 var _story_shot := false
 var _auto_test := false
@@ -53,6 +57,10 @@ func _ready() -> void:
 	amb.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(amb)
 
+	# 设置先于全部 UI 加载并应用(轮盘模式 / 音量在面板创建前就位)
+	SettingsManager.load_settings()
+	SettingsManager.apply_all()
+
 	# TouchControls 先于 HUD 创建:HUD 就能感知触屏模式(提示条 / 坐标位置)
 	touch_controls = TouchControls.new()
 	add_child(touch_controls)
@@ -63,6 +71,8 @@ func _ready() -> void:
 	add_child(_menu)
 	geometry_panel = GeometryPanel.new()
 	add_child(geometry_panel)
+	settings_panel = SettingsPanel.new()
+	add_child(settings_panel)
 	_pause = PauseMenu.new()
 	_pause.m = self
 	add_child(_pause)
@@ -74,6 +84,9 @@ func _ready() -> void:
 	_menu.set_unlocked(_unlocked)
 	_menu.visible = true
 	_hud.visible = false
+
+	# 开屏动画:游戏名揭示(点按可跳过),盖在标题菜单入场之上
+	add_child(BootIntro.new())
 
 	_parse_auto_shot()
 
@@ -91,6 +104,7 @@ func _show_menu() -> void:
 	_hud.visible = false
 	touch_controls.set_in_game(false)
 	geometry_panel.close()
+	settings_panel.close()
 	_menu.visible = true
 	_menu.set_unlocked(_unlocked)
 
@@ -121,7 +135,9 @@ func start_level(index: int, intro := true) -> void:
 	Sfx.play("start")
 
 	_menu.visible = false
+	_menu.close_act_panel()
 	geometry_panel.close()
+	settings_panel.close()
 	_hud.visible = true
 	touch_controls.set_in_game(true)
 	# 单人阵容没有"切换"可言:隐藏左侧切换钮,避免无效按键
@@ -209,7 +225,7 @@ func _key_pressed(k: Key) -> bool:
 
 func _physics_process(_delta: float) -> void:
 	frame_no += 1
-	if geometry_panel.is_open:
+	if geometry_panel.is_open or settings_panel.is_open:
 		return
 	if _state == State.PLAYING:
 		_check_deaths()
@@ -232,13 +248,23 @@ func _physics_process(_delta: float) -> void:
 	elif _state == State.MENU:
 		if debug_solo:
 			return
-		# 数字键快速选剧目(1=序章开演,2-4 未上演幕同样给出 toast 反馈);
-		# C 打开几何档案;Esc 退出游戏
+		# 数字键:二级菜单开着时直达该_choose剧目内的场次;否则快速选剧目
+		# (1=序章开演 → 进二级菜单,2-4 未上演幕同样给出 toast 反馈);
+		# C 打开几何档案;S 打开设置;Esc 关二级菜单 / 退出游戏
+		if _menu.is_act_panel_open():
+			for i in 4:
+				if _key_pressed(KEY_1 + i):
+					_menu.act_level_digit(i + 1)
+			if Input.is_action_just_pressed("ui_cancel"):
+				_menu.close_act_panel()
+			return
 		for i in LevelData.ACTS.size():
 			if _key_pressed(KEY_1 + i):
 				_menu.try_open_act(i)
 		if _key_pressed(KEY_C):
 			open_geometry_panel()
+		if _key_pressed(KEY_S):
+			open_settings()
 		if Input.is_action_just_pressed("ui_cancel"):
 			get_tree().quit()
 	elif _state == State.WIN:
@@ -295,6 +321,11 @@ func start_chapter(index: int) -> void:
 
 func open_geometry_panel() -> void:
 	geometry_panel.open(_unlocked)
+
+
+## 打开设置面板(标题菜单 / 暂停菜单共用)。
+func open_settings() -> void:
+	settings_panel.open()
 
 
 func resume_game() -> void:
@@ -487,6 +518,12 @@ func _parse_auto_shot() -> void:
 			_door_shot = true
 		elif raw == "--panelshot":
 			_panel_shot = true
+		elif raw == "--setshot":
+			_set_shot = true
+		elif raw == "--actshot":
+			_act_shot = true
+		elif raw == "--bootshot":
+			_boot_shot = true
 		elif raw == "--introshot":
 			_intro_shot = true
 		elif raw == "--storyshot":
@@ -505,12 +542,51 @@ func _parse_auto_shot() -> void:
 		_run_door_shot()
 	if _panel_shot:
 		_run_panel_shot()
+	if _set_shot:
+		_run_set_shot()
+	if _act_shot:
+		_run_actshot()
+	if _boot_shot:
+		_run_boot_shot()
 	if _intro_shot:
 		_run_intro_shot()
 	if _story_shot:
 		_run_story_shot()
 	if _auto_test:
 		_run_auto_test()
+
+
+## 截取设置面板。
+func _run_set_shot() -> void:
+	if _shot_dir.is_empty():
+		_shot_dir = "C:/Atian/Project/shots_bm"
+	await get_tree().create_timer(0.6).timeout
+	settings_panel.open()
+	await get_tree().create_timer(0.5).timeout
+	await _shot("settings")
+	get_tree().quit()
+
+
+## 截取剧目二级菜单(关卡列)。
+func _run_actshot() -> void:
+	if _shot_dir.is_empty():
+		_shot_dir = "C:/Atian/Project/shots_bm"
+	await get_tree().create_timer(0.6).timeout
+	_menu.try_open_act(0)
+	await get_tree().create_timer(0.6).timeout
+	await _shot("act_panel")
+	get_tree().quit()
+
+
+## 截取开屏动画(标题落定瞬间)。
+func _run_boot_shot() -> void:
+	if _shot_dir.is_empty():
+		_shot_dir = "C:/Atian/Project/shots_bm"
+	await get_tree().create_timer(1.35).timeout
+	await _shot("boot")
+	await get_tree().create_timer(1.8).timeout
+	await _shot("boot_end")
+	get_tree().quit()
 
 
 ## 截取章节开场卡。
@@ -524,11 +600,20 @@ func _run_intro_shot() -> void:
 
 
 ## 截取剧情对话框(序幕)。
+## 刻意先开局把相机带到关卡深处再开对话:验证变暗遮罩不再跟随相机
+## (follow_viewport 关闭后,遮罩恒定铺满屏幕,左右两侧都不会漏光)。
 func _run_story_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "C:/Atian/Project/shots_bm"
 	await get_tree().create_timer(0.6).timeout
-	open_prologue()
+	start_level(0, false)
+	await get_tree().create_timer(0.3).timeout
+	if not players.is_empty():
+		players[0].position = Vector2(2000, 850)
+		players[0].velocity = Vector2.ZERO
+	await get_tree().create_timer(0.4).timeout
+	get_tree().paused = true
+	show_story("prologue")
 	await get_tree().create_timer(1.6).timeout
 	await _shot("story")
 	get_tree().quit()

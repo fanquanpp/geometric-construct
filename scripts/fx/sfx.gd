@@ -16,6 +16,12 @@ static var _players := {}   # 音效名 -> AudioStreamPlayer
 static var _vols := {}      # 音效名 -> 基础音量 db
 static var _jitters := {}   # 音效名 -> 音高随机幅度(±比例)
 static var _loops := {}     # 循环音名 -> 无缝循环 AudioStreamWAV
+static var _volume_scale := 1.0  # 全局音量(线性 0-1,设置面板可调)
+
+
+## 全局音量(线性 0-1):叠加在每条音效的基础 db 之上。
+static func set_volume_scale(scale: float) -> void:
+	_volume_scale = clampf(scale, 0.0, 1.0)
 
 
 static func init(parent: Node) -> void:
@@ -165,7 +171,9 @@ static func play(sfx_name: String, vol_offset := 0.0) -> void:
 	if not _players.has(sfx_name):
 		return
 	var p: AudioStreamPlayer = _players[sfx_name]
-	p.volume_db = _vols[sfx_name] + vol_offset
+	# 音量合成:基础 db + 全局线性音量(0 → -80db 静音)
+	p.volume_db = _vols[sfx_name] + vol_offset \
+		+ (linear_to_db(maxf(_volume_scale, 0.0001)) if _volume_scale > 0.001 else -80.0)
 	var j: float = _jitters[sfx_name]
 	p.pitch_scale = 1.0 + randf_range(-j, j)
 	p.stop()

@@ -15,11 +15,13 @@ extends CharacterBody2D
 const BOUNCE_MIN := 240.0     # 低于该落地速度不反弹,直接站稳
 const BOUNCE_SETTLE := 0.8    # 未按住跳跃的落地反弹衰减(自然收敛)
 const SWAP_SETTLE := 0.55     # 置换落地缓冲(避免上下平台间乒乓)
-const MAX_FALL := 1150.0
+const MAX_FALL := 1150.0      # 终端速度 v∞:二次空气阻力下落 speed 的渐近上限
 const BASE_ACCEL := 2400.0    # 标准 1.0 重量几何体的地面加速度
 const AIR_ACCEL_RATIO := 0.62
-const BASE_FRICTION := 1900.0 # 标准几何体的地面摩擦(无输入时的减速度)
-const BALL_FRICTION_RATIO := 0.34  # 圆球滚动:摩擦极低,强调惯性
+## 地面摩擦系数 μ(库伦摩擦:减速度 a = μ·g)。标准几何体 μ ≈ 1.27,
+## 重物按材质差异放大摩擦系数(设计特性:越重越难起动也越难停下)。
+const MU_FRICTION := 1.2667
+const BALL_MU_ROLL := 0.43    # 圆球滚动阻力系数(μ 的滚动版):强调惯性
 const SWAP_LAUNCH := 300.0    # 置换瞬间射向新落点平台的初速度
 const CLIMB_UP := 150.0       # 爬墙:按住跳跃键的上升速度
 const CLIMB_SLIDE := 55.0     # 爬墙:只按方向贴墙时的缓降速度
@@ -140,32 +142,42 @@ func _physics_process(delta: float) -> void:
 		facing = signf(move_input.x)
 
 	# ———— 重力:升 / 顶 / 落三段曲线(下落加重、顶点微悬停,抛物感更强) ————
+	# 上升段:恒定重力(顶点窗口内减轻,制造"微悬停"的目标感);
+	# 下落段:牛顿阻力模型 ma = mg − kv²(二次空气阻力),
+	#         速度逼近终端速度 MAX_FALL 时阻力抵消重力,加速度平滑归零 ——
+	#         取代旧的硬 clamp 截断,长落体的速度曲线连续无拐点。
 	var g_mult := 1.0
 	if vel.y * gravity_dir < 0.0:
 		if absf(vel.y) < APEX_WINDOW:
 			g_mult = APEX_GRAVITY_MULT
+		vel.y += Geometries.GRAVITY * g_mult * gravity_dir * dt
 	else:
-		g_mult = FALL_GRAVITY_MULT
-	vel.y += Geometries.GRAVITY * g_mult * gravity_dir * dt
+		var v_n := clampf(absf(vel.y) / MAX_FALL, 0.0, 1.0)   # 归一化落速 v/v∞
+		var a_fall := Geometries.GRAVITY * FALL_GRAVITY_MULT * (1.0 - v_n * v_n)
+		vel.y += a_fall * gravity_dir * dt
+		if absf(vel.y) > MAX_FALL:
+			vel.y = MAX_FALL * signf(vel.y)   # 极端帧安全阀(渐近线之内)
 
-	# ———— 水平移动:加速度 + 惯性 ————
+	# ———— 水平移动:加速度 + 惯性(摩擦按 μ·g 库伦模型公式化) ————
 	var on_ground := is_on_floor()
 	var target_mult := _target_multiplier(sprinting)
 	var target_vx := move_input.x * target_mult * Geometries.RUN_SPEED
 	var eff_weight := def.weight * (RAMP_WEIGHT_RATIO if ramp_buffed else 1.0)
 	var accel_factor := clampf(1.15 - 0.3 * eff_weight, 0.55, 1.15)
 	var friction_factor := clampf(1.1 - 0.35 * eff_weight, 0.4, 1.1)
+	var mu := MU_FRICTION * friction_factor           # 等效摩擦系数(含重量材质项)
 	if def.shape == GeometryDef.Shape.BALL:
 		accel_factor = maxf(accel_factor, 1.0)
-		friction_factor = BALL_FRICTION_RATIO
+		mu = BALL_MU_ROLL * friction_factor           # 滚动阻力系数远小于滑动
 	if move_input.x != 0.0:
 		var accel := BASE_ACCEL * accel_factor
 		if not on_ground:
 			accel *= AIR_ACCEL_RATIO
 		vel.x = move_toward(vel.x, target_vx, accel * dt)
 	else:
-		# 松开输入:靠摩擦消耗速度,惯性滑行
-		var friction := BASE_FRICTION * friction_factor
+		# 松开输入:摩擦减速 a = μ·g(与质量无关的质量定律,μ 承载材质差异),
+		# 空中只有微弱空气阻力(0.28 倍),惯性滑行
+		var friction := mu * Geometries.GRAVITY
 		if not on_ground:
 			friction *= 0.28
 		vel.x = move_toward(vel.x, 0.0, friction * dt)
@@ -191,7 +203,7 @@ func _physics_process(delta: float) -> void:
 		var along := vel.dot(t)
 		var target_along := target_mult * Geometries.RUN_SPEED / maxf(absf(t.x), 0.35)
 		if dir == 0.0:
-			along = move_toward(along, 0.0, BASE_FRICTION * friction_factor * dt)
+			along = move_toward(along, 0.0, mu * Geometries.GRAVITY * dt)
 		else:
 			along = move_toward(along, dir * target_along, BASE_ACCEL * accel_factor * dt)
 		vel = t * along
@@ -715,33 +727,24 @@ func _draw() -> void:
 		else:
 			draw_rect(Rect2(t["pos"] - position - ts / 2.0, ts), Color(def.color, a * 0.7))
 
-	# 本体:棱角分明的几何形
+	# 本体:棱角分明的几何形(不带外框 —— 活跃指示靠亮度脉冲 + 名牌 + 队伍 chips)
 	if def.shape == GeometryDef.Shape.BALL:
 		_draw_ball(size)
 	else:
 		_draw_box(size)
 
-	# 活跃几何体的取景框:细白方框 + 呼吸刻度;
-	# 圆球不用方框 —— 它的活跃指示是 _draw_ball 里的圆形取景环(轮廓同族)
-	if is_active and def.shape != GeometryDef.Shape.BALL:
-		var frame := Rect2(-size / 2.0, size).grow(7.0)
-		draw_rect(frame, Color(1, 1, 1, 0.85), false, 1.6)
-		var pulse := 0.6 + 0.4 * sin((Time.get_ticks_msec() % 1000000) / 190.0)
-		draw_rect(Rect2(frame.position - Vector2(4, 4), Vector2(8, 8)),
-			Color(def.color.lerp(Color.WHITE, 0.4), pulse))
 	if is_active:
 		_draw_name_tag(size)
 
 
 func _draw_box(size: Vector2) -> void:
 	var body := Rect2(-size / 2.0, size)
-	_body_box.bg_color = def.color
+	# 活跃几何体的亮度呼吸:整块提亮(亮度连续变化,无像素取整,慢速也平滑)
 	if is_active:
-		_body_box.border_color = Color.WHITE
-		_body_box.set_border_width_all(2)
+		var glow := 0.10 + 0.10 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 380.0))
+		_body_box.bg_color = def.color.lerp(Color.WHITE, glow)
 	else:
-		_body_box.border_color = Color(def.color, 0.0)
-		_body_box.set_border_width_all(0)
+		_body_box.bg_color = def.color
 	draw_style_box(_body_box, body)
 
 	# 左上硬高光条(锐利,不渐变)

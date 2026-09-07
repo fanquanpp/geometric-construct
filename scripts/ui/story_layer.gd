@@ -66,11 +66,16 @@ func play(ks_path: String) -> void:
 	# 模板默认 对话盒=10 会被 MenuLayer(20)/HUD(10) 盖住,表现为"只有旁白名字
 	# 飘着、没有文本框、暂停中无法退出"的假死。统一抬到全部游戏 UI 之上,
 	# 并保持模板内部上下顺序(背景 < 对话 < 覆盖层)。
+	# 同时必须关掉 follow_viewport:模板的背景层(变暗遮罩)默认跟随游戏相机,
+	# 相机在关卡里移动后遮罩整体偏移,屏幕一侧露出一条未压暗的亮带
+	# (移动端表现为"左边遮罩缺失");关掉后遮罩恒定铺满屏幕。
 	var cls := _manager.find_children("*", "CanvasLayer", true, false)
 	cls.sort_custom(func(a: Node, b: Node) -> bool:
 		return (a as CanvasLayer).layer < (b as CanvasLayer).layer)
 	for i in cls.size():
-		(cls[i] as CanvasLayer).layer = 46 + i
+		var cl := cls[i] as CanvasLayer
+		cl.follow_viewport_enabled = false
+		cl.layer = 46 + i
 	# 压暗背景(半透明墨色,保留底层画面轮廓),隐藏模板顶部功能条;
 	# 压暗层参与入场过渡:自全透明淡入(世界"让位"而不是"熄灭")
 	var bg := _manager.get_node_or_null(
@@ -111,7 +116,6 @@ func play(ks_path: String) -> void:
 	_manager.init_dialogue()
 
 	# —— 入场过渡:压暗层先淡入 → 对话盒自底部升入(M1 CUBIC_OUT 硬减速停) ——
-	add_child(_manager)
 	var enter := create_tween()
 	enter.set_parallel(true)
 	if bg != null:

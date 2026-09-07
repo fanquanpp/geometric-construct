@@ -8,6 +8,15 @@ class_name Adaptive
 const DESIGN := Vector2(1280, 720)
 
 
+## 当前是否按"触屏交互"出文案 / 布局:
+## 真触摸屏设备,或桌面用 --touch 强制开启(截图 / 调试与真机一致)。
+static func is_touch_mode() -> bool:
+	if DisplayServer.is_touchscreen_available():
+		return true
+	var m = Main.I
+	return m != null and m.touch_controls != null and m.touch_controls.is_forced()
+
+
 ## 可见区尺寸(画布坐标)。
 static func visible_size(vp: Viewport) -> Vector2:
 	return vp.get_visible_rect().size
