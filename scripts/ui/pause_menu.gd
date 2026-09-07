@@ -68,7 +68,9 @@ func _ready() -> void:
 	body.add_child(touch_btn)
 
 	body.add_child(_spacer(0, 4))
-	body.add_child(Ui.l("Esc · 继续游戏", 12, Ui.LIGHT, Color(Ui.DIM, 0.85),
+	var esc_hint := "点按按钮继续游戏" if DisplayServer.is_touchscreen_available() \
+		else "Esc · 继续游戏"
+	body.add_child(Ui.l(esc_hint, 12, Ui.LIGHT, Color(Ui.DIM, 0.85),
 		HORIZONTAL_ALIGNMENT_CENTER))
 
 

@@ -27,6 +27,10 @@ func _ready() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
+	# 安全区内缩(刘海 / 挖孔避让),旋转或改窗口时跟随
+	Adaptive.apply_safe_area(root)
+	root.resized.connect(func() -> void: Adaptive.apply_safe_area(root))
+	var touch := _touch_mode()
 
 	# —— 左上:队伍 chips ——
 	_roster = HBoxContainer.new()
@@ -74,24 +78,32 @@ func _ready() -> void:
 	_hint_row.offset_top = 64
 	root.add_child(_hint_row)
 
-	# —— 左下:坐标常驻显示(1 格 = 100 px,小字号不遮挡) ——
+	# —— 左下:坐标常驻显示(1 格 = 100 px);触屏时移到左上,让位给轮盘 ——
 	_coords = Ui.l("", 12, Ui.LIGHT, Color(Ui.DIM, 0.85))
-	_coords.anchor_left = 0.0
-	_coords.anchor_right = 0.0
-	_coords.anchor_top = 1.0
-	_coords.anchor_bottom = 1.0
-	_coords.offset_left = 18
-	_coords.offset_top = -30
-	_coords.offset_right = 260
-	_coords.offset_bottom = -10
+	if touch:
+		_coords.offset_left = 24
+		_coords.offset_top = 50
+		_coords.offset_right = 300
+		_coords.offset_bottom = 70
+	else:
+		_coords.anchor_top = 1.0
+		_coords.anchor_bottom = 1.0
+		_coords.offset_left = 18
+		_coords.offset_top = -30
+		_coords.offset_right = 260
+		_coords.offset_bottom = -10
 	root.add_child(_coords)
 
-	# —— 底部:旁白 ——
+	# —— 底部:旁白(触屏时上移,避开轮盘 / 按键) ——
 	_narration = Ui.l("", 22, Ui.HEAD, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, true, 6)
 	_narration.anchor_left = 0.08
 	_narration.anchor_right = 0.92
-	_narration.anchor_top = 0.80
-	_narration.anchor_bottom = 0.92
+	if touch:
+		_narration.anchor_top = 0.68
+		_narration.anchor_bottom = 0.80
+	else:
+		_narration.anchor_top = 0.80
+		_narration.anchor_bottom = 0.92
 	_narration.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_narration.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_narration.modulate = Color(1, 1, 1, 0)
@@ -211,8 +223,12 @@ func _ready() -> void:
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		shapes_row.add_child(tr)
 	wvb.add_child(shapes_row)
-	wvb.add_child(Ui.l("空格 · 再走一遍        Esc · 回到标题", 16, Ui.LIGHT, Ui.DIM,
-		HORIZONTAL_ALIGNMENT_CENTER))
+	if _touch_mode():
+		wvb.add_child(Ui.l("右上 重来 · 再走一遍        右上 暂停 · 回到标题", 16,
+			Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER))
+	else:
+		wvb.add_child(Ui.l("空格 · 再走一遍        Esc · 回到标题", 16, Ui.LIGHT, Ui.DIM,
+			HORIZONTAL_ALIGNMENT_CENTER))
 	_win.add_child(wvb)
 	root.add_child(_win)
 
@@ -222,6 +238,25 @@ func _ready() -> void:
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(_fade)
+
+
+## 触屏模式:真触摸屏,或桌面用 --touch 强制开启(截图 / 调试一致)。
+func _touch_mode() -> bool:
+	if DisplayServer.is_touchscreen_available():
+		return true
+	var m = Main.I
+	return m != null and m.touch_controls != null and m.touch_controls.is_forced()
+
+
+## 文案自适应:触屏设备把关卡提示里的键位词换成触屏说法。
+func _adapt_copy(text: String) -> String:
+	if not _touch_mode():
+		return text
+	return text.replace("空格跳跃", "点按屏幕跳跃") \
+		.replace("空中再按一次", "空中再点一次") \
+		.replace("按住跳跃键向上爬", "长按屏幕向上爬") \
+		.replace("空格不再是跳跃", "点屏不再是跳跃") \
+		.replace("Tab 切换操控", "点按切换键,操控")
 
 
 ## 左下角坐标:实时显示受控几何体的世界坐标(单位:格,1 格 = 100 px)。
@@ -237,9 +272,13 @@ func _process(_delta: float) -> void:
 
 
 ## 按键提示条:按当前关卡的角色能力动态生成。
+## 触屏设备显示操作文字(轮盘 / 按键),桌面显示键位图标。
 func _rebuild_hints(def: LevelDef) -> void:
 	for c in _hint_row.get_children():
 		c.queue_free()
+	if _touch_mode():
+		_rebuild_touch_hints(def)
+		return
 	var can_jump := false
 	var can_swap := false
 	var can_sprint := false
@@ -290,6 +329,39 @@ func _rebuild_hints(def: LevelDef) -> void:
 	add_sep.call()
 	add_key.call("key-esc")
 	add_text.call("暂停")
+
+
+## 触屏提示条:与虚拟按键一一对应的纯文字说明(无键位图标)。
+func _rebuild_touch_hints(def: LevelDef) -> void:
+	var can_jump := false
+	var can_swap := false
+	var can_sprint := false
+	for i in def.roster:
+		var cd: GeometryDef = Geometries.get_def(i)
+		can_jump = can_jump or cd.can_jump
+		can_swap = can_swap or cd.can_swap
+		can_sprint = can_sprint or (cd.can_sprint and cd.sprint_speed > cd.base_speed)
+	var add_text := func(s: String):
+		_hint_row.add_child(Ui.l(s, 13, Ui.BODY, Ui.DIM, HORIZONTAL_ALIGNMENT_LEFT))
+	var add_sep := func():
+		var c := Control.new()
+		c.custom_minimum_size = Vector2(10, 0)
+		_hint_row.add_child(c)
+	add_text.call("轮盘 · 移动")
+	add_sep.call()
+	if can_jump:
+		add_text.call("点屏 · 跳跃 / 二段跳")
+		add_sep.call()
+	if can_swap:
+		add_text.call("点屏 · 置换")
+		add_sep.call()
+	if can_sprint:
+		add_text.call("轮盘拉满 · 自动加速")
+		add_sep.call()
+	if def.roster.size() > 1:
+		add_text.call("切换")
+		add_sep.call()
+	add_text.call("重来")
 
 
 func set_level_info(num: int, def: LevelDef) -> void:
@@ -357,7 +429,7 @@ func show_intro(num: int, def: LevelDef) -> void:
 	for n in _intro_title.get_children():
 		if n is Label:
 			(n as Label).text = def.name
-	_intro_text.text = def.intro
+	_intro_text.text = _adapt_copy(def.intro)
 	_intro.modulate = Color(1, 1, 1, 0)
 	_intro.visible = true
 	var tw := create_tween()

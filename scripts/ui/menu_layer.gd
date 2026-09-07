@@ -20,6 +20,13 @@ func _ready() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 
+	# 海报排版写死在 1280×720 设计稿坐标系,由 fit_design 等比缩放居中,
+	# 适配任意屏幕宽高比(20:9 手机 / 4:3 平板)
+	var content := Control.new()
+	content.size = Adaptive.DESIGN
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(content)
+
 	# —— 海报外框 + 角部刻度 ——
 	var frame := ColorRect.new()
 	frame.color = Color(Ui.PAPER, 0.16)
@@ -29,20 +36,20 @@ func _ready() -> void:
 	frame.offset_right = -16
 	frame.offset_top = 16
 	frame.offset_bottom = -16
-	root.add_child(_outline_rect(frame.position, frame.size, root))
+	content.add_child(_outline_rect(frame.position, frame.size, root))
 	for corner in [Vector2(16, 16), Vector2(1264, 16), Vector2(16, 704), Vector2(1264, 704)]:
 		var c := ColorRect.new()
 		c.color = Ui.RED
 		c.size = Vector2(10, 10)
 		c.position = corner - Vector2(5, 5)
 		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		root.add_child(c)
+		content.add_child(c)
 
 	# —— 左栏:标题 ——
 	var left := Control.new()
 	left.position = Vector2(84, 0)
 	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(left)
+	content.add_child(left)
 
 	var kicker := Ui.l("BLOCKISM · 构成主义方块肉鸽游戏", 15, Ui.LIGHT, Ui.DIM)
 	kicker.position = Vector2(0, 118)
@@ -60,8 +67,11 @@ func _ready() -> void:
 	intro.position = Vector2(4, 342)
 	left.add_child(intro)
 
-	# 左下:操作提示
-	var keys := Ui.l("1–4 选择章节    C 几何档案    Esc 退出", 13, Ui.LIGHT, Color(Ui.DIM, 0.9))
+	# 左下:操作提示(触屏设备无键盘,改为触摸指引)
+	var keys_text := "1–4 选择章节    C 几何档案    Esc 退出" \
+		if not DisplayServer.is_touchscreen_available() \
+		else "点按章节进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
+	var keys := Ui.l(keys_text, 13, Ui.LIGHT, Color(Ui.DIM, 0.9))
 	keys.position = Vector2(4, 618)
 	left.add_child(keys)
 
@@ -73,7 +83,7 @@ func _ready() -> void:
 	var right := Control.new()
 	right.position = Vector2(640, 0)
 	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(right)
+	content.add_child(right)
 
 	var sec := Ui.l("章节 SELECTION", 14, Ui.HEAD, Ui.DIM)
 	sec.position = Vector2(30, 128)
@@ -120,7 +130,7 @@ func _ready() -> void:
 	start.add_theme_stylebox_override("pressed", Ui.sb(Color(Ui.RED, 0.65), 0, null, 0, 20, 9))
 	start.add_theme_color_override("font_color", Color.WHITE)
 	start.pressed.connect(func() -> void: m.start_game())
-	root.add_child(start)
+	content.add_child(start)
 
 	var panel_btn := Button.new()
 	panel_btn.text = "几何档案"
@@ -128,7 +138,7 @@ func _ready() -> void:
 	panel_btn.position = Vector2(930, 560)
 	panel_btn.add_theme_font_size_override("font_size", 20)
 	panel_btn.pressed.connect(func() -> void: m.open_geometry_panel())
-	root.add_child(panel_btn)
+	content.add_child(panel_btn)
 
 	var story_btn := Button.new()
 	story_btn.text = "序幕剧情"
@@ -136,12 +146,12 @@ func _ready() -> void:
 	story_btn.position = Vector2(930, 624)
 	story_btn.add_theme_font_size_override("font_size", 20)
 	story_btn.pressed.connect(func() -> void: m.open_prologue())
-	root.add_child(story_btn)
+	content.add_child(story_btn)
 
 	# 剧情内容仍在扩充:右上角"开发中"角标(构成红小块,与定位标签同语言)
 	var story_tag := Ui.tag("开发中", Ui.RED, Color.WHITE, 12, 8, 3)
 	story_tag.position = Vector2(1104, 612)
-	root.add_child(story_tag)
+	content.add_child(story_tag)
 
 	# —— 漂浮几何徽标 ——
 	var xs := [0.05, 0.42, 0.95, 0.80]
@@ -157,7 +167,11 @@ func _ready() -> void:
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tr.pivot_offset = Vector2(s / 2.0, s / 2.0)
 		tr.position = Vector2(xs[i] * 1280.0, ys[i] * 720.0)
-		root.add_child(tr)
+		content.add_child(tr)
+
+	# 适配:可见区变化(旋转 / 改窗口)时重新缩放居中
+	Adaptive.fit_design(content)
+	root.resized.connect(func() -> void: Adaptive.fit_design(content))
 
 
 func _outline_rect(pos: Vector2, size_: Vector2, parent: Control) -> Control:

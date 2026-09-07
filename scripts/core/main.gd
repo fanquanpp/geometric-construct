@@ -52,10 +52,11 @@ func _ready() -> void:
 	amb.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(amb)
 
-	_hud = Hud.new()
-	add_child(_hud)
+	# TouchControls 先于 HUD 创建:HUD 就能感知触屏模式(提示条 / 坐标位置)
 	touch_controls = TouchControls.new()
 	add_child(touch_controls)
+	_hud = Hud.new()
+	add_child(_hud)
 	_menu = MenuLayer.new()
 	_menu.m = self
 	add_child(_menu)
@@ -87,6 +88,7 @@ func _show_menu() -> void:
 	_state = State.MENU
 	_clear_level()
 	_hud.visible = false
+	touch_controls.set_in_game(false)
 	geometry_panel.close()
 	_menu.visible = true
 	_menu.set_unlocked(_unlocked)
@@ -118,6 +120,7 @@ func start_level(index: int, intro := true) -> void:
 	_menu.visible = false
 	geometry_panel.close()
 	_hud.visible = true
+	touch_controls.set_in_game(true)
 	_hud.show_win(false)
 	_hud.set_level_info(_current, LevelData.LEVELS[_current])
 	_refresh_roster()

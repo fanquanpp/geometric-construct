@@ -12,6 +12,7 @@ var current := 0
 var is_open := false
 
 var _root: Control
+var _content: Control
 var _portrait: GeoPortrait
 var _name_label: Label
 var _full_label: Label
@@ -39,6 +40,14 @@ func _ready() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(shade)
 
+	# 档案页为固定设计稿排版:整体等比缩放居中,适配任意宽高比;
+	# 遮罩保持全屏(在缩放容器之外)
+	_content = Control.new()
+	_content.size = Adaptive.DESIGN
+	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(_content)
+	_root.resized.connect(func() -> void: Adaptive.fit_design(_content))
+
 	# 外框 + 角部刻度(与主菜单同语言)
 	var frame := Control.new()
 	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -55,23 +64,23 @@ func _ready() -> void:
 			var sy := -1.0 if corner.y == 0.0 else 1.0
 			frame.draw_line(corner, corner + Vector2(-sx * 18.0, 0), Ui.RED, 3.0)
 			frame.draw_line(corner, corner + Vector2(0, -sy * 18.0), Ui.RED, 3.0))
-	_root.add_child(frame)
+	_content.add_child(frame)
 
 	# —— 顶部标题行 ——
 	var header := Ui.poster_label("几何档案", 34, Ui.PAPER, true, Ui.RED)
 	header.position = Vector2(64, 40)
-	_root.add_child(header)
+	_content.add_child(header)
 	var header_sub := Ui.l("GEOMETRY DOSSIER · 每一个几何体,都有一份完整档案", 13,
 		Ui.LIGHT, Ui.DIM)
 	header_sub.position = Vector2(66, 88)
-	_root.add_child(header_sub)
+	_content.add_child(header_sub)
 	_index_label = Ui.l("", 16, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
 	_index_label.anchor_left = 1.0
 	_index_label.anchor_right = 1.0
 	_index_label.offset_left = -220
 	_index_label.offset_right = -64
 	_index_label.offset_top = 58
-	_root.add_child(_index_label)
+	_content.add_child(_index_label)
 
 	# —— 左侧:大幅几何肖像(固定列宽,垂直居中) ——
 	var portrait_zone := CenterContainer.new()
@@ -80,7 +89,7 @@ func _ready() -> void:
 	portrait_zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_portrait = GeoPortrait.new()
 	portrait_zone.add_child(_portrait)
-	_root.add_child(portrait_zone)
+	_content.add_child(portrait_zone)
 
 	# —— 右侧:信息栏(VBox 容器排版,杜绝绝对坐标互相遮挡) ——
 	var right := VBoxContainer.new()
@@ -88,7 +97,7 @@ func _ready() -> void:
 	right.size = Vector2(726, 520)
 	right.add_theme_constant_override("separation", 10)
 	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(right)
+	_content.add_child(right)
 
 	var name_row := HBoxContainer.new()
 	name_row.add_theme_constant_override("separation", 18)
@@ -123,15 +132,17 @@ func _ready() -> void:
 	right.add_child(_traits_box)
 
 	# —— 底部:操作提示(左) + 翻页/关闭按钮(右) ——
-	var hints := Ui.l("A / D 或 ←→ 切换      1–4 直达      滚轮翻页      Esc / C 返回",
-		13, Ui.BODY, Ui.DIM)
+	var hints_text := "A / D 或 ←→ 切换      1–4 直达      滚轮翻页      Esc / C 返回" \
+		if not DisplayServer.is_touchscreen_available() \
+		else "◀ ▶ 翻页查看四位几何体档案"
+	var hints := Ui.l(hints_text, 13, Ui.BODY, Ui.DIM)
 	hints.anchor_top = 1.0
 	hints.anchor_bottom = 1.0
 	hints.offset_left = 64
 	hints.offset_top = -52
 	hints.offset_right = 700
 	hints.offset_bottom = -30
-	_root.add_child(hints)
+	_content.add_child(hints)
 
 	var btn_row := HBoxContainer.new()
 	btn_row.add_theme_constant_override("separation", 10)
@@ -144,7 +155,7 @@ func _ready() -> void:
 	btn_row.offset_top = -66
 	btn_row.offset_bottom = -24
 	btn_row.alignment = BoxContainer.ALIGNMENT_END
-	_root.add_child(btn_row)
+	_content.add_child(btn_row)
 	btn_row.add_child(_nav_button("◀ 上一页", func() -> void: _switch(-1)))
 	btn_row.add_child(_nav_button("下一页 ▶", func() -> void: _switch(1)))
 	btn_row.add_child(_nav_button("关 闭", func() -> void: close()))
@@ -164,6 +175,7 @@ func _nav_button(text: String, on_click: Callable) -> Button:
 func open(index := 0) -> void:
 	current = clampi(index, 0, Geometries.ALL.size() - 1)
 	is_open = true
+	Adaptive.fit_design(_content)
 	_root.visible = true
 	_refresh()
 	_root.modulate = Color(1, 1, 1, 0)
