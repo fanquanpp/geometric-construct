@@ -10,9 +10,12 @@ var _hint_row: HBoxContainer
 var _coords: Label
 var _narration: Label
 var _intro: Control
+var _intro_card: PanelContainer
 var _intro_num: Label
-var _intro_title: Control
+var _intro_title: HBoxContainer
 var _intro_text: Label
+var _intro_skip: Button
+var _intro_tween: Tween
 var _complete: Control
 var _complete_tween: Tween
 var _win: Control
@@ -123,12 +126,13 @@ func _ready() -> void:
 	# 卡片容器:PanelContainer 随内容撑开;装饰(硬投影/顶缘亮线/红色角刻度)
 	# 画在 draw 回调里,先于 stylebox 渲染,正好垫在底板之下
 	var card_center := CenterContainer.new()
+	card_center.name = "CardCenter"
 	card_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	card_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var card := PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_theme_stylebox_override("panel",
-		Ui.sb(Ui.INK_2, 0, Color(Ui.PAPER, 0.18), 1, 44, 30))
+		Ui.sb(Ui.INK_2, 0, Color(Ui.PAPER, 0.18), 1, 36, 20))
 	card.draw.connect(func() -> void:
 		var r := Rect2(Vector2.ZERO, card.size)
 		# 硬投影(整体位移的实心暗块,无模糊)
@@ -142,26 +146,57 @@ func _ready() -> void:
 			card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Ui.RED, 3.0)
 			card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Ui.RED, 3.0))
 	card_center.add_child(card)
+	_intro_card = card
 
+	# 紧凑竖排:编号 → 标题(红块+特粗字,整组居中) → 细线 → 提示正文
 	var ivb := VBoxContainer.new()
 	ivb.alignment = BoxContainer.ALIGNMENT_CENTER
 	ivb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ivb.add_theme_constant_override("separation", 12)
-	_intro_num = Ui.l("", 16, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER)
-	_intro_title = Ui.poster_label("", 54, Ui.PAPER, true, Ui.RED)
-	var title_center := CenterContainer.new()
-	title_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	title_center.add_child(_intro_title)
-	_intro_text = Ui.l("", 19, Ui.BODY, Color(Ui.PAPER, 0.9), HORIZONTAL_ALIGNMENT_CENTER, false, 8)
+	ivb.add_theme_constant_override("separation", 7)
+	_intro_num = Ui.l("", 14, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	# 标题用 HBox 整组居中(替代 poster_label:后者在空文本时最小尺寸被
+	# 算死,后设文字会导致标题偏出卡片中线)
+	_intro_title = HBoxContainer.new()
+	_intro_title.alignment = BoxContainer.ALIGNMENT_CENTER
+	_intro_title.add_theme_constant_override("separation", 12)
+	_intro_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var title_block := ColorRect.new()
+	title_block.color = Ui.RED
+	title_block.custom_minimum_size = Vector2(13, 13)
+	title_block.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	title_block.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_intro_title.add_child(title_block)
+	_intro_title.add_child(Ui.l("", 42, Ui.TITLE, Ui.PAPER))
+	_intro_text = Ui.l("", 18, Ui.BODY, Color(Ui.PAPER, 0.9), HORIZONTAL_ALIGNMENT_CENTER, false, 6)
+	_intro_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var txt_center := CenterContainer.new()
 	txt_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	txt_center.add_child(_intro_text)
 	ivb.add_child(_intro_num)
-	ivb.add_child(title_center)
-	ivb.add_child(Ui.rule(120, 3, Ui.RED))
+	ivb.add_child(_intro_title)
+	ivb.add_child(Ui.rule(110, 3, Ui.RED))
 	ivb.add_child(txt_center)
 	card.add_child(ivb)
 	_intro.add_child(card_center)
+
+	# —— 卡片右上角:跳过整段提示 ——
+	_intro_skip = Button.new()
+	_intro_skip.text = "跳过 »"
+	_intro_skip.focus_mode = Control.FOCUS_NONE
+	_intro_skip.add_theme_font_override("font", Ui.HEAD)
+	_intro_skip.add_theme_font_size_override("font_size", 14)
+	_intro_skip.add_theme_stylebox_override("normal",
+		Ui.sb(Color(Ui.INK_2, 0.92), 0, Color(Ui.PAPER, 0.30), 1, 12, 5))
+	_intro_skip.add_theme_stylebox_override("hover", Ui.sb(Ui.RED, 0, Ui.RED, 1, 12, 5))
+	_intro_skip.add_theme_stylebox_override("pressed",
+		Ui.sb(Color(Ui.RED, 0.68), 0, Ui.RED, 1, 12, 5))
+	_intro_skip.add_theme_color_override("font_color", Color(Ui.PAPER, 0.85))
+	_intro_skip.add_theme_color_override("font_hover_color", Color.WHITE)
+	_intro_skip.add_theme_color_override("font_pressed_color", Color.WHITE)
+	_intro_skip.pressed.connect(_dismiss_intro)
+	_intro_skip.visible = false
+	_intro.add_child(_intro_skip)
+	_intro_card.resized.connect(_layout_intro_skip)
 	root.add_child(_intro)
 
 	# —— 过关文字 ——
@@ -254,13 +289,15 @@ func _adapt_copy(text: String) -> String:
 		return text
 	return text.replace("空格跳跃", "点按屏幕跳跃") \
 		.replace("空中再按一次", "空中再点一次") \
-		.replace("按住跳跃键向上爬", "长按屏幕向上爬") \
+		.replace("贴墙攀爬", "长按屏幕贴墙攀爬") \
 		.replace("空格不再是跳跃", "点屏不再是跳跃") \
 		.replace("Tab 切换操控", "点按切换键,操控")
 
 
 ## 左下角坐标:实时显示受控几何体的世界坐标(单位:格,1 格 = 100 px)。
 func _process(_delta: float) -> void:
+	if _intro.visible:
+		_layout_intro_skip()
 	var m = Main.I
 	if m == null or m.players.is_empty() or m._active_slot < 0 \
 			or m._active_slot >= m.players.size():
@@ -425,18 +462,47 @@ func narration(text: String, color: Color, dur := 3.2) -> void:
 
 func show_intro(num: int, def: LevelDef) -> void:
 	_intro_num.text = "第 %d 章 · %s" % [num + 1, Geometries.get_def(def.focus).full_name]
-	# PosterLabel 是包装容器,更新其内部 Label 的文本
 	for n in _intro_title.get_children():
 		if n is Label:
 			(n as Label).text = def.name
 	_intro_text.text = _adapt_copy(def.intro)
+	# 正文宽度上限:可见区 72% 且不超过 860px,超长自动折行 —— 杜绝溢出边框
+	var vis := Adaptive.visible_size(get_viewport())
+	_intro_text.custom_minimum_size = Vector2(minf(vis.x * 0.72, 860.0), 0)
+	if _intro_tween != null:
+		_intro_tween.kill()
 	_intro.modulate = Color(1, 1, 1, 0)
 	_intro.visible = true
+	_intro_skip.visible = true
+	_layout_intro_skip.call_deferred()
+	_intro_tween = create_tween()
+	_intro_tween.tween_property(_intro, "modulate:a", 1.0, 0.5)
+	_intro_tween.tween_interval(3.6)
+	_intro_tween.tween_property(_intro, "modulate:a", 0.0, 0.7)
+	_intro_tween.tween_callback(func() -> void:
+		_intro.visible = false
+		_intro_skip.visible = false)
+
+
+## 跳过按钮钉在卡片右上角内侧。卡片由 CenterContainer 居中,位置随内容
+## 与容器最小尺寸的收敛而变化(resized 信号不含位移),可见期间每帧校正。
+func _layout_intro_skip() -> void:
+	_intro_skip.reset_size()
+	_intro_skip.position = _intro_card.position + Vector2(
+		_intro_card.size.x - _intro_skip.size.x - 14.0, 14.0)
+
+
+## 点击"跳过":立即淡出开场卡,不再等计时器。
+func _dismiss_intro() -> void:
+	if not _intro.visible:
+		return
+	if _intro_tween != null:
+		_intro_tween.kill()
 	var tw := create_tween()
-	tw.tween_property(_intro, "modulate:a", 1.0, 0.5)
-	tw.tween_interval(3.6)
-	tw.tween_property(_intro, "modulate:a", 0.0, 0.7)
-	tw.tween_callback(func() -> void: _intro.visible = false)
+	tw.tween_property(_intro, "modulate:a", 0.0, 0.22)
+	tw.tween_callback(func() -> void:
+		_intro.visible = false
+		_intro_skip.visible = false)
 
 
 func show_complete(text := "归位。") -> void:

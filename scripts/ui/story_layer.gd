@@ -42,6 +42,21 @@ func play(ks_path: String) -> void:
 		return
 	_manager.start_dialogue_shot = shot
 
+	# —— 对话框排版:高度压到可见区 1/4,字号 / 边距随之收紧 ——
+	# 这些是 KonadoDialogueBox 的导出属性,必须在入树前赋值(_ready 时生效);
+	# update_dialogue_box_height 会在每句对话刷新边距,所以下边距与左右共用
+	# dialogue_margins,布局才不会被逐句重置。
+	var vis := Adaptive.visible_size(get_viewport())
+	var box_h := vis.y * 0.25
+	var box := _manager.get_node_or_null(
+		"KonadoUI/CanvasLayer2/DialogueInterface/KonadoDialogueBox")
+	if box != null:
+		box.name_size = 18
+		box.name_color = Ui.RED
+		box.dialogue_font_size = 20
+		box.dialogue_margins = 56
+		box.dialogue_height = clampi(int(box_h) - 104, 44, 96)
+
 	add_child(_manager)
 	# Konado 模板内含自己的 CanvasLayer,层级(layer)是全局的,不随父节点——
 	# 模板默认 对话盒=10 会被 MenuLayer(20)/HUD(10) 盖住,表现为"只有旁白名字
@@ -65,22 +80,70 @@ func play(ks_path: String) -> void:
 	var box_bg := _manager.get_node_or_null(
 		"KonadoUI/CanvasLayer2/DialogueInterface/KonadoDialogueBox/dialogue_box_bg") as Panel
 	if box_bg != null:
+		box_bg.custom_minimum_size = Vector2(0, box_h)
 		var box_sb := StyleBoxFlat.new()
 		box_sb.bg_color = Color(0.063, 0.071, 0.086, 0.95)
 		box_sb.border_color = Color(Ui.PAPER, 0.30)
 		box_sb.border_width_top = 2
-		box_sb.border_width_bottom = 0
-		box_sb.border_width_left = 0
-		box_sb.border_width_right = 0
-		box_sb.content_margin_left = 100.0
-		box_sb.content_margin_right = 100.0
-		box_sb.content_margin_top = 26.0
-		box_sb.content_margin_bottom = 40.0
 		box_bg.add_theme_stylebox_override("panel", box_sb)
+	# 文本容器撑满矮盒:内容垂直居中,避免文字贴顶、盒底大片留白
+	var container := _manager.get_node_or_null(
+		"KonadoUI/CanvasLayer2/DialogueInterface/KonadoDialogueBox/dialogue_container") as MarginContainer
+	if container != null:
+		container.offset_top = -box_h
+		container.add_theme_constant_override("margin_top", 14)
+		for n in container.get_children():
+			if n is VBoxContainer:
+				(n as VBoxContainer).alignment = BoxContainer.ALIGNMENT_CENTER
+
+	# —— 对话框右上角:跳过整段对话 ——
+	_add_skip_button(box, box_h)
 
 	_manager.shot_end.connect(_finish, CONNECT_ONE_SHOT)
 	_manager.init_dialogue()
 	_manager.start_dialogue()
+
+
+## 对话框右上角的"跳过"按钮:骑在盒顶缘右上角,点击直接结束整段剧情。
+## 挂在 KonadoDialogueBox(全部游戏 UI 之上的层)下,随对话框显隐;
+## StoryLayer 是 PROCESS_MODE_ALWAYS,世界暂停时按钮仍可点。
+func _add_skip_button(box: Control, box_h: float) -> void:
+	var skip := Button.new()
+	skip.text = "跳过 »"
+	skip.focus_mode = Control.FOCUS_NONE
+	skip.add_theme_font_override("font", Ui.HEAD)
+	skip.add_theme_font_size_override("font_size", 16)
+	skip.add_theme_stylebox_override("normal",
+		Ui.sb(Color(Ui.INK_2, 0.92), 0, Color(Ui.PAPER, 0.38), 1, 16, 7))
+	skip.add_theme_stylebox_override("hover", Ui.sb(Ui.RED, 0, Ui.RED, 1, 16, 7))
+	skip.add_theme_stylebox_override("pressed",
+		Ui.sb(Color(Ui.RED, 0.68), 0, Ui.RED, 1, 16, 7))
+	skip.add_theme_color_override("font_color", Color(Ui.PAPER, 0.92))
+	skip.add_theme_color_override("font_hover_color", Color.WHITE)
+	skip.add_theme_color_override("font_pressed_color", Color.WHITE)
+	skip.pressed.connect(_abort)
+	if box != null:
+		box.add_child(skip)
+		# 盒顶缘 = 屏幕底往上 box_h:按钮上缘高出顶缘 30px、下缘压住顶缘 12px
+		skip.anchor_left = 1.0
+		skip.anchor_right = 1.0
+		skip.anchor_top = 1.0
+		skip.anchor_bottom = 1.0
+		skip.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		skip.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		skip.offset_left = -128
+		skip.offset_right = -24
+		skip.offset_top = -box_h - 30.0
+		skip.offset_bottom = -box_h + 12.0
+	else:
+		# 兜底:找不到对话框时退化为屏幕右上角
+		add_child(skip)
+		skip.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		skip.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		skip.offset_left = -128
+		skip.offset_right = -24
+		skip.offset_top = 24
+		skip.offset_bottom = 66
 
 
 ## Esc / 暂停键随时退出剧情(保险:即便 Konado 内部异常也不再把世界冻在暂停里)。

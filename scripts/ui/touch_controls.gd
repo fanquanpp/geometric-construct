@@ -11,13 +11,13 @@ extends CanvasLayer
 ## 轮盘为扁平六边形轮廓:只暗示左右滑动,不产生纵向拖拽的错觉。
 ## 布局锚定可见区四角并内避安全区,旋转 / 改变窗口时自动重排。
 
-const ICON_SIZE_SMALL := 46.0
+const ICON_SIZE_SMALL := 56.0
 
 var forced := false
 var in_game := false
 
 var _root: Control
-var _buttons := {}          # action -> {btn: TouchScreenButton, icon_px: float, rect: Rect2}
+var _buttons := {}          # action -> {btn, label, icon_px, rect: Rect2}
 var _wheel: WheelPad
 var _jump_finger := -1      # 占据"空白处跳跃"的手指
 
@@ -34,10 +34,13 @@ func _ready() -> void:
 	_root.resized.connect(_relayout)
 	get_viewport().size_changed.connect(_relayout)
 
-	# —— 右上:切换 / 重来 / 暂停(小按钮行) ——
-	_add_button("keys/key-tab-flat.svg", "switch_next", ICON_SIZE_SMALL)
-	_add_button("buttons/restart-flat.svg", "restart", ICON_SIZE_SMALL)
-	_add_button("buttons/pause-flat.svg", "pause", ICON_SIZE_SMALL)
+	# —— 右上:切换 / 重来 / 暂停(方盘按钮行,图标 + 文字标签) ——
+	_add_button("buttons/switch-flat.svg", "buttons/switch-flat-on.svg",
+		"switch_next", "切换")
+	_add_button("buttons/restart-flat.svg", "buttons/restart-flat-on.svg",
+		"restart", "重来")
+	_add_button("buttons/pause-flat.svg", "buttons/pause-flat-on.svg",
+		"pause", "暂停")
 
 	# —— 左下:左右方向轮盘(拉满自动加速) ——
 	_wheel = WheelPad.new()
@@ -137,41 +140,57 @@ func _relayout() -> void:
 
 	# 右上小按钮行:切换 / 重来 / 暂停
 	var order := ["switch_next", "restart", "pause"]
-	var spacing := ICON_SIZE_SMALL + 10.0
+	var spacing := ICON_SIZE_SMALL + 14.0
 	for k in order.size():
 		var action: String = order[k]
 		var b: Dictionary = _buttons[action]
 		var sz := Vector2(b.icon_px, b.icon_px)
 		var pos := Vector2(
 			vis.x - right - 26.0 - sz.x / 2.0 - k * spacing,
-			top + 96.0 + sz.y / 2.0) - sz / 2.0
+			top + 92.0 + sz.y / 2.0) - sz / 2.0
 		b.btn.position = pos
 		b.rect = Rect2(pos, sz)
+		# 文字标签:钉在图标正下方
+		var label: Label = b.label
+		label.position = Vector2(pos.x + sz.x / 2.0 - 40.0, pos.y + sz.y + 4.0)
 
 
-## 生成一个 TouchScreenButton:图标 + InputMap 动作,位置由 _relayout 决定。
-func _add_button(icon_rel: String, action: String, icon_px: float) -> void:
+## 生成一个 TouchScreenButton:常态 / 按下两态图标 + InputMap 动作,
+## 下挂一枚文字标签(存进 _buttons,由 _relayout 定位)。位置由 _relayout 决定。
+func _add_button(icon_rel: String, icon_on_rel: String, action: String,
+		label_text: String) -> void:
 	var tex := Ui.icon(icon_rel)
+	var tex_on := Ui.icon(icon_on_rel)
 	var btn := TouchScreenButton.new()
 	btn.texture_normal = tex
-	btn.texture_pressed = tex
+	btn.texture_pressed = tex_on
 	btn.action = action
 	# TouchScreenButton 是 Node2D:按图标原始尺寸缩放到位
 	var base := maxf(tex.get_width(), 1.0)
-	var s := icon_px / base
+	var s := ICON_SIZE_SMALL / base
 	btn.scale = Vector2(s, s)
-	btn.modulate = Color(1, 1, 1, 0.62)
+	btn.modulate = Color(1, 1, 1, 0.66)
 	btn.passby_press = true
 	_root.add_child(btn)
-	_buttons[action] = {"btn": btn, "icon_px": icon_px, "rect": Rect2()}
+	var label := Ui.l(label_text, 12, Ui.LIGHT, Color(Ui.PAPER, 0.8),
+		HORIZONTAL_ALIGNMENT_CENTER)
+	label.size = Vector2(80, 16)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(label)
+	_buttons[action] = {"btn": btn, "label": label, "icon_px": ICON_SIZE_SMALL,
+		"rect": Rect2()}
 
 
 func _process(_delta: float) -> void:
-	# 按下高亮:压住的按钮更实、更亮
+	# 按下高亮:压住的按钮更实、更亮(标签同步提亮)
 	for action in _buttons:
-		var btn: TouchScreenButton = (_buttons[action] as Dictionary)["btn"]
-		var target := 0.95 if btn.is_pressed() else 0.62
+		var b: Dictionary = _buttons[action]
+		var btn: TouchScreenButton = b.btn
+		var target := 1.0 if btn.is_pressed() else 0.66
 		btn.modulate.a = move_toward(btn.modulate.a, target, 0.12)
+		var ltarget := 1.0 if btn.is_pressed() else 0.72
+		var label: Label = b.label
+		label.modulate.a = move_toward(label.modulate.a, ltarget, 0.12)
 
 
 ## 左右方向轮盘:扁平六边形底盘,滑钮仅沿横轴移动。

@@ -40,6 +40,7 @@ var _shot_dir := ""
 var _door_shot := false
 var _panel_shot := false
 var _intro_shot := false
+var _story_shot := false
 var _auto_test := false
 
 
@@ -477,11 +478,17 @@ func _parse_auto_shot() -> void:
 			_panel_shot = true
 		elif raw == "--introshot":
 			_intro_shot = true
+		elif raw == "--storyshot":
+			_story_shot = true
+		elif raw.begins_with("--level="):
+			_shot_level = raw.substr(8).to_int()
 	if _auto_shot and _shot_dir.is_empty():
 		_shot_dir = "C:/Atian/Project/shots_bm"
 	if _auto_shot and args.has("--menushot"):
 		_run_menu_shot()
-	if _auto_shot and not args.has("--menushot"):
+	# --introshot / --storyshot 自带开局流程,跳过通用 autoshot 以免抢关卡
+	if _auto_shot and not args.has("--menushot") \
+			and not _intro_shot and not _story_shot:
 		_run_auto_shot()
 	if _door_shot:
 		_run_door_shot()
@@ -489,6 +496,8 @@ func _parse_auto_shot() -> void:
 		_run_panel_shot()
 	if _intro_shot:
 		_run_intro_shot()
+	if _story_shot:
+		_run_story_shot()
 	if _auto_test:
 		_run_auto_test()
 
@@ -500,6 +509,17 @@ func _run_intro_shot() -> void:
 	start_level(_shot_level, true)
 	await get_tree().create_timer(1.2).timeout
 	await _shot("intro")
+	get_tree().quit()
+
+
+## 截取剧情对话框(序幕)。
+func _run_story_shot() -> void:
+	if _shot_dir.is_empty():
+		_shot_dir = "C:/Atian/Project/shots_bm"
+	await get_tree().create_timer(0.6).timeout
+	open_prologue()
+	await get_tree().create_timer(1.6).timeout
+	await _shot("story")
 	get_tree().quit()
 
 

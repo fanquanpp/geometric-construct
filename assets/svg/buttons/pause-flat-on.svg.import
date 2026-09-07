@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://fanhr3umi724"
-path="res://.godot/imported/restart-flat.svg-96447c89db93604a33728a7361862f14.ctex"
+uid="uid://d3oejkpvlf8an"
+path="res://.godot/imported/pause-flat-on.svg-580a26c7d2b824bfe9d99961ccb906db.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/svg/buttons/restart-flat.svg"
-dest_files=["res://.godot/imported/restart-flat.svg-96447c89db93604a33728a7361862f14.ctex"]
+source_file="res://assets/svg/buttons/pause-flat-on.svg"
+dest_files=["res://.godot/imported/pause-flat-on.svg-580a26c7d2b824bfe9d99961ccb906db.ctex"]
 
 [params]
 
