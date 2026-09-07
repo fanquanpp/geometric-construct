@@ -108,7 +108,9 @@ func _ready() -> void:
 		b.add_theme_constant_override("icon_max_width", 30)
 		b.add_theme_constant_override("h_separation", 14)
 		b.icon = Ui.icon("characters/%s-flat.svg" % ch.slug)
-		b.pressed.connect(func() -> void: m.start_chapter(idx))
+		b.pressed.connect(func() -> void:
+			Sfx.play("ui_click")
+			m.start_chapter(idx))
 		b.mouse_entered.connect(func() -> void: show_chapter_hint(idx))
 		b.focus_entered.connect(func() -> void: show_chapter_hint(idx))
 		list.add_child(b)
@@ -129,7 +131,9 @@ func _ready() -> void:
 	start.add_theme_stylebox_override("hover", Ui.sb(Color(Ui.RED, 0.82), 0, null, 0, 20, 9))
 	start.add_theme_stylebox_override("pressed", Ui.sb(Color(Ui.RED, 0.65), 0, null, 0, 20, 9))
 	start.add_theme_color_override("font_color", Color.WHITE)
-	start.pressed.connect(func() -> void: m.start_game())
+	start.pressed.connect(func() -> void:
+		Sfx.play("ui_click")
+		m.start_game())
 	content.add_child(start)
 
 	var panel_btn := Button.new()
@@ -137,7 +141,9 @@ func _ready() -> void:
 	panel_btn.custom_minimum_size = Vector2(240, 52)
 	panel_btn.position = Vector2(930, 560)
 	panel_btn.add_theme_font_size_override("font_size", 20)
-	panel_btn.pressed.connect(func() -> void: m.open_geometry_panel())
+	panel_btn.pressed.connect(func() -> void:
+		Sfx.play("ui_click")
+		m.open_geometry_panel())
 	content.add_child(panel_btn)
 
 	var story_btn := Button.new()
@@ -145,7 +151,9 @@ func _ready() -> void:
 	story_btn.custom_minimum_size = Vector2(240, 52)
 	story_btn.position = Vector2(930, 624)
 	story_btn.add_theme_font_size_override("font_size", 20)
-	story_btn.pressed.connect(func() -> void: m.open_prologue())
+	story_btn.pressed.connect(func() -> void:
+		Sfx.play("ui_click")
+		m.open_prologue())
 	content.add_child(story_btn)
 
 	# 剧情内容仍在扩充:右上角"开发中"角标(构成红小块,与定位标签同语言)
@@ -172,6 +180,16 @@ func _ready() -> void:
 	# 适配:可见区变化(旋转 / 改窗口)时重新缩放居中
 	Adaptive.fit_design(content)
 	root.resized.connect(func() -> void: Adaptive.fit_design(content))
+
+	# 入场过渡:整层淡入 + 海报自左轻微滑入(相对 fit_design 居中位)
+	root.modulate.a = 0.0
+	var target_x := content.position.x
+	content.position.x = target_x - 18.0
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(root, "modulate:a", 1.0, 0.42)
+	tw.tween_property(content, "position:x", target_x, 0.5) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
 func _outline_rect(pos: Vector2, size_: Vector2, parent: Control) -> Control:

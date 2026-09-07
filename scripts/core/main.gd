@@ -113,10 +113,12 @@ func start_level(index: int, intro := true) -> void:
 		_pause.close()
 	_current = clampi(index, 0, LevelData.LEVELS.size() - 1)
 	_clear_level()
+	_doors.clear()
 	_level_root = LevelBuilder.build(LevelData.LEVELS[_current])
 	add_child(_level_root)
 	_collect_players()
 	_state = State.PLAYING
+	Sfx.play("start")
 
 	_menu.visible = false
 	geometry_panel.close()
@@ -258,6 +260,7 @@ func _check_deaths() -> void:
 func _restart_level() -> void:
 	if _state != State.PLAYING:
 		return
+	Sfx.play("restart")
 	_hud.fade_to_black(0.25, func() -> void: start_level(_current))
 	_state = State.TRANSITION
 
@@ -290,6 +293,7 @@ func open_geometry_panel() -> void:
 
 
 func resume_game() -> void:
+	Sfx.play("resume")
 	get_tree().paused = false
 	_pause.close()
 	if _state == State.PAUSED:
@@ -305,6 +309,7 @@ func restart_from_pause() -> void:
 
 
 func quit_to_menu() -> void:
+	Sfx.play("ui_close")
 	get_tree().paused = false
 	_pause.close()
 	_show_menu()
@@ -448,6 +453,7 @@ func _check_complete() -> void:
 func _after_complete() -> void:
 	if _current >= LevelData.LEVELS.size() - 1:
 		_state = State.WIN
+		Sfx.play("fanfare")
 		_hud.show_win(true)
 		# 通关尾声剧情(仅一次,Esc/对话结束返回)
 		if not get_tree().paused:

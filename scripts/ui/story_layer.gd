@@ -100,6 +100,9 @@ func play(ks_path: String) -> void:
 	_add_skip_button(box, box_h)
 
 	_manager.shot_end.connect(_finish, CONNECT_ONE_SHOT)
+	# 逐句台词起头时来一声轻打字音,给推进节奏感(音量很低,不抢台词)
+	_manager.dialogue_line_start.connect(func(_node_id: String) -> void:
+		Sfx.play("story_next"))
 	_manager.init_dialogue()
 	_manager.start_dialogue()
 
@@ -121,7 +124,9 @@ func _add_skip_button(box: Control, box_h: float) -> void:
 	skip.add_theme_color_override("font_color", Color(Ui.PAPER, 0.92))
 	skip.add_theme_color_override("font_hover_color", Color.WHITE)
 	skip.add_theme_color_override("font_pressed_color", Color.WHITE)
-	skip.pressed.connect(_abort)
+	skip.pressed.connect(func() -> void:
+		Sfx.play("ui_click")
+		_abort())
 	if box != null:
 		box.add_child(skip)
 		# 盒顶缘 = 屏幕底往上 box_h:按钮上缘高出顶缘 30px、下缘压住顶缘 12px

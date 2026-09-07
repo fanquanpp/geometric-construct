@@ -60,7 +60,9 @@ var _climb_tick := 0.0        # 爬升音效节拍
 var _ramp_timer := 0.0        # 曲面 buff 剩余时长;站在曲面上时持续刷新
 var _squash_x := 1.0
 var _squash_y := 1.0
-var _roll_angle := 0.0
+var _roll_angle := 0.0        # 圆球累计滚动角(rad),每帧按角速度推进
+var _roll_speed := 0.0        # 圆球角速度(rad/s):地面 = v/r 纯滚动,空中保留角动量
+var _roll_loop: AudioStreamPlayer  # 圆球滚动轰鸣(音量/音高随速度连续调制)
 var _trail: Array = []        # 高速残影的位置记录 [{pos, size}]
 var _shadow_dist: float = INF
 var _body_box: StyleBoxFlat
@@ -90,6 +92,14 @@ func _ready() -> void:
 
 	_body_box = StyleBoxFlat.new()
 	_body_box.bg_color = def.color
+
+	# 圆球滚动轰鸣:循环噪声底,音量/音高由每帧速度调制
+	if def.shape == GeometryDef.Shape.BALL:
+		_roll_loop = AudioStreamPlayer.new()
+		_roll_loop.stream = Sfx.loop_stream("roll")
+		_roll_loop.volume_db = -60.0
+		add_child(_roll_loop)
+		_roll_loop.play()
 
 
 ## 挤压 / 缩小 / 残影都需要逐帧重绘。
@@ -221,7 +231,7 @@ func _physics_process(delta: float) -> void:
 			_jump_buffer = 0.0
 			_jump_cut = false
 			_squash(0.82, 1.18)
-			Sfx.play("jump")
+			Sfx.play("jump2")
 			_air_burst()
 	elif _swap_buffer > 0.0 and def.can_swap \
 			and (on_ground or _coyote > 0.0) and _swap_cd <= 0.0:
@@ -279,9 +289,11 @@ func _physics_process(delta: float) -> void:
 		var eff_bounce := effective_bounce()
 		var carrying := _has_riders()
 		if carrying or impact <= BOUNCE_MIN or eff_bounce <= 0.0:
-			# 驮着同伴时收力站稳 / 低速落地站稳
+			# 驮着同伴时收力站稳 / 低速落地站稳;有一定冲击则补轻着地音
 			if absf(vel.y) < 5.0:
 				_squash(1.24, 0.78)
+			elif impact > 120.0:
+				Sfx.play("land")
 		else:
 			var restitution := clampf(eff_bounce * 0.5, 0.0, 1.0)
 			if jump_held and def.can_jump:
@@ -297,9 +309,14 @@ func _physics_process(delta: float) -> void:
 			Sfx.play("bounce")
 		_swap_air = false
 
-		# ———— 圆球滚动 ————
-		if def.shape == GeometryDef.Shape.BALL:
-			_roll_angle += (vel.x / (def.size.x / 2.0)) * dt
+	# ———— 圆球滚动:地面按 v/r 纯滚动;空中保留角动量(轻微空气阻尼),
+	# 从曲面飞出后继续翻转,落地时姿态连续 ————
+	if def.shape == GeometryDef.Shape.BALL:
+		if now_on_floor:
+			_roll_speed = vel.x / (def.size.x * 0.5)
+		else:
+			_roll_speed = move_toward(_roll_speed, 0.0, 0.9 * dt)
+		_roll_angle += _roll_speed * dt
 
 	_was_on_floor = now_on_floor
 
@@ -334,6 +351,15 @@ func _physics_process(delta: float) -> void:
 
 	# 高速残影采样
 	_update_trail(vel)
+
+	# 圆球滚动轰鸣:贴地时音量/音高随速度爬升,离地淡出
+	if _roll_loop != null:
+		var spd := absf(vel.x)
+		var k := clampf(spd / (Geometries.RUN_SPEED * 2.5), 0.0, 1.0)
+		var target_db := lerpf(-46.0, -13.0, k) if now_on_floor else -60.0
+		_roll_loop.volume_db = lerpf(_roll_loop.volume_db, target_db,
+			1.0 - exp(-9.0 * dt))
+		_roll_loop.pitch_scale = 0.72 + 0.6 * k
 
 	# 挤压恢复
 	_squash_x = move_toward(_squash_x, 1.0, dt * 3.2)
@@ -506,12 +532,37 @@ func die() -> void:
 		return
 	dying = true
 	Sfx.play("die")
+	if _roll_loop != null:
+		_roll_loop.volume_db = -60.0
+	_death_burst()
+	if Main.I != null and Main.I.camera_rig != null:
+		Main.I.camera_rig.kick(7.0)
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 0.0, 0.28)
 	tw.tween_callback(_reset_for_respawn)
 	tw.tween_property(self, "modulate:a", 1.0, 0.35)
 	tw.tween_callback(_finish_respawn)
 	Main.I.on_player_died(self)
+
+
+## 死亡碎片爆裂:挂关卡层(避开本体淡出 modulate 的牵连),方块碎片受重力散落。
+func _death_burst() -> void:
+	var burst := CPUParticles2D.new()
+	burst.one_shot = true
+	burst.emitting = true
+	burst.amount = 18
+	burst.lifetime = 0.55
+	burst.explosiveness = 1.0
+	burst.spread = 180.0
+	burst.gravity = Vector2(0, 900 * gravity_dir)
+	burst.initial_velocity_min = 120.0
+	burst.initial_velocity_max = 340.0
+	burst.scale_amount_min = 3.0
+	burst.scale_amount_max = 6.0
+	burst.color = def.color
+	burst.finished.connect(burst.queue_free)
+	get_parent().add_child(burst)
+	burst.global_position = global_position
 
 
 func _reset_for_respawn() -> void:
@@ -525,6 +576,10 @@ func _reset_for_respawn() -> void:
 	_climbing = false
 	_climb_budget = GeometryDef.CLIMB_UNITS * Geometries.UNIT_PX
 	_ramp_timer = 0.0
+	_roll_angle = 0.0
+	_roll_speed = 0.0
+	_squash_x = 1.0
+	_squash_y = 1.0
 	_trail.clear()
 
 
@@ -538,7 +593,7 @@ func arrive_at(door: ExitDoor) -> void:
 	if arrived or in_exit or dying:
 		return
 	arrived = true
-	Sfx.play("switch")
+	Sfx.play("arrive")
 	var tw := create_tween()
 	tw.tween_property(self, "position:x", door.center.x, 0.22) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -561,6 +616,8 @@ func enter_exit(door: ExitDoor) -> void:
 	arrived = false
 	velocity = Vector2.ZERO
 	Sfx.play("enter")
+	if _roll_loop != null:
+		_roll_loop.volume_db = -60.0
 
 	# 进门粒子
 	var burst := CPUParticles2D.new()
@@ -683,18 +740,54 @@ func _draw_box(size: Vector2) -> void:
 		draw_colored_polygon(arrow, Color(1, 1, 1, 0.85))
 
 
+## 圆球形象:双色调半球 + 轮辐刻度 + 轮毂 + 指针辐条。
+## 转动图案先在单位圆内随物理滚动旋转、再整体压扁成椭圆——
+## 挤压/拉伸在屏幕空间进行、与旋转解耦,形变不扭曲转动姿态(动画十二法则)。
+## 高速时轮辐刻度自动减淡:旋转过快会频闪成噪点,反而损害滚动感。
 func _draw_ball(size: Vector2) -> void:
-	var r := size.x / 2.0
-	draw_circle(Vector2.ZERO, r, def.color)
+	var squash := Transform2D(
+		Vector2(size.x * 0.5, 0.0), Vector2(0.0, size.y * 0.5), Vector2.ZERO)
+	draw_set_transform_matrix(squash * Transform2D(_roll_angle, Vector2.ZERO))
+
+	# 基盘 + 深色下半球:最大的转动特征,随滚动翻转
+	draw_circle(Vector2.ZERO, 1.0, def.color)
+	var half := PackedVector2Array([Vector2(-1.0, 0.0)])
+	for i in 17:
+		var a := PI * float(i) / 16.0
+		half.append(Vector2(cos(a), sin(a)))
+	half.append(Vector2(1.0, 0.0))
+	draw_colored_polygon(half, def.color.darkened(0.24))
+
+	# 轮辐刻度:4 枚浅色圆点
+	var spin_vis := clampf(1.25 - absf(_roll_speed) / 30.0, 0.3, 1.0)
+	for i in 4:
+		var a := TAU * float(i) / 4.0 + PI * 0.25
+		draw_circle(Vector2(cos(a), sin(a)) * 0.8, 0.075, Color(1, 1, 1, 0.85 * spin_vis))
+
+	# 指针辐条:单根指针扫过全圆,滚动方向一目了然
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-0.05, 0.0), Vector2(0.05, 0.0),
+		Vector2(0.02, -0.66), Vector2(-0.02, -0.66),
+	]), Color(1, 1, 1, 0.8))
+
+	# 轮毂
+	draw_circle(Vector2.ZERO, 0.2, Ui.PAPER)
+	draw_circle(Vector2.ZERO, 0.085, Color(Ui.INK, 0.85))
+
+	# 活跃取景环:单位空间画等宽圆环(随椭圆变换,挤压时不变形走样)
 	if is_active:
-		draw_arc(Vector2.ZERO, r - 1.0, 0.0, TAU, 40, Color.WHITE, 2.0)
-	# 滚动辐条:让旋转可见
-	draw_set_transform(Vector2.ZERO, _roll_angle, Vector2.ONE)
-	var spoke := r * 0.62
-	draw_line(Vector2(-spoke, 0), Vector2(spoke, 0), Color(0, 0, 0, 0.4), 3.0)
-	draw_line(Vector2(0, -spoke), Vector2(0, spoke), Color(0, 0, 0, 0.28), 2.0)
-	draw_circle(Vector2.ZERO, r * 0.16, Color(1, 1, 1, 0.75))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		var ring_out := PackedVector2Array()
+		var ring_in := PackedVector2Array()
+		for i in 33:
+			var a := TAU * float(i) / 32.0
+			ring_out.append(Vector2(cos(a), sin(a)))
+			ring_in.append(Vector2(cos(a), sin(a)) * 0.94)
+		for i in 32:
+			draw_colored_polygon(PackedVector2Array([
+				ring_out[i], ring_out[i + 1], ring_in[i + 1], ring_in[i]]),
+				Color(1, 1, 1, 0.85))
+
+	draw_set_transform_matrix(Transform2D())
 
 
 func _draw_name_tag(size: Vector2) -> void:

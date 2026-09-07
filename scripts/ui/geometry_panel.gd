@@ -168,13 +168,16 @@ func _nav_button(text: String, on_click: Callable) -> Button:
 	b.text = text
 	b.custom_minimum_size = Vector2(0, 42)
 	b.add_theme_font_size_override("font_size", 15)
-	b.pressed.connect(on_click)
+	b.pressed.connect(func() -> void:
+		Sfx.play("ui_click")
+		on_click.call())
 	return b
 
 
 func open(index := 0) -> void:
 	current = clampi(index, 0, Geometries.ALL.size() - 1)
 	is_open = true
+	Sfx.play("ui_open")
 	Adaptive.fit_design(_content)
 	_root.visible = true
 	_refresh()
@@ -186,13 +189,17 @@ func open(index := 0) -> void:
 
 
 func close() -> void:
+	if not is_open:
+		return
 	is_open = false
+	Sfx.play("ui_close")
 	_root.visible = false
 	closed.emit()
 
 
 func _switch(dir: int) -> void:
 	current = wrapi(current + dir, 0, Geometries.ALL.size())
+	Sfx.play("ui_page")
 	_refresh()
 	if _tween != null:
 		_tween.kill()
@@ -298,6 +305,7 @@ func _input(event: InputEvent) -> void:
 				var idx := k - KEY_1
 				if idx < Geometries.ALL.size():
 					current = idx
+					Sfx.play("ui_page")
 					_refresh()
 	elif event is InputEventMouseButton and event.pressed:
 		match (event as InputEventMouseButton).button_index:
@@ -320,10 +328,27 @@ class GeoPortrait extends Control:
 		c.draw_rect(Rect2(-90, 122, 180, 12), Color(0, 0, 0, 0.4))
 		match def.shape:
 			GeometryDef.Shape.BALL:
+				# 与场景内圆球同语言:双色调半球 + 轮辐刻度 + 轮毂 + 指针辐条(静态斜置)
+				var tilt := -0.5
+				c.draw_set_transform_matrix(Transform2D(tilt, Vector2.ZERO))
 				c.draw_circle(Vector2.ZERO, 96, col)
-				c.draw_line(Vector2(-62, 0), Vector2(62, 0), Color(Ui.INK, 0.45), 8)
-				c.draw_line(Vector2(0, -62), Vector2(0, 62), Color(Ui.INK, 0.3), 5)
-				c.draw_rect(Rect2(-14, -14, 28, 28), Ui.PAPER)
+				var half := PackedVector2Array([Vector2(-96, 0)])
+				for i in 17:
+					var ha := PI * float(i) / 16.0
+					half.append(Vector2(cos(ha), sin(ha)) * 96.0)
+				half.append(Vector2(96, 0))
+				c.draw_colored_polygon(half, col.darkened(0.24))
+				for i in 4:
+					var ta := TAU * float(i) / 4.0 + PI * 0.25
+					c.draw_circle(Vector2(cos(ta), sin(ta)) * 76.0, 7.0,
+						Color(1, 1, 1, 0.85))
+				c.draw_colored_polygon(PackedVector2Array([
+					Vector2(-5, 0), Vector2(5, 0),
+					Vector2(2, -63), Vector2(-2, -63),
+				]), Color(1, 1, 1, 0.8))
+				c.draw_set_transform_matrix(Transform2D())
+				c.draw_circle(Vector2.ZERO, 19.0, Ui.PAPER)
+				c.draw_circle(Vector2.ZERO, 8.0, Color(Ui.INK, 0.85))
 			GeometryDef.Shape.RECT:
 				c.draw_rect(Rect2(-62, -124, 124, 248), col)
 				# 弹簧折线

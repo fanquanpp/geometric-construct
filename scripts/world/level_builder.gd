@@ -169,6 +169,7 @@ class Ramp extends StaticBody2D:
 class CameraRig extends Camera2D:
 	var _look := Vector2.ZERO
 	var _pulse := 0.0
+	var _kick := 0.0
 	var _snapped := false
 
 	func _ready() -> void:
@@ -180,6 +181,10 @@ class CameraRig extends Camera2D:
 	## 切换几何体:短暂加速平移 + 缩放收缩回弹。
 	func on_switch() -> void:
 		_pulse = 0.4
+
+	## 冲击瞬间的镜头微震(死亡等),快速衰减。
+	func kick(strength := 6.0) -> void:
+		_kick = strength
 
 	func _physics_process(delta: float) -> void:
 		var m = Main.I
@@ -196,6 +201,13 @@ class CameraRig extends Camera2D:
 			_snapped = true
 			return
 		_pulse = maxf(_pulse - delta, 0.0)
+
+		# 微震:随机方向抖动,幅度指数衰减归零
+		if _kick > 0.05:
+			offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * _kick
+			_kick = maxf(_kick - 34.0 * delta, 0.0)
+		elif offset != Vector2.ZERO:
+			offset = offset.lerp(Vector2.ZERO, 1.0 - exp(-14.0 * delta))
 
 		# 左右前瞻:随水平速度偏移一点,增加行驶感与手感
 		var look_target := Vector2(
