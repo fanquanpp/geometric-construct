@@ -74,11 +74,19 @@ static func build(def: LevelDef) -> Node2D:
 		root.add_child(door)
 
 	# —— 教学悬浮提示(世界坐标,靠近渐显) ——
+	# 浮动轮盘模式下,跳跃域在右半屏:提示词同步换域("点屏"→"右半屏点按")
 	var touch := Adaptive.is_touch_mode()
+	var wheel: String = Main.I.touch_controls.wheel_mode() \
+		if Main.I != null and Main.I.touch_controls != null else ""
+	var jump_word := "右半屏点按" if wheel == "float" else "点屏"
+	var tap_word := "右半屏轻点" if wheel == "float" else "轻点屏幕"
 	for h in def.hints:
 		var hm := HintMarker.new()
 		hm.position = h["pos"]
-		hm.text = str(h.get("touch", h["text"]) if touch else h["text"])
+		var text := str(h.get("touch", h["text"]) if touch else h["text"])
+		if touch:
+			text = text.replace("轻点屏幕", tap_word).replace("点屏", jump_word)
+		hm.text = text
 		root.add_child(hm)
 
 	# —— 几何体 ——

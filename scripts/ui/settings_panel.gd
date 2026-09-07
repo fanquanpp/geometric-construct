@@ -88,7 +88,8 @@ func _ready() -> void:
 
 	# ———— 操控 ————
 	body.add_child(_section_label("操控 CONTROL"))
-	body.add_child(_caption("轮盘位置(移动端):固定在左下角,或在左半屏按下处展开"))
+	body.add_child(_caption("轮盘位置(移动端):固定在左下角,或在左半屏按下处展开;"
+		+ "两种模式下,右半屏点按均为跳跃"))
 	var wheel_row := HBoxContainer.new()
 	wheel_row.add_theme_constant_override("separation", 10)
 	_wheel_fixed_btn = _mode_btn("固定位置")

@@ -381,14 +381,19 @@ func _rebuild_touch_hints(def: LevelDef) -> void:
 		var c := Control.new()
 		c.custom_minimum_size = Vector2(10, 0)
 		_hint_row.add_child(c)
+	# 跳跃域文案随轮盘模式变化:固定 = 全屏点按;浮动 = 右半屏点按(左半屏归轮盘)
+	var m = Main.I
+	var mode: String = m.touch_controls.wheel_mode() \
+		if m != null and m.touch_controls != null else SettingsManager.wheel_mode
+	var jump_zone := "右半屏点按" if mode == SettingsManager.WHEEL_FLOAT else "点屏"
 	# 切换 / 重来 / 暂停都有实体按钮(左上 / 右上),提示条不再重复
 	add_text.call("轮盘 · 移动")
 	add_sep.call()
 	if can_jump:
-		add_text.call("点屏 · 跳跃 / 二段跳")
+		add_text.call("%s · 跳跃 / 二段跳" % jump_zone)
 		add_sep.call()
 	if can_swap:
-		add_text.call("点屏 · 置换")
+		add_text.call("%s · 置换" % jump_zone)
 		add_sep.call()
 	if can_sprint:
 		add_text.call("轮盘拉满 · 自动加速")

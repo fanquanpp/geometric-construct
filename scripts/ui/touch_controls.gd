@@ -12,9 +12,11 @@ extends CanvasLayer
 ## 布局锚定可见区四角并内避安全区,旋转 / 改变窗口时自动重排。
 ##
 ## 轮盘位置(设置面板可调,SettingsManager 持久化):
-##   fixed —— 固定在左下角;
-##   float —— 按下位置展开:按住左半屏任意空白处,轮盘就在那里出现,
-##            松手后回到左下角待位。左半屏 = 可见区 x ≤ 50%。
+##   fixed —— 固定在左下角,轮盘触控区外空白处点按 = 跳跃;
+##   float —— 触控域半屏划分(业界通行方案):左半屏 = 轮盘域,按住就地展开、
+##            松手滑回左下待位;右半屏 = 跳跃域,点按 / 长按跳跃 ——
+##            两域互不干扰,按住轮盘转向的同时,右半屏照样可跳(v0.10.1 修复:
+##            旧实现轮盘占用期间吞掉全屏跳跃触摸)。小按钮热区在两域之外。
 
 const ICON_SIZE_SMALL := 56.0
 ## 触控热区外扩:视觉图标之外保留一圈余量(Material 建议目标 ≥48dp,
@@ -55,12 +57,23 @@ func _ready() -> void:
 	_wheel = WheelPad.new()
 	_root.add_child(_wheel)
 	_wheel.wheel_mode = SettingsManager.wheel_mode
+	# 开发覆盖(--wheel=fixed / --wheel=float):自动化截图 / 调试不受存档设置影响
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--wheel="):
+			var m := a.substr(8)
+			if m == WheelPad.MODE_FIXED or m == WheelPad.MODE_FLOAT:
+				_wheel.wheel_mode = m
 
 	# 游戏初始在标题菜单;进入关卡时由 Main 开启
 	visible = false
 	_relayout.call_deferred()
 
 
+## 触控域划分(浮动轮盘模式,业界通行方案 —— 左半屏移动 / 右半屏跳跃):
+##   左半屏 = 轮盘域:按住就地展开浮动轮盘;轮盘占用中再来左半屏触摸不产生跳跃;
+##   右半屏 = 跳跃域:点按 / 长按跳跃,与轮盘是否被按住完全无关(互不干扰);
+##   两域 exceptions:按在小按钮(切换 / 重来 / 暂停)热区上时归按钮,
+##   不被任何域吞掉。固定轮盘模式维持原行为:轮盘触控区外空白处点按 = 跳跃。
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
@@ -68,12 +81,23 @@ func _input(event: InputEvent) -> void:
 	if t == null:
 		return
 	if t.pressed:
-		# 浮动轮盘:左半屏空白处按下 = 轮盘在那里展开(优先于跳跃)
-		if _wheel != null and _wheel.wheel_mode == WheelPad.MODE_FLOAT \
-				and _wheel.float_begin(t.index, t.position):
-			get_viewport().set_input_as_handled()
+		if _wheel != null and _wheel.wheel_mode == WheelPad.MODE_FLOAT:
+			# 按钮热区优先:两个域都让路,交给 TouchScreenButton 自行处理
+			if _is_on_button(t.position):
+				return
+			var vis := Adaptive.visible_size(get_viewport())
+			if t.position.x <= vis.x * 0.5:
+				# 左半屏 · 轮盘域(轮盘占用中则本次触摸落空,不跳跃)
+				_wheel.float_begin(t.index, t.position)
+				get_viewport().set_input_as_handled()
+				return
+			# 右半屏 · 跳跃域
+			if _jump_finger == -1:
+				_jump_finger = t.index
+				Input.action_press("jump")
+				get_viewport().set_input_as_handled()
 			return
-		# 空白处按下 = 跳跃;轮盘触控区与小按钮各自处理,不抢占
+		# 固定模式:空白处按下 = 跳跃;轮盘触控区与小按钮各自处理,不抢占
 		if _jump_finger == -1 and not _pos_reserved(t.position):
 			_jump_finger = t.index
 			Input.action_press("jump")
@@ -83,7 +107,20 @@ func _input(event: InputEvent) -> void:
 		Input.action_release("jump")
 
 
-## 该位置已被其他控件占用(轮盘触控区 / 小按钮);隐藏的按钮不占热区。
+## 按下位置是否落在某个可见小按钮的热区内(热区 = 图标矩形外扩 HIT_MARGIN)。
+func _is_on_button(pos: Vector2) -> bool:
+	for action in _buttons:
+		var b: Dictionary = _buttons[action]
+		if not (b.btn as TouchScreenButton).is_visible_in_tree():
+			continue
+		if (b.rect as Rect2).grow(HIT_MARGIN).has_point(pos):
+			return true
+	return false
+
+
+## 该位置已被其他控件占用(固定轮盘触控区 / 小按钮);隐藏的按钮不占热区。
+## 浮动模式不经过这里:触控域由 _input 按半屏整域划分,轮盘永不"占住"全屏,
+## 否则按住轮盘转向时第二根手指的跳跃会被吞掉(v0.10.1 修复的边界冲突)。
 func _pos_reserved(pos: Vector2) -> bool:
 	for action in _buttons:
 		var b: Dictionary = _buttons[action]
@@ -125,6 +162,11 @@ func toggle() -> void:
 
 func is_forced() -> bool:
 	return forced
+
+
+## 当前生效的轮盘模式(含开发覆盖);HUD / 关卡提示文案据此出词。
+func wheel_mode() -> String:
+	return _wheel.wheel_mode if _wheel != null else SettingsManager.wheel_mode
 
 
 ## 单人阵容没有切换可言:隐藏/恢复左侧切换钮(热区一并失效)。
@@ -306,11 +348,12 @@ class WheelPad extends Control:
 		TouchControls.buzz(12)
 		return true
 
-	## 是否落在轮盘触控区(固定模式:轮廓外扩的扁长条;
-	## 浮动模式:未激活时不占热区,接管逻辑走 float_begin)。
+	## 是否落在轮盘触控区。固定模式:轮廓外扩的扁长条。
+	## 浮动模式:恒为 false —— 触控域由 TouchControls 按半屏划分,
+	## 轮盘绝不在此占位,按住转向时右半屏跳跃不受影响。
 	func holds_point(pos: Vector2) -> bool:
 		if wheel_mode == MODE_FLOAT:
-			return _finger != -1
+			return false
 		var d := pos - _center
 		return absf(d.x) <= half_w * 1.28 + 16.0 \
 			and absf(d.y) <= half_h * 2.2 + 16.0
