@@ -42,9 +42,11 @@ var _door_shot := false
 var _panel_shot := false
 var _set_shot := false
 var _act_shot := false
+var _act_shot_idx := 0
 var _boot_shot := false
 var _intro_shot := false
 var _story_shot := false
+var _tour_shot := false
 var _auto_test := false
 
 
@@ -520,14 +522,18 @@ func _parse_auto_shot() -> void:
 			_panel_shot = true
 		elif raw == "--setshot":
 			_set_shot = true
-		elif raw == "--actshot":
+		elif raw.begins_with("--actshot"):
 			_act_shot = true
+			if raw.contains("="):
+				_act_shot_idx = raw.substr(9).to_int()
 		elif raw == "--bootshot":
 			_boot_shot = true
 		elif raw == "--introshot":
 			_intro_shot = true
 		elif raw == "--storyshot":
 			_story_shot = true
+		elif raw == "--tourshot":
+			_tour_shot = true
 		elif raw.begins_with("--level="):
 			_shot_level = raw.substr(8).to_int()
 	if _auto_shot and _shot_dir.is_empty():
@@ -552,6 +558,8 @@ func _parse_auto_shot() -> void:
 		_run_intro_shot()
 	if _story_shot:
 		_run_story_shot()
+	if _tour_shot:
+		_run_tour_shot()
 	if _auto_test:
 		_run_auto_test()
 
@@ -572,7 +580,7 @@ func _run_actshot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "C:/Atian/Project/shots_bm"
 	await get_tree().create_timer(0.6).timeout
-	_menu.try_open_act(0)
+	_menu.try_open_act(_act_shot_idx)
 	await get_tree().create_timer(0.6).timeout
 	await _shot("act_panel")
 	get_tree().quit()
@@ -616,6 +624,35 @@ func _run_story_shot() -> void:
 	show_story("prologue")
 	await get_tree().create_timer(1.6).timeout
 	await _shot("story")
+	get_tree().quit()
+
+
+## 巡航截图:沿大型关卡的关键节拍传送受控几何体,逐点截图验收。
+## 节拍表按当前关卡下标内建;新巨构关卡在此追加自己的节拍行。
+func _run_tour_shot() -> void:
+	if _shot_dir.is_empty():
+		_shot_dir = "C:/Atian/Project/shots_bm"
+	_unlocked = LevelData.LEVELS.size() - 1
+	start_level(_shot_level, false)
+	await get_tree().create_timer(0.4).timeout
+	var tours := {
+		4: [["spawn", Vector2(300, 2700)],
+			["terraces", Vector2(2400, 2000)],
+			["pillar", Vector2(4300, 1400)],
+			["beam", Vector2(5600, 330)],
+			["bridge", Vector2(5900, 900)],
+			["gap", Vector2(6900, 800)],
+			["tower", Vector2(8300, 900)]],
+	}
+	var waypoints: Array = tours.get(_shot_level, [["spawn", Vector2(300, 850)]])
+	for wp in waypoints:
+		if players.is_empty():
+			break
+		var p: Player = players[_active_slot]
+		p.position = wp[1]
+		p.velocity = Vector2.ZERO
+		await get_tree().create_timer(0.55).timeout
+		await _shot("tour_" + str(wp[0]))
 	get_tree().quit()
 
 

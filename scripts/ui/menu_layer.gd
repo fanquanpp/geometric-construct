@@ -28,6 +28,7 @@ var _act_title: Label
 var _act_sub: Label
 var _act_rows: VBoxContainer
 var _act_level_hint: Label
+var _act_keys_hint: Label
 var _act_open := false
 var _act_idx := -1
 var _act_tween: Tween
@@ -375,7 +376,8 @@ func _build_act_panel(root: Control) -> void:
 		close_act_panel())
 	back_row.add_child(back)
 	var keys_hint := "1-%d 直达 · Esc 返回" % LevelData.ACTS[0]["levels"].size()
-	back_row.add_child(Ui.l(keys_hint, 12, Ui.LIGHT, Color(Ui.DIM, 0.9)))
+	_act_keys_hint = Ui.l(keys_hint, 12, Ui.LIGHT, Color(Ui.DIM, 0.9))
+	back_row.add_child(_act_keys_hint)
 	vb.add_child(back_row)
 
 
@@ -388,6 +390,7 @@ func _open_act_panel(idx: int) -> void:
 	_act_idx = idx
 	var act: Dictionary = LevelData.ACTS[idx]
 	_act_title.text = "%s · %s" % [act["name"], act["title"]]
+	_act_keys_hint.text = "1-%d 直达 · Esc 返回" % act["levels"].size()
 	_populate_act_rows(idx)
 	_act_open = true
 	Sfx.play("ui_open")
@@ -414,12 +417,18 @@ func close_act_panel() -> void:
 
 ## 关卡行:编号 + 几何体徽标 + 场次名 + 右侧状态(已通关 / 下一场 / 未解锁)。
 ## 悬停 / 聚焦在行下方显示该场的特性讲解;锁定场可点但只给反馈。
+## 幕条目可带 "total"(预设场次总数):超出已制作场次的编号渲染为
+## 「未上演」占位行 —— 只表意剧目规模,不可开演。
 func _populate_act_rows(idx: int) -> void:
 	for c in _act_rows.get_children():
 		c.queue_free()
 	var act: Dictionary = LevelData.ACTS[idx]
 	var levels: Array = act["levels"]
-	for k in levels.size():
+	var total: int = maxi(act.get("total", levels.size()), levels.size())
+	for k in total:
+		if k >= levels.size():
+			_add_wip_row(k)
+			continue
 		var li: int = levels[k]
 		var def: LevelDef = LevelData.LEVELS[li]
 		var unlocked := li <= _unlocked
@@ -467,6 +476,25 @@ func _populate_act_rows(idx: int) -> void:
 		status.offset_right = -14
 		status.offset_top = (54.0 - 24.0) / 2.0
 	_act_level_hint.text = ""
+
+
+## 未上演占位行:表意本幕的预设场次规模,不可开演,点击只给排练中的反馈。
+func _add_wip_row(k: int) -> void:
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(700, 54)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.add_theme_font_override("font", Ui.HEAD)
+	b.add_theme_font_size_override("font_size", 19)
+	b.text = "%02d   —— 未上演 · 排练中 ——" % (k + 1)
+	b.self_modulate = Color(1, 1, 1, 0.28)
+	Ui.wire_button(b)
+	b.mouse_entered.connect(func() -> void:
+		Sfx.play("ui_hover")
+		_act_level_hint.text = "这一场还在排练——巨构尚未搭完。")
+	b.pressed.connect(func() -> void:
+		Sfx.play("ui_error")
+		toast("%02d — 未上演,敬请期待" % (k + 1)))
+	_act_rows.add_child(b)
 
 
 ## 二级菜单开着时的数字键直达(Main 的 MENU 分支转发)。
