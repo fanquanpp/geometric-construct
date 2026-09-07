@@ -15,4 +15,7 @@ var platforms: Array = []  # Array[Rect2]
 var ramps: Array = []      # Array[{pts: Array[Vector2] 曲面折线, base: float 填充基线}] 曲面跳跃板
 var gates: Array = []      # Array[[Vector2 门中心, Vector2 门区域尺寸]] 加速门
 var exits: Array = []      # Array[[角色下标, Vector2 门中心]]
+## 移动构件(docs/design/structures.md §4):
+##   Array[{rect: Rect2 基准位置, offset: Vector2 单轴往返向量, period: float 秒/程, phase: float 相位}]
+var movers: Array = []
 var spawns: Array = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]

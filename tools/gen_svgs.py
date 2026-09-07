@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-方块主义 · 构成主义 SVG 素材生成器
+几何构成 · 构成主义 SVG 素材生成器
 ====================================
 美术锚点:极简主义 + 构成主义 + 几何图形 + 棱角分明锐利。
 
@@ -517,7 +517,7 @@ def cleanup():
 
 
 if __name__ == "__main__":
-    print("== 方块主义 SVG 生成器 ==")
+    print("== 几何构成 SVG 生成器 ==")
     gen_characters()
     gen_keys()
     gen_icons()

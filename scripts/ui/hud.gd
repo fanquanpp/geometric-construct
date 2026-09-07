@@ -236,9 +236,9 @@ func _ready() -> void:
 	wvb.alignment = BoxContainer.ALIGNMENT_CENTER
 	wvb.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	wvb.add_theme_constant_override("separation", 14)
-	var win_kicker := Ui.l("BLOCKISM · DEMO CLEAR", 15, Ui.LIGHT, Ui.DIM,
+	var win_kicker := Ui.l("GEOMETRIC CONSTRUCT · DEMO CLEAR", 15, Ui.LIGHT, Ui.DIM,
 		HORIZONTAL_ALIGNMENT_CENTER)
-	var win_title := Ui.l("全 块 归 位", 72, Ui.TITLE, Ui.PAPER, HORIZONTAL_ALIGNMENT_CENTER)
+	var win_title := Ui.l("全 员 归 位", 72, Ui.TITLE, Ui.PAPER, HORIZONTAL_ALIGNMENT_CENTER)
 	wvb.add_child(win_kicker)
 	wvb.add_child(win_title)
 	var win_rule := Ui.rule(160, 4, Ui.RED)

@@ -13,3 +13,6 @@ build/
 
 # gode 插件(Node.js/TypeScript 运行时,含 780MB 二进制)不入库,请按 README 自行安装
 addons/gode/
+
+# 开发截图(v0.8 迭代)
+.shots_v08/

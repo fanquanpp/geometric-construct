@@ -33,7 +33,10 @@ static func _static_init() -> void:
 		],
 		[], [],
 		[[0, Vector2(1900, 554)], [1, Vector2(850, 714)]],
-		[Vector2(140, 892), Vector2(260, 870), Vector2.ZERO, Vector2.ZERO]))
+		[Vector2(140, 892), Vector2(260, 870), Vector2.ZERO, Vector2.ZERO],
+		# 高台 B 侧的垂直移动平台:慢路(可等待),合作攀爬仍是快路
+		[{"rect": Rect2(1360, 856, 130, 24), "offset": Vector2(0, -240),
+			"period": 3.2, "phase": 0.0}]))
 
 	# 03 · 逆 — 突破:置换 + 加速门
 	LEVELS.append(_make("逆 · 突破", 2,
@@ -49,7 +52,10 @@ static func _static_init() -> void:
 		[],                                # ramps
 		[[Vector2(1000, 555), Vector2(140, 660)]],
 		[[2, Vector2(2750, 854)]],
-		[Vector2.ZERO, Vector2.ZERO, Vector2(140, 880), Vector2.ZERO]))
+		[Vector2.ZERO, Vector2.ZERO, Vector2(140, 880), Vector2.ZERO],
+		# 天花板断口内的水平接驳台:置换失误不再坠亡,惩罚降级为"等一个周期"
+		[{"rect": Rect2(1790, 216, 130, 24), "offset": Vector2(130, 0),
+			"period": 2.8, "phase": 0.0}]))
 
 	# 04 · 圆 — 过山车:曲面滑行 + 飞跃断路
 	LEVELS.append(_make("圆 · 过山车", 3,
@@ -81,7 +87,7 @@ static func _static_init() -> void:
 
 static func _make(name: String, focus: int, intro: String, size: Vector2,
 		roster: Array, platforms: Array, ramps: Array, gates: Array, exits: Array,
-		spawns: Array) -> LevelDef:
+		spawns: Array, movers: Array = []) -> LevelDef:
 	var def := LevelDef.new()
 	def.name = name
 	def.focus = focus
@@ -93,4 +99,5 @@ static func _make(name: String, focus: int, intro: String, size: Vector2,
 	def.gates = gates
 	def.exits = exits
 	def.spawns = spawns
+	def.movers = movers
 	return def

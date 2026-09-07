@@ -6,6 +6,9 @@ var m: Main
 
 var _root: Control
 var _resume: Button
+var _panel: PanelContainer
+var _dim: ColorRect
+var _open_tween: Tween
 
 
 func _ready() -> void:
@@ -22,6 +25,7 @@ func _ready() -> void:
 	dim.color = Color(Ui.INK, 0.78)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(dim)
+	_dim = dim
 
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -31,7 +35,9 @@ func _ready() -> void:
 	panel.custom_minimum_size = Vector2(400, 0)
 	panel.add_theme_stylebox_override("panel",
 		Ui.sb(Color(Ui.INK_2, 0.98), 0, Color(Ui.PAPER, 0.2), 1, 0, 0))
+	panel.pivot_offset = Vector2(200, 0)
 	center.add_child(panel)
+	_panel = panel
 
 	var vb := VBoxContainer.new()
 	vb.add_theme_constant_override("separation", 10)
@@ -103,9 +109,28 @@ func open() -> void:
 	_root.visible = true
 	Sfx.play("pause")
 	_resume.grab_focus()
+	# 入场(M1/M2):压暗层快淡入,面板自下 26px 升入 + BACK 落位
+	if _open_tween != null:
+		_open_tween.kill()
+	_panel.pivot_offset = _panel.size / 2.0
+	_dim.modulate.a = 0.0
+	_panel.position.y += 0.0
+	_panel.modulate.a = 0.0
+	_open_tween = create_tween()
+	_open_tween.set_parallel(true)
+	_open_tween.tween_property(_dim, "modulate:a", 1.0, 0.20)
+	_open_tween.tween_property(_panel, "modulate:a", 1.0, 0.16)
+	_open_tween.tween_property(_panel, "scale", Vector2.ONE, 0.30) \
+		.from(Vector2(0.94, 0.94)).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func close() -> void:
+	if _root.visible and _open_tween != null and _open_tween.is_running():
+		# 开场动画未播完就直接关:立刻定格,避免半透明残留
+		_open_tween.kill()
+		_dim.modulate.a = 1.0
+		_panel.modulate.a = 1.0
+		_panel.scale = Vector2.ONE
 	_root.visible = false
 
 

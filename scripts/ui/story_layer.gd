@@ -56,6 +56,10 @@ func play(ks_path: String) -> void:
 		box.dialogue_font_size = 20
 		box.dialogue_margins = 56
 		box.dialogue_height = clampi(int(box_h) - 104, 44, 96)
+		# 过渡节奏收快:出场/入场更利落(M2 面板档 0.3s)
+		box.fade_duration = 0.28
+		box.fade_trans_type = Tween.TRANS_CUBIC
+		box.fade_ease_type = Tween.EASE_OUT
 
 	add_child(_manager)
 	# Konado 模板内含自己的 CanvasLayer,层级(layer)是全局的,不随父节点——
@@ -67,11 +71,12 @@ func play(ks_path: String) -> void:
 		return (a as CanvasLayer).layer < (b as CanvasLayer).layer)
 	for i in cls.size():
 		(cls[i] as CanvasLayer).layer = 46 + i
-	# 压暗背景(半透明墨色,保留底层画面轮廓),隐藏模板顶部功能条
+	# 压暗背景(半透明墨色,保留底层画面轮廓),隐藏模板顶部功能条;
+	# 压暗层参与入场过渡:自全透明淡入(世界"让位"而不是"熄灭")
 	var bg := _manager.get_node_or_null(
 		"KonadoUI/CanvasLayer/ActingInterface/BackgroundLayer") as ColorRect
 	if bg != null:
-		bg.color = Color(0.063, 0.071, 0.086, 0.88)
+		bg.color = Color(0.063, 0.071, 0.086, 0.0)
 	var bar := _manager.get_node_or_null("KonadoUI/CanvasLayer2/ColorRect")
 	if bar != null:
 		bar.visible = false
@@ -104,6 +109,20 @@ func play(ks_path: String) -> void:
 	_manager.dialogue_line_start.connect(func(_node_id: String) -> void:
 		Sfx.play("story_next"))
 	_manager.init_dialogue()
+
+	# —— 入场过渡:压暗层先淡入 → 对话盒自底部升入(M1 CUBIC_OUT 硬减速停) ——
+	add_child(_manager)
+	var enter := create_tween()
+	enter.set_parallel(true)
+	if bg != null:
+		enter.tween_property(bg, "color:a", 0.88, 0.25)
+	if box != null:
+		var final_y: float = box.position.y
+		box.modulate.a = 0.0
+		box.position.y = final_y + 48.0
+		enter.tween_property(box, "modulate:a", 1.0, 0.26)
+		enter.tween_property(box, "position:y", final_y, 0.32) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_manager.start_dialogue()
 
 

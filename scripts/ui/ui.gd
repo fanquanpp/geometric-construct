@@ -211,17 +211,3 @@ static func icon(rel: String) -> Texture2D:
 	if not _icons.has(rel):
 		_icons[rel] = load("res://assets/svg/" + rel)
 	return _icons[rel]
-
-
-static func radial_tex(colors: Array, offsets: Array) -> GradientTexture2D:
-	var tex := GradientTexture2D.new()
-	var g := Gradient.new()
-	g.colors = PackedColorArray(colors)
-	g.offsets = PackedFloat32Array(offsets)
-	tex.gradient = g
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(1.0, 0.5)
-	tex.width = 128
-	tex.height = 128
-	return tex

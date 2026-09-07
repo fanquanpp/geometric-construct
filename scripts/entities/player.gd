@@ -26,6 +26,9 @@ const CLIMB_SLIDE := 55.0     # 爬墙:只按方向贴墙时的缓降速度
 const RAMP_BUFF_TIME := 1.5   # 曲面 buff:离开曲面后残留时长(秒)
 const RAMP_BOOST := 1.5       # 曲面 buff:速度上限倍率
 const RAMP_WEIGHT_RATIO := 0.5  # 曲面 buff:等效重量倍率(减半)
+const FALL_GRAVITY_MULT := 1.24 # 三段重力:下落加重,跳-落曲线不对称(更利落)
+const APEX_GRAVITY_MULT := 0.86 # 三段重力:抛物线顶点轻微悬停(目标感)
+const APEX_WINDOW := 110.0      # 顶点判定窗口(|vy| 低于此值)
 
 var def: GeometryDef
 var index: int
@@ -57,6 +60,7 @@ var _climbing := false        # 正在贴墙(滑壁或攀爬)
 var _climb_budget := 0.0      # 本次离地期间的剩余可爬高度(px),落地重置
 var _climb_side := 0          # 墙在身体哪一侧:-1 左 / +1 右(绘制握点用)
 var _climb_tick := 0.0        # 爬升音效节拍
+var _skidding := false        # 急转打滑(反馈只发一次,速度回落后复位)
 var _ramp_timer := 0.0        # 曲面 buff 剩余时长;站在曲面上时持续刷新
 var _squash_x := 1.0
 var _squash_y := 1.0
@@ -135,8 +139,14 @@ func _physics_process(delta: float) -> void:
 	if move_input.x != 0.0:
 		facing = signf(move_input.x)
 
-	# ———— 重力 ————
-	vel.y += Geometries.GRAVITY * gravity_dir * dt
+	# ———— 重力:升 / 顶 / 落三段曲线(下落加重、顶点微悬停,抛物感更强) ————
+	var g_mult := 1.0
+	if vel.y * gravity_dir < 0.0:
+		if absf(vel.y) < APEX_WINDOW:
+			g_mult = APEX_GRAVITY_MULT
+	else:
+		g_mult = FALL_GRAVITY_MULT
+	vel.y += Geometries.GRAVITY * g_mult * gravity_dir * dt
 
 	# ———— 水平移动:加速度 + 惯性 ————
 	var on_ground := is_on_floor()
@@ -159,6 +169,15 @@ func _physics_process(delta: float) -> void:
 		if not on_ground:
 			friction *= 0.28
 		vel.x = move_toward(vel.x, 0.0, friction * dt)
+
+	# ———— 急转打滑:地面反向发力且仍有速度 → 短挤压 + 脚下尘点(反馈可读) ————
+	if on_ground and move_input.x != 0.0 and absf(vel.x) > 200.0 \
+			and signf(move_input.x) != signf(vel.x) and not _skidding:
+		_skidding = true
+		_squash(1.10, 0.92)
+		_skid_burst()
+	elif move_input.x == 0.0 or absf(vel.x) < 40.0 or not on_ground:
+		_skidding = false
 
 	# ———— 圆球坡面切线:贴坡时把速度对齐坡面切线(保持水平分量 = 目标速度),
 	# 滑到坡端自然沿切线飞出 —— 过山车的核心(速度越大,飞跃越远) ————
@@ -286,6 +305,9 @@ func _physics_process(delta: float) -> void:
 	if landed:
 		if now_on_floor:
 			_air_jumps_left = 0
+		# 重落地的镜头轻沉(可叠加,幅度克制)
+		if impact > 620.0 and Main.I != null and Main.I.camera_rig != null:
+			Main.I.camera_rig.kick(minf(1.6 + impact / 420.0, 4.6))
 		var eff_bounce := effective_bounce()
 		var carrying := _has_riders()
 		if carrying or impact <= BOUNCE_MIN or eff_bounce <= 0.0:
@@ -426,6 +448,24 @@ func _air_burst() -> void:
 	ring.scale_amount_max = 2.5
 	ring.color = Color(def.color, 0.8)
 	add_child(ring)
+
+
+## 急转打滑的脚下尘点:纸白小方块,贴地横扫(与死亡碎片同语言,量级更小)。
+func _skid_burst() -> void:
+	var dust := CPUParticles2D.new()
+	dust.one_shot = true
+	dust.emitting = true
+	dust.amount = 7
+	dust.lifetime = 0.26
+	dust.explosiveness = 1.0
+	dust.spread = 180.0
+	dust.gravity = Vector2(0, 260 * gravity_dir)
+	dust.initial_velocity_min = 30.0
+	dust.initial_velocity_max = 90.0
+	dust.scale_amount_min = 1.2
+	dust.scale_amount_max = 2.2
+	dust.color = Color(Ui.PAPER, 0.55)
+	add_child(dust)
 
 
 ## 当前应瞄准的速度倍率:基础 → 加速门/曲面 → 冲刺。
@@ -681,13 +721,15 @@ func _draw() -> void:
 	else:
 		_draw_box(size)
 
-	# 活跃几何体的取景框:细白方框 + 呼吸刻度
-	if is_active:
+	# 活跃几何体的取景框:细白方框 + 呼吸刻度;
+	# 圆球不用方框 —— 它的活跃指示是 _draw_ball 里的圆形取景环(轮廓同族)
+	if is_active and def.shape != GeometryDef.Shape.BALL:
 		var frame := Rect2(-size / 2.0, size).grow(7.0)
 		draw_rect(frame, Color(1, 1, 1, 0.85), false, 1.6)
 		var pulse := 0.6 + 0.4 * sin((Time.get_ticks_msec() % 1000000) / 190.0)
 		draw_rect(Rect2(frame.position - Vector2(4, 4), Vector2(8, 8)),
 			Color(def.color.lerp(Color.WHITE, 0.4), pulse))
+	if is_active:
 		_draw_name_tag(size)
 
 

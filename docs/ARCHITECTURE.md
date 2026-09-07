@@ -1,6 +1,6 @@
 # 架构规范 · ARCHITECTURE
 
-> 方块主义 BLOCKISM · 构成主义方块肉鸽游戏 · Godot 4.7 · 纯 GDScript
+> 几何构成 GEOMETRIC CONSTRUCT · 构成主义几何肉鸽游戏 · Godot 4.7 · 纯 GDScript
 > 肉鸽系统为后续版本内容;当前仓库是初期 Demo(几何体机制与关卡奠基)。
 > 本文是项目结构的唯一权威描述;改动结构前先改本文。
 > 后续功能(地图编辑分享 / 同屏双人 / 跨设备联机 / 肉鸽)的技术方案见 `docs/ROADMAP.md`。
@@ -22,20 +22,21 @@ speed-rouge/
 │   ├── data/                # 纯数据层(无节点逻辑,可安全做内容包)
 │   │   ├── geometry_def.gd  #   几何体定义类(含属性规范与方案行生成)
 │   │   ├── geometries.gd    #   几何体数据表(四人,弹性 0.5 / 跃 2.0 固定)
-│   │   ├── level_def.gd     #   关卡定义类
+│   │   ├── level_def.gd     #   关卡定义类(含 movers 移动构件字段)
 │   │   └── level_data.gd    #   关卡数据表(4 个教程占位关)
 │   ├── entities/            # 场景内实体
 │   │   ├── player.gd        #   几何体控制器:加速度/惯性/二段跳/超载减半/置换/滚动/承载
 │   │   ├── exit_door.gd     #   几何体专属终点门(到站不收取,可撤销;sealed 终点激活)
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)
 │   ├── world/               # 关卡装配与环境
-│   │   ├── level_builder.gd #   LevelDef → 节点树(网格/平台/门/几何体/相机/镜头微震)
+│   │   ├── level_builder.gd #   LevelDef → 节点树(网格/平台/移动构件/门/几何体/相机/镜头微震)
 │   │   └── backdrop.gd      #   构成主义几何背景(视差)
 │   ├── ui/                  # 全部 UI(CanvasLayer)
 │   │   ├── ui.gd            #   主题工厂:调色板/字体/StyleBox/Theme/文字组件
 │   │   ├── adaptive.gd      #   移动端自适应:设计稿缩放居中 / 安全区避让
 │   │   ├── hud.gd           #   游戏 HUD(队伍 chips/章节徽章/按键提示/开场/结算)
-│   │   ├── menu_layer.gd    #   标题菜单
+│   │   ├── menu_layer.gd    #   标题菜单(动态标题 TitleMark + 分层入场演出)
+│   │   ├── title_mark.gd    #   动态标题:逐字落位 / 呼吸浮动 / 印刷错位 / 红块节拍
 │   │   ├── geometry_panel.gd  # 几何档案页(属性条 + 几何肖像 + 翻页按钮)
 │   │   ├── touch_controls.gd#   虚拟按键层(TouchScreenButton → InputMap 动作)
 │   │   ├── story_layer.gd   #   Konado 剧情层(story/*.ks,播放时暂停世界)
@@ -65,6 +66,7 @@ speed-rouge/
 ├── tests/                   # 开发用截图 / 验证场景(shot_*.tscn)
 ├── build/                   # 构建产物(已 gitignore)
 └── docs/                    # ARCHITECTURE / DESIGN / ROADMAP / UPDATE / CHANGELOG
+    └── design/              # 策划侧设计档案(总纲/美术/角色/建筑/关卡/剧情/肉鸽)
 ```
 
 > 预留目录(modes / editor / net)的交互约束见各自 README;

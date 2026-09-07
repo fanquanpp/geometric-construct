@@ -4,13 +4,13 @@ class_name Version
 ## 纯内容包(关卡/角色数据)升 PATCH。
 
 const MAJOR := 0
-const MINOR := 7
+const MINOR := 8
 const PATCH := 0
 ## 渠道后缀:正式发布为空串,开发期可用 "-dev"、"-wip"。
 const CHANNEL := ""
 
-const GAME_TITLE := "方块主义"
-const GAME_TITLE_EN := "BLOCKISM"
+const GAME_TITLE := "几何构成"
+const GAME_TITLE_EN := "GEOMETRIC CONSTRUCT"
 
 
 static func number_string() -> String:

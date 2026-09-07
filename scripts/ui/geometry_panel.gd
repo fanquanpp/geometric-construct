@@ -13,7 +13,10 @@ var is_open := false
 
 var _root: Control
 var _content: Control
+var _shade: ColorRect
 var _portrait: GeoPortrait
+var _portrait_zone: CenterContainer
+var _right_col: VBoxContainer
 var _name_label: Label
 var _full_label: Label
 var _role_tag: PanelContainer
@@ -39,6 +42,7 @@ func _ready() -> void:
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(shade)
+	_shade = shade
 
 	# 档案页为固定设计稿排版:整体等比缩放居中,适配任意宽高比;
 	# 遮罩保持全屏(在缩放容器之外)
@@ -90,6 +94,7 @@ func _ready() -> void:
 	_portrait = GeoPortrait.new()
 	portrait_zone.add_child(_portrait)
 	_content.add_child(portrait_zone)
+	_portrait_zone = portrait_zone
 
 	# —— 右侧:信息栏(VBox 容器排版,杜绝绝对坐标互相遮挡) ——
 	var right := VBoxContainer.new()
@@ -98,6 +103,7 @@ func _ready() -> void:
 	right.add_theme_constant_override("separation", 10)
 	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_content.add_child(right)
+	_right_col = right
 
 	var name_row := HBoxContainer.new()
 	name_row.add_theme_constant_override("separation", 18)
@@ -181,11 +187,16 @@ func open(index := 0) -> void:
 	Adaptive.fit_design(_content)
 	_root.visible = true
 	_refresh()
-	_root.modulate = Color(1, 1, 1, 0)
 	if _tween != null:
 		_tween.kill()
+	# 入场:遮罩先压上来(交叉淡化主页),内容层随后浮现;
+	# 遮罩达到不透明后主页即被盖住,后续翻页不再透出主页
+	_shade.modulate.a = 0.0
+	_content.modulate.a = 0.0
 	_tween = create_tween()
-	_tween.tween_property(_root, "modulate:a", 1.0, 0.22)
+	_tween.set_parallel(true)
+	_tween.tween_property(_shade, "modulate:a", 1.0, 0.20)
+	_tween.tween_property(_content, "modulate:a", 1.0, 0.26).set_delay(0.05)
 
 
 func close() -> void:
@@ -203,9 +214,17 @@ func _switch(dir: int) -> void:
 	_refresh()
 	if _tween != null:
 		_tween.kill()
-	_root.modulate = Color(1, 1, 1, 0.4)
+	# 翻页过渡:只淡内容层(不透明遮罩恒在,主页绝不透出)+ 沿翻页方向轻推移
+	_content.modulate.a = 0.35
+	_portrait_zone.position.x = 60.0 - 26.0 * dir
+	_right_col.position.x = 486.0 - 26.0 * dir
 	_tween = create_tween()
-	_tween.tween_property(_root, "modulate:a", 1.0, 0.16)
+	_tween.set_parallel(true)
+	_tween.tween_property(_content, "modulate:a", 1.0, 0.18)
+	_tween.tween_property(_portrait_zone, "position:x", 60.0, 0.22) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_tween.tween_property(_right_col, "position:x", 486.0, 0.22) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
 func _refresh() -> void:

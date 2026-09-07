@@ -2,14 +2,19 @@ class_name MenuLayer
 extends CanvasLayer
 ## 标题菜单:构成主义海报式排版。
 ## 右下:开始/继续、几何档案、序幕剧情(Konado 剧本 story/prologue.ks)。
-## 左侧:大字标题 + 定位语;右侧:章节行列表 + 主按钮。
-## 细线外框 + 角部刻度 + 版本号,一切直角、平面、锐利。
+## 左侧:动态大字标题(TitleMark)+ 定位语;右侧:章节行列表 + 主按钮。
+## 细线外框 + 角部刻度 + 版本号,一切直角、平面、锐利;
+## 入场为分层 stagger 演出,常驻动效遵循 art-style.md §3(M5 呼吸 / M6 打点)。
 
 var m: Main
 
 var _chapter_btns: Array = []
 var _chapter_hint: Label
 var _unlocked := 0
+var _title_mark: TitleMark
+var _floaters: Array = []          # 漂浮几何徽标(常驻慢速旋转 + 浮动)
+var _floater_seed: Array = []      # 每枚徽标的相位/方向
+var _t := 0.0
 
 
 func _ready() -> void:
@@ -45,19 +50,22 @@ func _ready() -> void:
 		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		content.add_child(c)
 
-	# —— 左栏:标题 ——
+	# —— 左栏:动态标题 ——
 	var left := Control.new()
 	left.position = Vector2(84, 0)
 	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(left)
 
-	var kicker := Ui.l("BLOCKISM · 构成主义方块肉鸽游戏", 15, Ui.LIGHT, Ui.DIM)
-	kicker.position = Vector2(0, 118)
+	var kicker := Ui.l("GEOMETRIC CONSTRUCT · 构成主义几何肉鸽游戏", 15, Ui.LIGHT, Ui.DIM)
+	kicker.position = Vector2(0, 112)
+	kicker.modulate.a = 0.0
 	left.add_child(kicker)
 
-	var title := Ui.poster_label("方块主义", 104, Ui.PAPER, true, Ui.RED)
-	title.position = Vector2(0, 158)
-	left.add_child(title)
+	# 动态标题:逐字入场 / 呼吸浮动 / 印刷错位故障 / 红块节拍
+	_title_mark = TitleMark.new()
+	_title_mark.setup(Version.GAME_TITLE, 104, Ui.PAPER, Ui.RED)
+	_title_mark.position = Vector2(0, 150)
+	left.add_child(_title_mark)
 
 	left.add_child(_place(Ui.rule(430, 3, Ui.RED), Vector2(4, 306)))
 	left.add_child(_place(Ui.rule(430, 1), Vector2(4, 313)))
@@ -65,6 +73,7 @@ func _ready() -> void:
 	var intro := Ui.l("四个几何体,被丢进一个不存在的地方。\n形状即性格,属性即命运——\n速度、弹性、置换与惯性,\n唯有互相依靠,才能找到各自的出口。",
 		17, Ui.BODY, Color(Ui.PAPER, 0.78), HORIZONTAL_ALIGNMENT_LEFT, false, 8)
 	intro.position = Vector2(4, 342)
+	intro.modulate.a = 0.0
 	left.add_child(intro)
 
 	# 左下:操作提示(触屏设备无键盘,改为触摸指引)
@@ -73,10 +82,12 @@ func _ready() -> void:
 		else "点按章节进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
 	var keys := Ui.l(keys_text, 13, Ui.LIGHT, Color(Ui.DIM, 0.9))
 	keys.position = Vector2(4, 618)
+	keys.modulate.a = 0.0
 	left.add_child(keys)
 
 	var ver_left := Ui.l(Version.full_string(), 12, Ui.LIGHT, Color(Ui.DIM, 0.8))
 	ver_left.position = Vector2(4, 648)
+	ver_left.modulate.a = 0.0
 	left.add_child(ver_left)
 
 	# —— 右栏:章节行 ——
@@ -108,10 +119,13 @@ func _ready() -> void:
 		b.add_theme_constant_override("icon_max_width", 30)
 		b.add_theme_constant_override("h_separation", 14)
 		b.icon = Ui.icon("characters/%s-flat.svg" % ch.slug)
+		b.pivot_offset = Vector2(12, 31)
 		b.pressed.connect(func() -> void:
 			Sfx.play("ui_click")
 			m.start_chapter(idx))
-		b.mouse_entered.connect(func() -> void: show_chapter_hint(idx))
+		b.mouse_entered.connect(func() -> void:
+			show_chapter_hint(idx)
+			_bump_button(b))
 		b.focus_entered.connect(func() -> void: show_chapter_hint(idx))
 		list.add_child(b)
 		_chapter_btns.append(b)
@@ -131,6 +145,8 @@ func _ready() -> void:
 	start.add_theme_stylebox_override("hover", Ui.sb(Color(Ui.RED, 0.82), 0, null, 0, 20, 9))
 	start.add_theme_stylebox_override("pressed", Ui.sb(Color(Ui.RED, 0.65), 0, null, 0, 20, 9))
 	start.add_theme_color_override("font_color", Color.WHITE)
+	start.pivot_offset = Vector2(120, 26)
+	start.mouse_entered.connect(func() -> void: _bump_button(start))
 	start.pressed.connect(func() -> void:
 		Sfx.play("ui_click")
 		m.start_game())
@@ -141,6 +157,8 @@ func _ready() -> void:
 	panel_btn.custom_minimum_size = Vector2(240, 52)
 	panel_btn.position = Vector2(930, 560)
 	panel_btn.add_theme_font_size_override("font_size", 20)
+	panel_btn.pivot_offset = Vector2(120, 26)
+	panel_btn.mouse_entered.connect(func() -> void: _bump_button(panel_btn))
 	panel_btn.pressed.connect(func() -> void:
 		Sfx.play("ui_click")
 		m.open_geometry_panel())
@@ -151,6 +169,8 @@ func _ready() -> void:
 	story_btn.custom_minimum_size = Vector2(240, 52)
 	story_btn.position = Vector2(930, 624)
 	story_btn.add_theme_font_size_override("font_size", 20)
+	story_btn.pivot_offset = Vector2(120, 26)
+	story_btn.mouse_entered.connect(func() -> void: _bump_button(story_btn))
 	story_btn.pressed.connect(func() -> void:
 		Sfx.play("ui_click")
 		m.open_prologue())
@@ -161,7 +181,7 @@ func _ready() -> void:
 	story_tag.position = Vector2(1104, 612)
 	content.add_child(story_tag)
 
-	# —— 漂浮几何徽标 ——
+	# —— 漂浮几何徽标(常驻慢速旋转 + 浮动,方向/速率各异) ——
 	var xs := [0.05, 0.42, 0.95, 0.80]
 	var ys := [0.22, 0.07, 0.62, 0.06]
 	for i in 4:
@@ -176,19 +196,55 @@ func _ready() -> void:
 		tr.pivot_offset = Vector2(s / 2.0, s / 2.0)
 		tr.position = Vector2(xs[i] * 1280.0, ys[i] * 720.0)
 		content.add_child(tr)
+		_floaters.append(tr)
+		_floater_seed.append({"spin": (0.22 if i % 2 == 0 else -0.16) * (1.0 + i * 0.12),
+			"phase": i * 1.7, "base_y": tr.position.y})
 
 	# 适配:可见区变化(旋转 / 改窗口)时重新缩放居中
 	Adaptive.fit_design(content)
 	root.resized.connect(func() -> void: Adaptive.fit_design(content))
 
-	# 入场过渡:整层淡入 + 海报自左轻微滑入(相对 fit_design 居中位)
-	root.modulate.a = 0.0
-	var target_x := content.position.x
-	content.position.x = target_x - 18.0
+	_play_entrance(kicker, intro, keys, ver_left, [sec, _chapter_hint, start, panel_btn])
+
+
+## 入场演出:标题逐字落位(TitleMark)→ 定位语 / 简介浮现 → 右栏与按钮逐项浮现(M7)。
+func _play_entrance(kicker: Label, intro: Label, keys: Label, ver: Label,
+		right_items: Array) -> void:
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(root, "modulate:a", 1.0, 0.42)
-	tw.tween_property(content, "position:x", target_x, 0.5) \
+	tw.tween_property(kicker, "modulate:a", 1.0, 0.30).set_delay(0.10)
+	tw.tween_property(intro, "modulate:a", 1.0, 0.35).set_delay(0.72)
+	for item in right_items:
+		var ctl := item as Control
+		ctl.modulate.a = 0.0
+		tw.tween_property(ctl, "modulate:a", 1.0, 0.22).set_delay(0.55)
+	# 章节行逐项浮现(M7:自上而下 stagger 0.06s)
+	for i in _chapter_btns.size():
+		var b: Button = _chapter_btns[i]
+		b.modulate.a = 0.0
+		tw.tween_property(b, "modulate:a", 1.0, 0.22).set_delay(0.55 + i * 0.06)
+	tw.tween_property(keys, "modulate:a", 1.0, 0.25).set_delay(1.30)
+	tw.tween_property(ver, "modulate:a", 1.0, 0.25).set_delay(1.40)
+	if _title_mark != null:
+		_title_mark.play_entrance()
+
+
+func _process(delta: float) -> void:
+	_t += delta
+	# 漂浮徽标:慢速旋转 + 呼吸浮动(M5:周期 2s 上下,永不抢焦点)
+	for i in _floaters.size():
+		var tr: TextureRect = _floaters[i]
+		var seed_d: Dictionary = _floater_seed[i]
+		tr.rotation += seed_d["spin"] * delta
+		tr.position.y = seed_d["base_y"] + sin(_t * 1.4 + seed_d["phase"]) * 6.0
+
+
+## 悬停微抬:按钮向自身左上轴点放大 3%(M2 微交互档 0.12s),移出由 pressed/焦点复位。
+func _bump_button(b: Button) -> void:
+	if not b.disabled:
+		Sfx.play("ui_hover")
+	var tw := create_tween()
+	tw.tween_property(b, "scale", Vector2(1.03, 1.03), 0.12) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
