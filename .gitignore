@@ -1,0 +1,15 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# 开发截图
+.shots/
+
+# 构建产物
+build/
+
+# Windows 临时锁文件
+~*.dll
+
+# gode 插件(Node.js/TypeScript 运行时,含 780MB 二进制)不入库,请按 README 自行安装
+addons/gode/

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bylh8wd5yd7pf"]
+
+[ext_resource type="Script" uid="uid://dvfy1lrhqcsee" path="res://tests/win_shot.gd" id="1"]
+
+[node name="WinShot" type="Node2D" unique_id=1764771750]
+script = ExtResource("1")
