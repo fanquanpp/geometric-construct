@@ -16,14 +16,17 @@ speed-rouge/
 ├── scripts/
 │   ├── core/                # 总控与系统层
 │   │   ├── main.gd          #   状态机:MENU/PLAYING/PAUSED/TRANSITION/WIN,
-│   │   │                    #   关卡流转、角色切换、输入边沿检测、调试钩子
+│   │   │                    #   标准闯关与肉鸽局(rogue 分支)流转、
+│   │   │                    #   角色切换、输入边沿检测、调试钩子
 │   │   ├── version.gd       #   语义化版本号唯一来源(MAJOR.MINOR.PATCH + CHANNEL)
 │   │   └── save_manager.gd  #   存档读写 + 版本化迁移(SAVE_VERSION)
 │   ├── data/                # 纯数据层(无节点逻辑,可安全做内容包)
 │   │   ├── geometry_def.gd  #   几何体定义类(含属性规范与方案行生成)
 │   │   ├── geometries.gd    #   几何体数据表(四人,弹性 0.5 / 跃 2.0 固定)
 │   │   ├── level_def.gd     #   关卡定义类(含 movers 移动构件字段)
-│   │   └── level_data.gd    #   关卡数据表(4 个教程占位关)
+│   │   ├── level_data.gd    #   关卡数据表(序章 4 场 + 第一幕 6 场巨构)
+│   │   ├── run_modifiers.gd #   肉鸽词条表(通用 + 主角专属,稀有度)
+│   │   └── rogue_fragments.gd # 肉鸽单人片段库(按主角分组的快/稳排法 + 精英考)
 │   ├── entities/            # 场景内实体
 │   │   ├── player.gd        #   几何体控制器:加速度/惯性/二段跳/超载减半/置换/滚动/承载
 │   │   ├── exit_door.gd     #   几何体专属终点门(到站不收取,可撤销;sealed 终点激活)
@@ -40,16 +43,25 @@ speed-rouge/
 │   │   ├── geometry_panel.gd  # 几何档案页(属性条 + 几何肖像 + 翻页按钮)
 │   │   ├── touch_controls.gd#   虚拟按键层(TouchScreenButton → InputMap 动作)
 │   │   ├── story_layer.gd   #   Konado 剧情层(story/*.ks,播放时暂停世界)
+│   │   ├── rogue_layer.gd   #   肉鸽 UI:选主角 / 选路卡 / 词条三选一 / 结算页
 │   │   └── pause_menu.gd    #   暂停菜单
 │   ├── fx/                  # 表现层辅助
 │   │   ├── sfx.gd           #   程序化芯片音效引擎(合成器 + 音效库,见"音频架构")
 │   │   └── ambience.gd      #   程序化环境垫乐
-│   ├── modes/  (预留)       # 玩法模式:肉鸽 / 同屏双人(scripts/modes/README.md)
-│   ├── editor/ (预留)       # 自主地图编辑器(scripts/editor/README.md)
+│   ├── modes/                # 玩法模式层(scripts/modes/README.md)
+│   │   └── rogue/            #   肉鸽「重跑 RE-RUN」(单人独立几何体)
+│   │       ├── run_state.gd      # 一局状态 + 属性钩子覆盖层 modified()
+│   │       └── rogue_director.gd # 流程:选路→片段→奖励→精英考→结算
+│   ├── editor/ (预留)       # 自主地图编辑器(设计权威 docs/design/editor.md;
+│   │                        #   桌面键鼠先行,移动端后置;前置 = 图层系统 M0,
+│   │                        #   见 docs/ROADMAP.md §1)
 │   └── net/    (预留)       # 跨设备联机(scripts/net/README.md)
-├── story/
-│   ├── prologue.ks          # 序幕剧情(Konado KS 剧本,标题菜单播放)
-│   └── epilogue.ks          # 尾声剧情(通关画面播放)
+├── story/                    # Konado KS 剧本(剧情回廊可回看)
+│   ├── prologue.ks          #   序幕(标题菜单)
+│   ├── act1.ks              #   第一幕开演剧(首次进第一幕自动播放)
+│   ├── rogue_intro.ks       #   重跑序说(首次进重跑自动播放)
+│   ├── rogue_<slug>.ks      #   四位主角的个人单章刻画(首次选定自动播放)
+│   └── epilogue.ks          #   尾声(通关画面播放)
 ├── assets/
 │   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入)
 │   ├── fonts/               # NotoSansSC 可变字体
@@ -66,10 +78,11 @@ speed-rouge/
 ├── tests/                   # 开发用截图 / 验证场景(shot_*.tscn)
 ├── build/                   # 构建产物(已 gitignore)
 └── docs/                    # ARCHITECTURE / DESIGN / ROADMAP / UPDATE / CHANGELOG
-    └── design/              # 策划侧设计档案(总纲/美术/角色/建筑/关卡/剧情/肉鸽)
+	└── design/              # 策划侧设计档案(总纲/美术/角色/建筑/关卡/编辑器/剧情/肉鸽)
 ```
 
-> 预留目录(modes / editor / net)的交互约束见各自 README;
+> modes 层交互约束见 scripts/modes/README.md;肉鸽实现见文末「肉鸽模式」一节。
+> 预留目录(editor / net)的交互约束见各自 README;
 > **音频资源约定**:音效/垫乐全部程序化合成(sfx.gd / ambience.gd),
 > 不引入二进制音频文件;未来如需引入,先按 ROADMAP 落音频总线方案。
 
@@ -121,15 +134,30 @@ A 跳,X 冲刺,LB/RB 切换,Back 重来,Start 暂停。
 
 ## 关键机制速查
 
-- **状态机**:`Main.State`,流转入口 `start_level / _restart_level / _open_pause /
-  resume_game / quit_to_menu / _show_menu`。
+- **状态机**:`Main.State`,流转入口 `start_level / start_rogue_fragment /
+  _restart_level / _open_pause / resume_game / quit_to_menu / _show_menu /
+  start_rogue_run / finish_rogue_run`。
 - **实体上报**:Player → `Main.I.on_player_died / on_player_exited / on_respawn_done`。
 - **存档**:`SaveManager`(user://speed-rouge.cfg),结构版本 `meta/save_version`,
-  旧档 `lonelyblocks.cfg` 自动迁移。
+  旧档 `lonelyblocks.cfg` 自动迁移;v3 新增 `rogue` 区段(刻度残段 /
+  已解锁词条 / 最远章节 / 剧情旗标),迁移分支给默认值。
 - **调试钩子**(命令行 user args,`--` 之后):
   `--autotest=N` 自动通关测试 · `--autoshot=N` 关卡截图 · `--menushot` 菜单截图 ·
   `--panelshot` 档案页截图 · `--introshot` 开场卡截图 · `--doorshot` 门特写 ·
-  `--shotdir=<path>` 输出目录。
+  `--tourshot` 巨构巡航截图 · `--rogueshot` 肉鸽 UI 截图 ·
+  `--rogueautotest[=N]` 肉鸽按主角自动跑整局 · `--shotdir=<path>` 输出目录。
+
+## 肉鸽模式(scripts/modes/rogue)
+
+「重跑 RE-RUN」= **单人独立几何体**的一局制肉鸽(设计权威 docs/design/roguelike.md):
+
+- **属性钩子**:Player 的属性读取走 `RunState.modified(def, key)`,
+  无局时逐字段直通;局内词条堆叠覆盖,六项标尺属性钳制 0.0–2.0。
+- **流转**:Main 在 `_rogue` 时把通关 / 死亡回调转给 RogueDirector
+  (选路二选一 → 片段 → 奖励三选一 → 章末专属精英考 → 落幕结算);
+  片段复用 `LevelBuilder.build` 装配,roster 只有主角一位、单门归位。
+- **分层**:modes 层只调 Main 公开方法,不反向改 core 流程;
+  词条表(run_modifiers)与片段库(rogue_fragments)是纯数据(data 层)。
 
 ## 运行与测试
 

@@ -20,8 +20,9 @@
 |---|---|---|
 | [art-style.md](art-style.md) | 视觉规范:调色板 / 形状语言 / 字体 / 动效法则 / 风格审计清单 | 美术 / UI |
 | [characters.md](characters.md) | 几何体角色设计:形体 / 属性 / 性格 / 台词 / 成长规划 | 策划 / 程序 |
-| [structures.md](structures.md) | 特殊建筑物:终点门 / 加速门 / 曲面跳跃板 / 移动构件 / 规划中构件 | 关卡 / 程序 |
-| [levels.md](levels.md) | 关卡设计:关卡数据规范 / 教学节奏 / 现有关卡解析 / 关卡迭代原则 | 关卡策划 |
+| [structures.md](structures.md) | 特殊建筑物:终点门 / 加速门 / 曲面跳跃板 / 移动构件 / 动态构件(开关门·限时桥)/ 规划中构件 | 关卡 / 程序 |
+| [levels.md](levels.md) | 关卡设计:关卡数据规范 / 教学节奏 / 现有关卡解析 / 组件语义与图层系统(lane·faces·who)/ 定位网格与量尺 | 关卡策划 |
+| [editor.md](editor.md) | 地图编辑器:双层内容模型 / 组件 schema / 验证器 / 试玩一体化 / 桌面先行策略 | 系统策划 / 程序 |
 | [story.md](story.md) | 剧情设计:世界观 / 角色声线 / 序章-尾声文本档案 / 剧情演出规范 | 叙事 |
 | [roguelike.md](roguelike.md) | 肉鸽系统:一局结构 / 强化词条 / 局外解锁 / 随机性设计 | 系统策划 |
 

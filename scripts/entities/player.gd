@@ -31,6 +31,11 @@ const RAMP_WEIGHT_RATIO := 0.5  # 曲面 buff:等效重量倍率(减半)
 const FALL_GRAVITY_MULT := 1.24 # 三段重力:下落加重,跳-落曲线不对称(更利落)
 const APEX_GRAVITY_MULT := 0.86 # 三段重力:抛物线顶点轻微悬停(目标感)
 const APEX_WINDOW := 110.0      # 顶点判定窗口(|vy| 低于此值)
+## 词条「玻璃疾走」:重落地即碎的冲击阈值。
+const GLASS_IMPACT := 620.0
+## 词条速度上限的绝对钳制(与门厅"加速门×曲面"峰值 3.75 一致,
+## 非强化状态的旧手感完全不变)。
+const MOD_SPEED_CAP := 3.75
 
 var def: GeometryDef
 var index: int
@@ -162,10 +167,11 @@ func _physics_process(delta: float) -> void:
 	var on_ground := is_on_floor()
 	var target_mult := _target_multiplier(sprinting)
 	var target_vx := move_input.x * target_mult * Geometries.RUN_SPEED
-	var eff_weight := def.weight * (RAMP_WEIGHT_RATIO if ramp_buffed else 1.0)
+	var eff_weight := RunState.modified(def, "weight") \
+		* (RAMP_WEIGHT_RATIO if ramp_buffed else 1.0)
 	var accel_factor := clampf(1.15 - 0.3 * eff_weight, 0.55, 1.15)
 	var friction_factor := clampf(1.1 - 0.35 * eff_weight, 0.4, 1.1)
-	var mu := MU_FRICTION * friction_factor           # 等效摩擦系数(含重量材质项)
+	var mu := MU_FRICTION * friction_factor * RunState.modified(def, "friction")
 	if def.shape == GeometryDef.Shape.BALL:
 		accel_factor = maxf(accel_factor, 1.0)
 		mu = BALL_MU_ROLL * friction_factor           # 滚动阻力系数远小于滑动
@@ -219,7 +225,7 @@ func _physics_process(delta: float) -> void:
 	_swap_cd -= dt
 	_coyote -= dt
 	if on_ground:
-		_coyote = 0.09
+		_coyote = RunState.modified(def, "coyote")
 		_jump_cut = false
 		_climb_budget = GeometryDef.CLIMB_UNITS * Geometries.UNIT_PX
 
@@ -245,7 +251,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		_climbing = false
 
-	var jump_power := def.jump_v * _overload_jump_ratio()
+	var jump_power := RunState.jump_v(def) * _overload_jump_ratio()
 	if _jump_buffer > 0.0 and def.can_jump:
 		if on_ground or _coyote > 0.0:
 			# 第一段跳(地面 / 土狼时间)
@@ -305,12 +311,12 @@ func _physics_process(delta: float) -> void:
 			" slides=", get_slide_collision_count(), " floor=", is_on_floor(),
 			" deg=%.0f" % rad_to_deg(get_floor_angle() if is_on_floor() else 0.0))
 	if not is_on_floor() and was_floor and vel.y * gravity_dir > 0:
-		_coyote = 0.09
+		_coyote = RunState.modified(def, "coyote")
 
-	# ———— 离地:发放空中跳跃次数(二段跳的第 2 跳额度) ————
+	# ———— 离地:发放空中跳跃次数(二段跳的第 2 跳额度;词条「云梯踏」+1) ————
 	var now_on_floor := is_on_floor()
 	if was_floor and not now_on_floor:
-		_air_jumps_left = maxi(GeometryDef.MAX_JUMPS - 1, 0)
+		_air_jumps_left = maxi(int(RunState.modified(def, "air_jumps")), 0)
 
 	# ———— 落地判定:弹性反弹 or 站稳 ————
 	var landed := now_on_floor and not was_floor
@@ -322,7 +328,11 @@ func _physics_process(delta: float) -> void:
 			Main.I.camera_rig.kick(minf(1.6 + impact / 420.0, 4.6))
 		var eff_bounce := effective_bounce()
 		var carrying := _has_riders()
-		if carrying or impact <= BOUNCE_MIN or eff_bounce <= 0.0:
+		# 玻璃疾走:重落地即碎(死亡按重拼结算,消耗红色刻度)
+		if RunState.has_flag(def, "glass") and impact > GLASS_IMPACT:
+			_swap_air = false
+			die()
+		elif carrying or impact <= BOUNCE_MIN or eff_bounce <= 0.0:
 			# 驮着同伴时收力站稳 / 低速落地站稳;有一定冲击则补轻着地音
 			if absf(vel.y) < 5.0:
 				_squash(1.24, 0.78)
@@ -417,7 +427,7 @@ func _perform_swap(vel: Vector2) -> Vector2:
 	up_direction = Vector2(0, -gravity_dir)
 	vel.y = SWAP_LAUNCH * gravity_dir
 	_swap_buffer = 0.0
-	_swap_cd = 0.25
+	_swap_cd = RunState.modified(def, "swap_cooldown")
 	_coyote = 0.0
 	_jump_cut = false
 	_swap_air = true
@@ -482,20 +492,25 @@ func _skid_burst() -> void:
 
 ## 当前应瞄准的速度倍率:基础 → 加速门/曲面 → 冲刺。
 ## 曲面 buff 临时把上限抬到 ×1.5;加速门为永久强化;冲刺取最高者。
+## 词条钩子:base_speed / buff_sprint_speed 覆盖读取,双倍门(gate_mult)
+## 只放大加速门强化后的上限,全局钳制在 MOD_SPEED_CAP。
 func _target_multiplier(sprinting: bool) -> float:
-	var cap := def.base_speed
+	var cap := RunState.modified(def, "base_speed")
 	if speed_buffed:
-		cap = maxf(cap, def.buff_sprint_speed)
+		cap = maxf(cap, RunState.modified(def, "buff_sprint_speed"))
 	if sprinting and def.can_sprint:
-		cap = maxf(cap, def.buff_sprint_speed if speed_buffed else def.sprint_speed)
+		cap = maxf(cap, RunState.modified(def, "buff_sprint_speed") if speed_buffed
+			else def.sprint_speed)
+	if speed_buffed:
+		cap = minf(cap * RunState.modified(def, "gate_mult"), MOD_SPEED_CAP)
 	if _ramp_timer > 0.0:
-		cap *= RAMP_BOOST
+		cap = minf(cap * RAMP_BOOST, MOD_SPEED_CAP)
 	return cap
 
 
-## 实际弹性:全员固定值(0.5;跃为 2.0)。
+## 实际弹性:基础值(0.5;跃为 2.0)+ 词条覆盖。
 func effective_bounce() -> float:
-	return def.bounce
+	return RunState.modified(def, "bounce")
 
 
 ## 背负超载时跳跃高度减半:头顶来者总重大于自身负重力 → 0.5,否则 1.0。
@@ -506,8 +521,8 @@ func _overload_jump_ratio() -> float:
 	var rider_load := 0.0
 	for p in Main.I.players:
 		if p != self and is_instance_valid(p) and p.rider_of == self:
-			rider_load += p.def.weight
-	if rider_load > def.carry + 0.01:
+			rider_load += RunState.modified(p.def, "weight")
+	if rider_load > RunState.modified(def, "carry") + 0.01:
 		return GeometryDef.OVERLOAD_JUMP_RATIO
 	return 1.0
 

@@ -14,7 +14,8 @@
 | 视觉规范(调色板 / 形状语言 / 动效法则 M1–M9 / 审计清单) | [design/art-style.md](design/art-style.md) |
 | 几何体角色设计(档案 / 手感 / 视觉 / 台词) | [design/characters.md](design/characters.md) |
 | 特殊建筑物(终点门 / 加速门 / 曲面板 / 移动构件 / 规划) | [design/structures.md](design/structures.md) |
-| 关卡设计(数据规范 / 写作流程 / 动态地图原则 / 章节化) | [design/levels.md](design/levels.md) |
+| 关卡设计(数据规范 / 写作流程 / 动态地图原则 / 组件语义与图层 / 网格量尺) | [design/levels.md](design/levels.md) |
+| 地图编辑器(双层内容模型 / 组件 schema / 验证器 / 桌面先行) | [design/editor.md](design/editor.md) |
 | 剧情设计(世界观 / 声线 / 演出规范 / 钩子) | [design/story.md](design/story.md) |
 | 肉鸽系统(一局结构 / 词条 / 局外 / 随机性) | [design/roguelike.md](design/roguelike.md) |
 

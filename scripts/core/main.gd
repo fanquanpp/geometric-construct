@@ -29,6 +29,14 @@ var camera_rig = null            # LevelBuilder.CameraRig,切换时触发过渡�
 var _doors := {}                 # geo_index -> ExitDoor
 var _complete_seq := 0           # 通关链序列号:重开/换关时作废待执行的自动流转
 
+# ———— 肉鸽模式(RogueDirector 驱动,modes/rogue) ————
+var rogue_layer: RogueLayer
+var rogue_dir: RogueDirector
+var _rogue := false              # 当前片段是肉鸽局内关卡(不走标准解锁/流转)
+var _level_def: LevelDef         # 当前装载的关卡数据(标准关 = LEVELS[_current])
+var _pending_rogue_pick := false # 剧情播完后弹出"选本局主角"
+var _pending_rogue_focus := -1   # 已选主角:个人单章剧播完后开跑
+
 # ———— 自动化测试 ————
 ## 测试模式:屏蔽真实键盘的切换/重开/暂停输入,避免外部按键干扰自动验证。
 var debug_solo := false
@@ -46,6 +54,10 @@ var _act_shot_idx := 0
 var _boot_shot := false
 var _intro_shot := false
 var _story_shot := false
+var _story_kind := "prologue"   # --storyshot=NAME:指定要截图/验证的剧本
+var _rogue_shot := false
+var _rogue_auto := false
+var _rogue_focus := 0           # --rogueautotest=N:指定主角跑通局
 var _tour_shot := false
 var _auto_test := false
 
@@ -78,6 +90,14 @@ func _ready() -> void:
 	_pause = PauseMenu.new()
 	_pause.m = self
 	add_child(_pause)
+
+	# 肉鸽模式:UI 层 + 流程控制器(modes/rogue)
+	rogue_layer = RogueLayer.new()
+	add_child(rogue_layer)
+	rogue_dir = RogueDirector.new()
+	rogue_dir.main = self
+	rogue_dir.layer = rogue_layer
+	add_child(rogue_dir)
 
 	_save = SaveManager.new()
 	_save.load_save()
@@ -127,10 +147,12 @@ func start_level(index: int, intro := true) -> void:
 	get_tree().paused = false
 	if _pause != null:
 		_pause.close()
+	_rogue = false
 	_current = clampi(index, 0, LevelData.LEVELS.size() - 1)
+	_level_def = LevelData.LEVELS[_current]
 	_clear_level()
 	_doors.clear()
-	_level_root = LevelBuilder.build(LevelData.LEVELS[_current])
+	_level_root = LevelBuilder.build(_level_def)
 	add_child(_level_root)
 	_collect_players()
 	_state = State.PLAYING
@@ -143,15 +165,58 @@ func start_level(index: int, intro := true) -> void:
 	_hud.visible = true
 	touch_controls.set_in_game(true)
 	# 单人阵容没有"切换"可言:隐藏左侧切换钮,避免无效按键
-	touch_controls.set_switch_available(LevelData.LEVELS[_current].roster.size() > 1)
+	touch_controls.set_switch_available(_level_def.roster.size() > 1)
 	_hud.show_win(false)
-	_hud.set_level_info(_current, LevelData.LEVELS[_current])
+	_hud.set_level_info(_level_def)
 	_refresh_roster()
 	_hud.fade_from_black()
 	if intro:
-		_hud.show_intro(_current, LevelData.LEVELS[_current])
-		var focus: GeometryDef = Geometries.get_def(LevelData.LEVELS[_current].focus)
+		var act := "序章" if _current < 4 else "第一幕"
+		var scene_no := _current + 1 if _current < 4 else _current - 3
+		_hud.show_intro("%s · 第 %d 场 · %s" % [act, scene_no,
+			Geometries.get_def(_level_def.focus).full_name], _level_def)
+		var focus: GeometryDef = Geometries.get_def(_level_def.focus)
 		_hud.narration(focus.quote, focus.color, 3.8)
+	_switch_to(0, true)
+	# 第一幕首次开演:先看开演剧,再上手(序幕钩子的下一拍)
+	if _current == 4 and intro and not _save.seen_act1:
+		_save.note_story("act1")
+		get_tree().paused = true
+		show_story("act1")
+
+
+## 肉鸽局内装载片段(RogueDirector 调用):不走标准解锁与通关流转。
+func start_rogue_fragment(def: LevelDef, elite_title := "") -> void:
+	_complete_seq += 1
+	get_tree().paused = false
+	if _pause != null:
+		_pause.close()
+	_rogue = true
+	_level_def = def
+	_clear_level()
+	_doors.clear()
+	_level_root = LevelBuilder.build(def)
+	add_child(_level_root)
+	_collect_players()
+	_state = State.PLAYING
+	Sfx.play("start")
+
+	_menu.visible = false
+	_menu.close_act_panel()
+	geometry_panel.close()
+	settings_panel.close()
+	_hud.visible = true
+	touch_controls.set_in_game(true)
+	touch_controls.set_switch_available(true)
+	_hud.show_win(false)
+	_hud.set_level_info(def, "考" if not elite_title.is_empty() else "重跑")
+	_refresh_roster()
+	_hud.fade_from_black()
+	var kicker := "重跑 · 精英考 · %s" % elite_title \
+		if not elite_title.is_empty() else "重跑 · %s章 · 第 %d 段" % [
+			["一", "二", "三"][clampi(rogue_dir.run.chapter - 1, 0, 2)],
+			rogue_dir.run.fragments_done + 1]
+	_hud.show_intro(kicker, def)
 	_switch_to(0, true)
 
 
@@ -208,7 +273,7 @@ func _refresh_roster() -> void:
 			mask |= 1 << p.index
 	var active: int = players[_active_slot].index \
 		if (_active_slot >= 0 and _active_slot < players.size()) else -1
-	_hud.refresh_roster(LevelData.LEVELS[_current].roster, active, mask)
+	_hud.refresh_roster(_level_def.roster, active, mask)
 
 
 # ———————————————— 输入 ————————————————
@@ -240,7 +305,7 @@ func _physics_process(_delta: float) -> void:
 			_cycle_slot(-1)
 
 		for i in mini(players.size(), 4):
-			if _key_pressed(KEY_1 + i) and i < LevelData.LEVELS[_current].roster.size():
+			if _key_pressed(KEY_1 + i) and i < _level_def.roster.size():
 				_switch_to(i)
 
 		if Input.is_action_just_pressed("restart"):
@@ -253,6 +318,10 @@ func _physics_process(_delta: float) -> void:
 		# 数字键:二级菜单开着时直达该_choose剧目内的场次;否则快速选剧目
 		# (1=序章开演 → 进二级菜单,2-4 未上演幕同样给出 toast 反馈);
 		# C 打开几何档案;S 打开设置;Esc 关二级菜单 / 退出游戏
+		if _menu.is_story_panel_open():
+			if Input.is_action_just_pressed("ui_cancel"):
+				_menu.close_story_panel()
+			return
 		if _menu.is_act_panel_open():
 			for i in 4:
 				if _key_pressed(KEY_1 + i):
@@ -279,7 +348,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func _check_deaths() -> void:
-	var def: LevelDef = LevelData.LEVELS[_current]
+	var def: LevelDef = _level_def
 	for p in players:
 		if p.dying or p.in_exit or p.arrived:
 			continue
@@ -294,7 +363,11 @@ func _restart_level() -> void:
 	if _state != State.PLAYING:
 		return
 	Sfx.play("restart")
-	_hud.fade_to_black(0.25, func() -> void: start_level(_current))
+	# 肉鸽局内重来:重开当前片段(不计死亡,不烧刻度)
+	if _rogue:
+		_hud.fade_to_black(0.25, func() -> void: start_rogue_fragment(_level_def))
+	else:
+		_hud.fade_to_black(0.25, func() -> void: start_level(_current))
 	_state = State.TRANSITION
 
 
@@ -350,6 +423,9 @@ func quit_to_menu() -> void:
 	Sfx.play("ui_close")
 	get_tree().paused = false
 	_pause.close()
+	if _rogue:
+		_rogue = false
+		rogue_dir.exit_run()
 	_show_menu()
 
 
@@ -364,15 +440,72 @@ func show_story(kind: String) -> void:
 	story.play("res://story/%s.ks" % kind)
 
 
-func open_prologue() -> void:
+## 剧情回廊播放入口:任意剧本(暂停世界,播完恢复)。
+func play_story(kind: String) -> void:
 	if _state != State.MENU:
 		return
 	get_tree().paused = true
-	show_story("prologue")
+	show_story(kind)
 
 
 func on_story_finished() -> void:
 	get_tree().paused = false
+	# 个人单章剧播完 → 正式开跑
+	if _pending_rogue_focus >= 0:
+		_begin_rogue_run()
+		return
+	# 重跑序说播完 → 弹出"选本局主角"
+	if _pending_rogue_pick:
+		_pending_rogue_pick = false
+		_open_rogue_pick()
+
+
+## 菜单入口:进入重跑(肉鸽)模式 —— 首局先看"重跑序说",再选本局主角;
+## 每位主角首次重跑时播放他的个人单章刻画(story/rogue_<slug>.ks)。
+func start_rogue_run() -> void:
+	if _state != State.MENU:
+		return
+	Sfx.play("ui_open")
+	get_tree().paused = true
+	if not _save.seen_rogue:
+		_save.note_story("rogue_intro")
+		show_story("rogue_intro")
+	else:
+		_open_rogue_pick()
+
+
+func _open_rogue_pick() -> void:
+	var shards := _save.rogue_shards
+	var runs := _save.rogue_runs
+	rogue_layer.show_geo_pick(_on_rogue_picked, shards, runs)
+
+
+## 选定本局主角:先看他的个人单章(仅首次),再正式开跑。
+func _on_rogue_picked(idx: int) -> void:
+	_state = State.PLAYING
+	_menu.visible = false
+	_hud.visible = true
+	_pending_rogue_focus = idx
+	var kind := "rogue_%s" % Geometries.get_def(idx).slug
+	if not _save.story_seen(kind):
+		_save.note_story(kind)
+		get_tree().paused = true
+		show_story(kind)
+	else:
+		_begin_rogue_run()
+
+
+func _begin_rogue_run() -> void:
+	rogue_dir.begin(_pending_rogue_focus)
+	_pending_rogue_focus = -1
+
+
+## 肉鸽落幕结算完成,回到标题菜单。
+func finish_rogue_run() -> void:
+	get_tree().paused = false
+	_rogue = false
+	rogue_dir.exit_run()
+	_show_menu()
 
 
 # ———————————————— 事件回调 ————————————————
@@ -383,6 +516,9 @@ func on_player_died(p: Player) -> void:
 	if _state == State.PLAYING:
 		_cycle_slot(1)
 	_refresh_roster()
+	# 肉鸽:重拼消耗一段红色刻度,耗尽则本局落幕
+	if _rogue:
+		rogue_dir.on_player_died()
 
 
 ## 到达专属终点门:原地待命(仍可被切换控制),全员到齐后终点激活。
@@ -471,6 +607,20 @@ func _check_complete() -> void:
 		if not p.in_exit:
 			return
 
+	# 肉鸽局:通关流转交给 RogueDirector(选路 / 奖励 / 精英考 / 结算)
+	if _rogue:
+		_state = State.TRANSITION
+		_complete_seq += 1
+		var seq := _complete_seq
+		var elite := rogue_dir.in_elite
+		get_tree().create_timer(0.9).timeout.connect(func() -> void:
+			if seq == _complete_seq and rogue_dir != null:
+				if elite:
+					rogue_dir.on_elite_complete()
+				else:
+					rogue_dir.on_fragment_complete())
+		return
+
 	_state = State.TRANSITION
 	Sfx.play("complete")
 	if _auto_test:
@@ -530,8 +680,16 @@ func _parse_auto_shot() -> void:
 			_boot_shot = true
 		elif raw == "--introshot":
 			_intro_shot = true
-		elif raw == "--storyshot":
+		elif raw.begins_with("--storyshot"):
 			_story_shot = true
+			if raw.contains("="):
+				_story_kind = raw.substr(12)
+		elif raw == "--rogueshot":
+			_rogue_shot = true
+		elif raw.begins_with("--rogueautotest"):
+			_rogue_auto = true
+			if raw.contains("="):
+				_rogue_focus = raw.substr(15).to_int()
 		elif raw == "--tourshot":
 			_tour_shot = true
 		elif raw.begins_with("--level="):
@@ -558,6 +716,10 @@ func _parse_auto_shot() -> void:
 		_run_intro_shot()
 	if _story_shot:
 		_run_story_shot()
+	if _rogue_shot:
+		_run_rogue_shot()
+	if _rogue_auto:
+		_run_rogue_auto_test()
 	if _tour_shot:
 		_run_tour_shot()
 	if _auto_test:
@@ -607,6 +769,73 @@ func _run_intro_shot() -> void:
 	get_tree().quit()
 
 
+## 截取肉鸽模式 UI(选体 / 选路 / 词条三选一 / 结算,逐屏截图验收)。
+func _run_rogue_shot() -> void:
+	if _shot_dir.is_empty():
+		_shot_dir = "C:/Atian/Project/shots_bm"
+	_state = State.PLAYING
+	await get_tree().create_timer(0.6).timeout
+	var done := func(_a = null) -> void: pass
+	rogue_layer.show_geo_pick(done, 34, 2)
+	await get_tree().create_timer(0.5).timeout
+	await _shot("rogue_pick")
+	rogue_layer._close_overlay()
+	var mock_routes := [
+		{"title": "演示甲", "note": "快 · 三级梯田直上,缺口只有两格"},
+		{"title": "演示乙", "note": "稳 · 全程地面安全网,谷底滚不碎"},
+	]
+	rogue_layer.show_route(1, mock_routes, done)
+	await get_tree().create_timer(0.5).timeout
+	await _shot("rogue_route")
+	rogue_layer._close_overlay()
+	rogue_layer.show_reward([
+		RunModifiers.ALL[0], RunModifiers.ALL[4], RunModifiers.ALL[5]], done)
+	await get_tree().create_timer(0.5).timeout
+	await _shot("rogue_reward")
+	rogue_layer._close_overlay()
+	rogue_layer.show_settle({
+		"cleared": false, "chapter": 2, "arrivals": 12, "elites": 1, "deaths": 3,
+		"shards": 17, "balance": 34, "mods": [RunModifiers.ALL[1], RunModifiers.ALL[4]],
+	}, done)
+	await get_tree().create_timer(0.5).timeout
+	await _shot("rogue_settle")
+	rogue_layer._close_overlay()
+	# 局内状态条:mock 一局(2 段进度 / 3 格刻度 / 2 词条)后装载真片段
+	rogue_dir.run = RunState.new(0)
+	rogue_dir.run.chapter = 2
+	rogue_dir.run.fragments_done = 1
+	rogue_dir.run.ticks = 3
+	rogue_dir.run.add_mod(RunModifiers.ALL[1])
+	rogue_dir.run.add_mod(RunModifiers.ALL[4])
+	get_tree().paused = false
+	start_rogue_fragment(RogueFragments.chapter_routes(0, 1)[0]["def"])
+	rogue_layer.refresh_status(rogue_dir.run)
+	await get_tree().create_timer(0.6).timeout
+	await _shot("rogue_status")
+	rogue_dir.run = null
+	get_tree().quit()
+
+
+## 肉鸽全流程自动测试:auto 模式下自动选路 / 选奖励 / 强制完成片段,
+## 跑完一整局(三章 + 三精英考 + 结算)直到回菜单。
+func _run_rogue_auto_test() -> void:
+	print("TEST: rogue auto run begin")
+	_menu.visible = false
+	_hud.visible = true
+	_state = State.PLAYING
+	rogue_dir.auto = true
+	print("TEST: rogue focus=", Geometries.get_def(_rogue_focus).name)
+	rogue_dir.begin(_rogue_focus)
+	var deadline := Time.get_ticks_msec() + 120000
+	while Time.get_ticks_msec() < deadline \
+			and rogue_dir.phase != RogueDirector.Phase.IDLE:
+		await get_tree().create_timer(0.5).timeout
+	print("TEST: rogue run end phase=", rogue_dir.phase,
+		" mods=", rogue_dir.run.mod_ids() if rogue_dir.run != null else [],
+		" shards=", _save.rogue_shards, " runs=", _save.rogue_runs)
+	get_tree().quit()
+
+
 ## 截取剧情对话框(序幕)。
 ## 刻意先开局把相机带到关卡深处再开对话:验证变暗遮罩不再跟随相机
 ## (follow_viewport 关闭后,遮罩恒定铺满屏幕,左右两侧都不会漏光)。
@@ -621,9 +850,9 @@ func _run_story_shot() -> void:
 		players[0].velocity = Vector2.ZERO
 	await get_tree().create_timer(0.4).timeout
 	get_tree().paused = true
-	show_story("prologue")
+	show_story(_story_kind)
 	await get_tree().create_timer(1.6).timeout
-	await _shot("story")
+	await _shot("story_" + _story_kind)
 	get_tree().quit()
 
 
@@ -644,6 +873,39 @@ func _run_tour_shot() -> void:
 			["bridge", Vector2(5900, 900)],
 			["gap", Vector2(6900, 800)],
 			["tower", Vector2(8300, 900)]],
+		5: [["spawn", Vector2(300, 2700)],
+			["ledge", Vector2(2300, 2350)],
+			["deck", Vector2(4000, 2300)],
+			["shoulder", Vector2(4600, 1700)],
+			["under", Vector2(5600, 2650)],
+			["turret", Vector2(7300, 1800)],
+			["tower", Vector2(7600, 1400)]],
+		6: [["spawn", Vector2(300, 2300)],
+			["pit", Vector2(2200, 2280)],
+			["ceil", Vector2(3000, 1000)],
+			["gallery", Vector2(3800, 1480)],
+			["shuttle", Vector2(4750, 1480)],
+			["east", Vector2(7100, 1200)]],
+		7: [["spawn", Vector2(300, 2500)],
+			["gate1", Vector2(1250, 2400)],
+			["deck_a", Vector2(2800, 2200)],
+			["viaduct", Vector2(2500, 1350)],
+			["deck_b", Vector2(4400, 2100)],
+			["hall", Vector2(6900, 1700)],
+			["east_end", Vector2(6400, 1350)]],
+		8: [["spawn", Vector2(300, 2500)],
+			["slope", Vector2(900, 2400)],
+			["hub", Vector2(1450, 2270)],
+			["catch_a", Vector2(2950, 2050)],
+			["catch_b", Vector2(3750, 1450)],
+			["dome_top", Vector2(5400, 1200)],
+			["terrace", Vector2(6800, 2350)]],
+		9: [["spawn", Vector2(300, 2700)],
+			["pipe_dash", Vector2(1500, 2400)],
+			["pipe_spring", Vector2(2750, 2400)],
+			["pipe_fall", Vector2(4400, 2400)],
+			["pipe_roll", Vector2(5950, 2600)],
+			["console", Vector2(3000, 700)]],
 	}
 	var waypoints: Array = tours.get(_shot_level, [["spawn", Vector2(300, 850)]])
 	for wp in waypoints:

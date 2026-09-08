@@ -9,10 +9,11 @@
 
 | 方向 | 状态 | 前置重构 | 涉及层 |
 |---|---|---|---|
-| 自主地图编辑与分享 | 规划 | 无(LevelDef 已是纯数据) | editor / data / ui |
+| 组件化图层系统(v0.13 先行,M0) | 规划定稿(2026-09-09) | 无(默认值与现状兼容) | data / world / entities |
+| 自主地图编辑与分享 | 定稿(2026-09-09,editor.md) | 图层系统(M0)+ 测试 AI 抽类(§5) | editor / data / ui |
 | 同屏双人(同设备) | 规划 | 输入抽象(输入槽) | modes / entities / ui |
 | 多人跨设备联机 | 规划 | 输入抽象 + 权威拓扑 | net / entities / core |
-| 肉鸽模式 | 规划 | 存档扩展;建议在编辑器之后 | modes / data / core |
+| 肉鸽模式 | **已实装(v0.12,单人制「重跑 RE-RUN」)** | 存档扩展 | modes / data / core |
 
 **公共前置:输入抽象重构**。当前 `player.gd` 直接读全局 InputMap
 (`Input.is_action_pressed`),联机与同屏双人都要改为"输入槽注入":
@@ -20,21 +21,59 @@
 sprint()`),本地键盘/手柄、虚拟触屏、远端 RPC、第二玩家各自实现一个来源。
 此重构完成后,同屏双人与联机可复用同一套实体代码。
 
-## 1. 自主地图编辑与分享
+## 1. 组件化图层系统 + 自主地图编辑与分享
 
-**目标**:玩家在网格画布上摆平台 / 曲面板 / 加速门 / 终点门 / 出生点,
-试玩、命名、生成分享码,他人一键导入游玩。
+> 设计权威:`docs/design/editor.md`(编辑器)、`docs/design/levels.md`
+> §7–8(组件语义四元组 / 定位网格)、`docs/design/structures.md` §0/§5(动态构件)。
+> 2026-09-09 探讨定稿;本节是技术方案与里程碑。
+
+**为什么图层系统是编辑器的前置**:编辑器要编辑的核心属性
+(`lane / faces / who`)必须有运行时语义——先让关卡"懂"层差,
+编辑器才能"画"层差。顺序不可倒置。
+
+### M0 · 组件化图层系统(先行,独立发版价值)
+
+把"平台 = 裸 Rect2"升级为"组件 = 几何 + 语义四元组"
+(`lane ∈ back/mid/front`、`faces ∈ full/top/bottom/none`、`who` 集合):
+
+- **数据**:`LevelDef.platforms` 项从 `Rect2` 扩展为字典(或新 ComponentDef 类),
+  缺省字段 = `mid / full / 全员`——**与现状逐像素一致,10 关零迁移**;
+  ramps / gates / movers / exits 同步挂语义(全部可 JSON 同构)。
+- **碰撞位编译**:构建期把实际出现的 (lane, who) 组合分配 Godot 碰撞位
+  (32 位预算,经验 <10);玩家 `collision_mask` = 适用组合位并集,
+  出生算定一次、运行时零开销。`faces` 用 one-way 碰撞 +
+  shape 面剔除实现(`top`/`bottom` 各对应一种方向性)。
+- **置换过滤**:`_perform_swap` 落点查询加 lane + faces + who 过滤
+  (levels.md §7.5)。
+- **渲染**:lane → z_index;`_rests_on` 投影裙角按 lane 分组;
+  前后景 modulate 规则(art-style.md §6.6,不重画瓦片)。
+- **动态构件**(首版进 schema,进测试):LeverGate / TimedBridge
+  (structures.md §5),运行时 `set_collision_layer_value` 切换,
+  状态可预读(虚化态 8% 亮度线框)。
+- **验证**:`--autotest` 全关回归 + 新增分层试玩截图钩子
+  (`--laneshot`,back/front 两组各截一张)。
+
+### M1 · 定位网格 LOD
+
+三级密度(近景 1 格线 / 中景 5 格线 / 远景 10 格点阵 + 坐标数字,
+levels.md §8);切换阈值初值代码内定,桌面 + Android 真机
+`--autoshot` 实测后定稿(多端验证)。
+
+### M2 · 编辑器桌面版(创作主战场)
+
+- **首版 = 桌面键鼠**(Godot 内嵌工具场景 `scripts/editor/`):
+  瓦片层(terrain 笔刷)+ 组件层(prefab 拖放,属性面板 schema 自动生成),
+  画布格数定义(建议上限 128×40)、量尺模式、验证器三件套
+  (数值医生 / 路径医生 / 配对医生,editor.md §5)、一键试玩(Esc 返回)。
+- 框选 / 撤销重做(EditorUndoRedoManager 不可用于发布版,自实现命令栈)。
+- **移动端后置**:游戏内只留「玩他人关卡」+ 极简触屏画笔;
+  完整触屏编辑待桌面版打磨后立项,真机反复测试优化。
+
+### M3 · 分享码与存档
 
 - **数据**:编辑产物 = `LevelDef` 同构 JSON(`Vector2` 存 `[x,y]` 数组),
-  头部带 `format_version / title / author / engine_version`。
-  运行时与手写关卡走同一条 `LevelBuilder.build` 装配,零分支。
-- **编辑器**(`scripts/editor/`):CanvasLayer 画布 + 1 格 = 100 px 网格吸附
-  (与关卡坐标系一致);元素托盘按 data 层定义自动生成;触屏优先
-  (虚拟轮盘项目以移动端为第一平台),支持框选 / 撤销重做(EditorUndoRedoManager
-  不可用于发布版,自实现命令栈)。
-- **校验**:①结构校验(门与几何体一一对应、出生点在地面、kill_y 覆盖);
-  ②**可通关试探**:复用 `--autotest` 的走跳 AI 在后台跑一遍,给出
-  "疑似不可通关"警告(不强制)。
+  头部带 `format_version / title / author / engine_version`;
+  运行时与手写关卡同一条 `LevelBuilder.build` 装配,零分支。
 - **分享码**:JSON → `FileAccess.COMPRESSION_DEFLATE` 压缩 → Base64url
   字符串(几百字符,可进二维码);导入时校验版本与字段,拒绝越界数值。
   手机间传播靠二维码 / 剪贴板;后续再评估社区中心(需服务端)。
@@ -69,32 +108,33 @@ sprint()`),本地键盘/手柄、虚拟触屏、远端 RPC、第二玩家各自�
   (方案:轻量 WebSocket 房间服只做"握手配对",游戏流量仍走 ENet)。
 - **同步**:
   - 玩家运动:`MultiplayerSynchronizer`,**不可靠**通道,20Hz 上限,
-    只同步 `position / velocity / gravity_dir / facing`;插值在接收端做。
+	只同步 `position / velocity / gravity_dir / facing`;插值在接收端做。
   - 事件(死亡、到站、加速门、过关流):可靠 RPC,走 `Main.I` 既有回调,
-    远端触发同一套状态机。
+	远端触发同一套状态机。
   - 生成/销毁:`MultiplayerSpawner`(注意:只认"场景路径" spawned 节点,
-    动态配置需自定义 `spawn_function`)。
+	动态配置需自定义 `spawn_function`)。
 - **房间流**:菜单新增"联机"入口 → 创建房间(显示主机 IP/房号)或加入
   → 选关(主机)→ 同步 `start_level(index)`;掉线一方降级为 AI 待机或弹回菜单。
 - **反作弊/健壮性**:主机校验一切输入合法性(位置速度钳制);
   客户端预测暂不做(合作游戏容忍延迟),后续视手感加。
 
-## 4. 肉鸽模式
+## 4. 肉鸽模式(已实装 v0.12 · 剩余迭代项)
 
-**目标**:一局制肉鸽:随机序列关卡 + 局内强化 + 局外解锁。
+**已落地**(设计权威 `docs/design/roguelike.md`,实现 `scripts/modes/rogue/`):
+单人独立几何体一局制——入口选本局主角 → 三章 ×(选路二选一 → 单人片段 →
+词条三选一)→ 章末专属精英考 → 落幕结算;词条走 `RunState.modified` 属性
+钩子覆盖层;存档 v3(残段 / 解锁 / 剧情旗标)。
 
-- **一局结构**:入口 → 三章节,每章"选路(二选一路线事件)→ 关卡 → 奖励三选一"
-  → 章末精英关 → 结算。死亡即结算,携带局外货币。
-- **随机性来源**:`scripts/data/` 追加 `run_modifiers.gd`(强化词条表,
-  纯数据)与路线图生成器;词条效果全部走现有属性钩子
-  (`base_speed / bounce / jump_units / weight / carry` 的局内覆盖层),
-  不改 `Player` 逻辑——数据驱动,与内容包同构。
-- **局内覆盖层**:`Player` 属性读取从 `def.xxx` 换成
-  `RunState.modified(def, "xxx")`(默认直通),标准闯关零影响。
-- **局外**:`SaveManager` 加统计与解锁字段( MINOR + 迁移分支);
-  解锁内容 = 新强化词条入池 / 新几何体(数据表只能尾部追加,见 UPDATE.md)。
-- **UI**:选路卡、奖励三选一、结算页复用构成主义组件
-  (`Ui.poster_label / tag / rule`)。
+**剩余迭代项**(按需启动):
+
+- **片段库扩容**:每位主角每章 2 条手工排法已够一轮体验;
+  扩到每章 3–4 条可显著拉长复玩周期(纯 data 层追加)。
+- **新几何体入池**(局外解锁项):追加第五几何体需新 `GeometryDef` +
+  SVG 素材 + 单人片段链 + 专属词条——内容量级一个完整版本。
+- **计时榜**:结算页已留装饰版式解锁,速度榜(不解锁数值)待定;
+  依赖音频总线之外的设置项扩展。
+- **更多词条钩子**:Launcher / Portal / 计时环(见 structures.md §5 规划)
+  落地后,词条池可围绕新构件继续追加。
 
 ## 5. 技术债与基础设施(顺手清)
 

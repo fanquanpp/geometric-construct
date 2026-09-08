@@ -6,18 +6,24 @@
 四个几何体——**疾**(红方 · 冲刺/爬墙)、**跃**(黄竖长方 · 强反弹/承载)、
 **逆**(蓝镜像方 · 重力翻转)、**圆**(橙圆球 · 惯性滚动/切线飞跃)——
 各持一种"形状即性格"的能力,合作闯关、抵达终点门。
-肉鸽系统(选路 → 词条三选一 → 章末精英考)已立项设计中,见 `docs/design/roguelike.md`。
+**肉鸽模式「重跑 RE-RUN」已上线**:单人独立几何体的一局制玩法——选一位主角,
+三章选路 × 词条三选一 × 章末精英考,死亡消耗红色刻度、刻度尽则落幕结算,
+残段兑换新词条入池。设计权威见 `docs/design/roguelike.md`。
 
-当前版本 **v0.11.1**(唯一来源 `scripts/core/version.gd`,变更明细见 [CHANGELOG.md](CHANGELOG.md))。
+当前版本 **v0.12.0**(唯一来源 `scripts/core/version.gd`,变更明细见 [CHANGELOG.md](CHANGELOG.md))。
 
 ## 当前内容
 
 - **剧目 REPERTOIRE**:序章剧目「四场连演」(4 个教学关)+ 第一幕「引力排练」
-  ——01「巨构门厅」已上演(96 × 32 格巨构主义大型关卡,四角色分位出生/分位归门),
-  02–06 场排练中占位;第二、三幕(碎裂舞台 / 终局构成)待开演。
+  **六场巨构全部开演**(巨构门厅 / 承接天桥 / 双面回廊 / 速度圣殿 / 碎裂穹顶 /
+  幕间·大风琴;四角色分位出生/分位归门);第二、三幕(碎裂舞台 / 终局构成)待开演。
+- **重跑 RE-RUN(肉鸽)**:单人制——疾的缺口冲刺 / 跃的反弹攀高 /
+  逆的双面走廊 / 圆的坡道连滑,各配专属词条池与精英考;
+  红色刻度(5 段)承担死亡代价,刻度残段做局外解锁(词条入池 / 结算版式)。
 - **机制**:二段跳、踩头承载与超载减半、重力置换(逆)、纯滚动与曲面板切线飞跃(圆)、
   爬墙(疾)、加速门(2.5×)、移动构件(往返平台 / Express 电梯)。
-- **剧情**:Konado 驱动的序幕(七拍)与尾声,含续章伏笔。
+- **剧情**:Konado 驱动的序幕(七拍)、第一幕开演剧、重跑序说与
+  四位主角的个人单章刻画、尾声;标题菜单「剧情回廊」可回看。
 - **表现**:程序化芯片音效引擎(25 条音效,零音频文件)、动态标题与 UI 动效体系
   (动效法则 M1–M9)、构成主义几何视差背景。
 - **平台**:Windows / Android 导出预设;触屏设备自动启用虚拟轮盘 + 跳跃域。
@@ -38,8 +44,9 @@
 ## 快速开始
 
 1. `git clone` 本仓库;
-2. **安装 gode(必做,见下文[第三方插件](#第三方插件))**——项目自动加载依赖它,未安装无法运行;
-3. 用 **Godot 4.7** 打开项目,启用 gode / konado / godot-ai 三个插件后直接运行(主场景 `scenes/Main.tscn`)。
+2. **安装第三方插件(必做,见下文[第三方插件](#第三方插件))**——`addons/` 整体不入库,
+   konado(剧情)/ gode(运行时)/ godot-ai(开发辅助)三个插件均需自行安装;
+3. 用 **Godot 4.7** 打开项目,在项目设置中启用三个插件后直接运行(主场景 `scenes/Main.tscn`)。
 
 导出:已配置 **Windows Desktop** 与 **Android** 两个导出预设(`export_presets.cfg`)。
 
@@ -65,15 +72,24 @@
 | 插件 | 版本 | 说明 | 源仓库 |
 | --- | --- | --- | --- |
 | gode | 2.4.3 | Godot 的 TypeScript / Node.js 运行时(**未随本仓库分发,需自行安装**) | <https://github.com/godothub/gode> |
-| Konado | 2.7.4 | 对话系统 / 剧情向游戏工具包 | <https://github.com/godothub/konado> |
-| godot-ai | 3.2.5 | MCP / AI 开发辅助插件(仅开发期使用) | <https://github.com/hi-godot/godot-ai> |
+| Konado | 2.7.4 | 对话系统 / 剧情向游戏工具包(**未随本仓库分发,需自行安装**) | <https://github.com/godothub/konado> |
+| godot-ai | 3.2.5 | MCP / AI 开发辅助插件,仅开发期使用(**未随本仓库分发,需自行安装**) | <https://github.com/hi-godot/godot-ai> |
 
-### 安装 gode(克隆后必做)
+### 安装插件(克隆后必做)
 
-gode 自带全平台 Node.js 运行时二进制,体积约 780 MB,超过 GitHub 单文件 100 MB 限制,因此本仓库**不包含** `addons/gode/`(已在 `.gitignore` 中排除)。项目的 `EventLoop` 自动加载依赖该插件,未安装时项目无法正常运行:
+本仓库**不包含** `addons/` 下任何插件(整体在 `.gitignore` 中排除);项目设置里的
+自动加载(`KND_I18n` / `EventLoop` / `_mcp_game_helper`)与启用插件列表都引用它们,
+缺插件时启动会报错、剧情与部分功能不可用。三个插件分别安装:
 
-1. 从 [godothub/gode](https://github.com/godothub/gode) 的 Releases 或[官网文档](https://godothub.com/oss/gode/)下载插件包(版本 ≥ 2.4.3);
-2. 将压缩包中的 `gode/` 目录解压到本项目的 `addons/` 下;
-3. 用 Godot 4.7 打开项目,在 **项目 → 项目设置 → 插件** 中启用 gode。
+- **gode**(≥ 2.4.3):自带全平台 Node.js 运行时二进制,体积约 780 MB,
+  超过 GitHub 单文件 100 MB 限制:
 
-`addons/gode/` 已被 git 忽略,本地安装后不会被误提交。
+  1. 从 [godothub/gode](https://github.com/godothub/gode) 的 Releases 或[官网文档](https://godothub.com/oss/gode/)下载插件包;
+  2. 将压缩包中的 `gode/` 目录解压到本项目的 `addons/` 下;
+- **Konado**(≥ 2.7.4):从 [godothub/konado](https://github.com/godothub/konado) 下载,
+  同样解压 `konado/` 到 `addons/` 下——剧情播放(序幕 / 第一幕 / 重跑 / 尾声)依赖它;
+- **godot-ai**(≥ 3.2.5,可选,仅开发期):从 [hi-godot/godot-ai](https://github.com/hi-godot/godot-ai) 下载,
+  解压 `godot_ai/` 到 `addons/` 下。
+
+全部安装后,用 Godot 4.7 打开项目,在 **项目 → 项目设置 → 插件** 中启用。
+`addons/` 已被 git 整体忽略,本地安装后不会被误提交。
