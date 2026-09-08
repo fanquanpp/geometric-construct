@@ -1,27 +1,35 @@
-# Godot 4+ specific ignores
+# ===== Godot =====
+# 编辑器缓存(导入产物、shader 缓存等,启动自动重建)
 .godot/
+# Android 构建模板与 gradle 产物
 /android/
+.gradle/
 
-# 开发截图
-.shots/
-
-# 构建产物
+# ===== 本地构建与开发产物(不推送) =====
+# 导出产物(exe / pck / dll),用 export_presets.cfg 随时可再导出
 build/
+# 开发截图(各版本迭代,.shots / .shots_vNN)
+.shots*/
 
-# Windows 临时锁文件
+# ===== 凭据与密钥(绝不入库) =====
+# Godot 导出凭据(Android keystore 密码等,导出对话框「保存凭据」时生成)
+export_credentials.cfg
+*.keystore
+*.jks
+
+# ===== 第三方插件(不入库,按 README「第三方插件」自行安装) =====
+addons/
+
+# ===== gode TS 工具链产物 =====
+.gode/
+node_modules/
+
+# ===== 系统与编辑器杂物 =====
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# ===== Windows 临时锁文件(导出覆盖被占用文件时产生) =====
 ~*.dll
-
-# gode 插件(Node.js/TypeScript 运行时,含 780MB 二进制)不入库,请按 README 自行安装
-addons/gode/
-
-# 开发截图(v0.8 迭代)
-.shots_v08/
-
-# 开发截图(v0.9 迭代)
-.shots_v09/
-
-# 开发截图(v0.10 迭代)
-.shots_v10/
-
-# 开发截图(v0.11 迭代)
-.shots_v11/
