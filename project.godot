@@ -21,8 +21,6 @@ config/icon="res://icon.svg"
 
 KND_I18n="*uid://c8y8inlr3ga6w"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
-EventLoop="*uid://d2r8m5k1q7yap"
-PhantomCameraManager="*uid://duq6jhf6unyis"
 
 [display]
 
@@ -33,7 +31,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/at-icons/plugin.cfg", "res://addons/gode/plugin.cfg", "res://addons/godot_ai/plugin.cfg", "res://addons/konado/plugin.cfg", "res://addons/phantom_camera/plugin.cfg")
+enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg", "res://addons/konado/plugin.cfg")
 
 [input]
 
@@ -94,17 +92,9 @@ pause={
 ]
 }
 
-[gui]
-
-fonts/dynamic_fonts/use_oversampling=true
-
 [input_devices]
 
 joypads/ignore_joypad_on_unfocused_application=true
-
-[native_extensions]
-
-paths=PackedStringArray("res://addons/gode/binary/gode.gdextension")
 
 [physics]
 
