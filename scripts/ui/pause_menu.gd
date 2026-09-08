@@ -67,7 +67,7 @@ func _ready() -> void:
 	_resume = _make_button("继 续", func() -> void: m.resume_game())
 	body.add_child(_resume)
 	body.add_child(_make_button("重 新 开 始", func() -> void: m.restart_from_pause()))
-	body.add_child(_make_button("几 何 档 案", func() -> void: m.open_geometry_panel()))
+	body.add_child(_make_button("档 案 几 何", func() -> void: m.open_geometry_panel()))
 	body.add_child(_make_button("设 置", func() -> void: m.open_settings()))
 	body.add_child(_make_button("返 回 标 题", func() -> void: m.quit_to_menu()))
 	var touch_btn := _make_button("虚拟按键 · 关", func() -> void: pass)

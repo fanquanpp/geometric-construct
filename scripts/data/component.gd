@@ -7,7 +7,7 @@ class_name Comp
 ##
 ## 兼容约定:平台项可以是裸 Rect2(旧格式,等价 mid / full / 全员),
 ## 也可以是字典 {rect, lane?, faces?, who?, tags?} —— 序章 + 第一幕 10 关零迁移
-## (levels.md §7.6)。编辑器分享码 JSON 同构使用同一套字段名。
+## (levels.md §7.6)。全部字段可 JSON 同构(数据互通前置)。
 
 const LANE_BACK := "back"
 const LANE_MID := "mid"

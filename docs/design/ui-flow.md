@@ -59,7 +59,6 @@ BootIntro(60) ── 开屏,点按跳过
     │    │    └─ 落幕 → finish_rogue_run() ⇒ 回标题
     │    └─ 中途退出(暂停菜单「回标题」)→ exit_run() ⇒ 回标题
     ├─ (规划)客席剧目「玩他人关卡」:三级列表页 → start_level_custom()
-    └─ (规划)工坊「编辑器」入口 ⇒ 编辑器 Screen(桌面)
 
 关卡 Screen ═══ Main.State = PLAYING
  ├─ Hud(10):开场卡 intro / 旁白 narration(非阻塞)· 队伍 chips · 章节徽章
@@ -108,7 +107,6 @@ Boot > StoryLayer > 面板带(35–38,`is_open` 早退)> 菜单二级面板
 
 | 功能 | 归型 | 层带 / 状态 | 入口与流转 |
 |---|---|---|---|
-| **地图编辑器**(桌面,editor.md) | Screen | 新态 `EDITOR`(Main.State 扩展)或独立场景自管;其内部面板复用面板带 | 标题菜单「工坊」→ 编辑器;Esc=编辑器内返回语义(editor.md §9) |
 | **玩他人关卡** | 菜单子页面(Flow) | 菜单带 20 内三级页面(列表 / 详情) | 标题菜单「客席剧目」→ 选关 → `start_level_custom()`(PLAYING 复用) |
 | **分享码导入** | Overlay | 面板带(35–38 复用 SettingsPanel 同款面板形态) | 客席剧目页内按钮 → 粘贴码 → 校验 → 入列表 |
 | **同屏双人** | Overlay(选角)→ 复用 PLAYING | 流程带 30(选角页);局内不变(roster=2) | 标题菜单「双人」→ 选角 → start_level |
@@ -124,7 +122,7 @@ Boot > StoryLayer > 面板带(35–38,`is_open` 早退)> 菜单二级面板
 
 现状"固定层带 + visible 开关 + 态分派"在页面 ≤15 时清晰可维护
 (肉鸽 5 页 + 覆盖 4 页 + 菜单 3 页 + 游戏带 2 页 ≈ 14),**不立即重构**。
-触发线:**编辑器 / 客席剧目 / 联机 任一立项时**,先抽 UiRouter 再动工:
+触发线:**客席剧目 / 联机 任一立项时**,先抽 UiRouter 再动工:
 
 - **UiRouter**(ROADMAP §5 技术债):页面注册表(型 / 带 / 输入独占声明)
   + 输入路由(按带取栈顶)+ Esc 统一弹栈 + opener 归还。

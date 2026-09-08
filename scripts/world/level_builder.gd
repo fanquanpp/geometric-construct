@@ -521,7 +521,7 @@ class MoverTrack extends Node2D:
 
 ## 限时桥(structures.md §5):周期性实心 ↔ 虚化的桥板 ——
 ## 虚化期无碰撞(运行时 set_collision_layer_value 切位)、降透明度,
-## 保留 8% 亮度线框 + 轨道线,切换状态可预读(editor.md §3 纪律)。
+## 保留 8% 亮度线框 + 轨道线,切换状态可预读(可预读纪律)。
 ## on/off 各 ≥1s 保证可读;sync_beat = 与 BGM 节拍时钟对齐(audio.md §5)。
 class TimedBridge extends StaticBody2D:
 	var slab_rect := Rect2()
@@ -578,7 +578,7 @@ class TimedBridge extends StaticBody2D:
 			# 实心态刻度:左缘红块(与移动板同语言)
 			draw_rect(Rect2(r.position + Vector2(0, 4), Vector2(8, 3)), Color(Ui.RED, 0.8))
 		else:
-			# 虚化态:8% 亮度线框 + 虚线段(editor.md §3 可预读纪律)
+			# 虚化态:8% 亮度线框 + 虚线段(可预读纪律)
 			draw_rect(r, Color(Ui.PAPER, 0.08))
 			var seg := 14.0
 			var x := r.position.x

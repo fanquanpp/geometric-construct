@@ -1,7 +1,7 @@
 class_name MenuLayer
 extends CanvasLayer
 ## 标题菜单:构成主义海报式排版。
-## 右下:开始/继续、几何档案、设置、序幕剧情(Konado 剧本 story/prologue.ks)。
+## 右下:开始/继续、档案几何(几何档案 × 剧情回廊,GeometryPanel)、设置。
 ## 左侧:动态大字标题(TitleMark)+ 定位语;右侧:剧目行(序章 + 三幕)+ 主按钮。
 ## 剧目行是"一级目录":点开剧目进入二级菜单(关卡列),再选场开演;
 ## 未上演的幕没有二级菜单,点击给错误音 + toast 反馈。
@@ -94,7 +94,7 @@ func _ready() -> void:
 	left.add_child(intro)
 
 	# 左下:操作提示(触屏设备无键盘,改为触摸指引)
-	var keys_text := "1–4 选择剧目    C 几何档案    Esc 退出" \
+	var keys_text := "1–4 选择剧目    C 档案几何    Esc 退出" \
 		if not DisplayServer.is_touchscreen_available() \
 		else "点按剧目进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
 	var keys := Ui.l(keys_text, 13, Ui.LIGHT, Color(Ui.DIM, 0.9))
@@ -195,7 +195,7 @@ func _ready() -> void:
 	content.add_child(rogue_btn)
 
 	var panel_btn := Button.new()
-	panel_btn.text = "几何档案"
+	panel_btn.text = "档案几何"
 	panel_btn.custom_minimum_size = Vector2(240, 44)
 	panel_btn.position = Vector2(670, 610)
 	panel_btn.add_theme_font_size_override("font_size", 18)
@@ -206,22 +206,10 @@ func _ready() -> void:
 		m.open_geometry_panel())
 	content.add_child(panel_btn)
 
-	var story_btn := Button.new()
-	story_btn.text = "剧情回廊"
-	story_btn.custom_minimum_size = Vector2(240, 44)
-	story_btn.position = Vector2(930, 610)
-	story_btn.add_theme_font_size_override("font_size", 18)
-	Ui.wire_button(story_btn)
-	story_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	story_btn.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		open_story_panel())
-	content.add_child(story_btn)
-
 	var settings_btn := Button.new()
 	settings_btn.text = "设 置"
 	settings_btn.custom_minimum_size = Vector2(240, 44)
-	settings_btn.position = Vector2(670, 666)
+	settings_btn.position = Vector2(930, 610)
 	settings_btn.add_theme_font_size_override("font_size", 18)
 	Ui.wire_button(settings_btn)
 	settings_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
@@ -229,8 +217,6 @@ func _ready() -> void:
 		Sfx.play("ui_click")
 		m.open_settings())
 	content.add_child(settings_btn)
-
-	_build_story_panel(root)
 
 	_build_act_panel(root)
 
@@ -258,7 +244,7 @@ func _ready() -> void:
 	root.resized.connect(func() -> void: Adaptive.fit_design(content))
 
 	_play_entrance(kicker, intro, keys, ver_left,
-		[sec, _chapter_hint, start, panel_btn, story_btn, settings_btn])
+		[sec, _chapter_hint, start, panel_btn, settings_btn])
 
 
 ## 入场演出:标题逐字落位(TitleMark)→ 定位语 / 简介浮现 → 右栏与按钮逐项浮现(M7)。
@@ -403,131 +389,6 @@ func is_act_panel_open() -> bool:
 	return _act_open
 
 
-# ———————————————— 剧情回廊(剧本列表) ————————————————
-
-## 全部剧本档案(改剧本 = 改这里与 story/*.ks、docs/design/story.md 同步)。
-const STORIES := [
-	{"kind": "prologue", "title": "序幕 · 空白与降临",
-		"sub": "七个拍子——空白、降临、相认、规则、缺口、约定、出发"},
-	{"kind": "act1", "title": "第一幕 · 开演",
-		"sub": "引力排练开演之前,四个几何体的约定"},
-	{"kind": "rogue_intro", "title": "重跑 · 序说",
-		"sub": "单人重跑——每一局,选中谁,谁就走一遍只属于自己的路"},
-	{"kind": "rogue_dash", "title": "重跑 · 疾之章",
-		"sub": "原来我一直跑,不是怕孤独追上我"},
-	{"kind": "rogue_spring", "title": "重跑 · 跃之章",
-		"sub": "以前我为别人折叠坠落,这一次,为自己折一次"},
-	{"kind": "rogue_fall", "title": "重跑 · 逆之章",
-		"sub": "你们管这叫孤独,我管这叫安静"},
-	{"kind": "rogue_roll", "title": "重跑 · 圆之章",
-		"sub": "一个人滚,更快"},
-	{"kind": "epilogue", "title": "尾声 · 全员归位",
-		"sub": "四门归位之后的回声,与第五个形状的刻度"},
-]
-
-var _story_root: Control
-var _story_open := false
-
-
-func _build_story_panel(root: Control) -> void:
-	_story_root = Control.new()
-	_story_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_story_root.theme = Ui.make_theme()
-	_story_root.visible = false
-	_story_root.mouse_filter = Control.MOUSE_FILTER_STOP
-	root.add_child(_story_root)
-
-	var shade := ColorRect.new()
-	shade.color = Color(Ui.INK, 0.92)
-	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_story_root.add_child(shade)
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_story_root.add_child(center)
-
-	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(760, 0)
-	card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
-	card.mouse_filter = Control.MOUSE_FILTER_STOP
-	center.add_child(card)
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 10)
-	card.add_child(vb)
-
-	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 12))
-	var tcol := VBoxContainer.new()
-	tcol.add_child(Ui.l("剧情回廊", 30, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
-	tcol.add_child(Ui.l("ARCHIVE OF SCRIPTS · 选一段重看", 13, Ui.LIGHT,
-		Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER))
-	title_bar.add_child(tcol)
-	vb.add_child(title_bar)
-
-	var body := VBoxContainer.new()
-	body.add_theme_constant_override("separation", 8)
-	var body_wrap := PanelContainer.new()
-	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 22, 16))
-	body_wrap.add_child(body)
-	vb.add_child(body_wrap)
-
-	for i in STORIES.size():
-		var s: Dictionary = STORIES[i]
-		var b := Button.new()
-		b.custom_minimum_size = Vector2(680, 52)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.add_theme_font_override("font", Ui.HEAD)
-		b.add_theme_font_size_override("font_size", 18)
-		b.add_theme_constant_override("h_separation", 14)
-		b.icon = Ui.icon("buttons/story-flat.svg") if ResourceLoader.exists(
-			"res://assets/svg/buttons/story-flat.svg") else Ui.icon("buttons/play-flat.svg")
-		b.text = s["title"]
-		b.pivot_offset = Vector2(12, 26)
-		Ui.wire_button(b)
-		b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-		b.pressed.connect(func() -> void:
-			Sfx.play("ui_click")
-			close_story_panel()
-			m.play_story(s["kind"]))
-		body.add_child(b)
-		var sub := Ui.l(s["sub"], 12, Ui.LIGHT, Ui.DIM)
-		sub.position = Vector2(58, 38)
-		b.add_child(sub)
-
-	var back_row := HBoxContainer.new()
-	back_row.add_theme_constant_override("separation", 12)
-	var back := Button.new()
-	back.text = "« 返回剧目"
-	back.custom_minimum_size = Vector2(170, 42)
-	back.add_theme_font_size_override("font_size", 16)
-	Ui.wire_button(back)
-	back.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	back.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		close_story_panel())
-	back_row.add_child(back)
-	back_row.add_child(Ui.l("Esc 返回", 12, Ui.LIGHT, Color(Ui.DIM, 0.9)))
-	vb.add_child(back_row)
-
-
-func open_story_panel() -> void:
-	_story_open = true
-	Sfx.play("ui_open")
-	_story_root.visible = true
-
-
-func close_story_panel() -> void:
-	_story_open = false
-	_story_root.visible = false
-
-
-func is_story_panel_open() -> bool:
-	return _story_open
 
 
 ## 进入某剧目的二级菜单:重排关卡行(解锁状态逐次刷新)。

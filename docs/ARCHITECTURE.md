@@ -34,7 +34,7 @@ speed-rouge/
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)
 │   ├── world/               # 关卡装配与环境
 │   │   ├── level_builder.gd #   LevelDef → 节点树(网格/平台/移动构件/动态构件/门/几何体/相机/镜头微震;
-│   │   │                    #   渲染双后端 LaneRenderer _draw / TileRenderer 瓦片,分工见 art-style.md §6.7)
+│   │   │                    #   渲染唯一管线 = LaneRenderer _draw 程序化绘制(art-style.md §6)
 │   │   └── backdrop.gd      #   构成主义几何背景(视差)
 │   ├── ui/                  # 全部 UI(CanvasLayer)
 │   │   ├── ui.gd            #   主题工厂:调色板/字体/StyleBox/Theme/文字组件
@@ -54,9 +54,6 @@ speed-rouge/
 │   │   └── rogue/            #   肉鸽「重跑 RE-RUN」(单人独立几何体)
 │   │       ├── run_state.gd      # 一局状态 + 属性钩子覆盖层 modified()
 │   │       └── rogue_director.gd # 流程:选路→片段→奖励→精英考→结算
-│   ├── editor/ (预留)       # 自主地图编辑器(设计权威 docs/design/editor.md;
-│   │                        #   桌面键鼠先行,移动端后置;前置 = 图层系统 M0,
-│   │                        #   见 docs/ROADMAP.md §1)
 │   └── net/    (预留)       # 跨设备联机(设计权威 docs/design/net.md;
 │                            #   里程碑 N0–N3 见 ROADMAP §3)
 ├── story/                    # Konado KS 剧本(剧情回廊可回看)
@@ -67,8 +64,8 @@ speed-rouge/
 │   └── epilogue.ks          #   尾声(通关画面播放)
 ├── assets/
 │   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入)
-│   ├── tiles/               # 瓦片成品 PNG/GIF(Aseprite 源导出存档,只读;
-│   │                        #   双管线渲染分工见 docs/design/art-style.md §6/§6.7)
+│   ├── tiles/               # (废止)v0.12 aseprite 瓦片存档,.gdignore 不导入,
+│   │                        #   仅历史留档 —— 地图全 _draw 渲染(art-style.md §6)
 │   ├── fonts/               # NotoSansSC 可变字体
 │   └── svg/                 # 全部图标(仅 flat 单样式,见 docs/DESIGN.md)
 │       ├── characters/      #   角色徽标(与 slug 对应)
@@ -84,11 +81,11 @@ speed-rouge/
 │                            #   layer_check.gd 图层语义 headless 验证)
 ├── build/                   # 构建产物(已 gitignore)
 └── docs/                    # ARCHITECTURE / DESIGN / ROADMAP / UPDATE / CHANGELOG
-	└── design/              # 策划侧设计档案(总纲/美术/动效/音频/氛围/角色/建筑/关卡/编辑器/UI流/剧情/肉鸽)
+	└── design/              # 策划侧设计档案(总纲/美术/动效/音频/氛围/角色/建筑/关卡/UI流/剧情/肉鸽)
 ```
 
 > modes 层交互约束见 scripts/modes/README.md;肉鸽实现见文末「肉鸽模式」一节。
-> 预留目录(editor / net)的交互约束见各自 README;
+> 预留目录(net)的交互约束见其 README;
 > **音频资源约定**:音效/垫乐全部程序化合成(sfx.gd / ambience.gd),
 > 不引入二进制音频文件;未来如需引入,先按 ROADMAP 落音频总线方案。
 

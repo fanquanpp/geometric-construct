@@ -63,6 +63,7 @@ var _rogue_auto := false
 var _rogue_focus := 0           # --rogueautotest=N:指定主角跑通局
 var _tour_shot := false
 var _lane_shot := false
+var _perf_log := false
 var _auto_test := false
 
 
@@ -90,6 +91,8 @@ func _ready() -> void:
 	add_child(_menu)
 	geometry_panel = GeometryPanel.new()
 	add_child(geometry_panel)
+	geometry_panel.story_requested.connect(
+		func(kind: String) -> void: play_story(kind))
 	settings_panel = SettingsPanel.new()
 	add_child(settings_panel)
 	_pause = PauseMenu.new()
@@ -325,10 +328,6 @@ func _physics_process(_delta: float) -> void:
 		# 数字键:二级菜单开着时直达该_choose剧目内的场次;否则快速选剧目
 		# (1=序章开演 → 进二级菜单,2-4 未上演幕同样给出 toast 反馈);
 		# C 打开几何档案;S 打开设置;Esc 关二级菜单 / 退出游戏
-		if _menu.is_story_panel_open():
-			if Input.is_action_just_pressed("ui_cancel"):
-				_menu.close_story_panel()
-			return
 		if _menu.is_act_panel_open():
 			for i in 4:
 				if _key_pressed(KEY_1 + i):
@@ -709,6 +708,8 @@ func _parse_auto_shot() -> void:
 			_tour_shot = true
 		elif raw == "--laneshot":
 			_lane_shot = true
+		elif raw == "--perflog":
+			_perf_log = true
 		elif raw.begins_with("--zoom="):
 			debug_zoom = raw.substr(7).to_float()
 		elif raw.begins_with("--level="):
@@ -743,6 +744,12 @@ func _parse_auto_shot() -> void:
 		_run_tour_shot()
 	if _lane_shot:
 		_run_lane_shot()
+	if _perf_log:
+		_run_perf_log()
+	elif OS.is_debug_build() and OS.has_feature("mobile"):
+		# Android debug 包自动开基线日志(真机无法传 user args,
+		# adb logcat 直接抓 PERF 行);桌面 debug 不受影响。
+		_run_perf_log()
 	if _auto_test:
 		_run_auto_test()
 
@@ -899,6 +906,7 @@ func _run_tour_shot() -> void:
 			["deck", Vector2(4000, 2300)],
 			["shoulder", Vector2(4600, 1700)],
 			["under", Vector2(5600, 2650)],
+			["window", Vector2(6650, 2320)],
 			["turret", Vector2(7300, 1800)],
 			["tower", Vector2(7600, 1400)]],
 		6: [["spawn", Vector2(300, 2300)],
@@ -938,6 +946,21 @@ func _run_tour_shot() -> void:
 		await get_tree().create_timer(0.55).timeout
 		await _shot("tour_" + str(wp[0]))
 	get_tree().quit()
+
+
+## 性能基线日志(ROADMAP §5 Android 性能 P0):每秒向 stdout 打一行
+## Performance 监视数据,`adb logcat` 抓取;与 --autotest / 手工试玩同用。
+func _run_perf_log() -> void:
+	while is_inside_tree():
+		await get_tree().create_timer(1.0).timeout
+		print("PERF fps=%d process=%.2fms draw=%d prim=%d obj=%d mem=%.1fMB" % [
+			int(Performance.get_monitor(Performance.TIME_FPS)),
+			Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+			int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
+			int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
+			int(Performance.get_monitor(Performance.OBJECT_COUNT)),
+			Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0,
+		])
 
 
 ## 图层实验室截图(ROADMAP §1 M0 验收):装载 LevelData.layer_lab(),
@@ -1024,6 +1047,10 @@ func _run_panel_shot() -> void:
 		geometry_panel._switch(1)
 		await get_tree().create_timer(0.4).timeout
 		await _shot("panel_char%d" % page)
+	# 回廊页签(档案几何整合页)
+	geometry_panel.open(0, "gallery")
+	await get_tree().create_timer(0.5).timeout
+	await _shot("panel_gallery")
 	get_tree().quit()
 
 

@@ -15,7 +15,6 @@
 | 几何体角色设计(标尺与利用率 / 手感公约数 / 射程矩阵 / 配合矩阵 / 档案台词) | [design/characters.md](design/characters.md) |
 | 特殊建筑物(终点门 / 加速门 / 曲面板 / 移动构件 / 规划) | [design/structures.md](design/structures.md) |
 | 关卡设计(数据规范 / 写作流程 / 动态地图原则 / 组件语义与图层 / 网格量尺) | [design/levels.md](design/levels.md) |
-| 地图编辑器(双层内容模型 / 组件 schema / 验证器 / 桌面先行) | [design/editor.md](design/editor.md) |
 | 多人联机(三档连接 / 输入槽 / LAN 发现 / 同步规格 / 中继服) | [design/net.md](design/net.md) |
 | UI 流与层级(三型页面 / 层带规范 / 导航语义 / 整合规划) | [design/ui-flow.md](design/ui-flow.md) |
 | 动效与特效(程序化管线 / 资产清单 / 转场规范 / 性能预算 / 玩法配合) | [design/motion.md](design/motion.md) |
