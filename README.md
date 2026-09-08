@@ -1,6 +1,6 @@
 # 几何构成 GEOMETRIC CONSTRUCT
 
-> 仓库代号 **speed-rouge** · 构成主义几何肉鸽游戏 · **Godot 4.7**(GDScript 2.0,部分逻辑 TypeScript)
+> 仓库代号 **speed-rouge** · 构成主义几何肉鸽游戏 · **Godot 4.7**(GDScript 2.0)
 
 致敬《Thomas Was Alone》的 platformer 底子,以**构成主义**为美术与演出语言:
 四个几何体——**疾**(红方 · 冲刺/爬墙)、**跃**(黄竖长方 · 强反弹/承载)、
@@ -45,8 +45,8 @@
 
 1. `git clone` 本仓库;
 2. **安装第三方插件(必做,见下文[第三方插件](#第三方插件))**——`addons/` 整体不入库,
-   konado(剧情)/ gode(运行时)/ godot-ai(开发辅助)三个插件均需自行安装;
-3. 用 **Godot 4.7** 打开项目,在项目设置中启用三个插件后直接运行(主场景 `scenes/Main.tscn`)。
+   konado(剧情)与 godot-ai(开发辅助,可选)均需自行安装;
+3. 用 **Godot 4.7** 打开项目,在项目设置中启用 konado(开发期另加 godot-ai)后直接运行(主场景 `scenes/Main.tscn`)。
 
 导出:已配置 **Windows Desktop** 与 **Android** 两个导出预设(`export_presets.cfg`)。
 
@@ -71,25 +71,19 @@
 
 | 插件 | 版本 | 说明 | 源仓库 |
 | --- | --- | --- | --- |
-| gode | 2.4.3 | Godot 的 TypeScript / Node.js 运行时(**未随本仓库分发,需自行安装**) | <https://github.com/godothub/gode> |
 | Konado | 2.7.4 | 对话系统 / 剧情向游戏工具包(**未随本仓库分发,需自行安装**) | <https://github.com/godothub/konado> |
-| godot-ai | 3.2.5 | MCP / AI 开发辅助插件,仅开发期使用(**未随本仓库分发,需自行安装**) | <https://github.com/hi-godot/godot-ai> |
+| godot-ai | 3.2.5 | MCP / AI 开发辅助插件,仅开发期使用(**未随本仓库分发,需自行安装;导出包已排除**) | <https://github.com/hi-godot/godot-ai> |
 
 ### 安装插件(克隆后必做)
 
 本仓库**不包含** `addons/` 下任何插件(整体在 `.gitignore` 中排除);项目设置里的
-自动加载(`KND_I18n` / `EventLoop` / `_mcp_game_helper`)与启用插件列表都引用它们,
-缺插件时启动会报错、剧情与部分功能不可用。三个插件分别安装:
+自动加载(`KND_I18n` / `_mcp_game_helper`)与启用插件列表都引用它们,
+缺插件时启动会报错、剧情不可用。两个插件分别安装:
 
-- **gode**(≥ 2.4.3):自带全平台 Node.js 运行时二进制,体积约 780 MB,
-  超过 GitHub 单文件 100 MB 限制:
-
-  1. 从 [godothub/gode](https://github.com/godothub/gode) 的 Releases 或[官网文档](https://godothub.com/oss/gode/)下载插件包;
-  2. 将压缩包中的 `gode/` 目录解压到本项目的 `addons/` 下;
 - **Konado**(≥ 2.7.4):从 [godothub/konado](https://github.com/godothub/konado) 下载,
-  同样解压 `konado/` 到 `addons/` 下——剧情播放(序幕 / 第一幕 / 重跑 / 尾声)依赖它;
+  解压 `konado/` 到 `addons/` 下——剧情播放(序幕 / 第一幕 / 重跑 / 尾声)依赖它;
 - **godot-ai**(≥ 3.2.5,可选,仅开发期):从 [hi-godot/godot-ai](https://github.com/hi-godot/godot-ai) 下载,
-  解压 `godot_ai/` 到 `addons/` 下。
+  解压 `godot_ai/` 到 `addons/` 下(导出预设已将其排除,不会进导出包)。
 
 全部安装后,用 Godot 4.7 打开项目,在 **项目 → 项目设置 → 插件** 中启用。
 `addons/` 已被 git 整体忽略,本地安装后不会被误提交。
