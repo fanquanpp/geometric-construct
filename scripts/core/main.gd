@@ -16,12 +16,15 @@ var geometry_panel: GeometryPanel
 var settings_panel: SettingsPanel
 var touch_controls: TouchControls
 var _save: SaveManager
+var _ambience: Ambience
 var _current := -1
 var _unlocked := 0
 var _active_slot := 0
 var _auto_shot := false
 var debug_move := Vector2.ZERO
 var debug_jump := false
+## 镜头变焦覆盖(>0 时镜头锁定该 zoom):网格 LOD / 远景档截图验证用。
+var debug_zoom := 0.0
 var frame_no := 0
 
 var players: Array = []
@@ -59,6 +62,7 @@ var _rogue_shot := false
 var _rogue_auto := false
 var _rogue_focus := 0           # --rogueautotest=N:指定主角跑通局
 var _tour_shot := false
+var _lane_shot := false
 var _auto_test := false
 
 
@@ -70,6 +74,7 @@ func _ready() -> void:
 	var amb := Ambience.new()
 	amb.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(amb)
+	_ambience = amb
 
 	# 设置先于全部 UI 加载并应用(轮盘模式 / 音量在面板创建前就位)
 	SettingsManager.load_settings()
@@ -157,6 +162,7 @@ func start_level(index: int, intro := true) -> void:
 	_collect_players()
 	_state = State.PLAYING
 	Sfx.play("start")
+	_ambience_motif("prologue" if _current < 4 else "act1")
 
 	_menu.visible = false
 	_menu.close_act_panel()
@@ -200,6 +206,7 @@ func start_rogue_fragment(def: LevelDef, elite_title := "") -> void:
 	_collect_players()
 	_state = State.PLAYING
 	Sfx.play("start")
+	_ambience_motif("rogue_%s" % Geometries.get_def(rogue_dir.run.focus).slug)
 
 	_menu.visible = false
 	_menu.close_act_panel()
@@ -508,6 +515,14 @@ func finish_rogue_run() -> void:
 	_show_menu()
 
 
+# ———————————————— BGM motif ————————————————
+
+## BGM motif 随章节 / 肉鸽主角切换(audio.md §3:motif 即章节与角色的音乐画像)。
+func _ambience_motif(motif_name: String) -> void:
+	if _ambience != null:
+		_ambience.set_motif(motif_name)
+
+
 # ———————————————— 事件回调 ————————————————
 
 func on_player_died(p: Player) -> void:
@@ -692,6 +707,10 @@ func _parse_auto_shot() -> void:
 				_rogue_focus = raw.substr(15).to_int()
 		elif raw == "--tourshot":
 			_tour_shot = true
+		elif raw == "--laneshot":
+			_lane_shot = true
+		elif raw.begins_with("--zoom="):
+			debug_zoom = raw.substr(7).to_float()
 		elif raw.begins_with("--level="):
 			_shot_level = raw.substr(8).to_int()
 	if _auto_shot and _shot_dir.is_empty():
@@ -722,6 +741,8 @@ func _parse_auto_shot() -> void:
 		_run_rogue_auto_test()
 	if _tour_shot:
 		_run_tour_shot()
+	if _lane_shot:
+		_run_lane_shot()
 	if _auto_test:
 		_run_auto_test()
 
@@ -916,6 +937,78 @@ func _run_tour_shot() -> void:
 		p.velocity = Vector2.ZERO
 		await get_tree().create_timer(0.55).timeout
 		await _shot("tour_" + str(wp[0]))
+	get_tree().quit()
+
+
+## 图层实验室截图(ROADMAP §1 M0 验收):装载 LevelData.layer_lab(),
+## 分镜截取 back 层亮度 / who 不适用降透明 / front 遮挡淡出 / 逆的 bottom 天花板 /
+## 开关门与限时桥两态;配合 --zoom=N 可验网格 LOD 远景档。
+func _run_lane_shot() -> void:
+	if _shot_dir.is_empty():
+		_shot_dir = "C:/Atian/Project/shots_bm"
+	_shot_level = 99
+	_level_def = LevelData.layer_lab()
+	_rogue = false
+	_current = -1
+	_clear_level()
+	_level_root = LevelBuilder.build(_level_def)
+	add_child(_level_root)
+	_collect_players()
+	_state = State.PLAYING
+	_menu.visible = false
+	_hud.visible = true
+	touch_controls.set_in_game(true)
+	touch_controls.set_switch_available(true)
+	_hud.show_win(false)
+	_hud.set_level_info(_level_def)
+	_refresh_roster()
+	_hud.fade_from_black()
+	_switch_to(0, true)
+	await get_tree().create_timer(0.8).timeout
+
+	# ① back 梁区(疾视角):疾站在背景梁上 —— 梁压亮度仍可站,
+	#    下方可见 top 单向板(顶缘亮线加亮)
+	players[0].position = Vector2(1500, 760)
+	players[0].velocity = Vector2.ZERO
+	await get_tree().create_timer(0.8).timeout
+	await _shot("lane_back_dash")
+	# ② 圆视角同区:疾专属墙对圆降透明(视觉即机制)+ top 单向板
+	if players.size() > 3:
+		_switch_to(3, true)
+		players[3].position = Vector2(1480, 1740)
+		players[3].velocity = Vector2.ZERO
+		await get_tree().create_timer(0.8).timeout
+		await _shot("lane_back_roll")
+	# ② 动态构件区:限时桥 + faces=none 装饰(桥实心/虚化两态各一张)
+	_switch_to(0, true)
+	players[0].position = Vector2(2950, 1700)
+	players[0].velocity = Vector2.ZERO
+	await get_tree().create_timer(0.55).timeout
+	await _shot("lane_bridge_a")
+	await get_tree().create_timer(2.0).timeout
+	await _shot("lane_bridge_b")
+	# ③ 前景遮挡区(疾躲入 front 组件后 → 组件淡出)
+	players[0].position = Vector2(4900, 1750)
+	players[0].velocity = Vector2.ZERO
+	await get_tree().create_timer(0.6).timeout
+	await _shot("lane_front")
+	# ⑤ 逆 + bottom 天花板:翻转重力贴上梁底(faces=bottom 单向面),
+	#    同框可见 back 梁压亮度;随后传送到开关门区
+	_switch_to(2, true)
+	players[2].gravity_dir = -1
+	players[2].up_direction = Vector2(0, 1)
+	players[2].position = Vector2(2950, 660)
+	players[2].velocity = Vector2.ZERO
+	await get_tree().create_timer(1.2).timeout
+	if camera_rig != null:
+		print("LANE SHOT cam=", camera_rig.position, " zoom=", camera_rig.zoom)
+	await _shot("lane_bottom_fall")
+	players[2].gravity_dir = 1
+	players[2].up_direction = Vector2(0, -1)
+	players[2].position = Vector2(5400, 1740)
+	players[2].velocity = Vector2.ZERO
+	await get_tree().create_timer(0.8).timeout
+	await _shot("lane_gate")
 	get_tree().quit()
 
 

@@ -28,6 +28,10 @@
   刷出来的地形自动拥有正确碰撞与层级。
 - 组件层托盘按 `tileset` 图集五层分类一一对应
   (terrain / ramps / decor / mover / guides → 美术加一层分类,编辑器多一组笔刷)。
+- **画布渲染 = 瓦片后端**(TileRenderer,art-style.md §6.7):编辑器产物
+  格对齐、autotile 天然无缝;组件画布外观 = 游戏内渲染(§9 同一路径),
+  lane / who / faces 的 modulate 语义与 `_draw()` 后端共用引擎代码。
+  官方关与编辑器产物的双后端分工同样见 art-style.md §6.7。
 
 ## 2. 组件 schema
 

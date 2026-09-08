@@ -47,6 +47,9 @@ var is_active := false
 var rider_of: Player = null
 var speed_buffed := false     # 加速门强化(永久,直至死亡重生)
 var gravity_dir: int = 1      # 当前重力方向(置换会翻转;1 = 向下,-1 = 向上)
+## 世界碰撞位并集(LevelBuilder 构建期按语义组合算定,levels.md §7.6;
+## 缺省组合恒为位 1,与旧版 mask=3 行为逐位一致)。
+var world_mask := 1
 
 ## 进门时的缩小系数,由 Tween 驱动。
 var shrink := 1.0
@@ -81,7 +84,7 @@ var _body_box: StyleBoxFlat
 
 func _ready() -> void:
 	collision_layer = 2
-	collision_mask = 3
+	collision_mask = 2 | world_mask
 	gravity_dir = def.gravity_dir
 	up_direction = Vector2(0, -gravity_dir)
 	z_index = 5
@@ -393,6 +396,13 @@ func _physics_process(delta: float) -> void:
 	elif _ramp_timer > 0.0:
 		_ramp_timer = maxf(_ramp_timer - dt, 0.0)
 
+	# ———— 钢琴地板砖:踩踏 / 滚过发声(audio.md §4) ————
+	for i in get_slide_collision_count():
+		var col := get_slide_collision(i)
+		var obj = col.get_collider()
+		if obj is LevelBuilder.PianoTile and col.get_normal().dot(up_direction) > 0.7:
+			(obj as LevelBuilder.PianoTile).strike(self, vel.length())
+
 	# 高速残影采样
 	_update_trail(vel)
 
@@ -586,10 +596,13 @@ func _squash(sx: float, sy: float) -> void:
 	_squash_y = sy
 
 
-## 向下射线找地面,供 _Draw 绘制脚下投影。
+## 向下(重力方向)射线找地面,供 _Draw 绘制脚下投影。
+## 查询走自身碰撞位:对我不适用的组件既不碰撞也不投影(视觉即机制)。
 func _update_ground_shadow() -> void:
 	var down := Vector2(0, gravity_dir)
-	var q := PhysicsRayQueryParameters2D.create(position, position + down * 460.0, 1)
+	var q := PhysicsRayQueryParameters2D.create(
+		position, position + down * 460.0, collision_mask)
+	q.exclude = [get_rid()]
 	var hit := get_world_2d().direct_space_state.intersect_ray(q)
 	_shadow_dist = position.distance_to(hit["position"]) if not hit.is_empty() else INF
 

@@ -127,7 +127,7 @@ func _ready() -> void:
 	_amb_value = Ui.l("100%", 15, Ui.HEAD, Ui.PAPER)
 	_amb_value.custom_minimum_size = Vector2(56, 0)
 	_amb_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	body.add_child(_row("环境垫乐", _amb_slider, _amb_value))
+	body.add_child(_row("垫乐 / BGM", _amb_slider, _amb_value))
 
 	body.add_child(_rule())
 

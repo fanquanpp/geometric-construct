@@ -7,8 +7,8 @@ SVG 成品一律由 `tools/gen_svgs.py` 生成,禁止手改。
 ## tiles/ · 地图组件瓦片源(Aseprite 唯一权威)
 
 地图组件像素素材的**唯一修改入口**,成品 PNG 导出到 `assets/tiles/`
-(生成物,只读;当前**暂未接入渲染**,为玩家自制关卡编辑器预制,
-规范与逐片映射见 `docs/design/art-style.md §6`)。
+(生成物,只读;为地图编辑器与双管线渲染预制——**职责分工见
+`docs/design/art-style.md §6.7`**,逐片映射见 §6.3)。
 
 重导出命令(项目根目录执行,Aseprite 路径见本机部署):
 

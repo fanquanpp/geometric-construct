@@ -120,11 +120,13 @@ static func _static_init() -> void:
 		]))
 
 	# 04 · 圆 — 过山车:曲面滑行 + 飞跃断路
+	# v0.13:起步直道前 6 格 = 钢琴地板砖试水段(audio.md §4)——
+	#   滚过即奏出上行琶音,玩家行为即配乐;砖面与原地面同高,碰撞零变化。
 	LEVELS.append(_make("圆 · 过山车", 3,
 		"圆不会跳:沿曲面滑行,从板端沿切线飞出。\n加速门把速度抬到 2.5 倍——缺口越大,飞得越远。",
 		Vector2(3200, 1080), [3],
 		[
-			Rect2(0, 920, 1080, 120),     # 起步直道
+			Rect2(600, 920, 480, 120),    # 起步直道后段
 			Rect2(1340, 920, 710, 120),   # 缺口 1(2.6 格)后的滑行段
 			Rect2(2830, 920, 370, 120),   # 大飞跃(7.8 格)后的终点台
 		],
@@ -146,7 +148,9 @@ static func _static_init() -> void:
 			[[3, Vector2(3140, 874)]],
 			[Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2(140, 894)], [],
 			[
-				{pos = Vector2(240, 780), text = "Shift · 冲刺(轮盘拉满同效)",
+				{pos = Vector2(300, 800), text = "起步直道 · 琴砖(踩踏滚过即发声)",
+					touch = "起步直道 · 琴砖(滚过即发声)"},
+				{pos = Vector2(240, 700), text = "Shift · 冲刺(轮盘拉满同效)",
 					touch = "轮盘拉满 · 冲刺加速"},
 				{pos = Vector2(830, 640), text = "沿曲面滑行 · 板端沿切线飞出",
 					touch = "沿曲面滑行 · 板端沿切线飞出"},
@@ -664,6 +668,70 @@ static func _static_init() -> void:
 				touch = "主电梯 · 直上琴台"},
 		]))
 	LEVELS[9].kill_y = 3300.0    # 地面 y28 格是安全网:坠落判定面下移到管基之下
+
+	# L3 钢琴砖试水段(audio.md §4):起步直道前 6 格,音级随行进上行 ——
+	# 圆滚过 = 连续琶音 glissando;砖面与原地面同高(y920),碰撞零变化。
+	LEVELS[3].piano_tiles = [
+		{"rect": Rect2(0, 920, 100, 120), "note": "C4"},
+		{"rect": Rect2(100, 920, 100, 120), "note": "E4"},
+		{"rect": Rect2(200, 920, 100, 120), "note": "G4"},
+		{"rect": Rect2(300, 920, 100, 120), "note": "A4"},
+		{"rect": Rect2(400, 920, 100, 120), "note": "C5"},
+		{"rect": Rect2(500, 920, 100, 120), "note": "E5"},
+	]
+
+
+## 图层实验室(--laneshot 专用,M0 验收关卡):一次性陈列全部组件语义 ——
+## lane 三档 / faces 四档 / who 专属 / 开关门 / 限时桥 / 钢琴砖。
+## 不进剧目 roster(LEVELS),不参与解锁进度。
+static func layer_lab() -> LevelDef:
+	var def := LevelDef.new()
+	def.name = "图层实验室"
+	def.focus = 0
+	def.intro = "组件语义陈列:层 / 面 / 归属 / 动态构件。"
+	def.size = Vector2(6000, 2000)
+	def.kill_y = 2300.0
+	def.top_kill_y = -600.0
+	def.roster = [0, 1, 2, 3]
+	def.spawns = [Vector2(200, 1740), Vector2(340, 1700),
+		Vector2(480, 1750), Vector2(620, 1744)]
+	def.platforms = [
+		# 主地面(mid/full/全员 = 缺省语义)
+		Rect2(0, 1800, 6000, 200),
+		# faces=top:单向薄板 —— 可自下方穿过,上方可站
+		{"rect": Rect2(700, 1300, 900, 50), "faces": "top"},
+		# 疾专属墙(who=[0]):对其他几何体完全不存在
+		{"rect": Rect2(1800, 1300, 80, 500), "who": [0]},
+		# faces=bottom:逆的重力天花板 —— 置换后落到梁底行走
+		{"rect": Rect2(2300, 500, 1300, 80), "faces": "bottom"},
+		# back 层梁:背景结构,亮度压到背景红线内(仍可站立)
+		{"rect": Rect2(1000, 800, 1700, 100), "lane": "back"},
+		# 逆专属浮板(bottom):置换对答区
+		{"rect": Rect2(3900, 1100, 500, 50), "who": [2], "faces": "bottom"},
+		# front 层遮挡:玩家躲入其后时降透明度
+		{"rect": Rect2(4700, 1300, 450, 500), "lane": "front"},
+		# faces=none:纯装饰线框
+		{"rect": Rect2(2500, 1300, 300, 200), "faces": "none"},
+	]
+	def.lever_gates = [
+		{   # 踩住开关 → 门板开(虚化);合作语言:一人踩门一人过
+			"lever": Rect2(5250, 1760, 160, 40),
+			"door": {"rect": Rect2(5650, 1400, 80, 400)},
+		},
+	]
+	def.timed_bridges = [
+		{   # 限时桥:实心 2s ↔ 虚化 2s,可预读线框
+			"rect": Rect2(2650, 1500, 700, 50),
+			"on_time": 2.0, "off_time": 2.0, "phase": 0.0,
+		},
+	]
+	def.piano_tiles = [
+		{"rect": Rect2(3400, 1800, 100, 200), "note": "C4"},
+		{"rect": Rect2(3500, 1800, 100, 200), "note": "E4"},
+		{"rect": Rect2(3600, 1800, 100, 200), "note": "G4"},
+		{"rect": Rect2(3700, 1800, 100, 200), "note": "C5"},
+	]
+	return def
 
 
 static func _make(name: String, focus: int, intro: String, size: Vector2,

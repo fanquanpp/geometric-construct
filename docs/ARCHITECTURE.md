@@ -25,6 +25,7 @@ speed-rouge/
 │   │   ├── geometries.gd    #   几何体数据表(四人,弹性 0.5 / 跃 2.0 固定)
 │   │   ├── level_def.gd     #   关卡定义类(含 movers 移动构件字段)
 │   │   ├── level_data.gd    #   关卡数据表(序章 4 场 + 第一幕 6 场巨构)
+│   │   ├── component.gd     #   地图组件语义四元组 lane/faces/who/tags(levels.md §7)
 │   │   ├── run_modifiers.gd #   肉鸽词条表(通用 + 主角专属,稀有度)
 │   │   └── rogue_fragments.gd # 肉鸽单人片段库(按主角分组的快/稳排法 + 精英考)
 │   ├── entities/            # 场景内实体
@@ -32,7 +33,8 @@ speed-rouge/
 │   │   ├── exit_door.gd     #   几何体专属终点门(到站不收取,可撤销;sealed 终点激活)
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)
 │   ├── world/               # 关卡装配与环境
-│   │   ├── level_builder.gd #   LevelDef → 节点树(网格/平台/移动构件/门/几何体/相机/镜头微震)
+│   │   ├── level_builder.gd #   LevelDef → 节点树(网格/平台/移动构件/动态构件/门/几何体/相机/镜头微震;
+│   │   │                    #   渲染双后端 LaneRenderer _draw / TileRenderer 瓦片,分工见 art-style.md §6.7)
 │   │   └── backdrop.gd      #   构成主义几何背景(视差)
 │   ├── ui/                  # 全部 UI(CanvasLayer)
 │   │   ├── ui.gd            #   主题工厂:调色板/字体/StyleBox/Theme/文字组件
@@ -55,7 +57,8 @@ speed-rouge/
 │   ├── editor/ (预留)       # 自主地图编辑器(设计权威 docs/design/editor.md;
 │   │                        #   桌面键鼠先行,移动端后置;前置 = 图层系统 M0,
 │   │                        #   见 docs/ROADMAP.md §1)
-│   └── net/    (预留)       # 跨设备联机(scripts/net/README.md)
+│   └── net/    (预留)       # 跨设备联机(设计权威 docs/design/net.md;
+│                            #   里程碑 N0–N3 见 ROADMAP §3)
 ├── story/                    # Konado KS 剧本(剧情回廊可回看)
 │   ├── prologue.ks          #   序幕(标题菜单)
 │   ├── act1.ks              #   第一幕开演剧(首次进第一幕自动播放)
@@ -64,6 +67,8 @@ speed-rouge/
 │   └── epilogue.ks          #   尾声(通关画面播放)
 ├── assets/
 │   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入)
+│   ├── tiles/               # 瓦片成品 PNG/GIF(Aseprite 源导出存档,只读;
+│   │                        #   双管线渲染分工见 docs/design/art-style.md §6/§6.7)
 │   ├── fonts/               # NotoSansSC 可变字体
 │   └── svg/                 # 全部图标(仅 flat 单样式,见 docs/DESIGN.md)
 │       ├── characters/      #   角色徽标(与 slug 对应)
@@ -75,10 +80,11 @@ speed-rouge/
 │       └── buttons/         # 按钮图标
 ├── tools/
 │   └── gen_svgs.py          # SVG 素材生成器(改素材先改这里再生成)
-├── tests/                   # 开发用截图 / 验证场景(shot_*.tscn)
+├── tests/                   # 开发用截图 / 验证场景(shot_*.tscn;
+│                            #   layer_check.gd 图层语义 headless 验证)
 ├── build/                   # 构建产物(已 gitignore)
 └── docs/                    # ARCHITECTURE / DESIGN / ROADMAP / UPDATE / CHANGELOG
-	└── design/              # 策划侧设计档案(总纲/美术/角色/建筑/关卡/编辑器/剧情/肉鸽)
+	└── design/              # 策划侧设计档案(总纲/美术/动效/音频/氛围/角色/建筑/关卡/编辑器/UI流/剧情/肉鸽)
 ```
 
 > modes 层交互约束见 scripts/modes/README.md;肉鸽实现见文末「肉鸽模式」一节。
@@ -92,7 +98,8 @@ speed-rouge/
 动作:move_left / move_right / jump / sprint / switch_next / switch_prev /
 restart / pause。player.gd 只读动作,不区分输入来源;手柄:左摇杆/十字键移动,
 A 跳,X 冲刺,LB/RB 切换,Back 重来,Start 暂停。
-(同屏双人 / 联机需把"读全局动作"重构为输入槽注入,方案见 ROADMAP。)
+(同屏双人 / 联机需把"读全局动作"重构为输入槽注入,设计权威
+`docs/design/net.md` §2,里程碑 N0 见 ROADMAP §3。)
 
 ## 剧情(Konado)
 
@@ -144,7 +151,8 @@ A 跳,X 冲刺,LB/RB 切换,Back 重来,Start 暂停。
 - **调试钩子**(命令行 user args,`--` 之后):
   `--autotest=N` 自动通关测试 · `--autoshot=N` 关卡截图 · `--menushot` 菜单截图 ·
   `--panelshot` 档案页截图 · `--introshot` 开场卡截图 · `--doorshot` 门特写 ·
-  `--tourshot` 巨构巡航截图 · `--rogueshot` 肉鸽 UI 截图 ·
+  `--tourshot` 巨构巡航截图 · `--laneshot` 图层实验室截图 ·
+  `--zoom=N` 锁定镜头变焦 · `--rogueshot` 肉鸽 UI 截图 ·
   `--rogueautotest[=N]` 肉鸽按主角自动跑整局 · `--shotdir=<path>` 输出目录。
 
 ## 肉鸽模式(scripts/modes/rogue)

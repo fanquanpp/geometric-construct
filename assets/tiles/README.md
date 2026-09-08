@@ -1,8 +1,10 @@
 # 瓦片成品存档 · assets/tiles
 
-`assets/art/tiles/*.aseprite` 的**导出生成物**。引擎可导入,但当前**无代码引用**——
-瓦片素材暂不接入渲染(地图仍是 `_draw()` 程序化),为玩家自制关卡编辑器预制,
-统一替换适配时再接入。
+`assets/art/tiles/*.aseprite` 的**导出生成物**。引擎可导入,当前无代码引用——
+瓦片为地图编辑器与**双管线渲染**预制(职责分工见
+`docs/design/art-style.md §6.7`):瓦片承担地形外观"皮",编辑器(M2)产物
+强制瓦片路径,官方关统一替换为 M2 后单次发版决策;语义 / 动态 / 投影
+永远在引擎侧。
 
 **禁止手改本目录 PNG / GIF**:修改请改源 `.aseprite` 后重导出
 (命令见 `assets/art/README.md`;接入规范与逐片映射见 `docs/design/art-style.md §6`)。

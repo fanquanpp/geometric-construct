@@ -53,3 +53,5 @@
 - [ ] `--autotest=0..3` 全部 LEVEL COMPLETE(见 docs/ARCHITECTURE.md 运行命令)
 - [ ] `--menushot / --panelshot / --autoshot=0..3` 截图人工过目(风格锚定不跑偏)
 - [ ] 新增素材已进 `gen_svgs.py`,无游离的手改 svg
+- [ ] Android:导出段显式 `texture_format/etc2_astc=true`、`rendering/viewport/hdr_2d` 关闭(核对项见 docs/ROADMAP.md §5「Android 性能」)
+- [ ] Android 真机抽查:`--perflog` 基线 + `dumpsys gfxinfo` 帧时间无异常 jank(钩子落地后生效)
