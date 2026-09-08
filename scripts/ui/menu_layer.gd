@@ -102,7 +102,8 @@ func _ready() -> void:
 	keys.modulate.a = 0.0
 	left.add_child(keys)
 
-	var ver_left := Ui.l(Version.full_string(), 12, Ui.LIGHT, Color(Ui.DIM, 0.8))
+	var ver_left := Ui.l("%s · 反犬旁僻(fanquanpp)" % Version.full_string(),
+		12, Ui.LIGHT, Color(Ui.DIM, 0.8))
 	ver_left.position = Vector2(4, 648)
 	ver_left.modulate.a = 0.0
 	left.add_child(ver_left)
@@ -138,9 +139,7 @@ func _ready() -> void:
 		b.pivot_offset = Vector2(12, 31)
 		Ui.wire_button(b)
 		b.pressed.connect(func() -> void: try_open_act(idx))
-		b.mouse_entered.connect(func() -> void:
-			Sfx.play("ui_hover")
-			show_act_hint(idx))
+		b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 		b.focus_entered.connect(func() -> void: show_act_hint(idx))
 		list.add_child(b)
 		_act_btns.append(b)
@@ -564,7 +563,6 @@ func set_unlocked(unlocked: int) -> void:
 		var b: Button = _act_btns[i]
 		# 未上演的幕压暗内容(入口保留、可点、有反馈;不使用 disabled 哑按钮)
 		b.self_modulate = Color(1, 1, 1, 1.0 if playable else 0.5)
-		b.tooltip_text = act["hint"]
 	if _act_btns.size() > 0:
 		_act_btns[0].grab_focus()
 	_chapter_hint.text = "剧目进度 · 已解锁 %d / %d 场" % [unlocked + 1, LevelData.LEVELS.size()]

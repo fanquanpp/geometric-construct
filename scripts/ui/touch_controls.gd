@@ -211,7 +211,8 @@ func _relayout() -> void:
 	# 轮盘:扁平六边形,贴左下角;高度刻意压扁,只暗示左右滑动
 	var half_w := clampf(vis.x * 0.085, 108.0, 148.0)
 	var half_h := clampf(half_w * 0.30, 24.0, 40.0)
-	var wheel_center := Vector2(left + 26.0 + half_w, vis.y - bottom - 18.0 - half_h)
+	# v0.13.4:贴底间隙 18 → 52,轮盘整体上移,不再贴着屏幕下缘
+	var wheel_center := Vector2(left + 26.0 + half_w, vis.y - bottom - 52.0 - half_h)
 	_wheel.setup(half_w, half_h, wheel_center)
 
 	# 左侧:切换按钮 —— 队伍 chips(左上)下方一段距离,左缘与 chips 对齐
