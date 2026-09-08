@@ -37,6 +37,7 @@ func _ready() -> void:
 		Ui.sb(Color(Ui.INK_2, 0.98), 0, Color(Ui.PAPER, 0.2), 1, 0, 0))
 	panel.pivot_offset = Vector2(200, 0)
 	center.add_child(panel)
+	Adaptive.register_card(panel)
 	_panel = panel
 
 	var vb := VBoxContainer.new()

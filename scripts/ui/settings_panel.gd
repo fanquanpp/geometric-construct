@@ -63,6 +63,7 @@ func _ready() -> void:
 			_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Ui.RED, 3.0)
 			_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Ui.RED, 3.0))
 	center.add_child(_card)
+	Adaptive.register_card(_card)
 
 	var vb := VBoxContainer.new()
 	vb.add_theme_constant_override("separation", 8)

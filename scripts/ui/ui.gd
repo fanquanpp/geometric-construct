@@ -31,6 +31,17 @@ static var _icons := {}
 
 static func init_font() -> void:
 	_base = load("res://assets/fonts/NotoSansSC-VF.ttf")
+	if _base is FontFile:
+		# 文字清晰度(v0.13.3):不同分辨率 / 缩放下保持锐利 —— 设置必须落在
+		# FontFile 上(FontVariation 没有这些属性,赋值会在运行时中断初始化,
+		# 字体全空导致开屏/菜单无文字,真机已踩坑):
+		# 灰度抗锯齿(彩色子像素在手机屏上出彩边)+ 常规 hinting(小字号笔画
+		# 更挺)+ 关闭子像素定位(CJK 密排字形对齐整数网格更脆)+
+		# 生成 mipmap(fit_design 缩小、镜头 zoom<1 的世界文字缩小时不糊)。
+		_base.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+		_base.hinting = TextServer.HINTING_NORMAL
+		_base.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+		_base.generate_mipmaps = true
 	if _base == null:
 		# 字体缺失时退回系统字体
 		var sf := SystemFont.new()
@@ -58,6 +69,7 @@ static func weight(w: int, spacing := 0) -> Font:
 	fv.base_font = _base
 	if spacing != 0:
 		fv.spacing_glyph = spacing
+
 	var ot := {}
 	ot[_tag("wght")] = w
 	fv.variation_opentype = ot

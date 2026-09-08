@@ -476,6 +476,9 @@ func _make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 
 	var hint := Ui.l(row["hint"], 13, Ui.LIGHT, Ui.DIM)
 	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# 限宽自动换行:任何宽高比下都不越出设计稿右缘(fit_design 4:3 实测裁切修复)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.custom_minimum_size = Vector2(264, 0)
 	hb.add_child(hint)
 	return hb
 

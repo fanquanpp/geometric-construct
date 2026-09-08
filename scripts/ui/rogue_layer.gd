@@ -128,6 +128,7 @@ func _open_overlay() -> VBoxContainer:
 			card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Ui.RED, 3.0))
 	card.resized.connect(func() -> void: card.pivot_offset = card.size / 2.0)
 	(_overlay.get_node("Center") as CenterContainer).add_child(card)
+	Adaptive.register_card(card)
 	var vb := VBoxContainer.new()
 	vb.add_theme_constant_override("separation", 10)
 	card.add_child(vb)

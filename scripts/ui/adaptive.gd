@@ -56,3 +56,25 @@ static func fit_design(c: Control) -> void:
 	c.pivot_offset = DESIGN * 0.5
 	c.scale = Vector2(s, s)
 	c.position = (vis - DESIGN) * 0.5
+
+
+## 卡片自适应缩放:画布(含安全区)小于卡片时整体等比缩小,任何窗口下完整可见。
+## 适用于原画布居中卡片(设置 / 暂停 / 剧目二级 / 肉鸽)——
+## 与 fit_design(海报式整页缩放)互补;卡片由 CenterContainer 居中,
+## scale 围绕中心收缩,不破坏居中。卡片内容变化时 resized 信号自动重算。
+static func register_card(card: Control, margin := Vector2(56, 40)) -> void:
+	var update := func() -> void:
+		var vp := card.get_viewport()
+		if vp == null or card.size.x <= 1.0:
+			return
+		var vis := visible_size(vp)
+		var s: float = minf(1.0, minf(
+			(vis.x - margin.x) / card.size.x,
+			(vis.y - margin.y) / card.size.y))
+		card.pivot_offset = card.size * 0.5
+		card.scale = Vector2(s, s)
+	card.resized.connect(update)
+	if card.get_parent() != null:
+		card.get_parent().resized.connect(update)
+	card.get_viewport().size_changed.connect(update)
+	update.call_deferred()

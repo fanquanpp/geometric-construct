@@ -270,6 +270,8 @@ func _play_entrance(kicker: Label, intro: Label, keys: Label, ver: Label,
 
 
 func _process(delta: float) -> void:
+	if not visible:
+		return
 	_t += delta
 	# 漂浮徽标:慢速旋转 + 呼吸浮动(M5:周期 2s 上下,永不抢焦点)
 	for i in _floaters.size():
@@ -334,6 +336,7 @@ func _build_act_panel(root: Control) -> void:
 	_act_card.resized.connect(func() -> void:
 		_act_card.pivot_offset = _act_card.size / 2.0)
 	center.add_child(_act_card)
+	Adaptive.register_card(_act_card)
 
 	var vb := VBoxContainer.new()
 	vb.add_theme_constant_override("separation", 10)
@@ -447,6 +450,9 @@ func _populate_act_rows(idx: int) -> void:
 		b.add_theme_font_override("font", Ui.HEAD)
 		b.add_theme_font_size_override("font_size", 19)
 		b.add_theme_constant_override("h_separation", 14)
+		# 图标限宽 28:SVG 原始尺寸会把行高撑到 ~80px,
+		# 六行关卡的卡片总高超出 720 设计稿被上下裁切(真机实测修复)
+		b.add_theme_constant_override("icon_max_width", 28)
 		b.icon = Ui.icon("characters/%s-flat.svg" % Geometries.get_def(def.focus).slug)
 		b.text = "%02d   %s" % [k + 1, def.name]
 		b.pivot_offset = Vector2(12, 27)
