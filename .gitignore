@@ -31,5 +31,11 @@ Desktop.ini
 .vscode/
 .idea/
 
-# ===== Windows 临时锁文件(导出覆盖被占用文件时产生) =====
-~*.dll
+# ===== Windows 临时锁文件(导出/插件覆盖被占用文件时产生,如 ~libgode_runtime.dll~RF*.TMP) =====
+~*
+*.tmp
+
+# ===== Python 工具链杂物(tools/*.py) =====
+__pycache__/
+*.pyc
+*.log

@@ -1,2 +1,19 @@
 # Normalize EOL for all files that Git considers text files.
 * text=auto eol=lf
+
+# ===== 二进制文件:禁止 EOL 转换 / 文本 diff =====
+*.png binary
+*.gif binary
+*.webp binary
+*.jpg binary
+*.jpeg binary
+*.ttf binary
+*.otf binary
+*.aseprite binary
+*.apk binary
+*.pck binary
+*.exe binary
+*.dll binary
+*.zip binary
+*.keystore binary
+*.jks binary
