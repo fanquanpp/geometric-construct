@@ -80,9 +80,10 @@ func _ready() -> void:
 	add_child(amb)
 	_ambience = amb
 
-	# 设置先于全部 UI 加载并应用(轮盘模式 / 音量在面板创建前就位)
+	# 设置先于全部 UI 加载并应用(轮盘模式 / 音量在面板创建前就位;
+	# 画面分辨率仅在命令行未给 --resolution 时应用,截图钩子优先)
 	SettingsManager.load_settings()
-	SettingsManager.apply_all()
+	SettingsManager.apply_all_at_boot()
 
 	# TouchControls 先于 HUD 创建:HUD 就能感知触屏模式(提示条 / 坐标位置)
 	touch_controls = TouchControls.new()

@@ -15,6 +15,13 @@ static var vibration := true          # 触感反馈(按下虚拟按键轻震)
 static var sfx_volume := 1.0          # 音效音量 0.0 - 1.0(线性)
 static var ambience_volume := 1.0     # 环境垫乐音量 0.0 - 1.0(线性)
 
+## 画面(仅桌面;移动端全屏独占,面板隐藏该分区,ROADMAP V6)。
+## 命令行 --resolution 优先于存档值(截图钩子依赖)。
+const RESOLUTIONS: Array[Vector2i] = [Vector2i(1280, 720), Vector2i(1600, 900),
+	Vector2i(1920, 1080)]
+static var resolution := Vector2i(1280, 720)
+static var fullscreen := false
+
 
 static func load_settings() -> void:
 	var cfg := ConfigFile.new()
@@ -26,6 +33,11 @@ static func load_settings() -> void:
 	vibration = bool(cfg.get_value("control", "vibration", true))
 	sfx_volume = clampf(float(cfg.get_value("audio", "sfx", 1.0)), 0.0, 1.0)
 	ambience_volume = clampf(float(cfg.get_value("audio", "ambience", 1.0)), 0.0, 1.0)
+	var res_str := str(cfg.get_value("video", "resolution", "1280x720"))
+	for r: Vector2i in RESOLUTIONS:
+		if res_str == "%dx%d" % [r.x, r.y]:
+			resolution = r
+	fullscreen = bool(cfg.get_value("video", "fullscreen", false))
 
 
 static func write_settings() -> void:
@@ -34,6 +46,8 @@ static func write_settings() -> void:
 	cfg.set_value("control", "vibration", vibration)
 	cfg.set_value("audio", "sfx", sfx_volume)
 	cfg.set_value("audio", "ambience", ambience_volume)
+	cfg.set_value("video", "resolution", "%dx%d" % [resolution.x, resolution.y])
+	cfg.set_value("video", "fullscreen", fullscreen)
 	cfg.save(SETTINGS_PATH)
 
 
@@ -67,6 +81,43 @@ static func set_ambience_volume(v: float) -> void:
 	ambience_volume = clampf(v, 0.0, 1.0)
 	Ambience.set_volume_scale(ambience_volume)
 	write_settings()
+
+
+static func set_resolution(v: Vector2i) -> void:
+	resolution = v
+	write_settings()
+	apply_video()
+
+
+static func set_fullscreen(on: bool) -> void:
+	fullscreen = on
+	write_settings()
+	apply_video()
+
+
+## 应用画面设置(仅桌面非 headless)。启动时仅在无 --resolution 命令行参数时
+## 调用一次(截图钩子的 --resolution 必须赢过存档值)。
+static func apply_video() -> void:
+	if OS.has_feature("mobile") or DisplayServer.get_name() == "headless":
+		return
+	if fullscreen:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+		return
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	DisplayServer.window_set_size(resolution)
+	var screen := DisplayServer.screen_get_usable_rect(
+		DisplayServer.window_get_current_screen())
+	DisplayServer.window_set_position(
+		screen.position + (screen.size - resolution) / 2)
+
+
+## 启动应用:命令行给了 --resolution(截图钩子/调试)则存档值让位。
+static func apply_all_at_boot() -> void:
+	apply_all()
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--resolution"):
+			return
+	apply_video()
 
 
 ## 启动时把持久化值应用到各运行系统(Main._ready 先于 UI 创建调用)。

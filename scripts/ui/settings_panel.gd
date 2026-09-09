@@ -25,6 +25,8 @@ var _sfx_slider: HSlider
 var _sfx_value: Label
 var _amb_slider: HSlider
 var _amb_value: Label
+var _res_btns: Array = []
+var _fs_btn: CheckButton
 
 
 func _ready() -> void:
@@ -108,6 +110,25 @@ func _ready() -> void:
 	body.add_child(_row("触感反馈(按键轻震)", _vib_btn))
 
 	body.add_child(_rule())
+
+	# ———— 画面(仅桌面;移动端全屏独占,不渲染本分区) ————
+	if not OS.has_feature("mobile"):
+		body.add_child(_section_label("画面 VIDEO"))
+		var res_row := HBoxContainer.new()
+		res_row.add_theme_constant_override("separation", 10)
+		_res_btns.clear()
+		for r: Vector2i in SettingsManager.RESOLUTIONS:
+			var btn := _mode_btn("%d×%d" % [r.x, r.y])
+			btn.pressed.connect(func() -> void: _set_resolution(r))
+			_res_btns.append(btn)
+			res_row.add_child(btn)
+		body.add_child(_row("窗口分辨率", res_row))
+		_fs_btn = _toggle_btn()
+		_fs_btn.toggled.connect(func(on: bool) -> void:
+			Sfx.play("ui_click")
+			SettingsManager.set_fullscreen(on))
+		body.add_child(_row("全屏", _fs_btn))
+		body.add_child(_rule())
 
 	# ———— 音频 ————
 	body.add_child(_section_label("音频 AUDIO"))
@@ -270,10 +291,24 @@ func _sync_from_settings() -> void:
 	_wheel_float_btn.set_pressed_no_signal(SettingsManager.wheel_mode
 		== SettingsManager.WHEEL_FLOAT)
 	_vib_btn.set_pressed_no_signal(SettingsManager.vibration)
+	if not OS.has_feature("mobile"):
+		for i in _res_btns.size():
+			var r: Vector2i = SettingsManager.RESOLUTIONS[i]
+			(_res_btns[i] as Button).set_pressed_no_signal(
+				SettingsManager.resolution == r)
+		_fs_btn.set_pressed_no_signal(SettingsManager.fullscreen)
 	_sfx_slider.set_value_no_signal(SettingsManager.sfx_volume)
 	_sfx_value.text = "%d%%" % roundi(SettingsManager.sfx_volume * 100.0)
 	_amb_slider.set_value_no_signal(SettingsManager.ambience_volume)
 	_amb_value.text = "%d%%" % roundi(SettingsManager.ambience_volume * 100.0)
+
+
+func _set_resolution(v: Vector2i) -> void:
+	Sfx.play("ui_click")
+	SettingsManager.set_resolution(v)
+	for i in _res_btns.size():
+		var r: Vector2i = SettingsManager.RESOLUTIONS[i]
+		(_res_btns[i] as Button).set_pressed_no_signal(r == v)
 
 
 func _set_wheel(mode: String) -> void:
