@@ -65,6 +65,6 @@
 - [ ] `--autotest=0` LEVEL COMPLETE(机制试炼场,当前唯一在演关;见 docs/ARCHITECTURE.md 运行命令)
 - [ ] `--menushot` / `--panelshot`(档案几何全页签)/ `--autoshot=0` / `--tourshot` 截图人工过目(风格锚定不跑偏)
 - [ ] 新增 SVG 已进 `gen_svgs.py`,无游离的手改 svg;新增图鉴插图源在
-      `assets/art/tiles_v2/` 且 PNG 已导出到 `assets/archive/`(地图零贴图纪律不破)
+	  `assets/art/tiles_v2/` 且 PNG 已导出到 `assets/archive/`(地图零贴图纪律不破)
 - [ ] Android:导出段显式 `texture_format/etc2_astc=true`、`rendering/viewport/hdr_2d` 关闭(核对项见 docs/ROADMAP.md §5「Android 性能」)
 - [ ] Android 真机抽查:`--perflog` 基线 + `dumpsys gfxinfo` 帧时间无异常 jank

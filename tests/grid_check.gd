@@ -107,7 +107,7 @@ func _check_level(li: int, def: LevelDef) -> void:
 	# —— 1. 吸附 + 4. 越界 ——
 	var bounds := Rect2(Vector2.ZERO, def.size)
 
-	func snap_rect(id: String, r: Rect2) -> void:
+	var snap_rect := func(id: String, r: Rect2) -> void:
 		for v in [r.position.x, r.position.y, r.end.x, r.end.y]:
 			_snap_check(li, id, v)
 		if not bounds.encloses(r):
@@ -115,7 +115,7 @@ func _check_level(li: int, def: LevelDef) -> void:
 
 	for i in def.platforms.size():
 		var r := Comp.rect_of(def.platforms[i])
-		snap_rect("组件#%d" % i, r)
+		snap_rect.call("组件#%d" % i, r)
 	for r in def.ramps:
 		var i := 0
 		for pnt in r["pts"]:
@@ -126,9 +126,9 @@ func _check_level(li: int, def: LevelDef) -> void:
 			i += 1
 	for i in def.movers.size():
 		var r: Rect2 = def.movers[i]["rect"]
-		snap_rect("摆渡#%d" % i, r)
+		snap_rect.call("摆渡#%d" % i, r)
 	for i in def.piano_tiles.size():
-		snap_rect("琴键#%d" % i, Comp.rect_of(def.piano_tiles[i]))
+		snap_rect.call("琴键#%d" % i, Comp.rect_of(def.piano_tiles[i]))
 	for i in def.spawns.size():
 		var sp = def.spawns[i]
 		var pts: Array = [sp] if sp is Vector2 \
@@ -142,7 +142,7 @@ func _check_level(li: int, def: LevelDef) -> void:
 		_snap_check(li, "门#%d" % e[0], e[1].x)
 		_snap_check(li, "门#%d" % e[0], e[1].y)
 	for z in def.zones:
-		snap_rect("分区 %s" % z.get("name", "?"), z["rect"])
+		snap_rect.call("分区 %s" % z.get("name", "?"), z["rect"])
 
 	# —— 2. 净空:可行走面头顶带侵入检查 ——
 	for c in solids:
