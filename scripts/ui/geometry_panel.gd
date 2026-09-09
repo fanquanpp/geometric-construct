@@ -188,7 +188,7 @@ func _ready() -> void:
 	_quote_label.custom_minimum_size = Vector2(640, 0)
 	right.add_child(_quote_label)
 
-	var stats_title := Ui.l("属性 ATTRIBUTES(0.0 – 2.0 标尺,红刻度 = 标准基准 1.0)",
+	var stats_title := Ui.l("属性 ATTRIBUTES(-1.0 – 3.0 标尺,红刻度 = 标准基准 2.0)",
 		13, Ui.LIGHT, Ui.DIM)
 	right.add_child(stats_title)
 	_stats_box = VBoxContainer.new()
@@ -627,7 +627,7 @@ func _refresh() -> void:
 		_traits_box.add_child(hb)
 
 
-## 单条属性行:标签 + 0.0–2.0 标尺条(红色刻度 = 1.0 标准)+ 数值 + 释义;
+## 单条属性行:标签 + 标尺 v2 条(-1.0–3.0,红刻度 = 2.0 标准)+ 数值 + 释义;
 ## 纯文本行(如形体)不带标尺。
 func _make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 	var hb := HBoxContainer.new()
@@ -645,7 +645,7 @@ func _make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 		hb.add_child(text)
 		return hb
 
-	# 标尺条
+	# 标尺条(标尺 v2:读数域 -1.0–3.0,基准 2.0 在 75% 处,-1.0 = 无填充)
 	const BAR_W := 300.0
 	var bar := Control.new()
 	bar.custom_minimum_size = Vector2(BAR_W, 12)
@@ -655,10 +655,10 @@ func _make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 	bar.draw.connect(func() -> void:
 		# 底轨
 		bar.draw_rect(Rect2(0, 4, BAR_W, 4), Color(Ui.PAPER, 0.14))
-		# 数值填充
-		bar.draw_rect(Rect2(0, 4, BAR_W * clampf(v, 0.0, 2.0) / 2.0, 4), col)
-		# 标准基准刻度(1.0)
-		bar.draw_rect(Rect2(BAR_W * 0.5 - 1.0, -2, 2, 16), Color(Ui.RED, 0.9))
+		# 数值填充(读数 -1.0 起点填起;关闭态 -1.0 无填充)
+		bar.draw_rect(Rect2(0, 4, BAR_W * clampf(v + 1.0, 0.0, 4.0) / 4.0, 4), col)
+		# 标准基准刻度(2.0)
+		bar.draw_rect(Rect2(BAR_W * 0.75 - 1.0, -2, 2, 16), Color(Ui.RED, 0.9))
 	)
 	hb.add_child(bar)
 

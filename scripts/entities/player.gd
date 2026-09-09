@@ -18,10 +18,11 @@ const SWAP_SETTLE := 0.55     # 置换落地缓冲(避免上下平台间乒乓)
 const MAX_FALL := 1150.0      # 终端速度 v∞:二次空气阻力下落 speed 的渐近上限
 const BASE_ACCEL := 2400.0    # 标准 1.0 重量几何体的地面加速度
 const AIR_ACCEL_RATIO := 0.62
-## 地面摩擦系数 μ(库伦摩擦:减速度 a = μ·g)。标准几何体 μ ≈ 1.27,
-## 重物按材质差异放大摩擦系数(设计特性:越重越难起动也越难停下)。
-const MU_FRICTION := 1.2667
-const BALL_MU_ROLL := 0.43    # 圆球滚动阻力系数(μ 的滚动版):强调惯性
+## 地面摩擦系数 μ(库伦摩擦:减速度 a = μ·g)。物理权威在 GeometryDef
+## (标准几何体 μ ≈ 1.27;越重越难起动也越难停下是设计特性),
+## 此处引用保持调用点不变。
+const MU_FRICTION := GeometryDef.MU_FRICTION
+const BALL_MU_ROLL := GeometryDef.BALL_MU_ROLL    # 圆球滚动阻力系数(μ 滚动版)
 const SWAP_LAUNCH := 300.0    # 置换瞬间射向新落点平台的初速度
 const CLIMB_UP := 150.0       # 爬墙:按住跳跃键的上升速度
 const CLIMB_SLIDE := 55.0     # 爬墙:只按方向贴墙时的缓降速度
@@ -36,6 +37,8 @@ const GLASS_IMPACT := 620.0
 ## 词条速度上限的绝对钳制(与门厅"加速门×曲面"峰值 3.75 一致,
 ## 非强化状态的旧手感完全不变)。
 const MOD_SPEED_CAP := 3.75
+## 可推动(肆·圆):推挤传速加速度(px/s²,characters.md §4)。
+const PUSH_TRANSFER := 1800.0
 
 var def: GeometryDef
 var index: int
@@ -257,8 +260,8 @@ func _physics_process(delta: float) -> void:
 	var jump_power := RunState.jump_v(def) * _overload_jump_ratio()
 	if _jump_buffer > 0.0 and def.can_jump:
 		if on_ground or _coyote > 0.0:
-			# 第一段跳(地面 / 土狼时间)
-			vel.y = -jump_power * gravity_dir
+			# 第一段跳(地面 / 土狼时间);跃顶起跳触发顶弹翻倍(characters.md §3)
+			vel.y = -jump_power * _top_boost_ratio() * gravity_dir
 			_jump_buffer = 0.0
 			_coyote = 0.0
 			_jump_cut = false
@@ -403,6 +406,17 @@ func _physics_process(delta: float) -> void:
 		if obj is LevelBuilder.PianoTile and col.get_normal().dot(up_direction) > 0.7:
 			(obj as LevelBuilder.PianoTile).strike(self, vel.length())
 
+	# ———— 可推动(肆·圆,characters.md §4):地面水平推挤圆球 → 传速滚动。
+	# 只传速不改位置,圆球自身滚动摩擦自然衰减;推力不高于推者自身速度 ————
+	if def.shape != GeometryDef.Shape.BALL and now_on_floor and absf(vel.x) > 20.0:
+		for i in get_slide_collision_count():
+			var col := get_slide_collision(i)
+			var other := col.get_collider() as Player
+			if other != null and other.def.can_be_pushed \
+					and signf(col.get_normal().x) == signf(-vel.x):
+				other.velocity.x = move_toward(other.velocity.x, vel.x,
+					PUSH_TRANSFER * dt)
+
 	# 高速残影采样
 	_update_trail(vel)
 
@@ -534,6 +548,14 @@ func _overload_jump_ratio() -> float:
 			rider_load += RunState.modified(p.def, "weight")
 	if rider_load > RunState.modified(def, "carry") + 0.01:
 		return GeometryDef.OVERLOAD_JUMP_RATIO
+	return 1.0
+
+
+## 顶弹翻倍(贰·跃,characters.md §3):从可顶弹几何体头顶起跳 → 该跳高度 ×2。
+## 只作用于第一段跳(地面/土狼);空中跳不继承。与超载减半自然相乘。
+func _top_boost_ratio() -> float:
+	if rider_of != null and is_instance_valid(rider_of) and rider_of.def.can_top_boost:
+		return 2.0
 	return 1.0
 
 

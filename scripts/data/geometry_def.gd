@@ -2,12 +2,15 @@ class_name GeometryDef
 extends RefCounted
 ## 一个可操控几何体的完整定义。
 ##
-## 属性规范(docs/DESIGN.md):所有属性取值 0.0 – 2.0;
-##   1.0 = 标准基准,0.0 = 不具备该特性,2.0 = 特性上限。
-##   未特殊化的属性一律记标准值,面板中标注"标准"。
+## 属性规范(glossary.md §4 标尺 v2):
+##   内部存储 = 物理倍率(0.0 – 2.0):1.0 = 标准物理基准,0.0 = 无该能力,
+##   2.0 = 物理上限;物理公式(px/s、格、反弹率)与本文件数值绑定。
+##   面板/文档展示 = 标尺 v2 读数:读数 = 物理倍率 + 1.0(物理 0.0 → 读数
+##   -1.0"关闭");跳高例外:读数 = 格数(标准跳 2.0 格 = 基准 2.0)。
+##   常规域读数 -1.0 – 3.0,正常模式硬顶 5.0,肉鸽不设限。
 ##
 ## 标尺换算:1.0 属性单位 = 100 px(1 格)。
-##   跳高(格) = jump_units(独立属性,二段跳角色统一 2.0 格/跳);
+##   跳高(格) = jump_units(独立属性,二段跳几何体统一 2.0 格/跳);
 ##   关卡可跳台阶高度必须比 jump_units 低 0.1。
 ##   弹性全员固定:0.5;跃为 2.0 固定(只决定落地反弹,不再决定跳高)。
 
@@ -18,6 +21,11 @@ const MAX_JUMPS := 2
 
 ## 背负超载(头顶来者总重 > 负重力)时的跳跃高度倍率:减半,而不是禁止跳跃。
 const OVERLOAD_JUMP_RATIO := 0.5
+
+## 地面摩擦系数 μ(库伦摩擦 a = μ·g;标准 ≈ 1.27)与圆球滚动阻力系数。
+## 物理权威在此(数据层),Player 引用——摩擦读数(characters.md §1)同源。
+const MU_FRICTION := 1.2667
+const BALL_MU_ROLL := 0.43
 
 ## 爬墙(can_climb):单次离地期间可向上攀爬的总高度(格),落地重置。
 const CLIMB_UNITS := 2.0
@@ -57,6 +65,14 @@ var bounce: float = 1.0        # 弹性:决定跳跃高度与落地反弹;全员
 var weight: float = 1.0        # 重量:影响加速度、惯性、承载判定
 var carry: float = 1.0         # 负重力:头顶可承载的总重量
 
+# ———— v0.16 新特性旗标(characters.md §1/§5;默认关,名册逐个开) ————
+## 顶弹翻倍(贰·跃):同伴站在本几何体顶部起跳时,该次跳跃高度 ×2。
+var can_top_boost := false
+## 可推动(肆·圆):其他几何体水平推挤时,本几何体受力滚动。
+var can_be_pushed := false
+## 磁界穿透(叁·逆):可任意穿过伍(界/边)的磁力边界。
+var can_pass_boundary := false
+
 
 ## 底部长度 / 高度,单位:格。
 func bottom_units() -> float:
@@ -67,22 +83,39 @@ func height_units() -> float:
 	return size.y / Geometries.UNIT_PX
 
 
-## 档案页属性行:{label, value, hint} 或 {label, text}。value 为 0.0 – 2.0 标尺读数。
+## 标尺 v2 读数换算:物理倍率 → 展示读数(物理 0.0 → -1.0 关闭)。
+static func scale_reading(physical: float) -> float:
+	return -1.0 if physical <= 0.0 else physical + 1.0
+
+
+## 惯性读数(v0.16 显式化):与重量同源耦合,解耦轴预留(characters.md §1)。
+func inertia_reading() -> float:
+	return scale_reading(weight)
+
+
+## 摩擦读数 = μ / μ标准 × 2.0:标准材质 2.0,圆滚动 μ0.43 → 0.7(物理不变)。
+func friction_reading() -> float:
+	var mu := BALL_MU_ROLL if shape == Shape.BALL else MU_FRICTION
+	return snappedf(mu / MU_FRICTION * 2.0, 0.1)
+
+
+## 档案页属性行:{label, value, hint} 或 {label, text}。value 为标尺 v2 读数
+## (-1.0 关闭 – 3.0 常规上限;glossary.md §4)。
 ## 派生量一律按真实物理式换算:
-##   速度 → v = 倍率 × RUN_SPEED(3.0 格/秒 = 300 px/s);
+##   速度 → v = (读数−1.0) × RUN_SPEED(3.0 格/秒 = 300 px/s);
 ##   跳高 → h = v₀² / 2g(起跳速度按能量守恒反推);
 ##   弹性 → 反弹率 e = bounce × 0.5(牛顿碰撞定律 v′ = e·v);
 ##   摩擦 → 减速度 a = μ·g(库伦摩擦,重量项视作材质差异)。
 func stat_rows() -> Array:
 	var speed_hint := "固定极速"
 	if can_sprint and sprint_speed > base_speed:
-		speed_hint = "冲刺 %.1f" % sprint_speed
+		speed_hint = "冲刺 %.1f" % scale_reading(sprint_speed)
 		if buff_sprint_speed > sprint_speed:
-			speed_hint += " / 加速门 %.1f" % buff_sprint_speed
+			speed_hint += " / 加速门 %.1f" % scale_reading(buff_sprint_speed)
 	elif not can_sprint:
 		speed_hint = "不可加速"
 		if buff_sprint_speed > base_speed:
-			speed_hint += " · 加速门 %.1f" % buff_sprint_speed
+			speed_hint += " · 加速门 %.1f" % scale_reading(buff_sprint_speed)
 	speed_hint += " · ≈%.0f 格/秒" % roundf(base_speed * 3.0)
 
 	var jump_hint := ""
@@ -103,16 +136,20 @@ func stat_rows() -> Array:
 	weight_hint += " · 摩擦 a = μ·g"
 
 	return [
-		{"label": "速度", "value": base_speed, "hint": speed_hint},
-		{"label": "弹性", "value": bounce, "hint": bounce_hint},
-		{"label": "跳跃", "value": jump_units if can_jump else 0.0,
+		{"label": "速度", "value": scale_reading(base_speed), "hint": speed_hint},
+		{"label": "弹性", "value": scale_reading(bounce), "hint": bounce_hint},
+		{"label": "跳跃", "value": jump_units if can_jump else -1.0,
 			"hint": jump_hint},
-		{"label": "攀墙", "value": CLIMB_UNITS if can_climb else 0.0,
+		{"label": "攀墙", "value": CLIMB_UNITS if can_climb else -1.0,
 			"hint": climb_hint},
-		{"label": "重量", "value": weight, "hint": weight_hint},
-		{"label": "负重力", "value": carry, "hint":
+		{"label": "重量", "value": scale_reading(weight), "hint": weight_hint},
+		{"label": "负载", "value": scale_reading(carry), "hint":
 			"头顶超载:跳跃高度减半" if carry <= 0.05
 			else _band_hint(carry, "仅轻量", "标准", "强力承载")},
+		{"label": "惯性", "value": inertia_reading(), "hint":
+			"动量保持程度(与重量同源耦合,解耦预留)"},
+		{"label": "摩擦系数", "value": friction_reading(), "hint":
+			"地面减速 a = μ·g(标准读数 2.0;滚动材质更低)"},
 		{"label": "形体", "text": "%.2f × %.2f 格(%d × %d px)"
 			% [bottom_units(), height_units(), int(size.x), int(size.y)]},
 	]
