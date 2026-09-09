@@ -461,6 +461,17 @@ def gen_buttons():
         line(32, 14, 32, 50, sw=6) + line(14, 32, 50, 32, sw=6)
     ))
     # 重启:八角循环 + 红色箭头
+    # 召回:下指箭头 + 落点方块(传送回记录点;v0.17.4 重绘)
+    write("buttons/recall-flat.svg", svg(
+        line(32, 8, 32, 28, sw=4) +
+        polygon([(18, 26), (32, 40), (46, 28)], color=PAPER, sw=4) +
+        rect(25, 45, 14, 14, fill=RED, stroke=None)
+    ))
+    write("buttons/recall-flat-on.svg", svg(
+        line(32, 8, 32, 28, color=RED, sw=4) +
+        polygon([(18, 26), (32, 40), (46, 28)], color=RED, sw=4) +
+        rect(25, 45, 14, 14, fill=PAPER, stroke=None)
+    ))
     write("buttons/restart-flat.svg", svg(
         polygon([(32, 8), (48, 15), (56, 32), (48, 49), (32, 56), (16, 49),
                  (8, 32), (16, 15)], sw=3.5, opacity=0.65) +

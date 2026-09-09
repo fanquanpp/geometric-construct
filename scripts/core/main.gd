@@ -51,6 +51,7 @@ var _held_keys := {}
 var _shot_level := 0
 var _shot_dir := ""
 var _door_shot := false
+var _recall_shot := false       # --recalltest:召回链路自测(动作注册/按下/传送)
 var _panel_shot := false
 var _set_shot := false
 var _act_shot := false
@@ -370,7 +371,7 @@ func _physics_process(_delta: float) -> void:
 			if _key_pressed(KEY_1 + i) and i < _level_def.roster.size():
 				_switch_to(i)
 
-		if Input.is_action_just_pressed("restart"):
+		if Input.is_action_just_pressed("recall"):
 			recall_active()
 		if Input.is_action_just_pressed("pause"):
 			_open_pause()
@@ -399,7 +400,7 @@ func _physics_process(_delta: float) -> void:
 	elif _state == State.WIN:
 		if debug_solo:
 			return
-		if Input.is_action_just_pressed("restart"):
+		if Input.is_action_just_pressed("recall"):
 			start_level(0)
 		if Input.is_action_just_pressed("pause"):
 			_show_menu()
@@ -742,6 +743,8 @@ func _parse_auto_shot() -> void:
 			_auto_shot = true
 		elif raw == "--doorshot":
 			_door_shot = true
+		elif raw == "--recalltest":
+			_recall_shot = true
 		elif raw == "--panelshot":
 			_panel_shot = true
 		elif raw == "--setshot":
@@ -788,6 +791,8 @@ func _parse_auto_shot() -> void:
 		_run_auto_shot()
 	if _door_shot:
 		_run_door_shot()
+	if _recall_shot:
+		_run_recall_test()
 	if _trial_shot:
 		_run_trial_shot()
 	if _panel_shot:
@@ -1129,6 +1134,29 @@ func _run_panel_shot() -> void:
 
 
 ## 传送到出口门前,验证门的渲染与过关文字。
+## 召回链路自测(headless):动作注册 → 按下 → 召回至出生点。
+func _run_recall_test() -> void:
+	if _shot_dir.is_empty():
+		_shot_dir = ".shots_v17"
+	start_level(0, false)
+	await get_tree().create_timer(0.5).timeout
+	var p: Player = players[_active_slot]
+	p.position = p.spawn_pos + Vector2(600, -300)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	# 走真实输入管线(R 键):action_press 从 idle 协程调用会错过 just_pressed 物理帧比对
+	var ev := InputEventKey.new()
+	ev.physical_keycode = KEY_R
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var ok: bool = p.position.distance_to(p.spawn_pos) < 2.0 and not p.dying
+	print("RECALLTEST ", "PASS" if ok else "FAIL",
+		" pos=", p.position, " spawn=", p.spawn_pos)
+	get_tree().quit(0 if ok else 1)
+
+
 func _run_door_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
