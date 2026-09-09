@@ -83,6 +83,7 @@
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 代码结构与分层规范(唯一权威) |
 | [docs/DESIGN.md](docs/DESIGN.md) | 设计速查表 + `docs/design/` 分类档案索引 |
+| [docs/ASSETS.md](docs/ASSETS.md) | 游戏内名称名词与资产统计速查(几何体 / 建筑 / 机关 / 词条 / 剧情 / 关卡)|
 | [docs/ROADMAP.md](docs/ROADMAP.md) | 后续方向:地图编辑分享 / 同屏双人 / 联机 / 肉鸽 |
 | [docs/UPDATE.md](docs/UPDATE.md) | 版本号 / 存档兼容 / 内容包 / 发版检查单 |
 | [CHANGELOG.md](CHANGELOG.md) | 全部版本变更记录 |
