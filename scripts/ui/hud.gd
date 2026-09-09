@@ -83,20 +83,14 @@ func _ready() -> void:
 	_hint_row.offset_top = 64
 	root.add_child(_hint_row)
 
-	# —— 左下:坐标常驻显示(1 格 = 100 px);触屏时移到左上,让位给轮盘 ——
-	_coords = Ui.l("", 12, Ui.LIGHT, Color(Ui.DIM, 0.85))
-	if touch:
-		_coords.offset_left = 24
-		_coords.offset_top = 50
-		_coords.offset_right = 300
-		_coords.offset_bottom = 70
-	else:
-		_coords.anchor_top = 1.0
-		_coords.anchor_bottom = 1.0
-		_coords.offset_left = 18
-		_coords.offset_top = -30
-		_coords.offset_right = 260
-		_coords.offset_bottom = -10
+	# —— 左下:坐标常驻显示(v0.17.3:统一左下角,字号增大)——
+	_coords = Ui.l("", 18, Ui.LIGHT, Color(Ui.DIM, 0.95))
+	_coords.anchor_top = 1.0
+	_coords.anchor_bottom = 1.0
+	_coords.offset_left = 24
+	_coords.offset_top = -44
+	_coords.offset_right = 460
+	_coords.offset_bottom = -10
 	root.add_child(_coords)
 
 	# —— 底部:旁白(触屏时上移,避开轮盘 / 按键) ——
@@ -441,16 +435,16 @@ func refresh_roster(roster: Array, active: int, exited_mask: int) -> void:
 		chip.add_theme_stylebox_override("panel", Ui.sb(
 			Color(Ui.INK_2, 0.92 if is_active else 0.7), 0,
 			Color(Ui.PAPER, 0.95) if is_active else Color(Ui.PAPER, 0.16),
-			2 if is_active else 1, 10, 5))
+			2 if is_active else 1, 14, 8))
 
 		var hb := HBoxContainer.new()
 		hb.add_theme_constant_override("separation", 8)
 		var block := ColorRect.new()
 		block.color = c.color
-		block.custom_minimum_size = Vector2(14, 14)
+		block.custom_minimum_size = Vector2(20, 20)
 		block.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		hb.add_child(block)
-		hb.add_child(Ui.l(c.name, 16, Ui.HEAD if is_active else Ui.BODY,
+		hb.add_child(Ui.l(c.name, 20, Ui.HEAD if is_active else Ui.BODY,
 			Color.WHITE if is_active else Color(Ui.PAPER, 0.75),
 			HORIZONTAL_ALIGNMENT_LEFT))
 		if exited:

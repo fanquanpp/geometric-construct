@@ -82,6 +82,9 @@ func play(ks_path: String) -> void:
 		"KonadoUI/CanvasLayer/ActingInterface/BackgroundLayer") as ColorRect
 	if bg != null:
 		bg.color = Color(0.063, 0.071, 0.086, 0.0)
+		bg.position = Vector2.ZERO
+		bg.size = get_viewport().get_visible_rect().size
+		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bar := _manager.get_node_or_null("KonadoUI/CanvasLayer2/ColorRect")
 	if bar != null:
 		bar.visible = false

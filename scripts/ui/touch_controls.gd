@@ -18,7 +18,8 @@ extends CanvasLayer
 ##            两域互不干扰,按住轮盘转向的同时,右半屏照样可跳(v0.10.1 修复:
 ##            旧实现轮盘占用期间吞掉全屏跳跃触摸)。小按钮热区在两域之外。
 
-const ICON_SIZE_SMALL := 56.0
+const ICON_SIZE_SMALL := 76.0
+const UI_STRIP_TOP := 200.0     # 顶层 UI 带:chips/提示/小按钮所在,禁跳
 ## 触控热区外扩:视觉图标之外保留一圈余量(Material 建议目标 ≥48dp,
 ## 热区应大于视觉元素,减少误触/空点)。
 const HIT_MARGIN := 18.0
@@ -70,7 +71,8 @@ func _ready() -> void:
 ## 触控域划分(浮动轮盘模式,业界通行方案 —— 左半屏移动 / 右半屏跳跃):
 ##   左半屏 = 轮盘域:按住就地展开浮动轮盘;轮盘占用中再来左半屏触摸不产生跳跃;
 ##   右半屏 = 跳跃域:点按 / 长按跳跃,与轮盘是否被按住完全无关(互不干扰);
-##   两域 exceptions:按在小按钮(切换 / 重来 / 暂停)热区上时归按钮,
+##   顶层 UI 带(y < 200 画布px:chips / 提示行 / 重来 / 暂停 / 跳过键)禁跳;
+#   两域 exceptions:按在小按钮(重来 / 暂停)热区上时归按钮,
 ##   不被任何域吞掉。固定轮盘模式维持原行为:轮盘触控区外空白处点按 = 跳跃。
 func _input(event: InputEvent) -> void:
 	if not visible:
@@ -89,14 +91,14 @@ func _input(event: InputEvent) -> void:
 				_wheel.float_begin(t.index, t.position)
 				get_viewport().set_input_as_handled()
 				return
-			# 右半屏 · 跳跃域
-			if _jump_finger == -1:
+			# 右半屏 · 跳跃域(顶层 UI 带除外)
+			if _jump_finger == -1 and t.position.y > UI_STRIP_TOP:
 				_jump_finger = t.index
 				Input.action_press("jump")
 				get_viewport().set_input_as_handled()
 			return
-		# 固定模式:空白处按下 = 跳跃;轮盘触控区与小按钮各自处理,不抢占
-		if _jump_finger == -1 and not _pos_reserved(t.position):
+		# 固定模式:空白处按下 = 跳跃;轮盘触控区/顶层 UI 带/小按钮不抢占
+		if _jump_finger == -1 and t.position.y > UI_STRIP_TOP 				and not _pos_reserved(t.position):
 			_jump_finger = t.index
 			Input.action_press("jump")
 			get_viewport().set_input_as_handled()

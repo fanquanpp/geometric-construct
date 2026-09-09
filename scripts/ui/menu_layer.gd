@@ -172,7 +172,9 @@ func _ready() -> void:
 		m.start_game())
 	content.add_child(start)
 
+	# 肉鸽(重跑)入口移除 —— 机制完善期之后随关卡设计一起回归(v0.17.3)
 	var rogue_btn := Button.new()
+	rogue_btn.visible = false
 	rogue_btn.text = "重跑 · RE-RUN"
 	rogue_btn.custom_minimum_size = Vector2(240, 44)
 	rogue_btn.position = Vector2(930, 554)

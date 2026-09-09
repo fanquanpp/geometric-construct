@@ -89,6 +89,7 @@ func _ready() -> void:
 
 	# TouchControls 先于 HUD 创建:HUD 就能感知触屏模式(提示条 / 坐标位置)
 	touch_controls = TouchControls.new()
+	touch_controls.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(touch_controls)
 	_hud = Hud.new()
 	add_child(_hud)
