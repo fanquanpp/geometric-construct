@@ -92,6 +92,7 @@ func _ready() -> void:
 	add_child(touch_controls)
 	_hud = Hud.new()
 	add_child(_hud)
+	_hud.chip_tapped.connect(switch_to_geo)
 	_menu = MenuLayer.new()
 	_menu.m = self
 	add_child(_menu)
@@ -288,6 +289,24 @@ func _switch_to(slot: int, quiet := false) -> void:
 			return
 
 
+## 数字键 / 点按 chips 切换(v0.17.2):按几何体下标直达;
+## 双子(伍)同下标两具 —— 已选中其一时再点即换另一位。
+func switch_to_geo(index: int) -> void:
+	if _state != State.PLAYING or players.is_empty():
+		return
+	var candidates: Array = []
+	for i in players.size():
+		var p: Player = players[i]
+		if p.index == index and not p.in_exit and not p.dying:
+			candidates.append(i)
+	if candidates.is_empty():
+		return
+	var target: int = candidates[0]
+	if candidates.size() > 1 and candidates.has(_active_slot):
+		target = candidates[1] if _active_slot == candidates[0] else candidates[0]
+	_switch_to(target)
+
+
 func _cycle_slot(dir: int) -> void:
 	if players.is_empty():
 		return
@@ -339,7 +358,7 @@ func _physics_process(_delta: float) -> void:
 		if Input.is_action_just_pressed("switch_prev"):
 			_cycle_slot(-1)
 
-		for i in mini(players.size(), 4):
+		for i in mini(players.size(), 5):
 			if _key_pressed(KEY_1 + i) and i < _level_def.roster.size():
 				_switch_to(i)
 

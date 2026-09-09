@@ -418,6 +418,9 @@ func set_level_info(def: LevelDef, num_label := "") -> void:
 	_rebuild_hints(def)
 
 
+signal chip_tapped(index: int)
+
+
 func refresh_roster(roster: Array, active: int, exited_mask: int) -> void:
 	for c in _roster.get_children():
 		c.queue_free()
@@ -428,8 +431,13 @@ func refresh_roster(roster: Array, active: int, exited_mask: int) -> void:
 		var exited: bool = (exited_mask & (1 << i)) != 0
 
 		var chip := PanelContainer.new()
-		chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# v0.17.2:chips 即切换入口 —— 点按直接切换到该几何体(替代切换按钮)
+		chip.mouse_filter = Control.MOUSE_FILTER_STOP
 		chip.modulate = Color(1, 1, 1, 0.5) if exited else Color.WHITE
+		var geo_index: int = i
+		chip.gui_input.connect(func(ev: InputEvent) -> void:
+			if ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed 					and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+				chip_tapped.emit(geo_index))
 		chip.add_theme_stylebox_override("panel", Ui.sb(
 			Color(Ui.INK_2, 0.92 if is_active else 0.7), 0,
 			Color(Ui.PAPER, 0.95) if is_active else Color(Ui.PAPER, 0.16),

@@ -44,9 +44,7 @@ func _ready() -> void:
 	_root.resized.connect(_relayout)
 	get_viewport().size_changed.connect(_relayout)
 
-	# —— 左上:切换(队伍 chips 下方,贴左边缘;单人阵容由 set_switch_available 隐藏) ——
-	_add_button("buttons/switch-flat.svg", "buttons/switch-flat-on.svg",
-		"switch_next", "切换")
+	# 切换已重构(v0.17.2):直接点按左上队伍 chips 切换,不再设切换按钮。
 	# —— 右上:重来 / 暂停(方盘按钮行,图标 + 文字标签) ——
 	_add_button("buttons/restart-flat.svg", "buttons/restart-flat-on.svg",
 		"restart", "重来")
@@ -169,13 +167,9 @@ func wheel_mode() -> String:
 	return _wheel.wheel_mode if _wheel != null else SettingsManager.wheel_mode
 
 
-## 单人阵容没有切换可言:隐藏/恢复左侧切换钮(热区一并失效)。
+## 单人阵容没有切换可言:v0.17.2 起切换走队伍 chips 点按,此钮已移除(接口保留兼容)。
 func set_switch_available(on: bool) -> void:
-	if not _buttons.has("switch_next"):
-		return
-	var b: Dictionary = _buttons["switch_next"]
-	(b.btn as TouchScreenButton).visible = on
-	(b.label as Label).visible = on
+	pass
 
 
 ## 设置面板改了轮盘模式后同步(切回固定时收拢浮动状态)。
@@ -214,15 +208,6 @@ func _relayout() -> void:
 	# 拇指自然搭放的高度;v0.13.6 曾试下三分之一 2/3,仍偏高)
 	var wheel_center := Vector2(left + 26.0 + half_w, vis.y * 3.0 / 4.0)
 	_wheel.setup(half_w, half_h, wheel_center)
-
-	# 左侧:切换按钮 —— 队伍 chips(左上)下方一段距离,左缘与 chips 对齐
-	var sw: Dictionary = _buttons["switch_next"]
-	var sw_sz := Vector2(sw.icon_px, sw.icon_px)
-	var sw_pos := Vector2(left + 24.0, top + 84.0)
-	sw.btn.position = sw_pos
-	sw.rect = Rect2(sw_pos, sw_sz)
-	var sw_label: Label = sw.label
-	sw_label.position = Vector2(sw_pos.x + sw_sz.x / 2.0 - 40.0, sw_pos.y + sw_sz.y + 4.0)
 
 	# 右上小按钮行:重来 / 暂停
 	var order := ["restart", "pause"]
