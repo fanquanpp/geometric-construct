@@ -371,7 +371,7 @@ func _physics_process(_delta: float) -> void:
 				_switch_to(i)
 
 		if Input.is_action_just_pressed("restart"):
-			_restart_level()
+			recall_active()
 		if Input.is_action_just_pressed("pause"):
 			_open_pause()
 	elif _state == State.MENU:
@@ -573,7 +573,7 @@ func on_player_died(p: Player) -> void:
 	if _auto_test:
 		print("TEST: ", p.def.name, " died/respawned")
 	if _state == State.PLAYING:
-		_cycle_slot(1)
+		# v0.17.3:死亡不再自动切换几何体(操控权保持,由玩家手动切换)
 		# 序章首摔安抚(每次启动至多一次):把序幕"重拼"规则说成玩法语言,
 		# 新手第一次摔碎时不至于以为出了错
 		if not _death_hinted and not _rogue and LevelData.act_index_of(_current) <= 0:
@@ -591,15 +591,7 @@ func on_player_arrived(p: Player) -> void:
 		print("TEST: ", p.def.name, " arrived at exit")
 	if _state != State.PLAYING:
 		return
-	# 当前操控者到站且还有未到站的同伴 → 自动切给下一位;全员到齐则保持视角
-	var all_arrived := true
-	for q in players:
-		if not q.arrived:
-			all_arrived = false
-			break
-	if not all_arrived and _active_slot >= 0 and _active_slot < players.size() \
-			and players[_active_slot] == p:
-		_cycle_slot(1)
+	# v0.17.3:到站不再自动切换几何体(玩家手动点 chips / 数字键切换)
 	_refresh_roster()
 	_check_all_arrived()
 
@@ -644,14 +636,32 @@ func _check_all_arrived() -> void:
 				_check_complete())
 
 
-## 重生结束时,若没有任何几何体处于操控中,则自动补一次切换。
+## 重生完成:v0.17.3 起不再自动切换——死亡几何体保持操控权,原地复活续玩。
 func on_respawn_done() -> void:
 	if _state != State.PLAYING:
 		return
-	for p in players:
-		if p.is_active:
-			return
-	_cycle_slot(1)
+
+
+var _checkpoints := {}   # geo index -> Vector2 最近记录点(关卡内记录点实体未来接入)
+
+
+## 召回(v0.17.3):右上按钮 / R 键 —— 当前受控几何体传送回最近记录点;
+## 尚无关卡内记录点系统,默认回到其出生点。到站 / 进门 / 死亡中不可召回。
+func recall_active() -> void:
+	if _state != State.PLAYING or players.is_empty():
+		return
+	if _active_slot < 0 or _active_slot >= players.size():
+		return
+	var p: Player = players[_active_slot]
+	if p == null or p.in_exit or p.dying or p.arrived:
+		return
+	p.recall_to(_checkpoints.get(p.index, p.spawn_pos))
+	Sfx.play("switch")
+
+
+## 记录点登记(关卡内记录点实体未来接入):index = 几何体下标。
+func set_checkpoint(index: int, pos: Vector2) -> void:
+	_checkpoints[index] = pos
 
 
 ## 加速门首次强化时的旁白提示。

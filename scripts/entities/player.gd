@@ -794,6 +794,26 @@ func _finish_respawn() -> void:
 	Main.I.on_respawn_done()
 
 
+## 召回(v0.17.3):传送到指定点并复位瞬态(速度/重力/缓冲/残影),
+## 不触发死亡演出;用于右上"召回"(回到记录点/出生点)。
+func recall_to(pos: Vector2) -> void:
+	position = pos
+	velocity = Vector2.ZERO
+	gravity_dir = _base_gravity()
+	up_direction = Vector2(0, -gravity_dir)
+	_swap_air = false
+	_swap_buffer = 0.0
+	_swap_cd = 0.0
+	_jump_buffer = 0.0
+	_jump_cut = false
+	_air_jumps_left = 0
+	_coyote = 0.0
+	_ramp_timer = 0.0
+	_climb_budget = GeometryDef.CLIMB_UNITS * Geometries.UNIT_PX
+	_trail.clear()
+	_squash(1.15, 0.88)
+
+
 ## 到达专属终点门:原地待命并保持可操控;离开门区则由 ExitDoor 取消到达。
 func arrive_at(door: ExitDoor) -> void:
 	if arrived or in_exit or dying:

@@ -48,7 +48,7 @@ func _ready() -> void:
 	# 切换已重构(v0.17.2):直接点按左上队伍 chips 切换,不再设切换按钮。
 	# —— 右上:重来 / 暂停(方盘按钮行,图标 + 文字标签) ——
 	_add_button("buttons/restart-flat.svg", "buttons/restart-flat-on.svg",
-		"restart", "重来")
+		"recall", "召回")
 	_add_button("buttons/pause-flat.svg", "buttons/pause-flat-on.svg",
 		"pause", "暂停")
 
@@ -212,7 +212,7 @@ func _relayout() -> void:
 	_wheel.setup(half_w, half_h, wheel_center)
 
 	# 右上小按钮行:重来 / 暂停
-	var order := ["restart", "pause"]
+	var order := ["recall", "pause"]
 	var spacing := ICON_SIZE_SMALL + 14.0
 	for k in order.size():
 		var action: String = order[k]
