@@ -28,6 +28,7 @@ RED = "#E0492F"
 YELLOW = "#E8B33A"
 BLUE = "#4E86D8"
 ORANGE = "#E07E2E"
+PURPLE = "#8455A6"
 
 SVG_HEAD = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' "
             "width='64' height='64'>")
@@ -109,6 +110,14 @@ def gen_characters():
         line(20, 32, 44, 32, color=INK, sw=3.5) +
         line(32, 20, 32, 44, color=INK, sw=2.5, opacity=0.6) +
         rect(29, 29, 6, 6, fill=PAPER, stroke=None)
+    ))
+    # 伍 · 紫色双三角(界/边):上△与下▽对望 + 磁力折线(characters.md §5)
+    write("characters/pair-flat.svg", svg(
+        polygon([(10, 50), (34, 50), (22, 28), ], color=PURPLE, fill=PURPLE) +
+        polygon([(30, 14), (54, 14), (42, 36), ], color=PURPLE, fill=PURPLE) +
+        poly([(22, 24), (30, 18), (36, 24), (42, 18)], color=PAPER, sw=3) +
+        rect(19, 21, 6, 6, fill=PAPER, stroke=None) +
+        rect(39, 15, 6, 6, fill=PAPER, stroke=None)
     ))
 
 

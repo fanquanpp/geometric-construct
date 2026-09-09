@@ -190,6 +190,8 @@ func show_geo_pick(on_pick: Callable, shards: int, runs: int) -> void:
 	row.add_theme_constant_override("separation", 12)
 	col.add_child(row)
 	for g in Geometries.ALL:
+		if g.paired:
+			continue   # 重跑 = 单人独演:一体两半(伍)不入选(roguelike.md §1)
 		var idx: int = g.index
 		var b := _card_shell(Vector2(196, 250))
 		var c := VBoxContainer.new()
