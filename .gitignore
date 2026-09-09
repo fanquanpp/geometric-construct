@@ -39,3 +39,6 @@ Desktop.ini
 __pycache__/
 *.pyc
 *.log
+
+# AI 助手项目级 skills(GodotPrompter,机器本地工具配置,不入游戏仓库)
+.zcode/skills/
