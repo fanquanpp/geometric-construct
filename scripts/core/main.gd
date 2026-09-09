@@ -71,6 +71,8 @@ var _auto_test := false
 func _ready() -> void:
 	I = self
 	Ui.init_font()
+	# 移动端传感器横屏(重力感应双横屏;桌面无效果)
+	DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
 	add_child(Backdrop.new())
 	Sfx.init(self)
 	var amb := Ambience.new()

@@ -49,6 +49,14 @@ static func set_vibration(on: bool) -> void:
 	write_settings()
 
 
+## 分级触感反馈(v0.16,characters.md §2 / ROADMAP V7):
+## 轻触 20ms(虚拟按键,TouchControls 调)· 落地 40ms(重落地)·
+## 死亡 60ms · 归门 30ms。桌面端 Input.vibrate_handheld 无效果,无需判平台。
+static func haptic(ms: int) -> void:
+	if vibration:
+		Input.vibrate_handheld(ms)
+
+
 static func set_sfx_volume(v: float) -> void:
 	sfx_volume = clampf(v, 0.0, 1.0)
 	Sfx.set_volume_scale(sfx_volume)

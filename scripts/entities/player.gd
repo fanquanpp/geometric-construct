@@ -332,8 +332,10 @@ func _physics_process(delta: float) -> void:
 		if now_on_floor:
 			_air_jumps_left = 0
 		# 重落地的镜头轻沉(可叠加,幅度克制)
-		if impact > 620.0 and Main.I != null and Main.I.camera_rig != null:
-			Main.I.camera_rig.kick(minf(1.6 + impact / 420.0, 4.6))
+		if impact > 620.0:
+			SettingsManager.haptic(40)
+			if Main.I != null and Main.I.camera_rig != null:
+				Main.I.camera_rig.kick(minf(1.6 + impact / 420.0, 4.6))
 		var eff_bounce := effective_bounce()
 		var carrying := _has_riders()
 		# 玻璃疾走:重落地即碎(死亡按重拼结算,消耗红色刻度)
@@ -659,6 +661,7 @@ func die() -> void:
 		return
 	dying = true
 	Sfx.play("die", 0.0, _note_pitch())
+	SettingsManager.haptic(60)
 	if _roll_loop != null:
 		_roll_loop.volume_db = -60.0
 	_death_burst()
@@ -725,6 +728,7 @@ func arrive_at(door: ExitDoor) -> void:
 		return
 	arrived = true
 	Sfx.play("arrive")
+	SettingsManager.haptic(30)
 	var tw := create_tween()
 	tw.tween_property(self, "position:x", door.center.x, 0.22) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
