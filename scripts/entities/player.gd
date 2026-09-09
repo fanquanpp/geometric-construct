@@ -119,11 +119,12 @@ func _ready() -> void:
 		circle.radius = def.size.x / 2.0
 		shape_node.shape = circle
 	elif def.shape == GeometryDef.Shape.TRIANGLE:
-		# 上三角(界)尖朝上 / 下三角(边)尖朝下;凸多边形碰撞
+		# 双子形体(v0.17.2 修正):界(天花板)= 倒三角▽平边贴顶;
+		# 边(地面)= 正三角△平边落地;磁力线连接两个顶点(尖对尖)
 		var poly := ConvexPolygonShape2D.new()
 		var hw := def.size.x * 0.5
 		var hh := def.size.y * 0.5
-		if pair_half == 1:
+		if pair_half == 0:
 			poly.points = PackedVector2Array([
 				Vector2(-hw, -hh), Vector2(hw, -hh), Vector2(0, hh)])
 		else:
@@ -619,7 +620,12 @@ func display_name() -> String:
 	return def.name_half if pair_half == 1 and not def.name_half.is_empty() 		else def.name
 
 
-## 磁力线锚点:两半的"顶"(上三角尖 / 下三角顶边中点,characters.md §5)。
+## 基础重力:界(上半)反向(挂天花板),其余按名册默认。
+func _base_gravity() -> int:
+	return -1 if pair_half == 0 else def.gravity_dir
+
+
+## 磁力线锚点 = 两半的顶点(界尖朝下 / 边尖朝上,尖对尖,characters.md §5)。
 func boundary_anchor() -> Vector2:
 	return position + Vector2(0.0, -def.size.y * 0.5 * gravity_dir)
 
@@ -632,20 +638,24 @@ func _draw_tri(size: Vector2) -> void:
 		col = def.color.lerp(Color.WHITE, glow)
 	var w := size.x * 0.5
 	var h := size.y * 0.5
+	var flat_top := pair_half == 0   # 界:平边贴天花板;边:平边落地
 	var pts := PackedVector2Array()
-	if pair_half == 1:
+	if flat_top:
 		pts = PackedVector2Array([Vector2(-w, -h), Vector2(w, -h), Vector2(0, h)])
 	else:
 		pts = PackedVector2Array([Vector2(-w, h), Vector2(w, h), Vector2(0, -h)])
 	draw_colored_polygon(pts, col)
-	# 接地暗带(短横线,与方块的底带同语言)
-	draw_line(Vector2(-w * 0.62, h * 0.72), Vector2(w * 0.62, h * 0.72),
+	# 接地暗带贴平边(行走面)
+	var band_y := -h * 0.72 if flat_top else h * 0.72
+	draw_line(Vector2(-w * 0.62, band_y), Vector2(w * 0.62, band_y),
 		Color(0, 0, 0, 0.18), 5.0)
-	# 顶缘高光条
-	draw_line(Vector2(-w * 0.26, -h * 0.70), Vector2(w * 0.26, -h * 0.70),
+	# 平边高光条
+	var hl_y := -h * 0.80 if flat_top else h * 0.80
+	draw_line(Vector2(-w * 0.26, hl_y), Vector2(w * 0.26, hl_y),
 		Color(1, 1, 1, 0.5), 3.0)
-	# 磁力锚点方块(两顶所在,与 MagBoundary 端点同语言)
-	draw_rect(Rect2(Vector2(-3.5, -h - 3.5), Vector2(7, 7)), Color(Ui.PAPER, 0.9))
+	# 磁力锚点方块 = 顶点(界尖朝下 / 边尖朝上),与 MagBoundary 端点同语言
+	var apex_y := h * 0.86 if flat_top else -h * 0.86
+	draw_rect(Rect2(Vector2(-3.5, apex_y - 3.5), Vector2(7, 7)), Color(Ui.PAPER, 0.9))
 
 
 ## 是否正驮着同伴(驮人时落地收力站稳,做稳定平台)。
@@ -761,7 +771,7 @@ func _reset_for_respawn() -> void:
 	position = spawn_pos
 	rider_of = null               # 重生位置远离载体:立即解除骑乘,防刚性随动拉扯
 	velocity = Vector2.ZERO
-	gravity_dir = def.gravity_dir
+	gravity_dir = _base_gravity()   # 界:反向重力随重生还原(修"卡住"错根)
 	up_direction = Vector2(0, -gravity_dir)
 	speed_buffed = false
 	_swap_air = false
