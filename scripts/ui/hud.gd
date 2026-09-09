@@ -412,30 +412,61 @@ func set_level_info(def: LevelDef, num_label := "") -> void:
 	_rebuild_hints(def)
 
 
+## 队伍 chips(v0.17.3 重构):**只建一次、原地刷新状态**——
+## 切换时不再销毁重建控件树(重建会让连点落在被释放的控件上,产生延迟/丢点)。
+## 触控:gui_input 优先吃 InputEventScreenTouch(按下即发,零模拟延迟)并
+## accept_event() 吞掉,避免 emulate_mouse 双发;120ms 防抖合并同手势双事件。
 signal chip_tapped(index: int)
+
+var _chips := {}          # geo_index -> {panel, label, check}
+var _chip_roster: Array = []
 
 
 func refresh_roster(roster: Array, active: int, exited_mask: int) -> void:
-	for c in _roster.get_children():
-		c.queue_free()
-
-	for i in roster:
-		var c: GeometryDef = Geometries.ALL[i]
-		var is_active: bool = i == active
-		var exited: bool = (exited_mask & (1 << i)) != 0
-
-		var chip := PanelContainer.new()
-		# v0.17.2:chips 即切换入口 —— 点按直接切换到该几何体(替代切换按钮)
-		chip.mouse_filter = Control.MOUSE_FILTER_STOP
-		chip.modulate = Color(1, 1, 1, 0.5) if exited else Color.WHITE
-		var geo_index: int = i
-		chip.gui_input.connect(func(ev: InputEvent) -> void:
-			if ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed 					and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
-				chip_tapped.emit(geo_index))
-		chip.add_theme_stylebox_override("panel", Ui.sb(
+	if _chip_roster != roster or _chips.is_empty():
+		_chip_roster = roster.duplicate()
+		_rebuild_chips(roster)
+	for idx in _chips:
+		var c: Dictionary = _chips[idx]
+		var is_active: bool = idx == active
+		var exited: bool = (exited_mask & (1 << idx)) != 0
+		var panel: PanelContainer = c["panel"]
+		panel.modulate = Color(1, 1, 1, 0.5) if exited else Color.WHITE
+		panel.add_theme_stylebox_override("panel", Ui.sb(
 			Color(Ui.INK_2, 0.92 if is_active else 0.7), 0,
 			Color(Ui.PAPER, 0.95) if is_active else Color(Ui.PAPER, 0.16),
 			2 if is_active else 1, 14, 8))
+		var lab: Label = c["label"]
+		lab.add_theme_font_override("font", Ui.HEAD if is_active else Ui.BODY)
+		lab.add_theme_color_override("font_color",
+			Color.WHITE if is_active else Color(Ui.PAPER, 0.75))
+		(c["check"] as TextureRect).visible = exited
+
+
+func _rebuild_chips(roster: Array) -> void:
+	for c in _roster.get_children():
+		c.queue_free()
+	_chips.clear()
+	for i in roster:
+		var c: GeometryDef = Geometries.ALL[i]
+		var chip := PanelContainer.new()
+		chip.mouse_filter = Control.MOUSE_FILTER_STOP
+		var geo_index: int = i
+		var last_fire := [0]   # 单元素数组:闭包内可写的防抖时间戳
+		chip.gui_input.connect(func(ev: InputEvent) -> void:
+			var fire := false
+			if ev is InputEventScreenTouch:
+				fire = (ev as InputEventScreenTouch).pressed
+			elif ev is InputEventMouseButton 					and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+				fire = (ev as InputEventMouseButton).pressed
+			if not fire:
+				return
+			chip.accept_event()   # 吞掉手势,防模拟鼠标双发
+			var now := Time.get_ticks_msec()
+			if now - last_fire[0] < 120:
+				return
+			last_fire[0] = now
+			chip_tapped.emit(geo_index))
 
 		var hb := HBoxContainer.new()
 		hb.add_theme_constant_override("separation", 8)
@@ -444,19 +475,20 @@ func refresh_roster(roster: Array, active: int, exited_mask: int) -> void:
 		block.custom_minimum_size = Vector2(20, 20)
 		block.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		hb.add_child(block)
-		hb.add_child(Ui.l(c.name, 20, Ui.HEAD if is_active else Ui.BODY,
-			Color.WHITE if is_active else Color(Ui.PAPER, 0.75),
-			HORIZONTAL_ALIGNMENT_LEFT))
-		if exited:
-			var check := TextureRect.new()
-			check.texture = Ui.icon("icons/check-flat.svg")
-			check.custom_minimum_size = Vector2(18, 18)
-			check.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			check.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			check.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			hb.add_child(check)
+		var lab := Ui.l(c.name, 20, Ui.BODY, Color(Ui.PAPER, 0.75),
+			HORIZONTAL_ALIGNMENT_LEFT)
+		hb.add_child(lab)
+		var check := TextureRect.new()
+		check.texture = Ui.icon("icons/check-flat.svg")
+		check.custom_minimum_size = Vector2(18, 18)
+		check.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		check.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		check.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		check.visible = false
+		hb.add_child(check)
 		chip.add_child(hb)
 		_roster.add_child(chip)
+		_chips[i] = {"panel": chip, "label": lab, "check": check}
 
 
 func narration(text: String, color: Color, dur := 3.2) -> void:

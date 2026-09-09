@@ -292,9 +292,16 @@ func _switch_to(slot: int, quiet := false) -> void:
 
 ## 数字键 / 点按 chips 切换(v0.17.2):按几何体下标直达;
 ## 双子(伍)同下标两具 —— 已选中其一时再点即换另一位。
+var _switch_ms := 0
+
+
 func switch_to_geo(index: int) -> void:
 	if _state != State.PLAYING or players.is_empty():
 		return
+	var now := Time.get_ticks_msec()
+	if now - _switch_ms < 150:
+		return   # 触摸 + 模拟鼠标双发防抖
+	_switch_ms = now
 	var candidates: Array = []
 	for i in players.size():
 		var p: Player = players[i]
