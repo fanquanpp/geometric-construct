@@ -771,7 +771,8 @@ class LeverGate extends Node2D:
 
 ## 钢琴地板砖(audio.md §4):踩踏 / 滚过即发声的平台砖 —— 玩家行为即配乐。
 ## 音级缺省按格 y 反向映射(越高 = 越高的音,地图即乐谱);
-## 触发冷却 0.15s 防连发(圆的 glissando 冷却减半保持音流);
+## v0.16 触发重构:接触沿触发一次,持续接触仅圆的滚奏(移动中)按 0.075s
+## 重触发(glissando)——静止压砖不再"机关枪式"连响;
 ## 落地速度 → 音量;演出 = 顶缘亮线脉冲 + 音符粒子;双几何体同砖 = 和音。
 class PianoTile extends StaticBody2D:
 	var slab_rect := Rect2()
@@ -779,6 +780,7 @@ class PianoTile extends StaticBody2D:
 	var layer_value := 1
 	var _pulse := 0.0         # 顶缘亮线脉冲剩余时间
 	var _last_played := {}    # player index -> 上次触发时刻(秒)
+	var _in_contact := {}    # player index -> 是否接触中(接触沿判定,v0.16)
 
 	func _ready() -> void:
 		collision_layer = layer_value
@@ -793,12 +795,17 @@ class PianoTile extends StaticBody2D:
 			note = Sfx.note_for_height(slab_rect.position.y, Main.I._level_def.size.y)
 
 	## 玩家每帧报告接触(由 Player 调用):impact = 落地/滚动速度。
+	## 接触沿触发一次;持续接触仅圆的滚奏(移动中)按 0.075s 重触发。
 	func strike(player: Player, impact: float) -> void:
 		var now := Time.get_ticks_msec() / 1000.0
-		var cd := 0.075 if player.def.shape == GeometryDef.Shape.BALL else 0.15
-		if _last_played.has(player.index) and now - _last_played[player.index] < cd:
-			return
-		_last_played[player.index] = now
+		var idx := player.index
+		var entering: bool = not _in_contact.get(idx, false)
+		_in_contact[idx] = true
+		if not entering:
+			var rolling: bool = player.def.shape == GeometryDef.Shape.BALL 				and absf(player.velocity.x) > 60.0
+			if not rolling or _last_played.has(idx) 					and now - _last_played[idx] < 0.075:
+				return
+		_last_played[idx] = now
 		_pulse = 0.4
 		queue_redraw()
 		_note_burst(player)
@@ -806,6 +813,10 @@ class PianoTile extends StaticBody2D:
 		Sfx.play_note(note, false, vol)
 		if player.rider_of != null or _has_other_rider(player):
 			Sfx.play_chord([note, Sfx.note_shift(note, 4)], vol * 0.8)
+
+	## 玩家离砖(由 Player 在接触结束时调用):复位接触沿,下次踩上重新触发。
+	func release(idx: int) -> void:
+		_in_contact[idx] = false
 
 	## 音符粒子:纸白小方块自砖顶缘散出(audio.md §4 触发演出)。
 	func _note_burst(_player: Player) -> void:

@@ -81,6 +81,7 @@ var _roll_angle := 0.0        # 圆球累计滚动角(rad),每帧按角速度推
 var _roll_speed := 0.0        # 圆球角速度(rad/s):地面 = v/r 纯滚动,空中保留角动量
 var _roll_loop: AudioStreamPlayer  # 圆球滚动轰鸣(音量/音高随速度连续调制)
 var _trail: Array = []        # 高速残影的位置记录 [{pos, size}]
+var _piano_touch: Array = []  # 上一帧接触的钢琴砖(接触沿判定,防静止连响)
 var _shadow_dist: float = INF
 var _body_box: StyleBoxFlat
 
@@ -266,7 +267,7 @@ func _physics_process(delta: float) -> void:
 			_coyote = 0.0
 			_jump_cut = false
 			_squash(0.78, 1.24)
-			Sfx.play("jump")
+			Sfx.play("jump", 0.0, _note_pitch())
 		elif _air_jumps_left > 0:
 			# 第二段跳(空中)
 			_air_jumps_left -= 1
@@ -274,7 +275,7 @@ func _physics_process(delta: float) -> void:
 			_jump_buffer = 0.0
 			_jump_cut = false
 			_squash(0.82, 1.18)
-			Sfx.play("jump2")
+			Sfx.play("jump2", 0.0, _note_pitch() * 1.26)
 			_air_burst()
 	elif _swap_buffer > 0.0 and def.can_swap \
 			and (on_ground or _coyote > 0.0) and _swap_cd <= 0.0:
@@ -343,7 +344,7 @@ func _physics_process(delta: float) -> void:
 			if absf(vel.y) < 5.0:
 				_squash(1.24, 0.78)
 			elif impact > 120.0:
-				Sfx.play("land")
+				Sfx.play("land", 0.0, _note_pitch())
 		else:
 			var restitution := clampf(eff_bounce * 0.5, 0.0, 1.0)
 			if jump_held and def.can_jump:
@@ -356,7 +357,7 @@ func _physics_process(delta: float) -> void:
 			vel.y = -impact * restitution * gravity_dir
 			velocity = vel
 			_squash(0.72, 1.3)
-			Sfx.play("bounce")
+			Sfx.play("bounce", 0.0, _note_pitch())
 		_swap_air = false
 
 	# ———— 圆球滚动:地面按 v/r 纯滚动;空中保留角动量(轻微空气阻尼),
@@ -399,12 +400,19 @@ func _physics_process(delta: float) -> void:
 	elif _ramp_timer > 0.0:
 		_ramp_timer = maxf(_ramp_timer - dt, 0.0)
 
-	# ———— 钢琴地板砖:踩踏 / 滚过发声(audio.md §4) ————
+	# ———— 钢琴地板砖:踩踏 / 滚过发声(audio.md §4);
+	# 接触沿上报 + 离砖复位,静止压砖不再每帧重发(v0.16 机关枪修复) ————
+	var piano_now: Array = []
 	for i in get_slide_collision_count():
 		var col := get_slide_collision(i)
 		var obj = col.get_collider()
 		if obj is LevelBuilder.PianoTile and col.get_normal().dot(up_direction) > 0.7:
+			piano_now.append(obj)
 			(obj as LevelBuilder.PianoTile).strike(self, vel.length())
+	for t in _piano_touch:
+		if not piano_now.has(t):
+			t.release(index)
+	_piano_touch = piano_now
 
 	# ———— 可推动(肆·圆,characters.md §4):地面水平推挤圆球 → 传速滚动。
 	# 只传速不改位置,圆球自身滚动摩擦自然衰减;推力不高于推者自身速度 ————
@@ -456,7 +464,7 @@ func _perform_swap(vel: Vector2) -> Vector2:
 	_jump_cut = false
 	_swap_air = true
 	_squash(1.3, 0.74)
-	Sfx.play("swap")
+	Sfx.play("swap", 0.0, _note_pitch())
 	_swap_burst()
 	return vel
 
@@ -559,6 +567,12 @@ func _top_boost_ratio() -> float:
 	return 1.0
 
 
+## 几何体主题音符变调比(壹=do / 贰=re / 叁=mi / 肆=fa;glossary.md §1):
+## 跳跃与落地音效各唱各的音,同一几何体的音效恒在它的音位上。
+func _note_pitch() -> float:
+	return Sfx.note_ratio(def.note)
+
+
 ## 是否正驮着同伴(驮人时落地收力站稳,做稳定平台)。
 func _has_riders() -> bool:
 	if Main.I == null:
@@ -633,7 +647,7 @@ func die() -> void:
 	if dying or in_exit or arrived:
 		return
 	dying = true
-	Sfx.play("die")
+	Sfx.play("die", 0.0, _note_pitch())
 	if _roll_loop != null:
 		_roll_loop.volume_db = -60.0
 	_death_burst()
@@ -682,6 +696,9 @@ func _reset_for_respawn() -> void:
 	_roll_speed = 0.0
 	_squash_x = 1.0
 	_squash_y = 1.0
+	for t in _piano_touch:
+		t.release(index)
+	_piano_touch.clear()
 	_trail.clear()
 
 

@@ -257,7 +257,7 @@ static func _bus_name(want: String) -> StringName:
 	return want if AudioServer.get_bus_index(want) >= 0 else &"Master"
 
 
-static func play(sfx_name: String, vol_offset := 0.0) -> void:
+static func play(sfx_name: String, vol_offset := 0.0, pitch := 1.0) -> void:
 	if not _players.has(sfx_name):
 		return
 	var p: AudioStreamPlayer = _players[sfx_name]
@@ -265,9 +265,15 @@ static func play(sfx_name: String, vol_offset := 0.0) -> void:
 	p.volume_db = _vols[sfx_name] + vol_offset \
 		+ (linear_to_db(maxf(_volume_scale, 0.0001)) if _volume_scale > 0.001 else -80.0)
 	var j: float = _jitters[sfx_name]
-	p.pitch_scale = 1.0 + randf_range(-j, j)
+	p.pitch_scale = pitch * (1.0 + randf_range(-j, j))
 	p.stop()
 	p.play()
+
+
+## 音名相对 C4 的音高比:几何体主题音符 → 跳跃/落地音效变调
+## (一几何体一音符,glossary.md §1 / audio.md §1)。
+static func note_ratio(note_name: String) -> float:
+	return note_freq(note_name) / note_freq("C4")
 
 
 ## 播放一个音符(钢琴砖 / 演奏路径):钢琴音色 = tri 基频 + 泛音[[2,0.3],[3,0.12]],

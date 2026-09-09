@@ -35,6 +35,7 @@ var index: int = 0
 var name: String = ""          # 单字代号,用于大字排版
 var full_name: String = ""     # 完整名(形态 + 色),档案页标题
 var slug: String = ""          # 对应 assets/svg/characters 素材名
+var note: String = "C4"        # 主题音符(C 大调音名):跳跃/落地音效变调基准
 var shape: Shape = Shape.SQUARE
 var color: Color = Color.WHITE
 var role: String = ""          # 定位标签:速度型 / 弹性型 / 置换型 / 滚动型
