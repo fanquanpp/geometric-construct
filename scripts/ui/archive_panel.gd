@@ -133,13 +133,13 @@ func _build_geo_page() -> void:
 	var page := _make_page("geo")
 
 	# 左侧:几何肖像(aseprite 200×200 → 2× 整数放大,NEAREST 保像素)
+	# 衬板无投影(v0.19.2:几何体形象不带黑色阴影,衬板只做墨色托底)
 	var zone := Control.new()
 	zone.position = Vector2(60, 118)
 	zone.size = Vector2(400, 400)
 	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.draw.connect(func() -> void:
-		zone.draw_rect(Rect2(8, 8, 400, 400), Color(0, 0, 0, 0.4))       # 硬投影
-		zone.draw_rect(Rect2(0, 0, 400, 400), Color(Ui.INK_3, 0.85))     # 墨底衬板
+		zone.draw_rect(Rect2(0, 0, 400, 400), Color(Ui.INK_3, 0.85))
 	)
 	page.add_child(zone)
 	_portrait_zone = zone
