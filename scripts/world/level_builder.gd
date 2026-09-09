@@ -161,15 +161,23 @@ static func build(def: LevelDef) -> Node2D:
 	for idx in def.roster:
 		var cd: GeometryDef = Geometries.ALL[idx]
 		if cd.paired:
-			# 双子(伍):界(上三角)在出生点,边(下三角)在其右 90px;
-			# 两顶之间张成磁力边界(characters.md §5)
+			# 双子(伍):界生于天花板(a,重力反向挂顶面),边生于地面(b);
+			# 两顶之间张成磁力边界,横跨上下两层(characters.md §5)
 			var halves: Array = []
+			var pa: Vector2
+			var pb: Vector2
+			if def.spawns[idx] is Dictionary:
+				pa = def.spawns[idx]["a"]
+				pb = def.spawns[idx]["b"]
+			else:
+				pa = def.spawns[idx]
+				pb = pa + Vector2(90, 0)
 			for half in 2:
 				var hp := Player.new()
 				hp.def = cd
 				hp.index = idx
 				hp.pair_half = half
-				hp.spawn_pos = def.spawns[idx] + Vector2(90.0 * float(half), 0)
+				hp.spawn_pos = pa if half == 0 else pb
 				hp.position = hp.spawn_pos
 				hp.world_mask = _mask_for(combos, idx)
 				root.add_child(hp)
@@ -301,7 +309,8 @@ class LaneRenderer extends Node2D:
 	var _auto_far: Array = []        # 自动沉降档(1 近景远层 / 2 最深远景)
 	var _delay: Array = []           # 切换波次剩余延时(近处先动)
 	var _last_slot := -1
-	const DIM_WHO := 0.30            # far:0 原位淡化档(levels.md §7.7)
+	const GHOST := 0.35              # 非实体虚化档(所见即所碰,v0.17)
+	const GHOST_FRONT := 0.45        # 前景虚化:可穿行遮挡恒半透
 	const DIM_FRONT := 0.55          # 前景遮挡:玩家躲入其后
 	const ALPHA_FAR1 := 0.34         # 远景近档:向背景雾色渗出 66%(冷色幽灵档)
 	const ALPHA_FAR2 := 0.26         # 最深远景:渗出 74%,仅余轮廓
@@ -350,6 +359,9 @@ class LaneRenderer extends Node2D:
 		var p: Player = m.players[slot]
 		return p.index if p != null else -1
 
+	func _solid_for(item, geo: int) -> bool:
+		return Comp.applies_to(item, geo) 			and Comp.lane_for(item, geo) == Comp.LANE_MID
+
 	func _target_alpha(i: int, tier: String, slot: int, geo: int) -> float:
 		if tier == Comp.LANE_FAR1:
 			return ALPHA_FAR1
@@ -357,14 +369,16 @@ class LaneRenderer extends Node2D:
 			return ALPHA_FAR2
 		if tier != lane:
 			return 0.0
-		var m = Main.I
+		# 分层语义 v2:对当前几何体非实体 → 一律虚化(所见即所碰)。
+		# back / front / 不适用(原 far:0)统一按幽灵档呈现。
+		if geo >= 0 and not _solid_for(items[i], geo):
+			return GHOST_FRONT if lane == Comp.LANE_FRONT else GHOST
 		if lane == Comp.LANE_FRONT:
+			var m = Main.I
 			if m != null and slot >= 0 and slot < m.players.size():
 				var p: Player = m.players[slot]
 				if p != null and Comp.rect_of(items[i]).has_point(p.position):
 					return DIM_FRONT
-		if geo >= 0 and not Comp.applies_to(items[i], geo):
-			return DIM_WHO    # far:0:不适用但显式保留原位淡化
 		return 1.0
 
 	func _process(delta: float) -> void:

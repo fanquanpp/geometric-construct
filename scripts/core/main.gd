@@ -928,6 +928,7 @@ func _run_tour_shot() -> void:
 			["front_zone", Vector2(3160, 1745)],
 			["who_wall", Vector2(3550, 1745)],
 			["swap_corridor", Vector2(4950, 1745)],
+			["ceiling_cover", Vector2(5000, 1245)],
 			["ceiling_deck", Vector2(5100, 1245)],
 			["faces_top", Vector2(4850, 1395)],
 			["piano_row", Vector2(6950, 1745)],
@@ -939,7 +940,7 @@ func _run_tour_shot() -> void:
 			["lever", Vector2(11600, 1760)],
 			["climb_tower", Vector2(12050, 1500)],
 			["boost_tower", Vector2(13060, 1290)],
-			["twins_deck", Vector2(13500, 1245)],
+			["twins_hall", Vector2(13500, 1745)],
 			["doors", Vector2(14600, 1754)]],
 	}
 	var waypoints: Array = tours.get(_shot_level, [["spawn", Vector2(300, 850)]])

@@ -98,10 +98,14 @@ var _body_box: StyleBoxFlat
 func _ready() -> void:
 	collision_layer = 2
 	collision_mask = 2 | world_mask
-	# 磁力边界(伍):除逆(穿透)与双体自身外,人人受阻(characters.md §5)
+	gravity_dir = def.gravity_dir
+	# 双子(伍·界/边,characters.md §5):界生于天花板(重力天生反向,天路是她的地面),
+	# 边行于地面;磁界线张在两者之间,横跨上下两层。须在 up_direction 之前生效。
+	if pair_half == 0:
+		gravity_dir = -1
+	# 磁力边界(伍):除逆(穿透)与双子自身外,人人受阻(characters.md §5)
 	if not def.can_pass_boundary and pair_half < 0:
 		collision_mask |= LevelBuilder.BOUNDARY_BIT
-	gravity_dir = def.gravity_dir
 	up_direction = Vector2(0, -gravity_dir)
 	z_index = 5
 	_climb_budget = GeometryDef.CLIMB_UNITS * Geometries.UNIT_PX
