@@ -64,6 +64,9 @@ var shrink := 1.0
 
 var facing := 1.0
 var input_x := 0.0            # 本帧水平输入(载体侧刚性随动的自走判定)
+## 一体两半(伍·界/边,characters.md §5):-1 非双体;0 = 界(上三角) 1 = 边(下三角)
+var pair_half := -1
+var partner: Player = null    # 另一半(双体专用)
 ## 逐帧物理探针(自动化验证用)。
 var debug_probe := false
 var _coyote := 0.0
@@ -95,6 +98,9 @@ var _body_box: StyleBoxFlat
 func _ready() -> void:
 	collision_layer = 2
 	collision_mask = 2 | world_mask
+	# 磁力边界(伍):除逆(穿透)与双体自身外,人人受阻(characters.md §5)
+	if not def.can_pass_boundary and pair_half < 0:
+		collision_mask |= LevelBuilder.BOUNDARY_BIT
 	gravity_dir = def.gravity_dir
 	up_direction = Vector2(0, -gravity_dir)
 	z_index = 5
@@ -108,6 +114,18 @@ func _ready() -> void:
 		var circle := CircleShape2D.new()
 		circle.radius = def.size.x / 2.0
 		shape_node.shape = circle
+	elif def.shape == GeometryDef.Shape.TRIANGLE:
+		# 上三角(界)尖朝上 / 下三角(边)尖朝下;凸多边形碰撞
+		var poly := ConvexPolygonShape2D.new()
+		var hw := def.size.x * 0.5
+		var hh := def.size.y * 0.5
+		if pair_half == 1:
+			poly.points = PackedVector2Array([
+				Vector2(-hw, -hh), Vector2(hw, -hh), Vector2(0, hh)])
+		else:
+			poly.points = PackedVector2Array([
+				Vector2(-hw, hh), Vector2(hw, hh), Vector2(0, -hh)])
+		shape_node.shape = poly
 	else:
 		var rect := RectangleShape2D.new()
 		rect.size = def.size
@@ -583,7 +601,47 @@ func _top_boost_ratio() -> float:
 ## 几何体主题音符变调比(壹=do / 贰=re / 叁=mi / 肆=fa;glossary.md §1):
 ## 跳跃与落地音效各唱各的音,同一几何体的音效恒在它的音位上。
 func _note_pitch() -> float:
+	if pair_half == 1:
+		return Sfx.note_ratio("A4")   # 边 = la(sol/la 双音位的第二半,glossary §1)
 	return Sfx.note_ratio(def.note)
+
+
+## 台词 / 代号(双体第二半用"边"的版本)。
+func quote_text() -> String:
+	return def.quote_half if pair_half == 1 and not def.quote_half.is_empty() 		else def.quote
+
+
+func display_name() -> String:
+	return def.name_half if pair_half == 1 and not def.name_half.is_empty() 		else def.name
+
+
+## 磁力线锚点:两半的"顶"(上三角尖 / 下三角顶边中点,characters.md §5)。
+func boundary_anchor() -> Vector2:
+	return position + Vector2(0.0, -def.size.y * 0.5 * gravity_dir)
+
+
+## 三角形象(伍):纯色硬边多边形 + 底部暗带 + 顶缘高光 + 磁力锚点方块。
+func _draw_tri(size: Vector2) -> void:
+	var col := def.color
+	if is_active:
+		var glow := 0.10 + 0.10 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 380.0))
+		col = def.color.lerp(Color.WHITE, glow)
+	var w := size.x * 0.5
+	var h := size.y * 0.5
+	var pts := PackedVector2Array()
+	if pair_half == 1:
+		pts = PackedVector2Array([Vector2(-w, -h), Vector2(w, -h), Vector2(0, h)])
+	else:
+		pts = PackedVector2Array([Vector2(-w, h), Vector2(w, h), Vector2(0, -h)])
+	draw_colored_polygon(pts, col)
+	# 接地暗带(短横线,与方块的底带同语言)
+	draw_line(Vector2(-w * 0.62, h * 0.72), Vector2(w * 0.62, h * 0.72),
+		Color(0, 0, 0, 0.18), 5.0)
+	# 顶缘高光条
+	draw_line(Vector2(-w * 0.26, -h * 0.70), Vector2(w * 0.26, -h * 0.70),
+		Color(1, 1, 1, 0.5), 3.0)
+	# 磁力锚点方块(两顶所在,与 MagBoundary 端点同语言)
+	draw_rect(Rect2(Vector2(-3.5, -h - 3.5), Vector2(7, 7)), Color(Ui.PAPER, 0.9))
 
 
 ## 是否正驮着同伴(驮人时落地收力站稳,做稳定平台)。
@@ -813,6 +871,8 @@ func _draw() -> void:
 	# 本体:棱角分明的几何形(不带外框 —— 活跃指示靠亮度脉冲 + 名牌 + 队伍 chips)
 	if def.shape == GeometryDef.Shape.BALL:
 		_draw_ball(size)
+	elif def.shape == GeometryDef.Shape.TRIANGLE:
+		_draw_tri(size)
 	else:
 		_draw_box(size)
 
@@ -892,8 +952,9 @@ func _draw_ball(size: Vector2) -> void:
 func _draw_name_tag(size: Vector2) -> void:
 	if Ui.HEAD == null:
 		return
-	var ts := Ui.HEAD.get_string_size(def.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15)
+	var nm := display_name()
+	var ts := Ui.HEAD.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 15)
 	var pos := Vector2(-ts.x / 2.0, (-size.y / 2.0 - 10.0) * gravity_dir)
-	draw_string(Ui.HEAD, pos + Vector2(0, 1), def.name,
+	draw_string(Ui.HEAD, pos + Vector2(0, 1), nm,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0, 0, 0, 0.55))
-	draw_string(Ui.HEAD, pos, def.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 1, 1, 0.92))
+	draw_string(Ui.HEAD, pos, nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 1, 1, 0.92))

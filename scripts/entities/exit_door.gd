@@ -13,6 +13,7 @@ var size := Vector2(64, 92)
 var sealed := false
 
 var _filled := false
+var _arrived_set := {}   # Player -> true(双体门:两半都到站才算满,characters.md §5)
 var _t := 0.0
 var _color: Color
 var _burst: CPUParticles2D
@@ -64,17 +65,27 @@ func _ready() -> void:
 	add_child(_check)
 
 
+func _pair_total() -> int:
+	if Main.I == null:
+		return 1
+	var n := 0
+	for p in Main.I.players:
+		if p.index == geo_index and not p.in_exit:
+			n += 1
+	return maxi(n, 1)
+
+
 func _on_body_entered(body: Node2D) -> void:
-	if _filled:
-		return
 	if body is Player:
 		var p := body as Player
 		if p.index == geo_index and not p.in_exit and not p.arrived and not p.dying:
 			# 到达待命(勾选):不收取,保持可操控;全员到齐后由 Main 统一吸入
-			_filled = true
-			_burst.emitting = true
-			_icon.visible = false
-			_check.visible = true
+			_arrived_set[p] = true
+			if not _filled and _arrived_set.size() >= _pair_total():
+				_filled = true
+				_burst.emitting = true
+				_icon.visible = false
+				_check.visible = true
 			p.arrive_at(self)
 
 
@@ -85,10 +96,12 @@ func _on_body_exited(body: Node2D) -> void:
 		var p := body as Player
 		if p.index == geo_index and p.arrived:
 			# 玩家把到站几何体走出门区:取消到站,可再次进入
-			_filled = false
-			_burst.emitting = false
-			_icon.visible = true
-			_check.visible = false
+			_arrived_set.erase(p)
+			if _arrived_set.size() < _pair_total():
+				_filled = false
+				_burst.emitting = false
+				_icon.visible = true
+				_check.visible = false
 			p.depart_exit()
 
 

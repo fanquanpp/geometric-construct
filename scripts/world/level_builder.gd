@@ -1,4 +1,7 @@
 class_name LevelBuilder
+
+## 磁力边界碰撞位(伍·界/边专用;组件组合位只占 3..31,此位独立在外)。
+const BOUNDARY_BIT := 1 << 30
 ## 把 LevelDef 数据实例化为节点树:平台 / 曲面跳跃板 / 加速门 / 门 / 几何体 / 相机。
 ## 渲染规范:棱角分明的平面石板 + 硬投影,无圆角无柔光。
 ## 关卡背景带 1 格 = 100 px 的定位网格(与 HUD 坐标读数对齐)。
@@ -153,6 +156,27 @@ static func build(def: LevelDef) -> Node2D:
 	# —— 几何体:collision_mask = 适用组合位并集,出生算定一次(§7.6) ——
 	for idx in def.roster:
 		var cd: GeometryDef = Geometries.ALL[idx]
+		if cd.paired:
+			# 一体两半(伍):界(上三角)在出生点,边(下三角)在其右 90px;
+			# 两顶之间张成磁力边界(characters.md §5)
+			var halves: Array = []
+			for half in 2:
+				var hp := Player.new()
+				hp.def = cd
+				hp.index = idx
+				hp.pair_half = half
+				hp.spawn_pos = def.spawns[idx] + Vector2(90.0 * float(half), 0)
+				hp.position = hp.spawn_pos
+				hp.world_mask = _mask_for(combos, idx)
+				root.add_child(hp)
+				halves.append(hp)
+			(halves[0] as Player).partner = halves[1]
+			(halves[1] as Player).partner = halves[0]
+			var mb := MagBoundary.new()
+			mb.a = halves[0]
+			mb.b = halves[1]
+			root.add_child(mb)
+			continue
 		var p := Player.new()
 		p.def = cd
 		p.index = idx
@@ -774,6 +798,52 @@ class LeverGate extends Node2D:
 ## v0.16 触发重构:接触沿触发一次,持续接触仅圆的滚奏(移动中)按 0.075s
 ## 重触发(glissando)——静止压砖不再"机关枪式"连响;
 ## 落地速度 → 音量;演出 = 顶缘亮线脉冲 + 音符粒子;双几何体同砖 = 和音。
+## 磁力边界(伍·界/边,characters.md §5):两半顶部之间的阻隔线,
+## 随两半移动逐帧伸缩;碰撞位 BOUNDARY_BIT(逆与双体自身的 mask 不含它)。
+## v1 纪律:线只阻挡不推移——两半快速分开时,原线处的几何体不会被扫飞。
+class MagBoundary extends StaticBody2D:
+	var a: Player
+	var b: Player
+	var _seg := SegmentShape2D.new()
+
+	func _ready() -> void:
+		collision_layer = LevelBuilder.BOUNDARY_BIT
+		collision_mask = 0
+		var cs := CollisionShape2D.new()
+		cs.shape = _seg
+		add_child(cs)
+		z_index = 4
+
+	func _physics_process(_dt: float) -> void:
+		if a == null or b == null or not is_instance_valid(a) or not is_instance_valid(b):
+			return
+		_seg.a = to_local(a.boundary_anchor())
+		_seg.b = to_local(b.boundary_anchor())
+		queue_redraw()
+
+	func _draw() -> void:
+		if a == null or b == null:
+			return
+		var col: Color = a.def.color
+		var pa := _seg.a
+		var pb := _seg.b
+		var d := pb - pa
+		if d.length() < 8.0:
+			return
+		var mid := (pa + pb) * 0.5
+		var n := Vector2(-d.y, d.x).normalized()
+		var bow := n * clampf(d.length() * 0.08, 4.0, 14.0)
+		# 磁力折线:三段硬折(构成主义,不弯曲)
+		var pts := PackedVector2Array([pa, pa + d * 0.3 + bow,
+			pa + d * 0.7 + bow, pb])
+		for i in 3:
+			draw_line(pts[i], pts[i + 1], Color(col, 0.85), 2.5)
+		# 端点方块 + 折点中块(磁力感)
+		draw_rect(Rect2(pa - Vector2(4, 4), Vector2(8, 8)), Color(col, 0.95))
+		draw_rect(Rect2(pb - Vector2(4, 4), Vector2(8, 8)), Color(col, 0.95))
+		draw_rect(Rect2(mid + bow - Vector2(3, 3), Vector2(6, 6)), Color(Ui.PAPER, 0.9))
+
+
 class PianoTile extends StaticBody2D:
 	var slab_rect := Rect2()
 	var note := ""            # 音名("C4");空 = 按 y 反向映射

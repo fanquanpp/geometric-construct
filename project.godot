@@ -94,9 +94,9 @@ pause={
 
 [input_devices]
 
-joypads/ignore_joypad_on_unfocused_application=true
 sensors/enable_accelerometer=true
 sensors/enable_gyroscope=true
+joypads/ignore_joypad_on_unfocused_application=true
 
 [physics]
 

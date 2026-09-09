@@ -62,6 +62,8 @@ var _story_kind := "prologue"   # --storyshot=NAME:指定要截图/验证的剧�
 var _rogue_shot := false
 var _rogue_auto := false
 var _rogue_focus := 0           # --rogueautotest=N:指定主角跑通局
+var _json_level_path := ""      # --leveljson=<res://...>:JSON 关卡覆盖(editor 契约前置)
+var _trial_shot := false        # --trialshot:JSON 关卡出生点连拍(双体/磁界验证)
 var _tour_shot := false
 var _lane_shot := false
 var _perf_log := false
@@ -160,6 +162,13 @@ func start_level(index: int, intro := true) -> void:
 	_rogue = false
 	_current = clampi(index, 0, LevelData.LEVELS.size() - 1)
 	_level_def = LevelData.LEVELS[_current]
+	# JSON 关卡覆盖(--leveljson,editor 数据契约走查):不进 ACTS / 进度体系
+	if not _json_level_path.is_empty():
+		var f := FileAccess.open(_json_level_path, FileAccess.READ)
+		if f != null:
+			_level_def = LevelData.from_json_text(f.get_as_text())
+		else:
+			push_warning("start_level: --leveljson 打开失败 %s" % _json_level_path)
 	_clear_level()
 	_doors.clear()
 	_level_root = LevelBuilder.build(_level_def)
@@ -248,7 +257,8 @@ func _collect_players() -> void:
 # ———————————————— 几何体切换 ————————————————
 
 ## 切换操控:已到达终点门待命的几何体仍然可以被选中(终点激活前不收取);
-## 只跳过正在进门 / 死亡中的几何体。
+## 只跳过正在进门 / 死亡中的几何体;双体(伍)第二半不可独立选中——
+## 选中任一半即两半同控(characters.md §5"一体两半,同念共动")。
 func _switch_to(slot: int, quiet := false) -> void:
 	if _state != State.PLAYING or players.is_empty():
 		return
@@ -257,17 +267,19 @@ func _switch_to(slot: int, quiet := false) -> void:
 	for pass_i in 2:
 		for k in n:
 			var p: Player = players[(slot + k) % n]
-			var ok: bool = (not p.in_exit and not p.dying) \
-				if pass_i == 0 else (not p.in_exit)
+			var ok: bool = (not p.in_exit and not p.dying and p.pair_half != 1) \
+				if pass_i == 0 else (not p.in_exit and p.pair_half != 1)
 			if not ok:
 				continue
 			_active_slot = players.find(p)
 			for j in n:
-				players[j].is_active = j == _active_slot
+				var q: Player = players[j]
+				q.is_active = j == _active_slot \
+					or (p.pair_half >= 0 and q.pair_half >= 0 and q.index == p.index)
 			_refresh_roster()
 			if not quiet:
 				Sfx.play("switch")
-				_hud.narration(p.def.quote, p.def.color)
+				_hud.narration(p.quote_text(), p.def.color)
 				if camera_rig != null:
 					camera_rig.on_switch()
 			return
@@ -283,7 +295,14 @@ func _refresh_roster() -> void:
 	var mask := 0
 	for p in players:
 		if p.in_exit or p.arrived:
-			mask |= 1 << p.index
+			# 双体(伍):同一 index 的两半全部到站才点亮名册勾选
+			var all_in := true
+			for q in players:
+				if q.index == p.index and not (q.in_exit or q.arrived):
+					all_in = false
+					break
+			if all_in:
+				mask |= 1 << p.index
 	var active: int = players[_active_slot].index \
 		if (_active_slot >= 0 and _active_slot < players.size()) else -1
 	_hud.refresh_roster(_level_def.roster, active, mask)
@@ -715,6 +734,10 @@ func _parse_auto_shot() -> void:
 			debug_zoom = raw.substr(7).to_float()
 		elif raw.begins_with("--level="):
 			_shot_level = raw.substr(8).to_int()
+		elif raw == "--trialshot":
+			_trial_shot = true
+		elif raw.begins_with("--leveljson="):
+			_json_level_path = raw.substr(12)
 	if _auto_shot and _shot_dir.is_empty():
 		_shot_dir = "C:/Atian/Project/shots_bm"
 	if _auto_shot and args.has("--menushot"):
@@ -725,6 +748,8 @@ func _parse_auto_shot() -> void:
 		_run_auto_shot()
 	if _door_shot:
 		_run_door_shot()
+	if _trial_shot:
+		_run_trial_shot()
 	if _panel_shot:
 		_run_panel_shot()
 	if _set_shot:
@@ -1108,6 +1133,18 @@ func _run_door_shot() -> void:
 	await _shot("door")
 	await get_tree().create_timer(1.1).timeout
 	await _shot("complete")
+	get_tree().quit()
+
+
+## JSON 试水关出生点连拍:验证双体渲染 / 磁力边界 / 双门(开发用)。
+func _run_trial_shot() -> void:
+	if _shot_dir.is_empty():
+		_shot_dir = ".shots_v16"
+	start_level(0, false)
+	await get_tree().create_timer(0.4).timeout
+	await _shot("trial_spawn")
+	await get_tree().create_timer(0.8).timeout
+	await _shot("trial_rest")
 	get_tree().quit()
 
 

@@ -906,6 +906,77 @@ static func layer_lab() -> LevelDef:
 	return def
 
 
+## JSON 同构装载(关卡编辑器数据契约前置,editor-plan.md §2 / levels.md §0):
+## 字段名与 LevelDef 一致;Vector2 = {x,y}、Rect2 = {x,y,w,h};
+## 组件 = 语义字典(rect 必填,lane/faces/who/tags 可选);spawns 缺项 = Vector2.ZERO。
+static func from_json_text(text: String) -> LevelDef:
+	var parsed = JSON.parse_string(text)
+	assert(parsed is Dictionary, "level json: root must be object")
+	var d: Dictionary = parsed
+	var def := LevelDef.new()
+	def.name = str(d.get("name", ""))
+	def.focus = int(d.get("focus", 0))
+	def.intro = str(d.get("intro", ""))
+	var sz: Dictionary = d.get("size", {"x": 1600, "y": 900})
+	def.size = Vector2(float(sz.get("x", 1600)), float(sz.get("y", 900)))
+	def.kill_y = float(d.get("kill_y", 1500.0))
+	def.top_kill_y = float(d.get("top_kill_y", -420.0))
+	for r in d.get("roster", []):
+		def.roster.append(int(r))
+	for p in d.get("platforms", []):
+		def.platforms.append(_json_comp(p))
+	for m in d.get("movers", []):
+		var md: Dictionary = _json_comp(m)
+		md["offset"] = _json_vec2(m.get("offset", {"x": 0, "y": -100}))
+		md["period"] = float(m.get("period", 3.0))
+		md["phase"] = float(m.get("phase", 0.0))
+		def.movers.append(md)
+	for t in d.get("piano_tiles", []):
+		var td: Dictionary = _json_comp(t)
+		if t.has("note"):
+			td["note"] = str(t["note"])
+		def.piano_tiles.append(td)
+	for g in d.get("gates", []):
+		def.gates.append([_json_vec2(g[0]), _json_vec2(g[1])])
+	for e in d.get("exits", []):
+		def.exits.append([int(e[0]), _json_vec2(e[1])])
+	var spawns: Array = []
+	for i in maxi(d.get("spawns", []).size(), def.roster.size()):
+		var sp = d.get("spawns", [])[i] if i < d.get("spawns", []).size() else null
+		spawns.append(_json_vec2(sp) if sp != null else Vector2.ZERO)
+	def.spawns = spawns
+	for h in d.get("hints", []):
+		var hd := {"pos": _json_vec2(h.get("pos", {"x": 0, "y": 0})),
+			"text": str(h.get("text", ""))}
+		if h.has("touch"):
+			hd["touch"] = str(h["touch"])
+		def.hints.append(hd)
+	return def
+
+
+static func _json_vec2(v) -> Vector2:
+	if v is Vector2:
+		return v
+	var d: Dictionary = v
+	return Vector2(float(d.get("x", 0.0)), float(d.get("y", 0.0)))
+
+
+static func _json_rect(r) -> Rect2:
+	if r is Rect2:
+		return r
+	var d: Dictionary = r
+	return Rect2(float(d.get("x", 0.0)), float(d.get("y", 0.0)),
+		float(d.get("w", 0.0)), float(d.get("h", 0.0)))
+
+
+static func _json_comp(p) -> Dictionary:
+	if p is Rect2:
+		return p
+	var d: Dictionary = p.duplicate()
+	d["rect"] = _json_rect(d.get("rect", {"x": 0, "y": 0, "w": 100, "h": 100}))
+	return d
+
+
 static func _make(name: String, focus: int, intro: String, size: Vector2,
 		roster: Array, platforms: Array, ramps: Array, gates: Array, exits: Array,
 		spawns: Array, movers: Array = [], hints: Array = []) -> LevelDef:

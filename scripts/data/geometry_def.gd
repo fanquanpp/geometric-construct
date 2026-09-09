@@ -14,7 +14,7 @@ extends RefCounted
 ##   关卡可跳台阶高度必须比 jump_units 低 0.1。
 ##   弹性全员固定:0.5;跃为 2.0 固定(只决定落地反弹,不再决定跳高)。
 
-enum Shape { SQUARE, RECT, BALL }
+enum Shape { SQUARE, RECT, BALL, TRIANGLE }
 
 ## 主动跳跃次数上限(二段跳:地面跳 1 次 + 空中跳 1 次)。
 const MAX_JUMPS := 2
@@ -73,6 +73,11 @@ var can_top_boost := false
 var can_be_pushed := false
 ## 磁界穿透(叁·逆):可任意穿过伍(界/边)的磁力边界。
 var can_pass_boundary := false
+## 一体两半(伍·界/边):true 时该名册位出生两个半体(characters.md §5)。
+var paired := false
+## 双体第二半的代号与台词("边");空 = 非双体或第一半。
+var name_half := ""
+var quote_half := ""
 
 
 ## 底部长度 / 高度,单位:格。

@@ -51,6 +51,18 @@ static func _static_init() -> void:
 			"穿过加速门立即加速到 2.5×,超越默认上限",
 			"可推动:同伴水平推挤即受力滚动——他是队伍的车",
 			"弹性固定 0.5:反弹克制,动能都留给向前的惯性"]))
+	# 4 · 伍 — 紫色正三角形 · 边界型(界/边 一体两半;glossary.md §1 · characters.md §5)
+	ALL.append(_make(4, "界", "紫色正三角形 · 界/边", "pair", "G4", GeometryDef.Shape.TRIANGLE,
+		"8455A6", Vector2(30, 30), 1, 0.5, 0.5, 0.5,
+		0.5, 1.0, 0.5, 0.0, false, true, false, false, "边界型",
+		"界。我在上,量天的高度。",
+		["一体两半:界(上三角)与边(下三角)同时存在,同念共动",
+			"磁力边界:两顶之间张成磁力线,阻隔一切——除了逆",
+			"跳高 1.0 格:矮坎可越,高墙交给同伴",
+			"慢速 0.5×:他们的强度在改变地图规则,不在机动性"]))
+	ALL[-1].paired = true
+	ALL[-1].name_half = "边"
+	ALL[-1].quote_half = "边。我在下,量地的厚度。"
 
 
 static func get_def(index: int) -> GeometryDef:

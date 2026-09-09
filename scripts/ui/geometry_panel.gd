@@ -4,7 +4,7 @@ extends CanvasLayer
 ## 双页签二级页面。档案页左侧大幅几何肖像,右侧代号 / 定位 / 台词 /
 ## 属性行 / 特性要点;回廊页 = 全部剧本列表,选中即打开**全文本阅读器**
 ## (v0.15:整段剧本文本展开,台词按角色着色、按分拍分段,不再重播对话)。
-## 可从标题菜单或暂停菜单进入;档案页 A/D 或方向键切换、1-4 直达、
+## 可从标题菜单或暂停菜单进入;档案页 A/D 或方向键切换、数字键直达、
 ## 滚轮翻页;Esc / C 返回(阅读器内先回回廊);底部 ◀ ▶ / 关闭 按钮(触摸屏可用)。
 
 signal closed
@@ -202,7 +202,7 @@ func _ready() -> void:
 	right.add_child(_traits_box)
 
 	# —— 底部:操作提示(左) + 翻页/关闭按钮(右) ——
-	var hints_text := "A / D 或 ←→ 切换      1–4 直达      滚轮翻页      Esc / C 返回" \
+	var hints_text := "A / D 或 ←→ 切换      1–9 直达      滚轮翻页      Esc / C 返回" \
 		if not DisplayServer.is_touchscreen_available() \
 		else "◀ ▶ 翻页查看四位几何体档案"
 	_hints = Ui.l(hints_text, 13, Ui.BODY, Ui.DIM)
@@ -695,7 +695,7 @@ func _input(event: InputEvent) -> void:
 			KEY_D, KEY_RIGHT:
 				if _tab == "dossier":
 					_switch(1)
-			KEY_1, KEY_2, KEY_3, KEY_4:
+			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9:
 				var idx := k - KEY_1
 				if _tab == "dossier" and idx < Geometries.ALL.size():
 					current = idx
@@ -763,6 +763,24 @@ class GeoPortrait extends Control:
 					Vector2(-26, 84), Vector2(0, 106), Vector2(26, 84)]), Color(Ui.INK, 0.4))
 				c.draw_colored_polygon(PackedVector2Array([
 					Vector2(-23, 78), Vector2(0, 100), Vector2(23, 78)]), Color(1, 1, 1, 0.96))
+			GeometryDef.Shape.TRIANGLE:
+				# 伍·界/边 双体并排卡:上△与下▽对望,两顶之间磁力折线(characters.md §6)
+				var up := PackedVector2Array([
+					Vector2(-108, 66), Vector2(-28, 66), Vector2(-68, -14)])
+				var down := PackedVector2Array([
+					Vector2(28, -66), Vector2(108, -66), Vector2(68, 14)])
+				c.draw_rect(Rect2(-128, 116, 256, 12), Color(0, 0, 0, 0.4))
+				c.draw_colored_polygon(up, col)
+				c.draw_colored_polygon(down, col)
+				# 磁力折线(纸白三段硬折)+ 端点方块
+				var zig := PackedVector2Array([
+					Vector2(-68, -26), Vector2(-22, -52), Vector2(24, -24), Vector2(68, -50)])
+				c.draw_polyline(zig, Color(Ui.PAPER, 0.9), 5.0)
+				for px: Vector2 in [Vector2(-68, -26), Vector2(68, -50)]:
+					c.draw_rect(Rect2(px - Vector2(9, 9), Vector2(18, 18)), Ui.PAPER)
+				# 印刷错位:边身的墨色重影
+				c.draw_colored_polygon(PackedVector2Array([
+					Vector2(28, -60), Vector2(108, -60), Vector2(68, 20)]), Color(Ui.INK, 0.22))
 			_:
 				var b := Rect2(-96, -96, 192, 192)
 				c.draw_rect(b, col)
