@@ -742,7 +742,7 @@ func _parse_auto_shot() -> void:
 		elif raw.begins_with("--leveljson="):
 			_json_level_path = raw.substr(12)
 	if _auto_shot and _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	if _auto_shot and args.has("--menushot"):
 		_run_menu_shot()
 	# --introshot / --storyshot 自带开局流程,跳过通用 autoshot 以免抢关卡
@@ -786,7 +786,7 @@ func _parse_auto_shot() -> void:
 ## 截取设置面板。
 func _run_set_shot() -> void:
 	if _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	await get_tree().create_timer(0.6).timeout
 	settings_panel.open()
 	await get_tree().create_timer(0.5).timeout
@@ -797,7 +797,7 @@ func _run_set_shot() -> void:
 ## 截取剧目二级菜单(关卡列)。
 func _run_actshot() -> void:
 	if _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	await get_tree().create_timer(0.6).timeout
 	_menu.try_open_act(_act_shot_idx)
 	await get_tree().create_timer(0.6).timeout
@@ -808,7 +808,7 @@ func _run_actshot() -> void:
 ## 截取开屏动画(标题落定瞬间)。
 func _run_boot_shot() -> void:
 	if _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	await get_tree().create_timer(1.35).timeout
 	await _shot("boot")
 	await get_tree().create_timer(1.8).timeout
@@ -819,7 +819,7 @@ func _run_boot_shot() -> void:
 ## 截取章节开场卡。
 func _run_intro_shot() -> void:
 	if _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	start_level(_shot_level, true)
 	await get_tree().create_timer(1.2).timeout
 	await _shot("intro")
@@ -829,7 +829,7 @@ func _run_intro_shot() -> void:
 ## 截取肉鸽模式 UI(选体 / 选路 / 词条三选一 / 结算,逐屏截图验收)。
 func _run_rogue_shot() -> void:
 	if _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	_state = State.PLAYING
 	await get_tree().create_timer(0.6).timeout
 	var done := func(_a = null) -> void: pass
@@ -898,7 +898,7 @@ func _run_rogue_auto_test() -> void:
 ## (follow_viewport 关闭后,遮罩恒定铺满屏幕,左右两侧都不会漏光)。
 func _run_story_shot() -> void:
 	if _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	await get_tree().create_timer(0.6).timeout
 	start_level(0, false)
 	await get_tree().create_timer(0.3).timeout
@@ -917,7 +917,7 @@ func _run_story_shot() -> void:
 ## 节拍表按当前关卡下标内建;新巨构关卡在此追加自己的节拍行。
 func _run_tour_shot() -> void:
 	if _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	_unlocked = LevelData.LEVELS.size() - 1
 	start_level(_shot_level, false)
 	await get_tree().create_timer(0.4).timeout
@@ -975,7 +975,7 @@ func _run_perf_log() -> void:
 ## 开关门与限时桥两态;配合 --zoom=N 可验网格 LOD 远景档。
 func _run_lane_shot() -> void:
 	if _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	_shot_level = 99
 	_level_def = LevelData.LEVELS[0]   # 分层演示已并入机制试炼场(v0.17)
 	_rogue = false
@@ -1071,7 +1071,7 @@ func _run_lane_shot() -> void:
 ## 截取几何档案页(全部页)。
 func _run_panel_shot() -> void:
 	if _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	await get_tree().create_timer(0.6).timeout
 	geometry_panel.open(0)
 	await get_tree().create_timer(0.5).timeout
@@ -1093,7 +1093,7 @@ func _run_panel_shot() -> void:
 ## 传送到出口门前,验证门的渲染与过关文字。
 func _run_door_shot() -> void:
 	if _shot_dir.is_empty():
-		_shot_dir = "C:/Atian/Project/shots_bm"
+		_shot_dir = "res://.shots"
 	start_level(0, false)
 	await get_tree().create_timer(0.3).timeout
 	players[0].position = Vector2(14450, 1700)

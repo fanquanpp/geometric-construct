@@ -3,7 +3,7 @@ extends Node2D
 ## 输出到 .shots/,供视觉验收。
 ## 运行:godot --path . res://tests/shot_all.tscn
 
-const OUT_DIR := "C:/Atian/Project/speed-rouge/.shots"
+var OUT_DIR := ProjectSettings.globalize_path("res://.shots")
 
 
 func _ready() -> void:

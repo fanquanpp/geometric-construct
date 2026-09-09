@@ -3,7 +3,7 @@ extends Node2D
 ## 终点门两阶段吸入,输出断言结果并截图。
 ## 运行:godot --path . res://tests/level_shot.tscn
 
-const OUT_DIR := "C:/Atian/Project/speed-rouge/.shots"
+var OUT_DIR := ProjectSettings.globalize_path("res://.shots")
 
 
 func _ready() -> void:

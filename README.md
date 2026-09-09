@@ -1,6 +1,6 @@
 # 几何构成 GEOMETRIC CONSTRUCT
 
-> 仓库代号 **speed-rouge** · 构成主义几何肉鸽游戏 · **Godot 4.7**(GDScript 2.0)
+> 仓库 **geometric-construct** · 构成主义几何肉鸽游戏 · **Godot 4.7**(GDScript 2.0)
 
 致敬《Thomas Was Alone》的 platformer 底子,以**构成主义**为美术与演出语言:
 四个几何体——**疾**(红方 · 冲刺/爬墙)、**跃**(黄竖长方 · 强反弹/承载)、

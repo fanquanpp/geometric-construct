@@ -8,7 +8,7 @@
 ## 目录结构
 
 ```
-speed-rouge/
+geometric-construct/
 ├── project.godot            # 引擎配置(主场景 scenes/Main.tscn)
 ├── icon.svg                 # 项目图标(构成主义红方标记)
 ├── scenes/
@@ -175,5 +175,5 @@ godot --path . -- --autotest=0
 
 # 修改 SVG/字体等资源后,先触发导入再截图
 godot --headless --path . --import
-godot --path . -- --autoshot=1 --shotdir="C:/Atian/Project/speed-rouge/.shots"
+godot --path . -- --autoshot=1  # 输出 res://.shots/,可用 --shotdir=<path> 自定
 ```

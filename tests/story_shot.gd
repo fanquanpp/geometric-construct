@@ -3,7 +3,7 @@ extends Node2D
 ## 走与菜单按钮完全相同的 open_prologue() 路径,输出 Konado 内部状态与报错。
 ## 运行:godot --path . res://tests/story_shot.tscn
 
-const OUT_DIR := "C:/Atian/Project/speed-rouge/.shots"
+var OUT_DIR := ProjectSettings.globalize_path("res://.shots")
 
 
 func _ready() -> void:
