@@ -1101,6 +1101,21 @@ func _run_panel_shot() -> void:
 		archive_panel._switch(1)
 		await get_tree().create_timer(0.4).timeout
 		await _shot("panel_geo%d" % page)
+	# 页签真实点击回归:模拟触屏(走鼠标模拟管线)点「机关」页签中心。
+	# v0.19.1 教训:整页容器默认 STOP 吞点击,页签真机失灵——open() 直调
+	# 的分镜测不出这类 GUI 管线问题,必须走一次真实输入。
+	var tab_center := Vector2(1050, 66)
+	var tap := InputEventScreenTouch.new()
+	tap.position = tab_center
+	tap.pressed = true
+	Input.parse_input_event(tap)
+	await get_tree().process_frame
+	var lift := InputEventScreenTouch.new()
+	lift.position = tab_center
+	lift.pressed = false
+	Input.parse_input_event(lift)
+	await get_tree().create_timer(0.4).timeout
+	await _shot("panel_tab_tap")
 	# 建筑图鉴 + 机关图鉴(两态静帧 + 动态精灵各拍一帧)
 	archive_panel.open(0, "bld")
 	await get_tree().create_timer(0.5).timeout

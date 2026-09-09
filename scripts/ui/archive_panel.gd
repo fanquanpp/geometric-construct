@@ -338,10 +338,11 @@ func _build_codex_page(kind: String) -> void:
 		col.position = Vector2(20.0 + icon_px + 10.0, (row_h - 30.0) * 0.5)
 		b.add_child(col)
 
-	# 右侧:详情区
+	# 右侧:详情区(纯排版容器,IGNORE 让事件落到真正的交互件上)
 	var detail := Control.new()
 	detail.position = Vector2(376, 116)
 	detail.size = Vector2(836, 540)
+	detail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_child(detail)
 
 	# 详情图:400×400(2× 整数放大,NEAREST)+ 硬投影 + 取景角标
@@ -557,6 +558,7 @@ func _build_gallery_page() -> void:
 	zone.offset_right = -24
 	zone.offset_top = 108
 	zone.offset_bottom = -34
+	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_child(zone)
 
 	var center := CenterContainer.new()
@@ -635,6 +637,7 @@ func _build_story_page() -> void:
 	zone.offset_right = -24
 	zone.offset_top = 108
 	zone.offset_bottom = -34
+	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_child(zone)
 
 	var center := CenterContainer.new()
@@ -800,10 +803,13 @@ func _story_line(who: String, text: String) -> Control:
 # ———————————————— 页面框架:页签 / 翻页 / 输入 ————————————————
 
 ## 在 _content 下建一个整页容器(默认隐藏),登记进 _pages。
+## mouse_filter 必须 IGNORE:整页 Control 默认 STOP,会盖住先加入的页签行
+## 吃掉全部触摸/点击(真机页签失灵的根因);IGNORE 不影响子控件收输入。
 func _make_page(tab: String) -> Control:
 	var page := Control.new()
 	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	page.visible = false
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_content.add_child(page)
 	_pages[tab] = page
 	return page

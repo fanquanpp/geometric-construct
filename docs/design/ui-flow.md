@@ -96,6 +96,13 @@ Boot > StoryLayer > 面板带(35–38,`is_open` 早退)> 菜单二级面板
 (MenuLayer 分派)> Main 态分派(MENU / PLAYING)> 游戏动作。
 新增 Overlay 必须插在面板带一级,不得旁路 `is_open` 约定。
 
+**GUI 拾取纪律**(v0.19.1 真机教训):后加入的满屏 Control 默认
+`mouse_filter = STOP`,会把绘制在其下方的页签 / 按钮的全部点击与触摸
+吞掉(键盘 / 滚轮 / 手柄按钮不经 GUI 拾取,桌面截图钩子若只调
+`open()` 直调也测不出)。整页容器与纯排版容器一律
+`MOUSE_FILTER_IGNORE`(不影响子控件);`--panelshot` 的
+`panel_tab_tap` 分镜以真实触屏输入回归页签点击。
+
 ## 5. 现状隐患登记(规划解决,不阻塞新内容)
 
 | # | 隐患 | 说明 | 解决方向 |
