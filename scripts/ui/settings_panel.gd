@@ -153,6 +153,18 @@ func _ready() -> void:
 
 	body.add_child(_rule())
 
+	# ———— 调试(双端;坐标化辅助设计,levels.md §8.3)————
+	body.add_child(_section_label("调试 DEBUG"))
+	var dbg_btn := _toggle_btn()
+	dbg_btn.button_pressed = Main.I != null and Main.I.debug_grid
+	dbg_btn.toggled.connect(func(on: bool) -> void:
+		Sfx.play("ui_click")
+		if Main.I != null:
+			Main.I.debug_grid = on)
+	body.add_child(_row("调试网格(组件 id·层 标注)", dbg_btn))
+
+	body.add_child(_rule())
+
 	# —— 底部:版本信息 + 关闭 ——
 	var foot := HBoxContainer.new()
 	foot.add_theme_constant_override("separation", 12)
