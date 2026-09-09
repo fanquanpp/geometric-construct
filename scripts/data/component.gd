@@ -34,7 +34,9 @@ const FAR_HOLD := 0
 
 ## 显示档 → z_index(levels.md §7.6/§7.7 渲染映射):
 ## 远景两档沉到定位网格之下,back 在网格之上同层,mid / front 依次抬高。
-const LANE_Z := {LANE_FAR2: -2, LANE_FAR1: -1, LANE_BACK: 0, LANE_MID: 1, LANE_FRONT: 2}
+## 分层语义 v2(v0.17):lane = 碰撞域 + 深度。mid 是唯一实体层;
+## front 在玩家之上(纯遮挡可穿行,躲入其后降 55%),back/far 在玩家之下。
+const LANE_Z := {LANE_FAR2: -2, LANE_FAR1: -1, LANE_BACK: 0, LANE_MID: 1, LANE_FRONT: 6}
 
 
 static func norm_lane(v) -> String:

@@ -3,7 +3,8 @@ class_name SaveManager
 ## 结构变更时递增 SAVE_VERSION,并在 _migrate 里补一条迁移分支;
 ## 规范见 docs/UPDATE.md。
 
-const SAVE_VERSION := 4
+const SAVE_VERSION := 5
+## v5:机制完善期——演出关卡清空为单一测试关,旧进度(幕/场次)全部失效,重置。
 const SAVE_PATH := "user://speed-rouge.cfg"
 const LEGACY_PATH := "user://lonelyblocks.cfg"  # v1 存档(旧《孤独的方块》)
 const STYLE_COST := 25                          # 结算页装饰版式(落款红章)

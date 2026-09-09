@@ -25,8 +25,9 @@ static func build(def: LevelDef) -> Node2D:
 	grid.level_size = def.size
 	root.add_child(grid)
 
-	# —— 语义编译:(lane, who) 组合 → 碰撞位(levels.md §7.6) ——
-	var combos := _compile_combos(def)
+	# —— 语义编译:lane = 碰撞域(v0.17 分层语义 v2,levels.md §7.6) ——
+	var geos: int = Geometries.ALL.size()
+	var combos := _compile_combos(def, geos)
 
 	# —— 每个组合一个静态碰撞体 ——
 	var bodies := {}
@@ -48,11 +49,12 @@ static func build(def: LevelDef) -> Node2D:
 	for it0 in def.platforms:
 		var it := Comp.normalize(it0)
 		items.append(it)
-		if it["faces"] == Comp.FACES_NONE:
-			continue    # 纯装饰,无碰撞(levels.md §7.3)
-		bodies[Comp.combo_key(it)].add_child(_rect_shape(it["rect"], it["faces"]))
+		var ckey := _static_key(it, geos)
+		if it["faces"] == Comp.FACES_NONE or not combos.has(ckey):
+			continue    # 纯装饰 / 非实体层(对全员非 mid):无碰撞
+		bodies[ckey].add_child(_rect_shape(it["rect"], it["faces"]))
 	for w in walls:
-		bodies["mid|all"].add_child(_rect_shape(w, Comp.FACES_FULL))
+		bodies["walls"].add_child(_rect_shape(w, Comp.FACES_FULL))
 	# 每档一个渲染器,共享全量组件列表:各自按 display_tier 决定画不画 ——
 	# 档间转移走交叉淡化(旧档淡出、新档淡入),z 切换藏在透明谷里
 	for tier in [Comp.LANE_FAR2, Comp.LANE_FAR1, Comp.LANE_BACK,
@@ -68,7 +70,7 @@ static func build(def: LevelDef) -> Node2D:
 		var ramp := Ramp.new()
 		ramp.pts = PackedVector2Array(r["pts"])
 		ramp.base_y = r["base"]
-		ramp.layer_value = _bit_value(combos, r)
+		ramp.layer_value = _bit_value(combos, _static_key(r, geos))
 		ramp.z_index = Comp.LANE_Z[Comp.lane_of(r)]
 		root.add_child(ramp)
 
@@ -91,13 +93,14 @@ static func build(def: LevelDef) -> Node2D:
 		mover.travel = mv.get("offset", Vector2.ZERO)
 		mover.period = mv.get("period", 3.0)
 		mover.phase = mv.get("phase", 0.0)
-		mover.layer_value = _bit_value(combos, mv)
+		mover.layer_value = _bit_value(combos, _static_key(mv, geos))
 		mover.z_index = Comp.LANE_Z[Comp.lane_of(mv)]
 		root.add_child(mover)
 
 	# —— 开关门(动态构件:踩踏开关 ↔ 门板 full/none 切换) ——
 	# 一门可配多只开关(levers,任一踩住即开):气闸式互让题的数据形态
-	for lg in def.lever_gates:
+	for li in def.lever_gates.size():
+		var lg = def.lever_gates[li]
 		var gate := LeverGate.new()
 		var levers: Array = lg.get("levers", [])
 		if levers.is_empty():
@@ -105,19 +108,20 @@ static func build(def: LevelDef) -> Node2D:
 		gate.lever_rects = levers
 		gate.door_item = Comp.normalize(lg["door"])
 		gate.invert = lg.get("invert", false)
-		gate.layer_bit = combos[Comp.combo_key(lg["door"])]["bit"]
+		gate.layer_bit = combos["dyn:lg:%d" % li]["bit"]
 		gate.z_index = Comp.LANE_Z[gate.door_item["lane"]]
 		root.add_child(gate)
 
 	# —— 限时桥(动态构件:实心 ↔ 虚化周期切换) ——
-	for tb in def.timed_bridges:
+	for ti in def.timed_bridges.size():
+		var tb = def.timed_bridges[ti]
 		var bridge := TimedBridge.new()
 		bridge.slab_rect = tb["rect"]
 		bridge.on_time = tb.get("on_time", 2.0)
 		bridge.off_time = tb.get("off_time", 2.0)
 		bridge.phase = tb.get("phase", 0.0)
 		bridge.sync_beat = tb.get("sync_beat", false)
-		bridge.layer_bit = combos[Comp.combo_key(tb)]["bit"]
+		bridge.layer_bit = combos["dyn:tb:%d" % ti]["bit"]
 		bridge.z_index = Comp.LANE_Z[Comp.lane_of(tb)]
 		root.add_child(bridge)
 
@@ -126,7 +130,7 @@ static func build(def: LevelDef) -> Node2D:
 		var tile := PianoTile.new()
 		tile.slab_rect = pt["rect"]
 		tile.note = pt.get("note", "")
-		tile.layer_value = _bit_value(combos, pt)
+		tile.layer_value = _bit_value(combos, _static_key(pt, geos))
 		tile.z_index = Comp.LANE_Z[Comp.lane_of(pt)]
 		root.add_child(tile)
 
@@ -195,44 +199,68 @@ static func build(def: LevelDef) -> Node2D:
 	return root
 
 
-## 收集全部组件的 (lane, who) 组合并分配碰撞位:
-## 位 1 恒为缺省组合(mid/全员,兼容现状),位 2 预留玩家,其余顺序分配。
-static func _compile_combos(def: LevelDef) -> Dictionary:
-	var combos := {"mid|all": {"bit": 1, "lane": Comp.LANE_MID, "who": []}}
+## 分层语义 v2(v0.17,levels.md §7.6):lane = 碰撞域。
+## 组件对几何体 g 有碰撞,当且仅当 applies_to(g) 且 lane_for(g) == mid;
+## back / far / front 档纯视觉,几何体可自由穿行(视觉=碰撞,所见即所碰)。
+## 签名 = 可碰撞几何体集合(midset),同签名共享碰撞位;
+## 动态构件(限时桥 / 开关门板)逐实例独占位,防运行时切换误伤共享位。
+static func _compile_combos(def: LevelDef, geos: int) -> Dictionary:
+	var combos := {}
 	var next_bit := 3
 	var samples: Array = []
 	samples.append_array(def.platforms)
 	samples.append_array(def.ramps)
 	samples.append_array(def.movers)
-	samples.append_array(def.timed_bridges)
 	samples.append_array(def.piano_tiles)
-	for lg in def.lever_gates:
-		samples.append(lg["door"])
 	for it in samples:
-		var key := Comp.combo_key(it)
-		if combos.has(key):
-			continue
-		if next_bit > 32:
-			push_warning("LevelBuilder: 碰撞位预算耗尽(>32 组合),组件被并入缺省位")
-			continue
-		combos[key] = {
-			"bit": next_bit, "lane": Comp.lane_of(it), "who": Comp.who_of(it)}
+		var key := _static_key(it, geos)
+		if combos.has(key) or _midset(it, geos).is_empty():
+			continue    # 空签名 = 对谁都非实体:纯视觉,不占位
+		combos[key] = {"bit": next_bit, "midset": _midset(it, geos)}
 		next_bit += 1
+	for i in def.timed_bridges.size():
+		combos["dyn:tb:%d" % i] = {
+			"bit": next_bit, "midset": _midset(def.timed_bridges[i], geos)}
+		next_bit += 1
+	for i in def.lever_gates.size():
+		combos["dyn:lg:%d" % i] = {"bit": next_bit,
+			"midset": _midset(Comp.normalize(def.lever_gates[i]["door"]), geos)}
+		next_bit += 1
+	# 关卡边界隐形墙:对全员恒实体
+	var all: Array = []
+	for g in geos:
+		all.append(g)
+	combos["walls"] = {"bit": next_bit, "midset": all}
 	return combos
 
 
-static func _bit_value(combos: Dictionary, item) -> int:
-	return 1 << (int(combos[Comp.combo_key(item)]["bit"]) - 1)
+## 组件对几何体集合的"实体签名":适用且对自己是 mid 的下标集合。
+static func _midset(item, geos: int) -> Array:
+	var out: Array = []
+	for g in geos:
+		if Comp.applies_to(item, g) and Comp.lane_for(item, g) == Comp.LANE_MID:
+			out.append(g)
+	return out
 
 
-## 某几何体的世界碰撞位并集(缺省组合恒适用)。
+static func _static_key(item, geos: int) -> String:
+	return "mid:" + str(_midset(item, geos))
+
+
+## 组件碰撞层值;无签名(纯视觉层)= 0(不与任何几何体碰撞)。
+static func _bit_value(combos: Dictionary, key: String) -> int:
+	var c: Dictionary = combos.get(key)
+	if c == null:
+		return 0
+	return 1 << (int(c["bit"]) - 1)
+
+
+## 某几何体的世界碰撞位并集(仅收集对自己是 mid 的签名)。
 static func _mask_for(combos: Dictionary, geo_index: int) -> int:
 	var mask := 0
 	for key in combos:
-		var c: Dictionary = combos[key]
-		var who: Array = c["who"]
-		if who.is_empty() or who.has(geo_index):
-			mask |= 1 << (int(c["bit"]) - 1)
+		if (combos[key]["midset"] as Array).has(geo_index):
+			mask |= 1 << (int(combos[key]["bit"]) - 1)
 	return mask
 
 

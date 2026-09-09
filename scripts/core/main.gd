@@ -922,59 +922,24 @@ func _run_tour_shot() -> void:
 	start_level(_shot_level, false)
 	await get_tree().create_timer(0.4).timeout
 	var tours := {
-		4: [["spawn", Vector2(240, 880)],
-			["bridge", Vector2(1150, 720)],
-			["airlock", Vector2(2150, 880)],
-			["lift", Vector2(3070, 860)],
-			["terrace", Vector2(3400, 380)]],
-		5: [["spawn", Vector2(300, 1260)],
-			["ramp", Vector2(1400, 1260)],
-			["wall", Vector2(1830, 1260)],
-			["beam", Vector2(1850, 900)],
-			["terrace", Vector2(2700, 1100)],
-			["doors", Vector2(3450, 1100)]],
-		6: [["spawn", Vector2(300, 2700)],
-			["terraces", Vector2(2400, 2000)],
-			["ramp", Vector2(3900, 2680)],
-			["hollow", Vector2(4500, 2520)],
-			["beam", Vector2(5600, 330)],
-			["bridge", Vector2(5900, 900)],
-			["gap", Vector2(6900, 800)],
-			["tower", Vector2(8300, 900)]],
-		7: [["spawn", Vector2(300, 2700)],
-			["ledge", Vector2(2300, 2350)],
-			["deck", Vector2(4000, 2300)],
-			["shoulder", Vector2(4600, 1700)],
-			["under", Vector2(5600, 2650)],
-			["window", Vector2(6650, 2320)],
-			["turret", Vector2(7300, 1800)],
-			["tower", Vector2(7600, 1400)]],
-		8: [["spawn", Vector2(300, 2300)],
-			["pit", Vector2(2200, 2280)],
-			["ceil", Vector2(3000, 1000)],
-			["gallery", Vector2(3800, 1480)],
-			["shuttle", Vector2(4750, 1480)],
-			["east", Vector2(7100, 1200)]],
-		9: [["spawn", Vector2(300, 2500)],
-			["gate1", Vector2(1250, 2400)],
-			["deck_a", Vector2(2800, 2200)],
-			["viaduct", Vector2(2500, 1350)],
-			["deck_b", Vector2(4400, 2100)],
-			["hall", Vector2(6900, 1700)],
-			["east_end", Vector2(6400, 1350)]],
-		10: [["spawn", Vector2(300, 2500)],
-			["slope", Vector2(900, 2400)],
-			["hub", Vector2(1450, 2270)],
-			["catch_a", Vector2(2950, 2050)],
-			["catch_b", Vector2(3750, 1450)],
-			["dome_top", Vector2(5400, 1200)],
-			["terrace", Vector2(6800, 2350)]],
-		11: [["spawn", Vector2(300, 2700)],
-			["pipe_dash", Vector2(1500, 2400)],
-			["pipe_spring", Vector2(2750, 2400)],
-			["pipe_fall", Vector2(4400, 2400)],
-			["pipe_roll", Vector2(5950, 2600)],
-			["console", Vector2(3000, 700)]],
+		0: [["spawn", Vector2(430, 1745)],
+			["wall_top", Vector2(1040, 1560)],
+			["back_zone", Vector2(2500, 1745)],
+			["front_zone", Vector2(3160, 1745)],
+			["who_wall", Vector2(3660, 1745)],
+			["faces_top", Vector2(4850, 1380)],
+			["faces_bottom", Vector2(5550, 1220)],
+			["piano", Vector2(6900, 1745)],
+			["ferry", Vector2(8050, 1690)],
+			["lift", Vector2(8750, 1100)],
+			["deck", Vector2(9300, 890)],
+			["ramp_fly", Vector2(10500, 700)],
+			["bridge", Vector2(11350, 1700)],
+			["lever", Vector2(11600, 1760)],
+			["climb_tower", Vector2(12050, 1500)],
+			["boost_tower", Vector2(13060, 1340)],
+			["twins", Vector2(13900, 1745)],
+			["doors", Vector2(14600, 1754)]],
 	}
 	var waypoints: Array = tours.get(_shot_level, [["spawn", Vector2(300, 850)]])
 	for wp in waypoints:
@@ -1011,7 +976,7 @@ func _run_lane_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "C:/Atian/Project/shots_bm"
 	_shot_level = 99
-	_level_def = LevelData.layer_lab()
+	_level_def = LevelData.LEVELS[0]   # 分层演示已并入机制试炼场(v0.17)
 	_rogue = false
 	_current = -1
 	_clear_level()
@@ -1130,7 +1095,7 @@ func _run_door_shot() -> void:
 		_shot_dir = "C:/Atian/Project/shots_bm"
 	start_level(0, false)
 	await get_tree().create_timer(0.3).timeout
-	players[0].position = Vector2(3130, 892)
+	players[0].position = Vector2(14450, 1700)
 	players[0].velocity = Vector2.ZERO
 	await get_tree().create_timer(0.25).timeout
 	await _shot("door")

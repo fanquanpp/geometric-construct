@@ -3,13 +3,15 @@ extends CanvasLayer
 ## 构成主义几何背景:墨色平面、巨大低对比几何面、折线山脊、
 ## 方点星阵与几何圆环。无柔光、无渐变,全部由平面色块与细线构成。
 ##
-## 陀螺仪轻量视差(v0.16 V7,仅移动端):设备倾斜 → 各视差层微移(≤8px),
-## Input.get_gravity() 低通滤波(硬件灵敏度差异归一化);桌面无传感器恒零。
-## 轴向映射按横屏持机假设,真机手测检查点校准(ROADMAP V7)。
+## 陀螺仪轻量视差(v0.16 V7,仅移动端):设备倾斜 → 各视差层微移(≤8px)。
+## v0.17 重写:改用 Input.get_accelerometer()(enable_accelerometer 已开,
+## 实测 get_gravity 在部分机型不生效)+ 自建低通滤波归一化;
+## 轴向按横屏持机假设,真机校准点仍在(ROADMAP V7)。
 
 const GYRO_DEPTH := {"sun": 3.0, "planes": 6.0, "marks": 8.0}
 var _gyro_layers: Array = []   # [{node: Parallax2D, depth: float}]
 var _gyro_off := Vector2.ZERO
+var _accel_lp := Vector3.ZERO  # 加速度计低通(≈重力方向)
 
 
 func _ready() -> void:
@@ -75,10 +77,12 @@ func _process(delta: float) -> void:
 	if not OS.has_feature("mobile"):
 		set_process(false)
 		return
-	var g := Input.get_gravity()
-	if g == Vector3.ZERO:
+	var accel := Input.get_accelerometer()
+	if accel == Vector3.ZERO:
 		return
-	# 横屏持机:设备左右倾(重力 y 分量)→ 水平位移;前后倾(x 分量)→ 垂直
+	# 低通提取重力方向(0.1 截止),再归一化为倾斜量
+	_accel_lp = _accel_lp.lerp(accel, clampf(3.0 * delta, 0.0, 1.0))
+	var g := _accel_lp
 	var target := Vector2(
 		clampf(-g.y / 9.81, -1.0, 1.0), clampf(g.x / 9.81, -1.0, 1.0))
 	_gyro_off = _gyro_off.lerp(target, 1.0 - exp(-3.0 * delta))
