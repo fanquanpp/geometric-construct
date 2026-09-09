@@ -64,7 +64,7 @@ var shrink := 1.0
 
 var facing := 1.0
 var input_x := 0.0            # 本帧水平输入(载体侧刚性随动的自走判定)
-## 一体两半(伍·界/边,characters.md §5):-1 非双体;0 = 界(上三角) 1 = 边(下三角)
+## 双子(伍·界/边,characters.md §5):-1 非双子;0 = 界(上三角) 1 = 边(下三角)
 var pair_half := -1
 var partner: Player = null    # 另一半(双体专用)
 ## 逐帧物理探针(自动化验证用)。

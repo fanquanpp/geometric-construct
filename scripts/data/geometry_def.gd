@@ -73,7 +73,7 @@ var can_top_boost := false
 var can_be_pushed := false
 ## 磁界穿透(叁·逆):可任意穿过伍(界/边)的磁力边界。
 var can_pass_boundary := false
-## 一体两半(伍·界/边):true 时该名册位出生两个半体(characters.md §5)。
+## 双子(伍·界/边):true 时该名册位出生两个个体(characters.md §5)。
 var paired := false
 ## 双体第二半的代号与台词("边");空 = 非双体或第一半。
 var name_half := ""

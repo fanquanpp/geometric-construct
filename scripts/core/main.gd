@@ -250,15 +250,20 @@ func _collect_players() -> void:
 			players.append(n as Player)
 		elif n is ExitDoor:
 			_doors[(n as ExitDoor).geo_index] = n
-	players.sort_custom(func(a, b) -> bool: return a.index < b.index)
+	# 双子(伍)两具同 index:按 pair_half 稳定排序,界恒先于边
+	players.sort_custom(func(a: Player, b: Player) -> bool:
+		if a.index != b.index:
+			return a.index < b.index
+		return a.pair_half < b.pair_half)
 	_active_slot = 0
 
 
 # ———————————————— 几何体切换 ————————————————
 
 ## 切换操控:已到达终点门待命的几何体仍然可以被选中(终点激活前不收取);
-## 只跳过正在进门 / 死亡中的几何体;双体(伍)第二半不可独立选中——
-## 选中任一半即两半同控(characters.md §5"一体两半,同念共动")。
+## 只跳过正在进门 / 死亡中的几何体。
+## 伍(界/边)是双子:两具身体在切换循环中各占一位、独立操控
+## (characters.md §5);磁力边界始终张在两顶之间,不随操控改变。
 func _switch_to(slot: int, quiet := false) -> void:
 	if _state != State.PLAYING or players.is_empty():
 		return
@@ -267,15 +272,13 @@ func _switch_to(slot: int, quiet := false) -> void:
 	for pass_i in 2:
 		for k in n:
 			var p: Player = players[(slot + k) % n]
-			var ok: bool = (not p.in_exit and not p.dying and p.pair_half != 1) \
-				if pass_i == 0 else (not p.in_exit and p.pair_half != 1)
+			var ok: bool = (not p.in_exit and not p.dying) \
+				if pass_i == 0 else (not p.in_exit)
 			if not ok:
 				continue
 			_active_slot = players.find(p)
 			for j in n:
-				var q: Player = players[j]
-				q.is_active = j == _active_slot \
-					or (p.pair_half >= 0 and q.pair_half >= 0 and q.index == p.index)
+				players[j].is_active = j == _active_slot
 			_refresh_roster()
 			if not quiet:
 				Sfx.play("switch")

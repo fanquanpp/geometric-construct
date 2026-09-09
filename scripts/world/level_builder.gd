@@ -157,7 +157,7 @@ static func build(def: LevelDef) -> Node2D:
 	for idx in def.roster:
 		var cd: GeometryDef = Geometries.ALL[idx]
 		if cd.paired:
-			# 一体两半(伍):界(上三角)在出生点,边(下三角)在其右 90px;
+			# 双子(伍):界(上三角)在出生点,边(下三角)在其右 90px;
 			# 两顶之间张成磁力边界(characters.md §5)
 			var halves: Array = []
 			for half in 2:
