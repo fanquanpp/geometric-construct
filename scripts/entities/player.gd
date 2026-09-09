@@ -39,6 +39,11 @@ const GLASS_IMPACT := 620.0
 const MOD_SPEED_CAP := 3.75
 ## 可推动(肆·圆):推挤传速加速度(px/s²,characters.md §4)。
 const PUSH_TRANSFER := 1800.0
+## 轻点/长按跳判定(v0.16 常量化,characters.md §2):
+## 按下即起跳(缓冲 0.12s)→ 上升中松键且速度仍超起跳速的 JUMP_CUT_RATIO
+## → 剩余速度 ×JUMP_CUT_MULT(轻点 ≈ 满跳 55% 高,长按全程不截断)。
+const JUMP_CUT_MULT := 0.55
+const JUMP_CUT_RATIO := 0.45
 
 var def: GeometryDef
 var index: int
@@ -58,6 +63,7 @@ var world_mask := 1
 var shrink := 1.0
 
 var facing := 1.0
+var input_x := 0.0            # 本帧水平输入(载体侧刚性随动的自走判定)
 ## 逐帧物理探针(自动化验证用)。
 var debug_probe := false
 var _coyote := 0.0
@@ -150,6 +156,7 @@ func _physics_process(delta: float) -> void:
 		if Main.I.debug_jump:
 			jump_held = true
 	_debug_jump_prev = Main.I != null and Main.I.debug_jump
+	input_x = move_input.x
 	if move_input.x != 0.0:
 		facing = signf(move_input.x)
 
@@ -282,32 +289,26 @@ func _physics_process(delta: float) -> void:
 		vel = _perform_swap(vel)
 	# 松开跳跃键截断上升(只截断一次)
 	if not _jump_cut and def.can_jump and not jump_held \
-			and vel.y * gravity_dir < -def.jump_v * 0.45:
-		vel.y *= 0.55
+			and vel.y * gravity_dir < -def.jump_v * JUMP_CUT_RATIO:
+		vel.y *= JUMP_CUT_MULT
 		_jump_cut = true
 
 	vel.y = clampf(vel.y, -MAX_FALL, MAX_FALL)
 
-	# ———— 承载同步:站上同伴头顶时,无输入则完全继承载体的速度(叠叠乐一起走)。
-	# 放在摩擦之后,保证同步值不被衰减;正在上跳(逆重力方向)时不覆盖 ————
+	# ———— 刚性携带·骑乘侧(v0.16,characters.md §2):无输入时水平运动
+	# 交给载体随动(见载体侧,用载体本帧实际位移搬运,零滑移);
+	# 头顶弹簧吸附已废除(用户实测:吸附感不行);有输入 = 自走,可走离头顶。
+	# 垂直仍接收载体速度(叠叠乐一起升降);正在上跳(逆重力方向)时不覆盖 ————
 	if rider_of != null and is_instance_valid(rider_of) \
-			and move_input.x == 0.0 and gravity_dir > 0 \
-			and vel.y * gravity_dir >= 0.0:
-		vel.x = rider_of.velocity.x
+			and gravity_dir > 0 and vel.y * gravity_dir >= 0.0:
+		if move_input.x == 0.0:
+			vel.x = 0.0
 		if rider_of.is_on_floor() or rider_of.velocity.y * gravity_dir < 0.0:
 			vel.y = rider_of.velocity.y
-		# 头顶弹簧:垂直接触时做水平对齐(死区 4px,限速),高速移动不滑落也不卡角
-		if gravity_dir > 0 and rider_of.gravity_dir > 0:
-			var foot := position.y + def.size.y * 0.5
-			var head_top := rider_of.position.y - rider_of.def.size.y * 0.5
-			if absf(foot - head_top) < 8.0:
-				var head_dx := position.x - rider_of.position.x
-				if absf(head_dx) > 4.0:
-					var pull := minf(absf(head_dx) - 4.0, 200.0 * dt)
-					position.x -= signf(head_dx) * pull
 
 	var impact := absf(vel.y)
 	var was_floor := _was_on_floor
+	var prev_x := position.x
 	velocity = vel
 	if debug_probe:
 		print("PHY pre f=", Engine.get_physics_frames(), " vel=", velocity.snapped(Vector2(1, 1)))
@@ -381,6 +382,16 @@ func _physics_process(delta: float) -> void:
 			new_rider = collider
 			break
 	rider_of = new_rider
+
+	# ———— 刚性携带·载体侧(v0.16):把骑乘者随动本帧实际水平位移——
+	# 无论物理帧处理顺序先后都零相对滑移;急停不甩尾,骑乘者有输入则自走 ————
+	var carry_dx := position.x - prev_x
+	if carry_dx != 0.0:
+		for p in Main.I.players:
+			if p != self and is_instance_valid(p) and p.rider_of == self \
+					and not p.dying and p.gravity_dir > 0 and p.input_x == 0.0:
+				p.position.x += carry_dx
+				p.velocity.x = velocity.x
 
 	# ———— 曲面 buff:踩在曲面跳跃板上 → 刷新残留时长;离开后逐帧耗尽。
 	# 加速(上限 ×1.5)与减重(等效重量减半)在 buff 存续期间始终生效 ————
@@ -683,6 +694,7 @@ func _death_burst() -> void:
 
 func _reset_for_respawn() -> void:
 	position = spawn_pos
+	rider_of = null               # 重生位置远离载体:立即解除骑乘,防刚性随动拉扯
 	velocity = Vector2.ZERO
 	gravity_dir = def.gravity_dir
 	up_direction = Vector2(0, -gravity_dir)
