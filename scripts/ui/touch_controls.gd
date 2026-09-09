@@ -5,7 +5,7 @@ extends CanvasLayer
 ##   (替代加速按钮,PC 端仍用 Shift);
 ##   屏幕任意空白处 点按 / 长按:跳跃(长按 = 按住,用于贴墙攀爬与高弹跳),
 ##   轮盘触控区与右上小按钮除外;
-##   右上小按钮:切换 / 重来 / 暂停。
+##   右上小按钮:切换 / 召回 / 暂停。
 ## 全部输出经 Input.action_press 注入 InputMap 动作,与键盘 / 手柄同一条输入
 ## 通路(player.gd 只读动作,不区分来源)。
 ## 轮盘为扁平六边形轮廓:只暗示左右滑动,不产生纵向拖拽的错觉。
@@ -46,8 +46,8 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_relayout)
 
 	# 切换已重构(v0.17.2):直接点按左上队伍 chips 切换,不再设切换按钮。
-	# —— 右上:重来 / 暂停(方盘按钮行,图标 + 文字标签) ——
-	_add_button("buttons/restart-flat.svg", "buttons/restart-flat-on.svg",
+	# —— 右上:召回 / 暂停(方盘按钮行,图标 + 文字标签) ——
+	_add_button("buttons/recall-flat.svg", "buttons/recall-flat-on.svg",
 		"recall", "召回")
 	_add_button("buttons/pause-flat.svg", "buttons/pause-flat-on.svg",
 		"pause", "暂停")

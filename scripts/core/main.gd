@@ -971,25 +971,24 @@ func _run_tour_shot() -> void:
 	await get_tree().create_timer(0.4).timeout
 	var tours := {
 		0: [["spawn", Vector2(430, 1745)],
-			["wall_top", Vector2(1040, 1560)],
-			["back_zone", Vector2(2500, 1745)],
-			["front_zone", Vector2(3160, 1745)],
-			["who_wall", Vector2(3550, 1745)],
-			["swap_corridor", Vector2(4950, 1745)],
-			["ceiling_cover", Vector2(5000, 1245)],
-			["ceiling_deck", Vector2(5100, 1245)],
-			["faces_top", Vector2(4850, 1395)],
-			["piano_row", Vector2(6950, 1745)],
-			["ferry", Vector2(8050, 1690)],
-			["lift", Vector2(9950, 1100)],
-			["deck_gate", Vector2(10600, 890)],
-			["ramp_fly", Vector2(11700, 700)],
-			["bridge", Vector2(11550, 1700)],
-			["lever", Vector2(11600, 1760)],
-			["climb_tower", Vector2(12050, 1500)],
-			["boost_tower", Vector2(13060, 1290)],
-			["twins_hall", Vector2(13500, 1745)],
-			["doors", Vector2(14600, 1754)]],
+			["float_top", Vector2(1150, 1415)],
+			["L3_pass", Vector2(1800, 1745)],
+			["L8_silhouette", Vector2(2380, 1745)],
+			["dash_wall", Vector2(2820, 1745)],
+			["L6_roll_top", Vector2(3930, 1374)],
+			["swap_corridor", Vector2(5200, 1745)],
+			["faces_top", Vector2(6250, 1600)],
+			["piano_row", Vector2(6800, 1745)],
+			["ferry", Vector2(8200, 1670)],
+			["pit_ramp", Vector2(8300, 1850)],
+			["lift_top", Vector2(9080, 1000)],
+			["deck_gate", Vector2(9550, 1020)],
+			["ceiling_top", Vector2(10800, 1150)],
+			["climb_tower", Vector2(11600, 360)],
+			["bridge", Vector2(11250, 1700)],
+			["twins_hall", Vector2(11800, 1745)],
+			["niche_door4", Vector2(13235, 1650)],
+			["doors", Vector2(12700, 1745)]],
 	}
 	var waypoints: Array = tours.get(_shot_level, [["spawn", Vector2(300, 850)]])
 	for wp in waypoints:
@@ -1018,15 +1017,14 @@ func _run_perf_log() -> void:
 		])
 
 
-## 图层实验室截图(ROADMAP §1 M0 验收):装载 LevelData.layer_lab(),
-## 分镜截取 back 层亮度 / who 不适用远景沉降与 far:0 原位淡化对照 /
-## front 遮挡淡出 / 逐几何体层级归属(疾跃同机位对照)/ 逆的 bottom 天花板 /
-## 开关门与限时桥两态;配合 --zoom=N 可验网格 LOD 远景档。
+## 分层语义 v3 截图验收(levels.md §7.10):装载机制试炼场,分镜截取
+## L3 背景可穿行 / L6 专属高亮(圆站上台面)/ L5 专属域(疾墙对疾高亮、
+## 逆墙对逆)/ L8 前景躲入降透明 / 动态机关两态;配合 --zoom=N 验网格 LOD。
 func _run_lane_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
 	_shot_level = 99
-	_level_def = LevelData.LEVELS[0]   # 分层演示已并入机制试炼场(v0.17)
+	_level_def = LevelData.LEVELS[0]   # 分层演示即机制试炼场(v0.17 起)
 	_rogue = false
 	_current = -1
 	_clear_level()
@@ -1045,75 +1043,46 @@ func _run_lane_shot() -> void:
 	_switch_to(0, true)
 	await get_tree().create_timer(0.8).timeout
 
-	# ① back 梁区(疾视角):疾站在背景梁上 —— 梁压亮度仍可站,
-	#    下方可见 top 单向板(顶缘亮线加亮)
-	players[0].position = Vector2(1500, 760)
+	# ① 疾 @ Z1:L3 背景建筑(1700)与 L8 前景遮挡(2200)同框,右侧 L5 疾域墙
+	players[0].position = Vector2(2350, 1740)
 	players[0].velocity = Vector2.ZERO
 	await get_tree().create_timer(0.8).timeout
-	await _shot("lane_back_dash")
-	# ② 圆视角同区:疾专属墙对圆降透明(视觉即机制)+ top 单向板
+	await _shot("lane_L3_L8_dash")
+	# ② 圆 @ L6 圆域实台:专属高亮描边(呼吸脉冲)
 	if players.size() > 3:
 		_switch_to(3, true)
-		players[3].position = Vector2(1480, 1740)
+		players[3].position = Vector2(3930, 1370)
 		players[3].velocity = Vector2.ZERO
-		await get_tree().create_timer(0.8).timeout
-		await _shot("lane_back_roll")
-	# ② 动态构件区:限时桥 + faces=none 装饰(桥实心/虚化两态各一张)
+		await get_tree().create_timer(0.9).timeout
+		await _shot("lane_L6_focus_roll")
+	# ③ 疾 @ L5 疾域墙:对疾实体 + 高亮描边
 	_switch_to(0, true)
-	players[0].position = Vector2(2950, 1700)
+	players[0].position = Vector2(2560, 1740)
 	players[0].velocity = Vector2.ZERO
-	await get_tree().create_timer(0.55).timeout
-	await _shot("lane_bridge_a")
-	await get_tree().create_timer(2.0).timeout
-	await _shot("lane_bridge_b")
-	# ③ 前景遮挡区(疾躲入 front 组件后 → 组件淡出)
-	players[0].position = Vector2(4900, 1750)
+	await get_tree().create_timer(0.8).timeout
+	await _shot("lane_L5_focus_dash")
+	# ④ 疾躲入 L8 前景:组件降透明呈剪影
+	players[0].position = Vector2(2380, 1740)
+	players[0].velocity = Vector2.ZERO
+	await get_tree().create_timer(0.7).timeout
+	await _shot("lane_L8_dim")
+	# ⑤ 逆 @ Z2 置换走廊:L5 逆域墙高亮;上方 faces=bottom 天路
+	_switch_to(2, true)
+	players[2].position = Vector2(4700, 1740)
+	players[2].velocity = Vector2.ZERO
+	await get_tree().create_timer(0.8).timeout
+	await _shot("lane_L5_focus_fall")
+	# ⑥ 气闸开关门(共享件常亮,无描边)
+	_switch_to(0, true)
+	players[0].position = Vector2(9900, 1740)
 	players[0].velocity = Vector2.ZERO
 	await get_tree().create_timer(0.6).timeout
-	await _shot("lane_front")
-	# ④ 远景沉降(疾视角):两块圆专属浮板对疾沉入远景 ——
-	#    近板自动档 far1,远板 far:2 固定最深档;旁边钢琴砖(全员适用)保持主层作对照
-	_switch_to(0, true)
-	players[0].position = Vector2(3150, 1745)
+	await _shot("lane_dyn_gate")
+	# ⑦ 限时桥 + 双子磁界室远景
+	players[0].position = Vector2(10800, 1740)
 	players[0].velocity = Vector2.ZERO
-	await get_tree().create_timer(0.9).timeout
-	await _shot("lane_sink_far")
-	# ④b 切换回升(圆视角):两板回升主层 mid —— 原远景抬起,疾专属墙(far:0)仍原位淡化
-	if players.size() > 3:
-		_switch_to(3, true)
-		players[3].position = Vector2(3150, 1745)
-		players[3].velocity = Vector2.ZERO
-		await get_tree().create_timer(0.9).timeout
-		await _shot("lane_sink_rise")
-	# ④c 逐几何体层级(跃/疾同机位对照):疾跃共享板 —— 跃见 back 层(压亮度),疾见 mid 主层
-	if players.size() > 1:
-		_switch_to(1, true)
-		players[1].position = Vector2(1200, 1010)
-		players[1].velocity = Vector2.ZERO
-		await get_tree().create_timer(0.9).timeout
-		await _shot("lane_override_spring")
-	_switch_to(0, true)
-	players[0].position = Vector2(1200, 1010)
-	players[0].velocity = Vector2.ZERO
-	await get_tree().create_timer(0.9).timeout
-	await _shot("lane_override_dash")
-	# ⑤ 逆 + bottom 天花板:翻转重力贴上梁底(faces=bottom 单向面),
-	#    同框可见 back 梁压亮度;随后传送到开关门区
-	_switch_to(2, true)
-	players[2].gravity_dir = -1
-	players[2].up_direction = Vector2(0, 1)
-	players[2].position = Vector2(2950, 660)
-	players[2].velocity = Vector2.ZERO
-	await get_tree().create_timer(1.2).timeout
-	if camera_rig != null:
-		print("LANE SHOT cam=", camera_rig.position, " zoom=", camera_rig.zoom)
-	await _shot("lane_bottom_fall")
-	players[2].gravity_dir = 1
-	players[2].up_direction = Vector2(0, -1)
-	players[2].position = Vector2(5400, 1740)
-	players[2].velocity = Vector2.ZERO
 	await get_tree().create_timer(0.8).timeout
-	await _shot("lane_gate")
+	await _shot("lane_dyn_bridge")
 	get_tree().quit()
 
 

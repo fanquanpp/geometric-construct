@@ -1,19 +1,23 @@
 class_name LevelBuilder
 
-## 磁力边界碰撞位(伍·界/边专用;组件组合位只占 3..31,此位独立在外)。
+## 磁力边界碰撞位(伍·界/边专用;组件签名位只占 3..29,bit30 起为特权位)。
 const BOUNDARY_BIT := 1 << 30
+## 碰撞签名位分配上限(bit29,共 27 槽):与磁界等特权位彻底隔离,
+## 超限构建期报错并丢弃多余签名(§7.10 位上限守卫)。
+const MAX_COMBO_BIT := 29
 ## 把 LevelDef 数据实例化为节点树:平台 / 曲面跳跃板 / 加速门 / 门 / 几何体 / 相机。
 ## 渲染规范:棱角分明的平面石板 + 硬投影,无圆角无柔光。
 ## 关卡背景带 1 格 = 100 px 的定位网格(与 HUD 坐标读数对齐)。
 ##
-## 组件图层系统(levels.md §7 / ROADMAP §1 M0):
-##   构建期把实际出现的 (lane, who) 组合编译为 Godot 碰撞位 —— 位 1 恒为缺省
-##   组合(mid/全员,与旧版逐位一致),位 2 预留玩家几何体,其余组合按出场
-##   顺序分配 3..31;玩家 collision_mask = 适用组合位并集,出生算定一次。
-##   faces 用 one-way 碰撞实现(top 顶面可站 / bottom 底面可站,逆向天花板);
-##   显示分五档(far2/far1/back/mid/front):lane 定原生层级,逐几何体 lanes
-##   覆盖归属,对受控几何体不适用者按 far 档沉降为远景(§7.7),切换时
-##   按距离波次交叉淡化升降。
+## 分层语义 v3(levels.md §7.10):八层定值 × 双归属 + 组件编号 ——
+##   组件 = {id, layer(1..8), faces, who 集合, tags};实体性写入层表
+##   (L4–L7 实体,L1–L3 / L8 景观纯视觉)。构建期把实体层组件实际出现的
+##   (layer, who) 签名编译为 Godot 碰撞位(位 1 弃用,位 2 = 玩家几何体,
+##   签名位 3..29 按出场顺序分配);玩家 collision_mask = 适用签名位并集,
+##   出生算定一次。faces 用 one-way 碰撞实现(top 顶面可站 / bottom 底面
+##   可站,逆向天花板)。渲染每层一个 LaneRenderer,实体层组件按高亮
+##   三档呈现(专属亮 / 共享常 / 无关暗);机关物由 FocusDriver 驱动同款
+##   三档呈现,切换受控几何体时按距离波次交叉淡化。
 
 
 static func build(def: LevelDef) -> Node2D:
@@ -25,11 +29,11 @@ static func build(def: LevelDef) -> Node2D:
 	grid.level_size = def.size
 	root.add_child(grid)
 
-	# —— 语义编译:lane = 碰撞域(v0.17 分层语义 v2,levels.md §7.6) ——
+	# —— 语义编译:分层语义 v3(§7.10),签名 = (layer, who),仅实体层占位 ——
 	var geos: int = Geometries.ALL.size()
 	var combos := _compile_combos(def, geos)
 
-	# —— 每个组合一个静态碰撞体 ——
+	# —— 每个签名一个静态碰撞体 ——
 	var bodies := {}
 	for key in combos:
 		var c: Dictionary = combos[key]
@@ -39,40 +43,52 @@ static func build(def: LevelDef) -> Node2D:
 		root.add_child(body)
 		bodies[key] = body
 
-	# —— 平台:碰撞按组合入位,渲染按五档显示层分组(§7.7) ——
+	# —— 平台:碰撞按签名入位,渲染按八层定值表分组(§7.10) ——
 	var items: Array = []
-	# 左右隐形墙(仅碰撞,不绘制;恒在缺省组合,任何几何体都不可穿出)
+	var used_ids := {}
+	var layer_seq := {}
+	# 左右隐形墙(仅碰撞,不绘制;对全员恒实体,任何几何体都不可穿出)
 	var walls := [
 		Rect2(-40, -700, 40, def.size.y + 1400),
 		Rect2(def.size.x, -700, 40, def.size.y + 1400),
 	]
 	for it0 in def.platforms:
 		var it := Comp.normalize(it0)
+		_assign_id(it, used_ids, layer_seq)
 		items.append(it)
-		var ckey := _static_key(it, geos)
-		if it["faces"] == Comp.FACES_NONE or not combos.has(ckey):
-			continue    # 纯装饰 / 非实体层(对全员非 mid):无碰撞
+		if not Comp.is_solid_layer(it["layer"]) \
+				or it["faces"] == Comp.FACES_NONE:
+			continue    # 景观层 / 纯装饰:无碰撞(所见即所碰)
+		var ckey := Comp.sig_key(it)
+		if not combos.has(ckey):
+			continue    # 位耗尽被丢弃的签名(构建期已报错)
 		bodies[ckey].add_child(_rect_shape(it["rect"], it["faces"]))
 	for w in walls:
 		bodies["walls"].add_child(_rect_shape(w, Comp.FACES_FULL))
-	# 每档一个渲染器,共享全量组件列表:各自按 display_tier 决定画不画 ——
-	# 档间转移走交叉淡化(旧档淡出、新档淡入),z 切换藏在透明谷里
-	for tier in [Comp.LANE_FAR2, Comp.LANE_FAR1, Comp.LANE_BACK,
-			Comp.LANE_MID, Comp.LANE_FRONT]:
+	# 每层一个渲染器,只画自己层的组件 —— 实体层按高亮三档呈现
+	# (专属亮 / 共享常 / 无关暗),档间转移走交叉淡化(§7.10)
+	for layer in [1, 2, 3, 4, 5, 6, 7, 8]:
 		var renderer := LaneRenderer.new()
-		renderer.lane = tier
-		renderer.items = items
-		renderer.z_index = Comp.LANE_Z[tier]
+		renderer.layer = layer
+		renderer.items = items.filter(func(it: Dictionary) -> bool:
+			return it["layer"] == layer)
+		renderer.z_index = Comp.LAYER_Z[layer]
 		root.add_child(renderer)
+
+	# —— 机关物的高亮三档呈现由 FocusDriver 统一驱动(§7.10) ——
+	var focus_entries: Array = []
 
 	# —— 曲面跳跃板 ——
 	for r in def.ramps:
 		var ramp := Ramp.new()
 		ramp.pts = PackedVector2Array(r["pts"])
 		ramp.base_y = r["base"]
-		ramp.layer_value = _bit_value(combos, _static_key(r, geos))
-		ramp.z_index = Comp.LANE_Z[Comp.lane_of(r)]
+		ramp.layer_value = _bit_value(combos, Comp.sig_key(r))
+		ramp.z_index = Comp.LAYER_Z[Comp.layer_of(r)]
 		root.add_child(ramp)
+		focus_entries.append({"node": ramp,
+			"item": {"layer": Comp.layer_of(r), "who": Comp.who_of(r)},
+			"rect": _ramp_bounds(ramp.pts, ramp.base_y)})
 
 	# —— 加速门 ——
 	for g in def.gates:
@@ -93,9 +109,12 @@ static func build(def: LevelDef) -> Node2D:
 		mover.travel = mv.get("offset", Vector2.ZERO)
 		mover.period = mv.get("period", 3.0)
 		mover.phase = mv.get("phase", 0.0)
-		mover.layer_value = _bit_value(combos, _static_key(mv, geos))
-		mover.z_index = Comp.LANE_Z[Comp.lane_of(mv)]
+		mover.layer_value = _bit_value(combos, Comp.sig_key(mv))
+		mover.z_index = Comp.LAYER_Z[Comp.layer_of(mv)]
 		root.add_child(mover)
+		focus_entries.append({"node": mover,
+			"item": {"layer": Comp.layer_of(mv), "who": Comp.who_of(mv)},
+			"rect": r})
 
 	# —— 开关门(动态构件:踩踏开关 ↔ 门板 full/none 切换) ——
 	# 一门可配多只开关(levers,任一踩住即开):气闸式互让题的数据形态
@@ -109,8 +128,10 @@ static func build(def: LevelDef) -> Node2D:
 		gate.door_item = Comp.normalize(lg["door"])
 		gate.invert = lg.get("invert", false)
 		gate.layer_bit = combos["dyn:lg:%d" % li]["bit"]
-		gate.z_index = Comp.LANE_Z[gate.door_item["lane"]]
+		gate.z_index = Comp.LAYER_Z[gate.door_item["layer"]]
 		root.add_child(gate)
+		focus_entries.append({"node": gate, "item": gate.door_item,
+			"rect": gate.door_item["rect"]})
 
 	# —— 限时桥(动态构件:实心 ↔ 虚化周期切换) ——
 	for ti in def.timed_bridges.size():
@@ -122,17 +143,23 @@ static func build(def: LevelDef) -> Node2D:
 		bridge.phase = tb.get("phase", 0.0)
 		bridge.sync_beat = tb.get("sync_beat", false)
 		bridge.layer_bit = combos["dyn:tb:%d" % ti]["bit"]
-		bridge.z_index = Comp.LANE_Z[Comp.lane_of(tb)]
+		bridge.z_index = Comp.LAYER_Z[Comp.layer_of(tb)]
 		root.add_child(bridge)
+		focus_entries.append({"node": bridge,
+			"item": {"layer": Comp.layer_of(tb), "who": Comp.who_of(tb)},
+			"rect": tb["rect"]})
 
 	# —— 钢琴地板砖(踩踏 / 滚过发声,audio.md §4) ——
 	for pt in def.piano_tiles:
 		var tile := PianoTile.new()
 		tile.slab_rect = pt["rect"]
 		tile.note = pt.get("note", "")
-		tile.layer_value = _bit_value(combos, _static_key(pt, geos))
-		tile.z_index = Comp.LANE_Z[Comp.lane_of(pt)]
+		tile.layer_value = _bit_value(combos, Comp.sig_key(pt))
+		tile.z_index = Comp.LAYER_Z[Comp.layer_of(pt)]
 		root.add_child(tile)
+		focus_entries.append({"node": tile,
+			"item": {"layer": Comp.layer_of(pt), "who": Comp.who_of(pt)},
+			"rect": pt["rect"]})
 
 	# —— 出口门 ——
 	for e in def.exits:
@@ -197,6 +224,11 @@ static func build(def: LevelDef) -> Node2D:
 		p.world_mask = _mask_for(combos, idx)
 		root.add_child(p)
 
+	# —— 高亮三档驱动:机关物的专属亮 / 共享常 / 无关暗(§7.10) ——
+	var focus := FocusDriver.new()
+	focus.entries = focus_entries
+	root.add_child(focus)
+
 	# —— 相机 ——
 	var cam := CameraRig.new()
 	cam.limit_left = 0
@@ -207,52 +239,92 @@ static func build(def: LevelDef) -> Node2D:
 	return root
 
 
-## 分层语义 v2(v0.17,levels.md §7.6):lane = 碰撞域。
-## 组件对几何体 g 有碰撞,当且仅当 applies_to(g) 且 lane_for(g) == mid;
-## back / far / front 档纯视觉,几何体可自由穿行(视觉=碰撞,所见即所碰)。
-## 签名 = 可碰撞几何体集合(midset),同签名共享碰撞位;
-## 动态构件(限时桥 / 开关门板)逐实例独占位,防运行时切换误伤共享位。
+## 分层语义 v3(levels.md §7.10):碰撞位编译。
+## 签名 = (layer, who 集合),仅实体层(L4–L7)组件参与 —— 景观层纯视觉
+## 不占位;同签名共享碰撞位;动态构件(限时桥 / 开关门板)逐实例独占位,
+## 防运行时切换误伤共享位。签名位 3..29(MAX_COMBO_BIT)超限报错丢弃,
+## 保证永不侵占 bit30 起的磁界等特权位。
 static func _compile_combos(def: LevelDef, geos: int) -> Dictionary:
 	var combos := {}
 	var next_bit := 3
+	# 关卡边界隐形墙优先占位:对全员恒实体,无论签名多挤都不得被挤到特权位
+	var all: Array = []
+	for g in geos:
+		all.append(g)
+	combos["walls"] = {"bit": next_bit, "midset": all}
+	next_bit += 1
 	var samples: Array = []
 	samples.append_array(def.platforms)
 	samples.append_array(def.ramps)
 	samples.append_array(def.movers)
 	samples.append_array(def.piano_tiles)
-	for it in samples:
-		var key := _static_key(it, geos)
-		if combos.has(key) or _midset(it, geos).is_empty():
-			continue    # 空签名 = 对谁都非实体:纯视觉,不占位
-		combos[key] = {"bit": next_bit, "midset": _midset(it, geos)}
+	for it0 in samples:
+		var it: Dictionary = it0 if it0 is Dictionary else {"rect": it0}
+		if not Comp.is_solid_layer(Comp.layer_of(it)):
+			continue    # 景观层:纯视觉,不占位
+		var key := Comp.sig_key(it)
+		if combos.has(key):
+			continue
+		if next_bit > MAX_COMBO_BIT:
+			push_error("LevelBuilder: 碰撞签名位耗尽(上限 bit29,§7.10)"
+				+ "—— 签名 %s 起被丢弃" % key)
+			break
+		combos[key] = {"bit": next_bit, "midset": _expand(Comp.who_of(it), geos)}
 		next_bit += 1
 	for i in def.timed_bridges.size():
-		combos["dyn:tb:%d" % i] = {
-			"bit": next_bit, "midset": _midset(def.timed_bridges[i], geos)}
-		next_bit += 1
+		var tb: Dictionary = def.timed_bridges[i]
+		if next_bit <= MAX_COMBO_BIT:
+			combos["dyn:tb:%d" % i] = {
+				"bit": next_bit, "midset": _expand(Comp.who_of(tb), geos)}
+			next_bit += 1
+		else:
+			push_error("LevelBuilder: 限时桥 %d 碰撞位耗尽被丢弃(§7.10)" % i)
 	for i in def.lever_gates.size():
-		combos["dyn:lg:%d" % i] = {"bit": next_bit,
-			"midset": _midset(Comp.normalize(def.lever_gates[i]["door"]), geos)}
-		next_bit += 1
-	# 关卡边界隐形墙:对全员恒实体
-	var all: Array = []
-	for g in geos:
-		all.append(g)
-	combos["walls"] = {"bit": next_bit, "midset": all}
+		var door := Comp.normalize(def.lever_gates[i]["door"])
+		if next_bit <= MAX_COMBO_BIT:
+			combos["dyn:lg:%d" % i] = {
+				"bit": next_bit, "midset": _expand(Comp.who_of(door), geos)}
+			next_bit += 1
+		else:
+			push_error("LevelBuilder: 开关门 %d 碰撞位耗尽被丢弃(§7.10)" % i)
 	return combos
 
 
-## 组件对几何体集合的"实体签名":适用且对自己是 mid 的下标集合。
-static func _midset(item, geos: int) -> Array:
+## who 集合展开为实际可碰撞几何体下标集合(空 = 全员)。
+static func _expand(who: Array, geos: int) -> Array:
 	var out: Array = []
 	for g in geos:
-		if Comp.applies_to(item, g) and Comp.lane_for(item, g) == Comp.LANE_MID:
+		if who.is_empty() or who.has(g):
 			out.append(g)
 	return out
 
 
-static func _static_key(item, geos: int) -> String:
-	return "mid:" + str(_midset(item, geos))
+## 组件编号分配(§7.10):显式 id 优先(登记占用);缺省按层分段自动编
+## (L4 首件 = 401),段内撞号退回负数临时号。
+static func _assign_id(it: Dictionary, used: Dictionary, seq: Dictionary) -> void:
+	if int(it["id"]) != 0:
+		used[int(it["id"])] = true
+		return
+	var layer: int = it["layer"]
+	var n: int = int(seq.get(layer, 0)) + 1
+	seq[layer] = n
+	var cand: int = layer * 100 + n
+	if used.has(cand):
+		cand = -(used.size() + 1)
+	it["id"] = cand
+	used[cand] = true
+
+
+## 曲面跳跃板的包围框(FocusDriver 波次排序用)。
+static func _ramp_bounds(pts: PackedVector2Array, base_y: float) -> Rect2:
+	if pts.is_empty():
+		return Rect2()
+	var lo := pts[0]
+	var hi := pts[0]
+	for p in pts:
+		lo = lo.min(p)
+		hi = hi.max(p)
+	return Rect2(lo, hi - lo + Vector2(0, base_y - lo.y))
 
 
 ## 组件碰撞层值;无签名(纯视觉层)= 0(不与任何几何体碰撞)。
@@ -288,33 +360,26 @@ static func _rect_shape(r: Rect2, faces: String) -> CollisionShape2D:
 	return cs
 
 
-## 绘制一组同档平台:硬投影 + 平面石板 + 顶缘亮线,全部直角。
-## 组块连接和谐化:
-##   1. 投影先全部画完、主体后画 —— 相邻组块的投影不再互相裁切出暗色缝线;
-##   2. 坐落在其他组块上的立块,投影只做横向偏移 —— 不在承接面顶缘拖出暗带;
-##   3. 立块底缘两侧补 45° 裙角(主体同色的硬折线,非圆角),
-##      让"立块 ↔ 承接面"的过渡融为一体。
-## 五档显示层(art-style.md §6,引擎 modulate / alpha 实现,不重画瓦片):
-##   每档渲染器共享全量组件,按 Comp.display_tier 判定本档该画谁:
-##   命中本档 → 淡入至档位透明度;归属他档 → 淡出到 0(z 切换藏在透明谷);
-##   far1/far2 为不适用建筑沉降出的远景纵深,切换受控几何体时按距离
-##   波次(近先远后,≤0.3s)交叉淡化升降,形成远近层次感。
+## 绘制一层平台:硬投影 + 平面石板 + 顶缘亮线,全部直角。
+## 八层定值表(§7.10):每层一个渲染器,items 已按层过滤,只画本层组件。
+## 实体层(L4–L7)组件按高亮三档呈现:
+##   专属(who 含受控者)= 专属色描边脉冲;共享(who 空)= 常亮;
+##   无关 = 幽灵暗度(所见即所碰);景观层常驻,深度梯度由 modulate /
+##   基础透明度表达(L1 最暗 → L3 背景压亮度,L8 前景躲入降透明)。
+## 切换受控几何体时按距离波次交叉淡化(近处先动,≤0.3s)。
+## 组块连接和谐化:投影先画 / 立块横向投影 / 45° 裙角(同 v2)。
 class LaneRenderer extends Node2D:
-	var lane := Comp.LANE_MID
-	var items: Array = []            # 全量归一化组件字典(Comp.normalize,与它档共享)
+	var layer := Comp.LAYER_MAIN
+	var items: Array = []            # 本层归一化组件字典(构建期按 layer 过滤)
 	var _base: StyleBoxFlat
 	var _slab: StyleBoxFlat
-	var _alpha: Array = []           # 本档视角下每件组件的当前透明度系数(0-1)
-	var _tier: Array = []            # 每件组件当前的显示档(缓存,供投影/裙角分组)
-	var _auto_far: Array = []        # 自动沉降档(1 近景远层 / 2 最深远景)
+	var _alpha: Array = []           # 每件组件当前透明度系数(0-1)
+	var _hl: Array = []              # 每件组件是否处于"专属高亮"
+	var _hl_col: Array = []          # 高亮色(受控几何体专属色)
 	var _delay: Array = []           # 切换波次剩余延时(近处先动)
 	var _last_slot := -1
-	const GHOST := 0.35              # 非实体虚化档(所见即所碰,v0.17)
-	const GHOST_FRONT := 0.45        # 前景虚化:可穿行遮挡恒半透
+	const GHOST := 0.35              # 无关件幽灵暗度(§7.10)
 	const DIM_FRONT := 0.55          # 前景遮挡:玩家躲入其后
-	const ALPHA_FAR1 := 0.34         # 远景近档:向背景雾色渗出 66%(冷色幽灵档)
-	const ALPHA_FAR2 := 0.26         # 最深远景:渗出 74%,仅余轮廓
-	const FAR_SPLIT := 700.0         # 自动分档:距受控几何体 ≤7 格 = far1,否则 far2
 	const STAGGER_PER_PX := 0.00019  # 波次:每 100px 迟 0.019s
 	const STAGGER_MAX := 0.30
 	const TRANS_K := 18.0            # 透明度过渡速率(≈0.16s 收敛,M2 档位)
@@ -324,21 +389,19 @@ class LaneRenderer extends Node2D:
 		_base.bg_color = Color("262B34")
 		_slab = StyleBoxFlat.new()
 		_slab.bg_color = Color("313845")
-		match lane:
-			Comp.LANE_BACK:
-				# 背景红线:PAPER 亮度的 8% 以内(art-style.md §4.1)——
-				# 石板基色 ≈0.17 亮度,压到 ×0.45 ≈ 0.077
-				modulate = Color(0.45, 0.46, 0.53)
-			Comp.LANE_FAR1:
-				# 远景冷色偏移:退后变虚 —— 比背层更冷,向雾色渗出(近档)
-				modulate = Color(0.62, 0.66, 0.78)
-			Comp.LANE_FAR2:
-				# 最深远景:更冷更虚,只留结构轮廓可读
+		# 景观层深度梯度:渗雾冷色(L1/L2)与背景压亮度(L3)(art-style.md §4.1)
+		match layer:
+			Comp.LAYER_DEEP:
 				modulate = Color(0.42, 0.46, 0.58)
+			Comp.LAYER_FAR:
+				modulate = Color(0.62, 0.66, 0.78)
+			Comp.LAYER_BACK:
+				# 背景红线:PAPER 亮度的 8% 以内 —— 石板基色 ≈0.17 亮度,压到 ×0.45
+				modulate = Color(0.45, 0.46, 0.53)
 		var n := items.size()
 		_alpha.resize(n)
-		_tier.resize(n)
-		_auto_far.resize(n)
+		_hl.resize(n)
+		_hl_col.resize(n)
 		_delay.resize(n)
 		# start_level 装配时序:渲染器 _ready 先于 _collect_players(),
 		# players 可能为空 —— active 一律走与 _process 相同的守卫
@@ -347,10 +410,10 @@ class LaneRenderer extends Node2D:
 		_last_slot = slot
 		var geo := _geo_of(slot)
 		for i in n:
-			_auto_far[i] = 1
+			_hl[i] = false
+			_hl_col[i] = Color(0, 0, 0, 0)
 			_delay[i] = 0.0
-			_tier[i] = Comp.display_tier(items[i], geo, 1)
-			_alpha[i] = _target_alpha(i, _tier[i], slot, geo)
+			_alpha[i] = _target_alpha(i, slot, geo)
 
 	func _geo_of(slot: int) -> int:
 		var m = Main.I
@@ -359,27 +422,22 @@ class LaneRenderer extends Node2D:
 		var p: Player = m.players[slot]
 		return p.index if p != null else -1
 
-	func _solid_for(item, geo: int) -> bool:
-		return Comp.applies_to(item, geo) 			and Comp.lane_for(item, geo) == Comp.LANE_MID
-
-	func _target_alpha(i: int, tier: String, slot: int, geo: int) -> float:
-		if tier == Comp.LANE_FAR1:
-			return ALPHA_FAR1
-		if tier == Comp.LANE_FAR2:
-			return ALPHA_FAR2
-		if tier != lane:
-			return 0.0
-		# 分层语义 v2:对当前几何体非实体 → 一律虚化(所见即所碰)。
-		# back / front / 不适用(原 far:0)统一按幽灵档呈现。
-		if geo >= 0 and not _solid_for(items[i], geo):
-			return GHOST_FRONT if lane == Comp.LANE_FRONT else GHOST
-		if lane == Comp.LANE_FRONT:
-			var m = Main.I
-			if m != null and slot >= 0 and slot < m.players.size():
-				var p: Player = m.players[slot]
-				if p != null and Comp.rect_of(items[i]).has_point(p.position):
-					return DIM_FRONT
-		return 1.0
+	func _target_alpha(i: int, slot: int, geo: int) -> float:
+		var it: Dictionary = items[i]
+		var base: float = Comp.LAYER_BASE_ALPHA.get(layer, 1.0)
+		# 景观层:常驻深度档;仅 L8 前景在玩家躲入其后降透明
+		if not Comp.is_solid_layer(layer):
+			if layer == Comp.LAYER_FRONT and geo >= 0:
+				var m = Main.I
+				if m != null and slot >= 0 and slot < m.players.size():
+					var p: Player = m.players[slot]
+					if p != null and (it["rect"] as Rect2).has_point(p.position):
+						return DIM_FRONT
+			return base
+		# 实体层:无关件 → 幽灵暗度(所见即所碰);专属 / 共享 → 常亮
+		if geo >= 0 and Comp.display_role(it, geo) == Comp.ROLE_DIM:
+			return GHOST
+		return base
 
 	func _process(delta: float) -> void:
 		var m = Main.I
@@ -389,31 +447,39 @@ class LaneRenderer extends Node2D:
 			_last_slot = slot
 			if geo >= 0:
 				var ppos: Vector2 = m.players[slot].position
-				# 切换波次:按与受控几何体的距离重排远景档,近处先升降
+				# 切换波次:按与受控几何体的距离排延时,近处先升降
 				for i in items.size():
-					var d: float = Comp.rect_of(items[i]).get_center().distance_to(ppos)
-					_auto_far[i] = 1 if d < FAR_SPLIT else 2
+					var d: float = (items[i]["rect"] as Rect2).get_center() \
+						.distance_to(ppos)
 					_delay[i] = clampf(d * STAGGER_PER_PX, 0.0, STAGGER_MAX)
 		var changed := false
+		var any_hl := false
 		for i in items.size():
 			if _delay[i] > 0.0:
 				_delay[i] = maxf(_delay[i] - delta, 0.0)
-				continue    # 波次未到:保持旧档旧透明度
-			var t := Comp.display_tier(items[i], geo, _auto_far[i])
-			if t != _tier[i]:
-				_tier[i] = t
-				changed = true
-			var tgt := _target_alpha(i, t, slot, geo)
+				continue    # 波次未到:保持旧透明度
+			var tgt := _target_alpha(i, slot, geo)
 			if absf(tgt - _alpha[i]) > 0.003:
 				_alpha[i] = lerpf(_alpha[i], tgt, 1.0 - exp(-TRANS_K * delta))
 				if absf(tgt - _alpha[i]) <= 0.004:
 					_alpha[i] = tgt
 				changed = true
-		if changed:
-			queue_redraw()
+			var hl: bool = geo >= 0 and Comp.is_solid_layer(layer) \
+				and Comp.display_role(items[i], geo) == Comp.ROLE_FOCUS
+			if hl != _hl[i]:
+				_hl[i] = hl
+				changed = true
+			if hl:
+				_hl_col[i] = (m.players[slot] as Player).def.color
+				any_hl = true
+			elif _hl_col[i].a > 0.0:
+				_hl_col[i] = Color(0, 0, 0, 0)
+				changed = true
+		if changed or any_hl:
+			queue_redraw()   # 高亮呼吸脉冲需逐帧重绘
 
 	func _visible(i: int) -> bool:
-		return _tier[i] == lane and _alpha[i] > 0.012
+		return _alpha[i] > 0.012
 
 	func _draw() -> void:
 		# —— 第一遍:硬投影(整体位移的实心暗块,无模糊) ——
@@ -471,7 +537,11 @@ class LaneRenderer extends Node2D:
 				draw_rect(Rect2(r.position + Vector2(mark_x, 0), Vector2(14, 3)),
 					Color(Ui.RED, 0.55 * a))
 				mark_x += 480.0
-		# —— 第三遍:接触裙角 —— 立块底缘两侧的 45° 硬折线小裙边(主体同色),
+		# —— 第三遍:专属高亮描边(呼吸脉冲,受控几何体专属色,§7.10) ——
+		for i in items.size():
+			if _hl[i] and _visible(i):
+				LevelBuilder.draw_focus(self, items[i]["rect"], _hl_col[i])
+		# —— 第四遍:接触裙角 —— 立块底缘两侧的 45° 硬折线小裙边(主体同色),
 		# 把立块"种"进承接面,消除生硬的竖直接缝
 		for i in items.size():
 			if not _visible(i) or items[i]["faces"] == Comp.FACES_NONE:
@@ -489,8 +559,8 @@ class LaneRenderer extends Node2D:
 				Vector2(r.end.x, by - f), Vector2(r.end.x, by),
 				Vector2(r.end.x + f, by)]), Color("262B34", a))
 
-	## items[i] 是否坐落在**同档且可见**的另一个组块上(底缘贴着对方顶缘,
-	## 水平方向有实质搭接)—— 承接块沉入远景后,投影/裙角随之还原为落地态。
+	## items[i] 是否坐落在**同层且可见**的另一个组块上(底缘贴着对方顶缘,
+	## 水平方向有实质搭接)—— 承接块淡出后,投影/裙角随之还原为落地态。
 	func _rests_on(i: int) -> bool:
 		var r: Rect2 = items[i]["rect"]
 		for j in items.size():
@@ -511,7 +581,8 @@ class LaneRenderer extends Node2D:
 class Ramp extends StaticBody2D:
 	var pts := PackedVector2Array()
 	var base_y := 1000.0
-	var layer_value := 1    # 语义组合碰撞位(缺省组合 = 位 1)
+	var layer_value := 1    # 语义签名碰撞位(景观层 = 0:纯视觉)
+	var hl_color := Color(0, 0, 0, 0)   # 专属高亮色(FocusDriver 写入,§7.10)
 
 	func _ready() -> void:
 		collision_layer = layer_value
@@ -561,6 +632,8 @@ class Ramp extends StaticBody2D:
 		for i in pts.size() - 1:
 			var mid := (pts[i] + pts[i + 1]) * 0.5
 			draw_rect(Rect2(mid - Vector2(7, 8), Vector2(14, 3)), Color(Ui.RED, 0.55))
+		# 专属高亮描边(呼吸脉冲,§7.10)
+		LevelBuilder.draw_focus(self, LevelBuilder._ramp_bounds(pts, base_y), hl_color)
 
 	const THICKNESS := 48.0
 
@@ -587,6 +660,7 @@ class Mover extends AnimatableBody2D:
 	var period := 3.0
 	var phase := 0.0
 	var layer_value := 1
+	var hl_color := Color(0, 0, 0, 0)   # 专属高亮色(FocusDriver 写入,§7.10)
 	var _t := 0.0
 
 	func _ready() -> void:
@@ -635,6 +709,10 @@ class MoverSlab extends Node2D:
 		draw_rect(Rect2(r.position + Vector2(0, 3), Vector2(8, 3)), Color(Ui.RED, 0.8))
 		draw_rect(Rect2(Vector2(r.end.x - 8, r.position.y + 3), Vector2(8, 3)),
 			Color(Ui.RED, 0.8))
+		# 专属高亮描边(读宿主 Mover 的 hl_color,呼吸脉冲,§7.10)
+		var mv := get_parent() as Mover
+		if mv != null:
+			LevelBuilder.draw_focus(self, r, mv.hl_color)
 
 
 ## 移动构件轨道:世界坐标里的细线路径 + 两端终点刻度,提前预告行程。
@@ -667,6 +745,7 @@ class TimedBridge extends StaticBody2D:
 	var phase := 0.0
 	var sync_beat := false
 	var layer_bit := 1
+	var hl_color := Color(0, 0, 0, 0)   # 专属高亮色(FocusDriver 写入,§7.10)
 	var _t := 0.0
 	var _solid := true
 	var _beat_phase := 0.0   # 启动时对齐到的节拍相位
@@ -724,6 +803,8 @@ class TimedBridge extends StaticBody2D:
 					Color(Ui.PAPER, 0.30))
 				x += seg * 2.0
 			draw_rect(r, Color(Ui.PAPER, 0.16), false, 1.0)
+		# 专属高亮描边(呼吸脉冲,§7.10)
+		LevelBuilder.draw_focus(self, r, hl_color)
 
 
 ## 开关门(structures.md §5):踩踏开关与门板成对 ——
@@ -736,6 +817,7 @@ class LeverGate extends Node2D:
 	var door_item := {}      # Comp.normalize 后的门板组件字典
 	var invert := false      # false:踩下 = 门开;true:踩下 = 门关
 	var layer_bit := 1
+	var hl_color := Color(0, 0, 0, 0)   # 门板专属高亮色(FocusDriver 写入,§7.10)
 	var _riders: Array = []  # 每只开关上的几何体集合({body: true})
 	var _door_body: StaticBody2D
 	var _open := false
@@ -833,6 +915,8 @@ class LeverGate extends Node2D:
 			if pressed:
 				draw_rect(Rect2(lever_rect.position + Vector2(lever_rect.size.x * 0.5 - 14,
 					lr.position.y - 16), Vector2(28, 3)), Color(Ui.RED, 0.8))
+		# 门板专属高亮描边(呼吸脉冲,§7.10)
+		LevelBuilder.draw_focus(self, r, hl_color)
 
 
 ## 钢琴地板砖(audio.md §4):踩踏 / 滚过即发声的平台砖 —— 玩家行为即配乐。
@@ -890,6 +974,7 @@ class PianoTile extends StaticBody2D:
 	var slab_rect := Rect2()
 	var note := ""            # 音名("C4");空 = 按 y 反向映射
 	var layer_value := 1
+	var hl_color := Color(0, 0, 0, 0)   # 专属高亮色(FocusDriver 写入,§7.10)
 	var _pulse := 0.0         # 顶缘亮线脉冲剩余时间
 	var _last_played := {}    # player index -> 上次触发时刻(秒)
 	var _in_contact := {}    # player index -> 是否接触中(接触沿判定,v0.16)
@@ -978,6 +1063,67 @@ class PianoTile extends StaticBody2D:
 		# 音级刻度:左缘红块(触发时展开为双倍宽)
 		var mw := 10.0 if _pulse > 0.0 else 5.0
 		draw_rect(Rect2(r.position + Vector2(0, 4), Vector2(mw, 3)), Color(Ui.RED, 0.8))
+		# 专属高亮描边(呼吸脉冲,§7.10)
+		LevelBuilder.draw_focus(self, r, hl_color)
+
+
+## 专属高亮描边(高亮三档,levels.md §7.10):几何体专属色 2px 外框 +
+## 呼吸脉冲;col.a = 0 时不画(LaneRenderer 与机关物 _draw 共用)。
+static func draw_focus(c: CanvasItem, r: Rect2, col: Color) -> void:
+	if col.a <= 0.0:
+		return
+	var pl := 0.55 + 0.35 * sin(Time.get_ticks_msec() / 1000.0 * 6.0)
+	c.draw_rect(r.grow(3.0), Color(col.r, col.g, col.b, col.a * pl), false, 2.0)
+
+
+## 高亮三档驱动(§7.10):机关物(Ramp / Mover / PianoTile / LeverGate /
+## TimedBridge)不走 LaneRenderer —— 本节点逐帧按 (layer, who) × 受控
+## 几何体计算 modulate 透明度与专属高亮色,写回各机关的 hl_color 并触发
+## 重绘;碰撞归属仍由构建期签名位决定,这里只管呈现。景观层机关走
+## Comp.LAYER_BASE_ALPHA 基础透明度。
+class FocusDriver extends Node2D:
+	## {node: Node2D(带 hl_color 属性), item: {layer, who}, rect: Rect2}
+	var entries: Array = []
+	var _hl: Array = []
+	var _last_slot := -1
+	const GHOST := 0.35
+	const TRANS_K := 14.0
+
+	func _ready() -> void:
+		_hl.resize(entries.size())
+		for i in _hl.size():
+			_hl[i] = false
+		var m = Main.I
+		_last_slot = m._active_slot if m != null and not m.players.is_empty() else -1
+
+	func _process(delta: float) -> void:
+		var m = Main.I
+		var slot: int = m._active_slot if m != null and not m.players.is_empty() else -1
+		var geo := -1
+		if m != null and slot >= 0 and slot < m.players.size() \
+				and m.players[slot] != null:
+			geo = m.players[slot].index
+		for i in entries.size():
+			var e: Dictionary = entries[i]
+			var node = e["node"]           # 故意不标类型:hl_color 为鸭子属性
+			var role := Comp.display_role(e["item"], geo)
+			var tgt: float = Comp.LAYER_BASE_ALPHA.get(
+				Comp.layer_of(e["item"]), 1.0)
+			if role == Comp.ROLE_DIM:
+				tgt = GHOST
+			node.modulate.a = lerpf(node.modulate.a, tgt,
+				1.0 - exp(-TRANS_K * delta))
+			var want := Color(0, 0, 0, 0)
+			if role == Comp.ROLE_FOCUS and geo >= 0:
+				want = (m.players[slot] as Player).def.color
+			var was_hl: bool = _hl[i]
+			var changed := false
+			if node.hl_color != want:
+				node.hl_color = want
+				changed = true
+			_hl[i] = want.a > 0.0
+			if _hl[i] or changed or was_hl:
+				node.queue_redraw()   # 高亮脉冲逐帧重绘;退出高亮补一帧清框
 
 
 ## 镜头:始终以受控几何体为画面中心,带左右前瞻偏移与速度变焦;

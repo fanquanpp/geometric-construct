@@ -63,6 +63,9 @@ static func _static_init() -> void:
 	ALL[-1].paired = true
 	ALL[-1].name_half = "边"
 	ALL[-1].quote_half = "边。我在下,量地的厚度。"
+	# 磁界穿透(叁·逆,v0.16 设计 · characters.md §5):唯一可穿过磁力边界者。
+	# v0.18 修复:该旗标此前从未被置位,"逆穿磁界"一直未生效。
+	ALL[2].can_pass_boundary = true
 
 
 static func get_def(index: int) -> GeometryDef:

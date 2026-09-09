@@ -1,51 +1,69 @@
 class_name Comp
-## 地图组件语义组(levels.md §7.2)的纯数据层定义与访问器。
-## 组件 = 几何(位置/尺寸/折点) + lane + faces + who + tags + lanes + far:
-##   lane  ∈ back | mid | front      层级:背景结构 / 主层 / 前景遮挡
-##   faces ∈ full | top | bottom | none   碰撞面:四面实心 / 仅顶面单向 / 仅底面 / 无碰撞
-##   who   = 几何体下标集合,空 = 全员适用;不含某几何体 = 对其完全不存在
-##   lanes = {几何体下标: lane}      逐几何体层级归属(§7.7):同一建筑对不同
-##                                   几何体可处在不同层级,缺省回落 lane
-##   far   ∈ -1 | 0 | 1 | 2          不适用时的沉降档(§7.7):-1 = 自动按距
-##                                   受控几何体的远近分远景两档;0 = 原位淡化
-##                                   (v0.13 旧行为);1/2 = 固定远景档
+## 地图组件语义组 v3(分层语义 v3,levels.md §7.10)的纯数据层定义与访问器。
+## 组件 = 几何(位置/尺寸/折点) + id + layer + faces + who + tags:
+##   id    组件编号             关内唯一,建议按层分段(L4 首件 = 401);
+##                              调试 / 高亮指向 / 存档 / 未来编辑器引用
+##   layer ∈ 1..8               第一归属:所在图层(八层定值表,实体性写入层表)
+##   faces ∈ full | top | bottom | none  碰撞面:四面实心 / 仅顶面单向 /
+##                              仅底面(逆的天花板) / 无碰撞纯装饰
+##   who   = 几何体下标集合      第二归属:与哪些几何体交互;空 = 全员共享
+##   tags  = 语义标签(预留)
 ##
-## v0.18 分层语义 v3 已拍板(2026-09-10,levels.md §7.10,未实装):
-## lane 升格为八层定值 layer ∈ 1..8(实体性写入层表),who 保持集合、
-## 新增组件编号 id;lanes / far 废弃(分层差异拆两个组件)。
-## 本文件现仍为 v2 语义,实装清单见 levels.md §7.10。
+## 实体化谓词(solid_for,渲染与碰撞共用的唯一函数):
+##   组件对几何体 g 有碰撞 ⟺ 层为实体层(L4–L7) 且 (who 空 或 g ∈ who)
+##   且 faces ≠ none;景观层(L1–L3 / L8)一律纯视觉,几何体自由穿行。
+## 高亮三档(display_role,§7.10):专属(who 非空且含受控者)= 专属色
+## 描边脉冲;共享 = 常亮;无关 = 幽灵暗度;景观层不参与三档。
 ##
-## 兼容约定:平台项可以是裸 Rect2(旧格式,等价 mid / full / 全员),
-## 也可以是字典 {rect, lane?, faces?, who?, lanes?, far?, tags?} —— 序章 +
-## 第一幕 10 关零迁移(levels.md §7.6)。全部字段可 JSON 同构(数据互通前置;
-## lanes 键在 normalize 时收敛为 int,兼容 JSON 的字符串键)。
+## 兼容约定:平台项可以是裸 Rect2(旧格式,等价 L4 / full / 全员),
+## 也可以是字典 {rect, id?, layer?, faces?, who?, tags?}。旧字段
+## lane / lanes / far 仅在读取时兼容(norm_layer 把 lane 映射进 layer,
+## lanes / far 丢弃)——v3 数据不再写出。全部字段可 JSON 同构。
 
-const LANE_BACK := "back"
-const LANE_MID := "mid"
-const LANE_FRONT := "front"
+## —— 八层定值表(全局固定,一次定稿;每关选用子集,未用即空)——
+const LAYER_DEEP := 1      # L1 深景:纯视觉最暗档(原 far2)
+const LAYER_FAR := 2       # L2 远景:沉降档(原 far1)
+const LAYER_BACK := 3      # L3 背景建筑:可穿行装饰(原 back)
+const LAYER_MAIN := 4      # L4 主实体层:全员共享地形(原 mid)
+const LAYER_EXTRA1 := 5    # L5 扩展实体层·甲(专属 / 分组实体域)
+const LAYER_EXTRA2 := 6    # L6 扩展实体层·乙
+const LAYER_EXTRA3 := 7    # L7 扩展实体层·丙
+const LAYER_FRONT := 8     # L8 前景遮挡:玩家之上剪影(原 front)
 
-## 显示档(非数据 lane):不适用建筑沉降出的远景纵深,均在网格之下。
-const LANE_FAR1 := "far1"
-const LANE_FAR2 := "far2"
+## 显示层 → z_index(L8 在玩家 z5 之上;L7 与既有机关 z 相邻,树序定先后)。
+const LAYER_Z := {1: -2, 2: -1, 3: 0, 4: 1, 5: 2, 6: 3, 7: 4, 8: 6}
+
+## 各层基础透明度(L1 / L2 渗雾远景;其余原色,配合 modulate 深度梯度)。
+const LAYER_BASE_ALPHA := {1: 0.26, 2: 0.34, 3: 1.0, 4: 1.0,
+	5: 1.0, 6: 1.0, 7: 1.0, 8: 1.0}
 
 const FACES_FULL := "full"
 const FACES_TOP := "top"
 const FACES_BOTTOM := "bottom"
 const FACES_NONE := "none"
 
-## far 字段:自动分档 / 原位淡化 / 固定远景档。
-const FAR_AUTO := -1
-const FAR_HOLD := 0
-
-## 显示档 → z_index(levels.md §7.6/§7.7 渲染映射):
-## 远景两档沉到定位网格之下,back 在网格之上同层,mid / front 依次抬高。
-## 分层语义 v2(v0.17):lane = 碰撞域 + 深度。mid 是唯一实体层;
-## front 在玩家之上(纯遮挡可穿行,躲入其后降 55%),back/far 在玩家之下。
-const LANE_Z := {LANE_FAR2: -2, LANE_FAR1: -1, LANE_BACK: 0, LANE_MID: 1, LANE_FRONT: 6}
+## 高亮三档(levels.md §7.10)。
+const ROLE_LANDSCAPE := 0   # 景观层组件:常驻,不参与三档
+const ROLE_SHARED := 1      # 实体层 who 空(或无受控者):共享常亮
+const ROLE_FOCUS := 2       # who 非空且含受控者:专属高亮
+const ROLE_DIM := 3         # who 非空不含受控者:幽灵暗度
 
 
-static func norm_lane(v) -> String:
-	return v if v == LANE_BACK or v == LANE_MID or v == LANE_FRONT else LANE_MID
+static func norm_layer(v) -> int:
+	if v is String:   # 旧 lane 字符串只读兼容(映射进八层,v3 不再写出)
+		match v:
+			"back":
+				return LAYER_BACK
+			"front":
+				return LAYER_FRONT
+			"far1":
+				return LAYER_FAR
+			"far2":
+				return LAYER_DEEP
+			_:
+				return LAYER_MAIN
+	var l := int(v)
+	return l if l >= 1 and l <= 8 else LAYER_MAIN
 
 
 static func norm_faces(v) -> String:
@@ -53,29 +71,35 @@ static func norm_faces(v) -> String:
 		or v == FACES_BOTTOM or v == FACES_NONE else FACES_FULL
 
 
-static func norm_far(v) -> int:
-	var f := int(v)
-	return f if f >= FAR_AUTO and f <= 2 else FAR_AUTO
+## who 集合收敛为 int 下标数组(JSON 的数字字符串兼容,非法项丢弃)。
+static func norm_who(v) -> Array:
+	var out: Array = []
+	if v is Array:
+		for e in v:
+			match typeof(e):
+				TYPE_INT, TYPE_FLOAT:
+					if not out.has(int(e)):
+						out.append(int(e))
+				TYPE_STRING:
+					if str(e).is_valid_int() and not out.has(int(e)):
+						out.append(int(e))
+	return out
 
 
 ## 归一化为标准字典(裸 Rect2 → 缺省语义组;字典补齐缺省字段)。
+## id = 0 表示未编号,由 LevelBuilder 装配时按层分段自动分配(负数兜底)。
 static func normalize(item) -> Dictionary:
 	if item is Rect2:
-		return {"rect": item, "lane": LANE_MID, "faces": FACES_FULL, "who": [],
-			"lanes": {}, "far": FAR_AUTO}
+		return {"rect": item, "id": 0, "layer": LAYER_MAIN,
+			"faces": FACES_FULL, "who": [], "tags": []}
 	var d: Dictionary = item
-	var lanes := {}
-	if d.get("lanes") is Dictionary:
-		for k in d["lanes"]:
-			lanes[int(k)] = norm_lane(d["lanes"][k])
 	return {
 		"rect": d["rect"],
-		"lane": norm_lane(d.get("lane", LANE_MID)),
+		"id": int(d.get("id", 0)),
+		"layer": norm_layer(d.get("layer", d.get("lane", LAYER_MAIN))),
 		"faces": norm_faces(d.get("faces", FACES_FULL)),
-		"who": d.get("who", []),
-		"lanes": lanes,
-		"far": norm_far(d.get("far", FAR_AUTO)),
-		"tags": d.get("tags", []),
+		"who": norm_who(d.get("who", [])),
+		"tags": d.get("tags", []) if d.get("tags", []) is Array else [],
 	}
 
 
@@ -83,62 +107,58 @@ static func rect_of(item) -> Rect2:
 	return item["rect"] if item is Dictionary else item
 
 
-static func lane_of(item) -> String:
-	return norm_lane(item.get("lane", LANE_MID)) if item is Dictionary else LANE_MID
+static func id_of(item) -> int:
+	return int(item.get("id", 0)) if item is Dictionary else 0
+
+
+static func layer_of(item) -> int:
+	return norm_layer(item.get("layer", item.get("lane", LAYER_MAIN))) \
+		if item is Dictionary else LAYER_MAIN
 
 
 static func faces_of(item) -> String:
-	return norm_faces(item.get("faces", FACES_FULL)) if item is Dictionary else FACES_FULL
+	return norm_faces(item.get("faces", FACES_FULL)) if item is Dictionary \
+		else FACES_FULL
 
 
+## who 集合(已收敛 int;空 = 全员共享)。
 static func who_of(item) -> Array:
-	return item.get("who", []) if item is Dictionary else []
+	return norm_who(item.get("who", [])) if item is Dictionary else []
 
 
-static func lanes_of(item) -> Dictionary:
-	return item.get("lanes", {}) if item is Dictionary else {}
+## 层表写死的实体性:L4–L7 实体,L1–L3 / L8 景观(levels.md §7.10)。
+static func is_solid_layer(layer: int) -> bool:
+	return layer >= LAYER_MAIN and layer <= LAYER_EXTRA3
 
 
-static func far_of(item) -> int:
-	return norm_far(item.get("far", FAR_AUTO)) if item is Dictionary else FAR_AUTO
-
-
-## 组件是否适用于某几何体(who 空 = 全员;不适用 = 完全不碰撞,levels.md §7.4)。
+## 组件是否适用于某几何体(who 空 = 全员)。
 static func applies_to(item, geo_index: int) -> bool:
-	var who: Array = who_of(item)
+	var who := who_of(item)
 	return who.is_empty() or who.has(geo_index)
 
 
-## 适用时的显示层级:lanes 逐几何体覆盖优先,缺省回落 lane。
-static func lane_for(item, geo_index: int) -> String:
-	var base := lane_of(item)
+## 实体化谓词(唯一函数,渲染与碰撞共用,§7.10):
+## 实体层 ∧ 非纯装饰 ∧ (who 空 或 含该几何体)。geo 由调用方保证 ≥ 0。
+static func solid_for(item, geo_index: int) -> bool:
+	return is_solid_layer(layer_of(item)) and faces_of(item) != FACES_NONE \
+		and applies_to(item, geo_index)
+
+
+## 高亮三档判定(§7.10):仅实体层组件参与;无受控者(geo < 0)一律常亮。
+static func display_role(item, geo_index: int) -> int:
+	if not is_solid_layer(layer_of(item)):
+		return ROLE_LANDSCAPE
 	if geo_index < 0:
-		return base
-	var ov := lanes_of(item)
-	if ov.is_empty():
-		return base
-	return norm_lane(ov.get(geo_index, ov.get(str(geo_index), base)))
+		return ROLE_SHARED
+	var who := who_of(item)
+	if who.is_empty():
+		return ROLE_SHARED
+	return ROLE_FOCUS if who.has(geo_index) else ROLE_DIM
 
 
-## 显示档判定(§7.7):适用 → 逐几何体层级;不适用 → far 档
-## (0 原位保持 / 1、2 固定远景 / -1 用 auto_far 自动分档结果)。
-## geo_index < 0(无受控几何体)时一律按原生层级,维持 v0.13 兼容。
-static func display_tier(item, geo_index: int, auto_far: int) -> String:
-	if geo_index >= 0 and not applies_to(item, geo_index):
-		var f := far_of(item)
-		if f == FAR_HOLD:
-			return lane_of(item)
-		if f >= 1:
-			return LANE_FAR1 if f == 1 else LANE_FAR2
-		return LANE_FAR1 if auto_far <= 1 else LANE_FAR2
-	return lane_for(item, geo_index)
-
-
-## (lane, who) 组合键:碰撞位编译的分组依据(§7.6)。faces 不进组合 ——
-## 单向面改变的是碰撞方向,不改变"谁碰得到";lanes / far 只影响渲染,
-## 同样不进组合 —— 层级归属不改变碰撞。
-static func combo_key(item) -> String:
-	var who: Array = who_of(item).duplicate()
+## 碰撞签名键(§7.10):(layer, who 集合) —— 同签名共享碰撞位;faces 不进
+## 签名(单向面改变碰撞方向,不改变"谁碰得到")。景观层组件不产生签名。
+static func sig_key(item) -> String:
+	var who := who_of(item).duplicate()
 	who.sort()
-	var who_s := "all" if who.is_empty() else ",".join(who)
-	return "%s|%s" % [lane_of(item), who_s]
+	return "%d|%s" % [layer_of(item), "all" if who.is_empty() else str(who)]

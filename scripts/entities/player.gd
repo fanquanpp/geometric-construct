@@ -55,8 +55,8 @@ var is_active := false
 var rider_of: Player = null
 var speed_buffed := false     # 加速门强化(永久,直至死亡重生)
 var gravity_dir: int = 1      # 当前重力方向(置换会翻转;1 = 向下,-1 = 向上)
-## 世界碰撞位并集(LevelBuilder 构建期按语义组合算定,levels.md §7.6;
-## 缺省组合恒为位 1,与旧版 mask=3 行为逐位一致)。
+## 世界碰撞位并集(LevelBuilder 构建期按实体签名算定,分层语义 v3
+## levels.md §7.10:签名 = (layer, who),仅实体层组件占位,空集 = 1)。
 var world_mask := 1
 
 ## 进门时的缩小系数,由 Tween 驱动。

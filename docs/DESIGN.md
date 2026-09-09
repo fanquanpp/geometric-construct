@@ -44,7 +44,7 @@
 | 置换(逆) | 同跳跃键 |
 | 冲刺 | Shift / 手柄 X(触屏:轮盘拉满) |
 | 爬墙(疾) | 贴墙 + 朝墙方向;按住跳 = 攀升 |
-| 切换 | Tab / Q·E / 1-4 / 手柄 LB·RB |
-| 重来 / 暂停 | R / Esc / 手柄 Back·Start |
+| 切换 | Tab / Q·E / 1-5 / 手柄 LB·RB |
+| 召回 / 暂停 | R / Esc / 手柄 Back·Start |
 
 手感细则与曲面/加速门叠乘规则见 `design/characters.md` §2、`design/structures.md`。

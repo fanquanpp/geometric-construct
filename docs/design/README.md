@@ -24,7 +24,7 @@
 | [art-style.md](art-style.md) | 视觉规范:调色板 / 形状语言 / 字体 / 动效法则 / 风格审计清单 | 美术 / UI |
 | [characters.md](characters.md) | 几何体角色设计:属性标尺与利用率 / 手感公约数 / 射程矩阵 / 承载链 / 角色×系统配合矩阵 / 档案台词 / 新角色立项约束 | 策划 / 程序 |
 | [structures.md](structures.md) | 特殊建筑物:终点门 / 加速门 / 曲面跳跃板 / 移动构件 / 动态构件(开关门·限时桥)/ 规划中构件 | 关卡 / 程序 |
-| [levels.md](levels.md) | 关卡设计:关卡数据规范 / 教学节奏 / 现有关卡解析 / 组件语义与图层系统(lane·faces·who)/ 定位网格与量尺 | 关卡策划 |
+| [levels.md](levels.md) | 关卡设计:关卡数据规范 / 教学节奏 / 现有关卡解析 / 组件语义与八层分层系统(layer·faces·who 集合·组件 id)/ 坐标化辅助设计(Dimensions 量尺·zones·gridcheck) | 关卡策划 |
 | [ui-flow.md](ui-flow.md) | UI 流与层级:三型页面(Screen/Flow/Overlay)/ 层带规范 / Esc 与输入路由 / 未来功能整合规划 | UI / 程序 |
 | [motion.md](motion.md) | 动效与特效:程序化管线四件套 / 动效资产清单 / 页面转场规范 / 性能预算 / 玩法系统配合矩阵 | UI / 程序 / 美术 |
 | [audio.md](audio.md) | 音频设计:七音符体系(C 大调统一音高)/ 现有音效音高审计 / BGM 序列器 / 钢琴地板砖(玩家即配乐)/ 配合与兼容 | 音频 / 程序 |

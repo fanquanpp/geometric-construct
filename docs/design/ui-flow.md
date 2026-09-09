@@ -62,7 +62,7 @@ BootIntro(60) ── 开屏,点按跳过
 	├─ (规划)客席剧目「玩他人关卡」:三级列表页 → start_level_custom()
 
 关卡 Screen ═══ Main.State = PLAYING
- ├─ Hud(10):开场卡 intro / 旁白 narration(非阻塞)· 队伍 chips · 章节徽章
+ ├─ Hud(10):开场卡 intro / 旁白 narration(非阻塞)· 队伍 chips · 章节徽章 · 右上召回/暂停按钮
  ├─ TouchControls(12):局内虚拟按键(set_in_game 切换)
  ├─ PauseMenu(30)[pause 键]→ 继续 / 重来 / 设置(38) / 回标题
  ├─ 剧情(横切):act1 开演剧(45,首进第一幕)· epilogue 尾声(45,通关)

@@ -355,7 +355,7 @@ func _rebuild_hints(def: LevelDef) -> void:
 		add_text.call("切换")
 		add_sep.call()
 	add_key.call("key-r")
-	add_text.call("重来")
+	add_text.call("召回")
 	add_sep.call()
 	add_key.call("key-esc")
 	add_text.call("暂停")
