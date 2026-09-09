@@ -211,7 +211,7 @@ aseprite 瓦片素材管线同步废止,全部地图维持程序化 `_draw()` �
 | V5 剧情幕结构 | 序幕–第一幕–…–落幕七段重构落档(story.md §1.5),伍=「第五刻度」第二幕登场 | **已落档(新幕关卡未建)** | storyshot(随新幕) |
 | V6 美术剧幕主题差分 | 每幕美术主题(构成/巨构/极简/梦核)落 art-style.md §7 + Godot 内建光影评估 §8(已落档);**待实现:屏幕分辨率设置**(PC 三档 1280×720 / 1600×900 / 1920×1080 + 全屏切换,入 SettingsPanel,持久化 `settings.cfg` 增 `video` 区段,移动端隐藏) | 设计已落档,实现未开工 | 视觉审计清单 + setshot |
 | V7 传感器与反馈 | 屏幕旋转感应(✅ SENSOR_LANDSCAPE)/ 震动分级(✅ 重落地40/死亡60/归门30ms,设置可关)/ 陀螺仪轻量视差(backdrop 装饰层随 Input.get_gravity() 偏移 ±6px,仅移动端;**前置:project.godot `input_devices/sensors` 勾 enable_accelerometer(get_gravity 依赖)与 enable_gyroscope;数据按硬件灵敏度归一化 = clamp + 低通滤波**) | 部分实装 | 真机 |
-| V8 关卡编辑器外部项目 | 独立新项目,**仅策划案与文档**(技术选型含 gode/js-ts 评估、aseprite UI 素材、分辨率适配),不进本仓库 | 未开工 | 文档评审 |
+| V8 关卡编辑器外部项目 | 独立仓库 `C:\Atian\Project\conter-speed`(仅文档,未开发):PLAN.md 策划案 + docs/data-contract.md(LevelDef JSON 契约,E0 待冻结);主项目前置三项(JSON 装载 / --leveljson / schema 文档化)已于 v0.16 落地 | **文档已迁入,E0 待评审** | E0 评审(用户) |
 
 **附带工具(低优先级)**:基准图对比 `tools/shot_diff.py`——对 `--tourshot`
 关键节拍截图做区域化像素 diff(呼吸脉冲/粒子属预期噪音,必须按节拍掩码比对),
