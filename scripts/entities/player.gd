@@ -777,65 +777,14 @@ func _draw_box(size: Vector2) -> void:
 	draw_style_box(_body_box, body)
 
 	# 精度与对比度:底部暗带(接地体量)+ 左上高光条 + 右缘窄暗边,
-	# 让形体在深色场地上"立"起来(全部硬边色块,无渐变)
+	# 让形体在深色场地上"立"起来(全部硬边色块,无渐变)。
+	# 局内自机不带图案:印刷错位主纹只出现在档案肖像(GeometryPanel.GeoPortrait)。
 	draw_rect(Rect2(body.position.x, body.end.y - body.size.y * 0.24,
 		body.size.x, body.size.y * 0.24), Color(0, 0, 0, 0.18))
 	draw_rect(Rect2(body.end.x - maxf(2.0, u * 0.045), body.position.y,
 		maxf(2.0, u * 0.045), body.size.y), Color(0, 0, 0, 0.14))
 	draw_rect(Rect2(body.position + Vector2(3, 3), Vector2(size.x * 0.42, 3)),
 		Color(1.0, 1.0, 1.0, 0.5))
-
-	# ———— 身份主纹(印刷错位:墨色错位底 + 纯白主纹,构成主义印刷语言) ————
-	if def.can_swap:
-		# 逆 · 置换:单根上下双头箭头(实心,一根说清"两个方向")
-		var s := u * 0.30       # 杆半长
-		var w := u * 0.13       # 杆宽
-		var hw := u * 0.26      # 箭头半宽
-		var hl := u * 0.20      # 箭头长
-		var stem := PackedVector2Array([
-			Vector2(-w * 0.5, -s), Vector2(w * 0.5, -s),
-			Vector2(w * 0.5, s), Vector2(-w * 0.5, s)])
-		_print_mark(stem)
-		for dir: int in [-1, 1]:
-			var head := PackedVector2Array([
-				Vector2(0, dir * (s + hl)),
-				Vector2(-hw, dir * (s - hl * 0.2)),
-				Vector2(hw, dir * (s - hl * 0.2))])
-			_print_mark(head)
-	elif gravity_dir < 0:
-		# 反重力:单根向上实心箭头
-		var s := u * 0.34
-		var w := u * 0.13
-		var hw := u * 0.30
-		var hl := u * 0.24
-		_print_mark(PackedVector2Array([
-			Vector2(-w * 0.5, s), Vector2(w * 0.5, s),
-			Vector2(w * 0.5, -s + hl * 0.6), Vector2(hw, -s + hl * 0.6),
-			Vector2(0, -s - hl * 0.4), Vector2(-hw, -s + hl * 0.6),
-			Vector2(-w * 0.5, -s + hl * 0.6)]))
-	else:
-		# 速度 / 弹性 / 滚动的方块与长方:身份折线主纹
-		if def.can_climb:
-			# 疾:双折角 »(速度方向),右缘爬墙刻度保留
-			for k in 2:
-				var ox := u * (0.02 + 0.28 * k)
-				var a := u * 0.26
-				var w := u * 0.115
-				_print_mark(PackedVector2Array([
-					Vector2(ox - u * 0.17, -a), Vector2(ox, 0), Vector2(ox - u * 0.17, a)]), w)
-		elif def.shape == GeometryDef.Shape.RECT:
-			# 跃:弹簧折线(竖向),末端上指小三角
-			var pts := PackedVector2Array()
-			pts.append(Vector2(0, -u * 0.34))
-			var dir := 1.0
-			for i in 4:
-				pts.append(Vector2(u * 0.19 * dir, -u * 0.34 + u * 0.17 * (i + 1)))
-				dir *= -1.0
-			_print_mark(pts, u * 0.10)
-			var tip := u * 0.38
-			_print_mark(PackedVector2Array([
-				Vector2(-u * 0.11, tip - u * 0.14), Vector2(0, tip),
-				Vector2(u * 0.11, tip - u * 0.14)]), u * 0.09)
 
 	# 爬墙握点:贴墙时在墙面一侧的白色横向刻度
 	if _climbing:
@@ -845,29 +794,11 @@ func _draw_box(size: Vector2) -> void:
 				Color(1, 1, 1, 0.75), 2.5)
 
 
-## 印刷错位主纹:墨色错位底纹(偏移 ~4.5%) + 纯白主纹。
-## 实心多边形走 fill;折线走 width 描边。
-func _print_mark(pts: PackedVector2Array, width := -1.0) -> void:
-	var off := maxf(2.0, minf(def.size.x, def.size.y) * 0.045)
-	var echo := PackedVector2Array()
-	for p in pts:
-		echo.append(p + Vector2(off, off))
-	if width > 0.0:
-		draw_polyline(echo, Color(Ui.INK, 0.45), width)
-		draw_polyline(pts, Color(1, 1, 1, 0.97), width)
-	else:
-		draw_colored_polygon(echo, Color(Ui.INK, 0.45))
-		draw_colored_polygon(pts, Color(1, 1, 1, 0.97))
-
-
-## 圆球形象:双色调半球 + 轮辐刻度 + 轮毂 + 指针辐条。
+## 圆球形象:基盘 + 暗色半月(滚动方向可读性主元素)+ 轮毂。
+## 局内自机不带图案:指针辐条等印刷错位图案只出现在档案肖像。
 ## 转动图案先在单位圆内随物理滚动旋转、再整体压扁成椭圆——
 ## 挤压/拉伸在屏幕空间进行、与旋转解耦,形变不扭曲转动姿态(动画十二法则)。
-## 高速时轮辐刻度自动减淡:旋转过快会频闪成噪点,反而损害滚动感。
-## 圆球形象(v0.13.2 重设计,元素做减法):
-## 基盘 + 单一暗色半月(随滚动翻转,转动可读性主元素)+ 单根粗白指针 + 轮毂。
-## 转动图案先在单位圆内随物理滚动旋转、再整体压扁成椭圆——
-## 挤压/拉伸在屏幕空间进行、与旋转解耦,形变不扭曲转动姿态(动画十二法则)。
+## 高速时半月对比自动承载转动可读:明暗半球随滚动翻转,无需额外刻度。
 func _draw_ball(size: Vector2) -> void:
 	var squash := Transform2D(
 		Vector2(size.x * 0.5, 0.0), Vector2(0.0, size.y * 0.5), Vector2.ZERO)
@@ -882,13 +813,6 @@ func _draw_ball(size: Vector2) -> void:
 		half.append(Vector2(cos(a), sin(a)))
 	half.append(Vector2(1.0, 0.0))
 	draw_colored_polygon(half, def.color.darkened(0.26))
-	# 指针辐条:单根粗白杆(带墨色错位),替代旧版细杆 + 四圆点
-	draw_colored_polygon(PackedVector2Array([
-		Vector2(-0.11, 0.06), Vector2(0.11, 0.06),
-		Vector2(0.11, 0.80), Vector2(-0.11, 0.80)]), Color(Ui.INK, 0.4))
-	draw_colored_polygon(PackedVector2Array([
-		Vector2(-0.11, 0.0), Vector2(0.11, 0.0),
-		Vector2(0.11, 0.74), Vector2(-0.11, 0.74)]), Color(1, 1, 1, 0.96))
 
 	# 轮毂
 	draw_circle(Vector2.ZERO, 0.2, Ui.PAPER)

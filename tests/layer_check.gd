@@ -1,7 +1,8 @@
 extends SceneTree
 ## 图层系统 headless 验证(ROADMAP §1 M0):
 ## 碰撞位编译 / 玩家 mask 出生算定 / faces 单向碰撞 / who 整体不碰撞 /
-## 开关门运行时切位 / 限时桥周期切换。
+## 开关门运行时切位 / 限时桥周期切换 / 逐几何体层级归属(lanes)+
+## 远景沉降档(far)语义 / 五档渲染器在树。
 ## 运行:godot --headless --path . --script res://tests/layer_check.gd
 ## 全部通过输出 LAYER CHECK PASS,否则逐条列出 FAIL。
 
@@ -83,8 +84,8 @@ func _process(delta: float) -> bool:
 				_fail("疾与圆的 mask 相同:who 专属墙未编译")
 			if m_fall == m_roll:
 				_fail("逆与圆的 mask 相同:who 专属浮板未编译")
-			if m_spring != m_roll:
-				_fail("跃与圆应同 mask(均无专属组件)")
+			if m_spring == m_roll:
+				_fail("跃与圆 mask 相同:疾跃共享板(lanes 样本,who=[0,1])未编译")
 			_stage = 1
 		1:
 			if _t < 0.3:
@@ -169,7 +170,8 @@ func _process(delta: float) -> bool:
 					_bridge = n
 			if _bridge == null:
 				_fail(" TimedBridge 未实例化")
-				return _finish()
+				_stage = 8
+				return false
 			if _bridge_states.is_empty() or \
 					_bridge_states[-1][0] != _bridge._solid:
 				_bridge_states.append([_bridge._solid, _t])
@@ -183,8 +185,67 @@ func _process(delta: float) -> bool:
 						saw_ghost = true
 				if not saw_solid or not saw_ghost:
 					_fail("限时桥未在实心/虚化间切换")
-				return _finish()
+				_stage = 8
+		8:
+			return _check_semantics()
 	return false
+
+
+## 逐几何体层级归属(lanes)+ 远景沉降档(far)纯函数语义(§7.7)
+## + 五档显示层渲染器在树(z -2/-1/0/1/2)。
+func _check_semantics() -> bool:
+	var shared := {}
+	var roll_auto := {}
+	var roll_far2 := {}
+	var hold_wall := {}
+	for it0 in LevelData.layer_lab().platforms:
+		if not (it0 is Dictionary):
+			continue
+		var d: Dictionary = it0
+		if d.has("lanes"):
+			shared = d
+		elif d.get("far", -1) == 2:
+			roll_far2 = d
+		elif not d.get("who", []).is_empty() and d["who"][0] == 3:
+			roll_auto = d
+		elif d.get("far", -1) == 0:
+			hold_wall = d
+	if shared.is_empty() or roll_auto.is_empty() \
+			or roll_far2.is_empty() or hold_wall.is_empty():
+		_fail("实验室缺新语义样本(lanes / far)")
+		return _finish()
+	if Comp.display_tier(shared, 0, 1) != "mid":
+		_fail("共享板对疾应为主层 mid(lanes 缺省回落失效)")
+	if Comp.display_tier(shared, 1, 1) != "back":
+		_fail("共享板对跃应为 back(lanes 逐几何体覆盖失效)")
+	if Comp.display_tier(shared, 3, 2) != "far2":
+		_fail("共享板对圆应自动沉降 far2(不适用)")
+	if Comp.display_tier(roll_auto, 3, 2) != "mid":
+		_fail("圆专属板对圆应保持 mid(适用)")
+	if Comp.display_tier(roll_auto, 0, 1) != "far1":
+		_fail("圆专属板对疾应自动沉降 far1(近距)")
+	if Comp.display_tier(roll_auto, 0, 2) != "far2":
+		_fail("自动沉降未随距离升档(auto_far→far2)")
+	if Comp.display_tier(roll_far2, 0, 1) != "far2":
+		_fail("far:2 应固定最深远景档")
+	if Comp.display_tier(hold_wall, 3, 1) != Comp.lane_of(hold_wall):
+		_fail("far:0 应原位保持原生层级(不沉降)")
+	if Comp.display_tier(roll_auto, -1, 2) != "mid":
+		_fail("无受控几何体(-1)不应触发沉降")
+	# JSON 往返兼容:lanes 字符串键在 normalize 收敛为 int
+	var j: Dictionary = shared.duplicate()
+	j["lanes"] = {"1": "back"}
+	if Comp.display_tier(Comp.normalize(j), 1, 1) != "back":
+		_fail("lanes JSON 字符串键未收敛(int 键查找失效)")
+	# 五档显示层渲染器全部在树,远景档 z < 0(网格之下)
+	var zs := {}
+	for nn in _level.get_children():
+		if nn is LevelBuilder.LaneRenderer:
+			zs[(nn as Node2D).z_index] = true
+	for z in [-2, -1, 0, 1, 2]:
+		if not zs.has(z):
+			_fail("缺 z=%d 显示档渲染器" % z)
+	return _finish()
 
 
 var _t_check_start := 0.0

@@ -206,13 +206,13 @@ func _relayout() -> void:
 	var left := ins.x
 	var top := ins.y
 	var right := ins.z
-	var bottom := ins.w
 
-	# 轮盘:扁平六边形,贴左下角;高度刻意压扁,只暗示左右滑动
+	# 轮盘:扁平六边形,左缘避安全区;高度刻意压扁,只暗示左右滑动
 	var half_w := clampf(vis.x * 0.085, 108.0, 148.0)
 	var half_h := clampf(half_w * 0.30, 24.0, 40.0)
-	# v0.13.4:贴底间隙 18 → 52,轮盘整体上移,不再贴着屏幕下缘
-	var wheel_center := Vector2(left + 26.0 + half_w, vis.y - bottom - 52.0 - half_h)
+	# v0.14.0:常驻位定在屏幕下四分之一处(中心 = 可见区高度 3/4,
+	# 拇指自然搭放的高度;v0.13.6 曾试下三分之一 2/3,仍偏高)
+	var wheel_center := Vector2(left + 26.0 + half_w, vis.y * 3.0 / 4.0)
 	_wheel.setup(half_w, half_h, wheel_center)
 
 	# 左侧:切换按钮 —— 队伍 chips(左上)下方一段距离,左缘与 chips 对齐
@@ -296,9 +296,12 @@ func _process(_delta: float) -> void:
 class WheelPad extends Control:
 	const MODE_FIXED := "fixed"
 	const MODE_FLOAT := "float"
-	const DEADZONE := 0.14
+	const DEADZONE := 0.10
 	const SPRINT_ON := 0.96      # 拉到最大 → 自动加速
 	const SPRINT_OFF := 0.86     # 滞回:低于此才退出加速,避免边缘抖动
+	## 输出曲线 γ(>1):跨出死区后对归一行程做幂映射,轻推段灵敏度压低
+	## (微调 / 精确停边更细腻),拉满仍为 1.0 全速不变。样式与行程不变。
+	const OUT_CURVE := 1.35
 
 	var wheel_mode := MODE_FIXED
 	var strength := 0.0          # 死区处理后的输出 -1..1
@@ -392,12 +395,19 @@ class WheelPad extends Control:
 			queue_redraw())
 
 	## 滑钮跟随手指(仅水平),并注入移动 / 加速动作。
+	## 输入精度(v0.13.6):死区重映射 —— 跨出死区输出从 0 平滑起步,
+	## 消除旧版 0 → 0.14 的速度突跳;再走 γ 幂曲线压低轻推段灵敏度。
+	## 冲刺判定用原始行程 pull,阈值行为不变。
 	func _follow(pos: Vector2) -> void:
 		_knob_x = clampf(pos.x - _center.x, -_travel, _travel)
 		var pull := absf(_knob_x) / _travel
 		var s := _knob_x / _travel
-		if absf(s) < DEADZONE:
+		var mag := absf(s)
+		if mag < DEADZONE:
 			s = 0.0
+		else:
+			var norm := (mag - DEADZONE) / (1.0 - DEADZONE)
+			s = signf(s) * pow(norm, OUT_CURVE)
 		strength = s
 		_update_sprint(pull)
 		if s < 0.0:
@@ -454,9 +464,11 @@ class WheelPad extends Control:
 		])
 		draw_polyline(hex, edge, 2.0, true)
 		# 水平中线 + 中心刻度:强调只有左右一个维度
+		# 绘制精度(v0.13.6):全部图元开抗锯齿、圆弧细分为 72 段,
+		# 高 DPI 下边缘无锯齿、圆更圆;颜色 / 粗细 / 形状(样式)一律不动
 		draw_line(c + Vector2(-half_w * 0.7, 0), c + Vector2(half_w * 0.7, 0),
-			Color(Ui.PAPER, 0.10 * idle_a), 1.5)
-		draw_circle(c, 2.5, Color(Ui.PAPER, 0.35 * idle_a))
+			Color(Ui.PAPER, 0.10 * idle_a), 1.5, true)
+		draw_circle(c, 2.5, Color(Ui.PAPER, 0.35 * idle_a), true, -1.0, true)
 		# 左右方向箭头(沿中线,随方向点亮)
 		for dir: int in [-1, 1]:
 			var tip := c + Vector2(dir * (half_w - 13.0), 0)
@@ -470,7 +482,10 @@ class WheelPad extends Control:
 			var col := Ui.PAPER if lit else Color(Ui.PAPER, 0.4 * idle_a)
 			if lit and sprinting:
 				col = Ui.RED
+			# 多边形本身无抗锯齿:沿闭合边缘补一圈同色 AA 描边,边缘平滑
 			draw_colored_polygon(tri, col)
+			draw_polyline(PackedVector2Array(
+				[tri[0], tri[1], tri[2], tri[0]]), col, 1.4, true)
 		# 滑钮(仅沿横轴;拉满加速时描红)
 		var knob := c + Vector2(_knob_x, 0)
 		var ring := Color(Ui.PAPER, 0.85 * idle_a)
@@ -478,6 +493,6 @@ class WheelPad extends Control:
 			ring = Ui.RED
 		elif strength != 0.0:
 			ring = Color(Ui.PAPER, 0.95)
-		draw_circle(knob, _knob_r, Color(Ui.INK_2, 0.80 * idle_a))
-		draw_arc(knob, _knob_r, 0.0, TAU, 40, ring, 2.0, true)
-		draw_circle(knob, 3.5, Color(Ui.PAPER, 0.9 * idle_a))
+		draw_circle(knob, _knob_r, Color(Ui.INK_2, 0.80 * idle_a), true, -1.0, true)
+		draw_arc(knob, _knob_r, 0.0, TAU, 72, ring, 2.0, true)
+		draw_circle(knob, 3.5, Color(Ui.PAPER, 0.9 * idle_a), true, -1.0, true)

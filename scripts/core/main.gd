@@ -31,6 +31,7 @@ var players: Array = []
 var camera_rig = null            # LevelBuilder.CameraRig,切换时触发过渡动画
 var _doors := {}                 # geo_index -> ExitDoor
 var _complete_seq := 0           # 通关链序列号:重开/换关时作废待执行的自动流转
+var _death_hinted := false       # 序章首摔安抚旁白已播(每次启动一次)
 
 # ———— 肉鸽模式(RogueDirector 驱动,modes/rogue) ————
 var rogue_layer: RogueLayer
@@ -91,8 +92,6 @@ func _ready() -> void:
 	add_child(_menu)
 	geometry_panel = GeometryPanel.new()
 	add_child(geometry_panel)
-	geometry_panel.story_requested.connect(
-		func(kind: String) -> void: play_story(kind))
 	settings_panel = SettingsPanel.new()
 	add_child(settings_panel)
 	_pause = PauseMenu.new()
@@ -165,7 +164,9 @@ func start_level(index: int, intro := true) -> void:
 	_collect_players()
 	_state = State.PLAYING
 	Sfx.play("start")
-	_ambience_motif("prologue" if _current < 4 else "act1")
+	# 幕归属由 LevelData.ACTS 推导(v0.15 序章扩容后不再按下标硬编码)
+	var act_i := LevelData.act_index_of(_current)
+	_ambience_motif("prologue" if act_i <= 0 else "act1")
 
 	_menu.visible = false
 	_menu.close_act_panel()
@@ -180,15 +181,14 @@ func start_level(index: int, intro := true) -> void:
 	_refresh_roster()
 	_hud.fade_from_black()
 	if intro:
-		var act := "序章" if _current < 4 else "第一幕"
-		var scene_no := _current + 1 if _current < 4 else _current - 3
-		_hud.show_intro("%s · 第 %d 场 · %s" % [act, scene_no,
+		var act_name := "序章" if act_i <= 0 else str(LevelData.ACTS[act_i]["name"])
+		_hud.show_intro("%s · 第 %d 场 · %s" % [act_name, LevelData.scene_no_of(_current),
 			Geometries.get_def(_level_def.focus).full_name], _level_def)
 		var focus: GeometryDef = Geometries.get_def(_level_def.focus)
 		_hud.narration(focus.quote, focus.color, 3.8)
 	_switch_to(0, true)
 	# 第一幕首次开演:先看开演剧,再上手(序幕钩子的下一拍)
-	if _current == 4 and intro and not _save.seen_act1:
+	if _current == LevelData.first_level_of_act(1) and intro and not _save.seen_act1:
 		_save.note_story("act1")
 		get_tree().paused = true
 		show_story("act1")
@@ -438,20 +438,13 @@ func quit_to_menu() -> void:
 # ———————————————— 剧情文字(konado) ————————————————
 
 ## 播放剧情:暂停世界,叠放 Konado 对话层;结束后恢复。
-## kind:"prologue" 序幕(标题菜单)/ "epilogue" 尾声(通关画面)。
+## kind:"act1" 开演剧(首进第一幕)/ "epilogue" 尾声(通关画面)/
+## "rogue_*" 肉鸽序说与单章。回看走档案几何回廊页的全文本阅读器,不经此处。
 func show_story(kind: String) -> void:
 	var story := StoryLayer.new()
 	story.m = self
 	add_child(story)
 	story.play("res://story/%s.ks" % kind)
-
-
-## 剧情回廊播放入口:任意剧本(暂停世界,播完恢复)。
-func play_story(kind: String) -> void:
-	if _state != State.MENU:
-		return
-	get_tree().paused = true
-	show_story(kind)
 
 
 func on_story_finished() -> void:
@@ -529,6 +522,11 @@ func on_player_died(p: Player) -> void:
 		print("TEST: ", p.def.name, " died/respawned")
 	if _state == State.PLAYING:
 		_cycle_slot(1)
+		# 序章首摔安抚(每次启动至多一次):把序幕"重拼"规则说成玩法语言,
+		# 新手第一次摔碎时不至于以为出了错
+		if not _death_hinted and not _rogue and LevelData.act_index_of(_current) <= 0:
+			_death_hinted = true
+			_hud.narration("摔碎不是终结 · 空白处会把你在起点重新拼好", Ui.RED, 3.4)
 	_refresh_roster()
 	# 肉鸽:重拼消耗一段红色刻度,耗尽则本局落幕
 	if _rogue:
@@ -893,7 +891,18 @@ func _run_tour_shot() -> void:
 	start_level(_shot_level, false)
 	await get_tree().create_timer(0.4).timeout
 	var tours := {
-		4: [["spawn", Vector2(300, 2700)],
+		4: [["spawn", Vector2(240, 880)],
+			["bridge", Vector2(1150, 720)],
+			["airlock", Vector2(2150, 880)],
+			["lift", Vector2(3070, 860)],
+			["terrace", Vector2(3400, 380)]],
+		5: [["spawn", Vector2(300, 1260)],
+			["ramp", Vector2(1400, 1260)],
+			["wall", Vector2(1830, 1260)],
+			["beam", Vector2(1850, 900)],
+			["terrace", Vector2(2700, 1100)],
+			["doors", Vector2(3450, 1100)]],
+		6: [["spawn", Vector2(300, 2700)],
 			["terraces", Vector2(2400, 2000)],
 			["ramp", Vector2(3900, 2680)],
 			["hollow", Vector2(4500, 2520)],
@@ -901,7 +910,7 @@ func _run_tour_shot() -> void:
 			["bridge", Vector2(5900, 900)],
 			["gap", Vector2(6900, 800)],
 			["tower", Vector2(8300, 900)]],
-		5: [["spawn", Vector2(300, 2700)],
+		7: [["spawn", Vector2(300, 2700)],
 			["ledge", Vector2(2300, 2350)],
 			["deck", Vector2(4000, 2300)],
 			["shoulder", Vector2(4600, 1700)],
@@ -909,27 +918,27 @@ func _run_tour_shot() -> void:
 			["window", Vector2(6650, 2320)],
 			["turret", Vector2(7300, 1800)],
 			["tower", Vector2(7600, 1400)]],
-		6: [["spawn", Vector2(300, 2300)],
+		8: [["spawn", Vector2(300, 2300)],
 			["pit", Vector2(2200, 2280)],
 			["ceil", Vector2(3000, 1000)],
 			["gallery", Vector2(3800, 1480)],
 			["shuttle", Vector2(4750, 1480)],
 			["east", Vector2(7100, 1200)]],
-		7: [["spawn", Vector2(300, 2500)],
+		9: [["spawn", Vector2(300, 2500)],
 			["gate1", Vector2(1250, 2400)],
 			["deck_a", Vector2(2800, 2200)],
 			["viaduct", Vector2(2500, 1350)],
 			["deck_b", Vector2(4400, 2100)],
 			["hall", Vector2(6900, 1700)],
 			["east_end", Vector2(6400, 1350)]],
-		8: [["spawn", Vector2(300, 2500)],
+		10: [["spawn", Vector2(300, 2500)],
 			["slope", Vector2(900, 2400)],
 			["hub", Vector2(1450, 2270)],
 			["catch_a", Vector2(2950, 2050)],
 			["catch_b", Vector2(3750, 1450)],
 			["dome_top", Vector2(5400, 1200)],
 			["terrace", Vector2(6800, 2350)]],
-		9: [["spawn", Vector2(300, 2700)],
+		11: [["spawn", Vector2(300, 2700)],
 			["pipe_dash", Vector2(1500, 2400)],
 			["pipe_spring", Vector2(2750, 2400)],
 			["pipe_fall", Vector2(4400, 2400)],
@@ -964,7 +973,8 @@ func _run_perf_log() -> void:
 
 
 ## 图层实验室截图(ROADMAP §1 M0 验收):装载 LevelData.layer_lab(),
-## 分镜截取 back 层亮度 / who 不适用降透明 / front 遮挡淡出 / 逆的 bottom 天花板 /
+## 分镜截取 back 层亮度 / who 不适用远景沉降与 far:0 原位淡化对照 /
+## front 遮挡淡出 / 逐几何体层级归属(疾跃同机位对照)/ 逆的 bottom 天花板 /
 ## 开关门与限时桥两态;配合 --zoom=N 可验网格 LOD 远景档。
 func _run_lane_shot() -> void:
 	if _shot_dir.is_empty():
@@ -1015,6 +1025,32 @@ func _run_lane_shot() -> void:
 	players[0].velocity = Vector2.ZERO
 	await get_tree().create_timer(0.6).timeout
 	await _shot("lane_front")
+	# ④ 远景沉降(疾视角):两块圆专属浮板对疾沉入远景 ——
+	#    近板自动档 far1,远板 far:2 固定最深档;旁边钢琴砖(全员适用)保持主层作对照
+	_switch_to(0, true)
+	players[0].position = Vector2(3150, 1745)
+	players[0].velocity = Vector2.ZERO
+	await get_tree().create_timer(0.9).timeout
+	await _shot("lane_sink_far")
+	# ④b 切换回升(圆视角):两板回升主层 mid —— 原远景抬起,疾专属墙(far:0)仍原位淡化
+	if players.size() > 3:
+		_switch_to(3, true)
+		players[3].position = Vector2(3150, 1745)
+		players[3].velocity = Vector2.ZERO
+		await get_tree().create_timer(0.9).timeout
+		await _shot("lane_sink_rise")
+	# ④c 逐几何体层级(跃/疾同机位对照):疾跃共享板 —— 跃见 back 层(压亮度),疾见 mid 主层
+	if players.size() > 1:
+		_switch_to(1, true)
+		players[1].position = Vector2(1200, 1010)
+		players[1].velocity = Vector2.ZERO
+		await get_tree().create_timer(0.9).timeout
+		await _shot("lane_override_spring")
+	_switch_to(0, true)
+	players[0].position = Vector2(1200, 1010)
+	players[0].velocity = Vector2.ZERO
+	await get_tree().create_timer(0.9).timeout
+	await _shot("lane_override_dash")
 	# ⑤ 逆 + bottom 天花板:翻转重力贴上梁底(faces=bottom 单向面),
 	#    同框可见 back 梁压亮度;随后传送到开关门区
 	_switch_to(2, true)
@@ -1047,10 +1083,13 @@ func _run_panel_shot() -> void:
 		geometry_panel._switch(1)
 		await get_tree().create_timer(0.4).timeout
 		await _shot("panel_char%d" % page)
-	# 回廊页签(档案几何整合页)
+	# 回廊页签(档案几何整合页)+ 全文本阅读器(序幕)
 	geometry_panel.open(0, "gallery")
 	await get_tree().create_timer(0.5).timeout
 	await _shot("panel_gallery")
+	geometry_panel._open_story(GeometryPanel.STORIES[0])
+	await get_tree().create_timer(0.5).timeout
+	await _shot("panel_story")
 	get_tree().quit()
 
 
@@ -1060,7 +1099,7 @@ func _run_door_shot() -> void:
 		_shot_dir = "C:/Atian/Project/shots_bm"
 	start_level(0, false)
 	await get_tree().create_timer(0.3).timeout
-	players[0].position = Vector2(1430, 968)
+	players[0].position = Vector2(3130, 892)
 	players[0].velocity = Vector2.ZERO
 	await get_tree().create_timer(0.25).timeout
 	await _shot("door")

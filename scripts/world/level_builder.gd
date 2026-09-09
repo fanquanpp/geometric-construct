@@ -8,7 +8,9 @@ class_name LevelBuilder
 ##   组合(mid/全员,与旧版逐位一致),位 2 预留玩家几何体,其余组合按出场
 ##   顺序分配 3..31;玩家 collision_mask = 适用组合位并集,出生算定一次。
 ##   faces 用 one-way 碰撞实现(top 顶面可站 / bottom 底面可站,逆向天花板);
-##   lane 决定 z_index 与 modulate 规则(art-style.md §6.6,不重画瓦片)。
+##   显示分五档(far2/far1/back/mid/front):lane 定原生层级,逐几何体 lanes
+##   覆盖归属,对受控几何体不适用者按 far 档沉降为远景(§7.7),切换时
+##   按距离波次交叉淡化升降。
 
 
 static func build(def: LevelDef) -> Node2D:
@@ -33,8 +35,8 @@ static func build(def: LevelDef) -> Node2D:
 		root.add_child(body)
 		bodies[key] = body
 
-	# —— 平台:碰撞按组合入位,渲染按 lane 分组 ——
-	var lanes := {Comp.LANE_BACK: [], Comp.LANE_MID: [], Comp.LANE_FRONT: []}
+	# —— 平台:碰撞按组合入位,渲染按五档显示层分组(§7.7) ——
+	var items: Array = []
 	# 左右隐形墙(仅碰撞,不绘制;恒在缺省组合,任何几何体都不可穿出)
 	var walls := [
 		Rect2(-40, -700, 40, def.size.y + 1400),
@@ -42,19 +44,20 @@ static func build(def: LevelDef) -> Node2D:
 	]
 	for it0 in def.platforms:
 		var it := Comp.normalize(it0)
-		lanes[it["lane"]].append(it)
+		items.append(it)
 		if it["faces"] == Comp.FACES_NONE:
 			continue    # 纯装饰,无碰撞(levels.md §7.3)
 		bodies[Comp.combo_key(it)].add_child(_rect_shape(it["rect"], it["faces"]))
 	for w in walls:
 		bodies["mid|all"].add_child(_rect_shape(w, Comp.FACES_FULL))
-	for lane in lanes:
-		if lanes[lane].is_empty():
-			continue
+	# 每档一个渲染器,共享全量组件列表:各自按 display_tier 决定画不画 ——
+	# 档间转移走交叉淡化(旧档淡出、新档淡入),z 切换藏在透明谷里
+	for tier in [Comp.LANE_FAR2, Comp.LANE_FAR1, Comp.LANE_BACK,
+			Comp.LANE_MID, Comp.LANE_FRONT]:
 		var renderer := LaneRenderer.new()
-		renderer.lane = lane
-		renderer.items = lanes[lane]
-		renderer.z_index = Comp.LANE_Z[lane]
+		renderer.lane = tier
+		renderer.items = items
+		renderer.z_index = Comp.LANE_Z[tier]
 		root.add_child(renderer)
 
 	# —— 曲面跳跃板 ——
@@ -90,9 +93,13 @@ static func build(def: LevelDef) -> Node2D:
 		root.add_child(mover)
 
 	# —— 开关门(动态构件:踩踏开关 ↔ 门板 full/none 切换) ——
+	# 一门可配多只开关(levers,任一踩住即开):气闸式互让题的数据形态
 	for lg in def.lever_gates:
 		var gate := LeverGate.new()
-		gate.lever_rect = lg["lever"]
+		var levers: Array = lg.get("levers", [])
+		if levers.is_empty():
+			levers = [lg["lever"]]
+		gate.lever_rects = levers
 		gate.door_item = Comp.normalize(lg["door"])
 		gate.invert = lg.get("invert", false)
 		gate.layer_bit = combos[Comp.combo_key(lg["door"])]["bit"]
@@ -221,23 +228,34 @@ static func _rect_shape(r: Rect2, faces: String) -> CollisionShape2D:
 	return cs
 
 
-## 绘制一组同 lane 平台:硬投影 + 平面石板 + 顶缘亮线,全部直角。
+## 绘制一组同档平台:硬投影 + 平面石板 + 顶缘亮线,全部直角。
 ## 组块连接和谐化:
 ##   1. 投影先全部画完、主体后画 —— 相邻组块的投影不再互相裁切出暗色缝线;
 ##   2. 坐落在其他组块上的立块,投影只做横向偏移 —— 不在承接面顶缘拖出暗带;
 ##   3. 立块底缘两侧补 45° 裙角(主体同色的硬折线,非圆角),
 ##      让"立块 ↔ 承接面"的过渡融为一体。
-## lane 视觉规则(art-style.md §6.6,引擎 modulate 实现,不重画瓦片):
-##   back = 压亮度至背景红线内;front = 玩家躲入其后时降至 55% 透明度;
-##   who 不适用的组件,对当前操控几何体常驻降透明度(0.14s 过渡,M2 档位)。
+## 五档显示层(art-style.md §6,引擎 modulate / alpha 实现,不重画瓦片):
+##   每档渲染器共享全量组件,按 Comp.display_tier 判定本档该画谁:
+##   命中本档 → 淡入至档位透明度;归属他档 → 淡出到 0(z 切换藏在透明谷);
+##   far1/far2 为不适用建筑沉降出的远景纵深,切换受控几何体时按距离
+##   波次(近先远后,≤0.3s)交叉淡化升降,形成远近层次感。
 class LaneRenderer extends Node2D:
 	var lane := Comp.LANE_MID
-	var items: Array = []            # 归一化组件字典(Comp.normalize)
+	var items: Array = []            # 全量归一化组件字典(Comp.normalize,与它档共享)
 	var _base: StyleBoxFlat
 	var _slab: StyleBoxFlat
-	var _alpha: Array = []           # 每件组件的当前透明度系数(0-1)
-	const DIM_WHO := 0.30            # who 不适用:常驻降透明度(levels.md §7.7)
+	var _alpha: Array = []           # 本档视角下每件组件的当前透明度系数(0-1)
+	var _tier: Array = []            # 每件组件当前的显示档(缓存,供投影/裙角分组)
+	var _auto_far: Array = []        # 自动沉降档(1 近景远层 / 2 最深远景)
+	var _delay: Array = []           # 切换波次剩余延时(近处先动)
+	var _last_slot := -1
+	const DIM_WHO := 0.30            # far:0 原位淡化档(levels.md §7.7)
 	const DIM_FRONT := 0.55          # 前景遮挡:玩家躲入其后
+	const ALPHA_FAR1 := 0.34         # 远景近档:向背景雾色渗出 66%(冷色幽灵档)
+	const ALPHA_FAR2 := 0.26         # 最深远景:渗出 74%,仅余轮廓
+	const FAR_SPLIT := 700.0         # 自动分档:距受控几何体 ≤7 格 = far1,否则 far2
+	const STAGGER_PER_PX := 0.00019  # 波次:每 100px 迟 0.019s
+	const STAGGER_MAX := 0.30
 	const TRANS_K := 18.0            # 透明度过渡速率(≈0.16s 收敛,M2 档位)
 
 	func _ready() -> void:
@@ -245,63 +263,110 @@ class LaneRenderer extends Node2D:
 		_base.bg_color = Color("262B34")
 		_slab = StyleBoxFlat.new()
 		_slab.bg_color = Color("313845")
-		if lane == Comp.LANE_BACK:
-			# 背景红线:PAPER 亮度的 8% 以内(art-style.md §4.1)——
-			# 石板基色 ≈0.17 亮度,压到 ×0.45 ≈ 0.077
-			modulate = Color(0.45, 0.46, 0.53)
-		_alpha.resize(items.size())
+		match lane:
+			Comp.LANE_BACK:
+				# 背景红线:PAPER 亮度的 8% 以内(art-style.md §4.1)——
+				# 石板基色 ≈0.17 亮度,压到 ×0.45 ≈ 0.077
+				modulate = Color(0.45, 0.46, 0.53)
+			Comp.LANE_FAR1:
+				# 远景冷色偏移:退后变虚 —— 比背层更冷,向雾色渗出(近档)
+				modulate = Color(0.62, 0.66, 0.78)
+			Comp.LANE_FAR2:
+				# 最深远景:更冷更虚,只留结构轮廓可读
+				modulate = Color(0.42, 0.46, 0.58)
+		var n := items.size()
+		_alpha.resize(n)
+		_tier.resize(n)
+		_auto_far.resize(n)
+		_delay.resize(n)
 		# start_level 装配时序:渲染器 _ready 先于 _collect_players(),
 		# players 可能为空 —— active 一律走与 _process 相同的守卫
 		var m = Main.I
-		var active: int = m._active_slot if m != null and not m.players.is_empty() else -1
-		for i in items.size():
-			_alpha[i] = _target_alpha(i, active)
+		var slot: int = m._active_slot if m != null and not m.players.is_empty() else -1
+		_last_slot = slot
+		var geo := _geo_of(slot)
+		for i in n:
+			_auto_far[i] = 1
+			_delay[i] = 0.0
+			_tier[i] = Comp.display_tier(items[i], geo, 1)
+			_alpha[i] = _target_alpha(i, _tier[i], slot, geo)
 
-	func _target_alpha(i: int, active: int) -> float:
+	func _geo_of(slot: int) -> int:
+		var m = Main.I
+		if m == null or slot < 0 or slot >= m.players.size():
+			return -1
+		var p: Player = m.players[slot]
+		return p.index if p != null else -1
+
+	func _target_alpha(i: int, tier: String, slot: int, geo: int) -> float:
+		if tier == Comp.LANE_FAR1:
+			return ALPHA_FAR1
+		if tier == Comp.LANE_FAR2:
+			return ALPHA_FAR2
+		if tier != lane:
+			return 0.0
 		var m = Main.I
 		if lane == Comp.LANE_FRONT:
-			if m != null and active >= 0 and active < m.players.size():
-				var p: Player = m.players[active]
+			if m != null and slot >= 0 and slot < m.players.size():
+				var p: Player = m.players[slot]
 				if p != null and Comp.rect_of(items[i]).has_point(p.position):
 					return DIM_FRONT
-			return 1.0
-		if active >= 0 and active < m.players.size() \
-				and not Comp.applies_to(items[i], m.players[active].index):
-			return DIM_WHO
+		if geo >= 0 and not Comp.applies_to(items[i], geo):
+			return DIM_WHO    # far:0:不适用但显式保留原位淡化
 		return 1.0
 
 	func _process(delta: float) -> void:
 		var m = Main.I
-		var active: int = m._active_slot if m != null and not m.players.is_empty() else -1
+		var slot: int = m._active_slot if m != null and not m.players.is_empty() else -1
+		var geo := _geo_of(slot)
+		if slot != _last_slot:
+			_last_slot = slot
+			if geo >= 0:
+				var ppos: Vector2 = m.players[slot].position
+				# 切换波次:按与受控几何体的距离重排远景档,近处先升降
+				for i in items.size():
+					var d: float = Comp.rect_of(items[i]).get_center().distance_to(ppos)
+					_auto_far[i] = 1 if d < FAR_SPLIT else 2
+					_delay[i] = clampf(d * STAGGER_PER_PX, 0.0, STAGGER_MAX)
 		var changed := false
 		for i in items.size():
-			var t := _target_alpha(i, active)
-			if absf(t - _alpha[i]) > 0.003:
-				_alpha[i] = lerpf(_alpha[i], t, 1.0 - exp(-TRANS_K * delta))
-				if absf(t - _alpha[i]) <= 0.004:
-					_alpha[i] = t
+			if _delay[i] > 0.0:
+				_delay[i] = maxf(_delay[i] - delta, 0.0)
+				continue    # 波次未到:保持旧档旧透明度
+			var t := Comp.display_tier(items[i], geo, _auto_far[i])
+			if t != _tier[i]:
+				_tier[i] = t
+				changed = true
+			var tgt := _target_alpha(i, t, slot, geo)
+			if absf(tgt - _alpha[i]) > 0.003:
+				_alpha[i] = lerpf(_alpha[i], tgt, 1.0 - exp(-TRANS_K * delta))
+				if absf(tgt - _alpha[i]) <= 0.004:
+					_alpha[i] = tgt
 				changed = true
 		if changed:
 			queue_redraw()
 
+	func _visible(i: int) -> bool:
+		return _tier[i] == lane and _alpha[i] > 0.012
+
 	func _draw() -> void:
-		var rects: Array = []
-		for it in items:
-			rects.append(Comp.rect_of(it))
 		# —— 第一遍:硬投影(整体位移的实心暗块,无模糊) ——
 		for i in items.size():
+			if not _visible(i):
+				continue
 			var it: Dictionary = items[i]
 			if it["faces"] == Comp.FACES_NONE:
 				continue
 			var r: Rect2 = it["rect"]
 			var off := Vector2(7, 8)
-			if _rests_on(r):
+			if _rests_on(i):
 				off.y = 0.0    # 有承接面:只横向投影,不在对方顶缘留暗带
 			draw_rect(Rect2(r.position + off, r.size), Color(0, 0, 0, 0.38 * _alpha[i]))
 		# —— 第二遍:主体 + 上层亮面板 + 顶缘亮线(大块先画,小块的顶线不被吞) ——
 		var order: Array = []
 		for i in items.size():
-			order.append(i)
+			if _visible(i):
+				order.append(i)
 		order.sort_custom(func(a: int, b: int) -> bool:
 			var ra: Rect2 = items[a]["rect"]
 			var rb: Rect2 = items[b]["rect"]
@@ -320,7 +385,7 @@ class LaneRenderer extends Node2D:
 			var is_bottom := faces == Comp.FACES_BOTTOM
 			_base.bg_color = Color("2B3140") if is_top \
 				else ("232833" if is_bottom else "262B34")
-			_base.bg_color.a = a    # who 不适用 / 前景遮挡的降透明(视觉即机制)
+			_base.bg_color.a = a    # 档位透明度 / 前景遮挡的降透明(视觉即机制)
 			draw_style_box(_base, r)
 			var slab := minf(r.size.y * 0.4, 22.0)
 			if slab > 2.0:
@@ -330,7 +395,7 @@ class LaneRenderer extends Node2D:
 			# 顶缘亮线(top 单向板更亮,提示"只有这面是实的")
 			draw_rect(Rect2(r.position, Vector2(r.size.x, 2)),
 				Color(Ui.PAPER, (0.55 if is_top else 0.30) * a))
-			# bottom 面:底缘蓝色细线 —— 逆的重力天花板(art-style.md §6.6)
+			# bottom 面:底缘蓝色细线 —— 逆的重力天花板(art-style.md §6)
 			if is_bottom:
 				draw_rect(Rect2(Vector2(r.position.x, r.end.y - 3),
 					Vector2(r.size.x, 3)), Color("4E86D8", 0.65 * a))
@@ -343,10 +408,11 @@ class LaneRenderer extends Node2D:
 		# —— 第三遍:接触裙角 —— 立块底缘两侧的 45° 硬折线小裙边(主体同色),
 		# 把立块"种"进承接面,消除生硬的竖直接缝
 		for i in items.size():
-			var it: Dictionary = items[i]
-			var r: Rect2 = it["rect"]
-			if it["faces"] == Comp.FACES_NONE or not _rests_on(r):
+			if not _visible(i) or items[i]["faces"] == Comp.FACES_NONE:
 				continue
+			if not _rests_on(i):
+				continue
+			var r: Rect2 = items[i]["rect"]
 			var a: float = _alpha[i]
 			var f := 16.0
 			var by := r.end.y
@@ -357,11 +423,15 @@ class LaneRenderer extends Node2D:
 				Vector2(r.end.x, by - f), Vector2(r.end.x, by),
 				Vector2(r.end.x + f, by)]), Color("262B34", a))
 
-	## r 是否坐落在同 lane 的另一个组块上(底缘贴着对方顶缘,水平方向有实质搭接)。
-	func _rests_on(r: Rect2) -> bool:
-		for it in items:
-			var u: Rect2 = it["rect"]
-			if u == r or u.position.y <= r.position.y:
+	## items[i] 是否坐落在**同档且可见**的另一个组块上(底缘贴着对方顶缘,
+	## 水平方向有实质搭接)—— 承接块沉入远景后,投影/裙角随之还原为落地态。
+	func _rests_on(i: int) -> bool:
+		var r: Rect2 = items[i]["rect"]
+		for j in items.size():
+			if j == i or not _visible(j):
+				continue
+			var u: Rect2 = items[j]["rect"]
+			if u.position.y <= r.position.y:
 				continue
 			if absf(r.end.y - u.position.y) > 6.0:
 				continue
@@ -429,12 +499,13 @@ class Ramp extends StaticBody2D:
 	const THICKNESS := 48.0
 
 	## 曲面是否搭在某块平台之上(x 落在平台范围内,且平台顶缘就在基线附近)。
+	## 读当前装载的关卡数据(肉鸽片段 / 实验室也正确),平台项可为语义字典。
 	func _over_platform(x: float, y: float) -> bool:
 		var m = Main.I
-		if m == null or m._current < 0:
+		if m == null or m._level_def == null:
 			return false
-		for r0 in LevelData.LEVELS[m._current].platforms:
-			var r: Rect2 = r0
+		for r0 in m._level_def.platforms:
+			var r: Rect2 = Comp.rect_of(r0)
 			if x >= r.position.x and x <= r.end.x \
 					and y >= r.position.y - 8.0 and y <= r.position.y + 60.0:
 				return true
@@ -590,14 +661,16 @@ class TimedBridge extends StaticBody2D:
 
 
 ## 开关门(structures.md §5):踩踏开关与门板成对 ——
-## 有人踩住开关 ↔ 门板碰撞在 full/none 间切换(运行时切位),
+## 有人踩住任一开关 ↔ 门板碰撞在 full/none 间切换(运行时切位),
 ## 门板虚化态保留 8% 亮度线框;合作分工新语言:一人踩门一人过。
+## 一门多开关(v0.15):门两侧各一只开关 = 气闸式互让题(先过者踩住
+## 对侧开关,接留守者过来),任一开关被踩即算"踩下"。
 class LeverGate extends Node2D:
-	var lever_rect := Rect2()
+	var lever_rects: Array = []   # Array[Rect2] 踩踏开关板(≥1)
 	var door_item := {}      # Comp.normalize 后的门板组件字典
 	var invert := false      # false:踩下 = 门开;true:踩下 = 门关
 	var layer_bit := 1
-	var _pressed := false
+	var _riders: Array = []  # 每只开关上的几何体集合({body: true})
 	var _door_body: StaticBody2D
 	var _open := false
 
@@ -613,33 +686,45 @@ class LeverGate extends Node2D:
 		cs.shape = shape
 		_door_body.add_child(cs)
 		add_child(_door_body)
-		# 踩踏开关:检测几何体站上(检测位 = 玩家层,位 2)
-		var area := Area2D.new()
-		area.collision_layer = 0
-		area.collision_mask = 2
-		var acs := CollisionShape2D.new()
-		acs.position = lever_rect.get_center()
-		var ashape := RectangleShape2D.new()
-		ashape.size = lever_rect.size
-		acs.shape = ashape
-		area.add_child(acs)
-		area.body_entered.connect(_on_body_entered)
-		area.body_exited.connect(_on_body_exited)
-		add_child(area)
+		# 踩踏开关:检测几何体站上(检测位 = 玩家层,位 2),逐只开关记录乘员
+		for i in lever_rects.size():
+			var lever_rect: Rect2 = lever_rects[i]
+			_riders.append({})
+			var area := Area2D.new()
+			area.collision_layer = 0
+			area.collision_mask = 2
+			var acs := CollisionShape2D.new()
+			acs.position = lever_rect.get_center()
+			var ashape := RectangleShape2D.new()
+			ashape.size = lever_rect.size
+			acs.shape = ashape
+			area.add_child(acs)
+			area.body_entered.connect(_on_body_entered.bind(i))
+			area.body_exited.connect(_on_body_exited.bind(i))
+			add_child(area)
 		_apply(_initial_open())
 
 	func _initial_open() -> bool:
 		return invert    # 缺省:没人踩 = 门关;invert:没人踩 = 门开
 
-	func _on_body_entered(_body: Node) -> void:
-		_pressed = true
+	func _any_pressed() -> bool:
+		for riders in _riders:
+			if not (riders as Dictionary).is_empty():
+				return true
+		return false
+
+	func _on_body_entered(body: Node, i: int) -> void:
+		_riders[i][body] = true
 		_apply(not invert)
 		Sfx.play("ui_click")
+		queue_redraw()
 
-	func _on_body_exited(_body: Node) -> void:
-		_pressed = false
-		_apply(_initial_open())
-		Sfx.play("ui_close", -6.0)
+	func _on_body_exited(body: Node, i: int) -> void:
+		_riders[i].erase(body)
+		if not _any_pressed():
+			_apply(_initial_open())
+			Sfx.play("ui_close", -6.0)
+		queue_redraw()
 
 	func _apply(open: bool) -> void:
 		if _open == open:
@@ -660,20 +745,28 @@ class LeverGate extends Node2D:
 			draw_rect(r, Color("262B34"))
 			draw_rect(Rect2(r.position, Vector2(r.size.x, 4)), Color("313845"))
 			draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.30))
-		# 踩踏开关:凸 / 凹两态 + 红色刻度(凸 = 待踩,凹 = 踩住)
-		var lr := Rect2(lever_rect.position + Vector2(0, lever_rect.size.y - 10),
-			Vector2(lever_rect.size.x, 10))
-		var pressed := _pressed
-		var sink := 4.0 if pressed else 0.0
-		draw_rect(Rect2(lr.position + Vector2(-3, 7), lr.size + Vector2(6, 3)),
-			Color(0, 0, 0, 0.38))
-		draw_rect(Rect2(lr.position + Vector2(0, sink), lr.size),
-			Color("313845") if not pressed else Color("3A4254"))
-		draw_rect(Rect2(lr.position + Vector2(0, sink),
-			Vector2(lr.size.x, 2)), Color(Ui.RED, 0.9 if not pressed else 0.5))
-		if pressed:
-			draw_rect(Rect2(lever_rect.position + Vector2(lever_rect.size.x * 0.5 - 14,
-				lr.position.y - 16), Vector2(28, 3)), Color(Ui.RED, 0.8))
+		# 踩踏开关:凸 / 凹两态 + 红色刻度(凸 = 待踩,凹 = 踩住);
+		# 开关与门之间画一条 8% 亮度的地面连线,标出"这只开关管这扇门"
+		for i in lever_rects.size():
+			var lever_rect: Rect2 = lever_rects[i]
+			var lr := Rect2(lever_rect.position + Vector2(0, lever_rect.size.y - 10),
+				Vector2(lever_rect.size.x, 10))
+			var pressed: bool = not (_riders[i] as Dictionary).is_empty()
+			var sink := 4.0 if pressed else 0.0
+			var link_y := lr.end.y - 2.0
+			var lx0 := minf(lr.get_center().x, r.get_center().x)
+			var lx1 := maxf(lr.get_center().x, r.get_center().x)
+			draw_rect(Rect2(Vector2(lx0, link_y), Vector2(lx1 - lx0, 2)),
+				Color(Ui.RED if pressed else Ui.PAPER, 0.22 if pressed else 0.10))
+			draw_rect(Rect2(lr.position + Vector2(-3, 7), lr.size + Vector2(6, 3)),
+				Color(0, 0, 0, 0.38))
+			draw_rect(Rect2(lr.position + Vector2(0, sink), lr.size),
+				Color("313845") if not pressed else Color("3A4254"))
+			draw_rect(Rect2(lr.position + Vector2(0, sink),
+				Vector2(lr.size.x, 2)), Color(Ui.RED, 0.9 if not pressed else 0.5))
+			if pressed:
+				draw_rect(Rect2(lever_rect.position + Vector2(lever_rect.size.x * 0.5 - 14,
+					lr.position.y - 16), Vector2(28, 3)), Color(Ui.RED, 0.8))
 
 
 ## 钢琴地板砖(audio.md §4):踩踏 / 滚过即发声的平台砖 —— 玩家行为即配乐。
@@ -913,38 +1006,59 @@ class GridLayer extends Node2D:
 
 
 ## 地图内悬浮文本提示(新手教程):世界坐标里的教学牌 ——
-## 一枚红色刻度块 + 基线细线 + 一行说明文字。
+## 一枚红色刻度块 + 基线细线 + 一行说明文字,文字垫在墨色实心底板上
+## (构成主义底板 + 红色左缘刻度,v0.15:真机户外可读性优先)。
 ## 靠近渐显、远离渐隐(透明度跟随受控几何体的距离);
 ## 文字自身不做位移动画(物理像素取整会呈不规则 1px 跳步,真机可见卡顿),
 ## 只做透明度呼吸,动效法则见 docs/design/art-style.md §3。
 class HintMarker extends Node2D:
 	var text := ""
 	var _label: Label
+	var _plate: PanelContainer
 	var _t := randf() * TAU
+	const FADE_RADIUS := 780.0    # 渐显半径(px):7.8 格内线性升到 1.0
 
 	func _ready() -> void:
 		z_index = 4
-		_label = Ui.l(text, 15, Ui.HEAD, Color(Ui.PAPER, 0.92),
+		var touch := Adaptive.is_touch_mode()
+		_plate = PanelContainer.new()
+		_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_plate.add_theme_stylebox_override("panel",
+			Ui.sb(Color(Ui.INK, 0.72), 0, Color(Ui.PAPER, 0.14), 1, 12, 5))
+		var row := HBoxContainer.new()
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_theme_constant_override("separation", 9)
+		var mark := ColorRect.new()
+		mark.color = Ui.RED
+		mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		mark.custom_minimum_size = Vector2(4, 16 if touch else 14)
+		mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(mark)
+		_label = Ui.l(text, 17 if touch else 15, Ui.HEAD, Color(Ui.PAPER, 0.94),
 			HORIZONTAL_ALIGNMENT_CENTER, true, 0)
-		add_child(_label)
+		_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(_label)
+		_plate.add_child(row)
+		add_child(_plate)
 
 	func _process(delta: float) -> void:
 		_t += delta
-		# 文字水平居中于锚点(每帧校正,宽度随文本/字号缓存而稳)
-		var w := _label.get_minimum_size().x
-		_label.position = Vector2(-w / 2.0, -36.0)
-		# 距离渐显:620px 内线性升到 1.0
+		# 底板水平居中于锚点、悬在刻度块之上(每帧校正,宽度随文本/字号缓存而稳)
+		var s := _plate.get_combined_minimum_size()
+		_plate.position = Vector2(-s.x / 2.0, -s.y - 26.0)
+		# 距离渐显:FADE_RADIUS 内线性升到 1.0
 		var alpha := 0.0
 		var m = Main.I
 		if m != null and not m.players.is_empty() \
 				and m._active_slot >= 0 and m._active_slot < m.players.size():
 			var d: float = m.players[m._active_slot].position.distance_to(global_position)
-			alpha = clampf(1.35 - d / 620.0, 0.0, 1.0)
+			alpha = clampf(1.35 - d / FADE_RADIUS, 0.0, 1.0)
 		# 呼吸:透明度 ±8% 波动(周期 ≈2.2s,幅度 ≤10%,M5 动效法则)
 		var breathe := 0.92 + 0.08 * sin(_t * 2.85)
 		modulate = Color(1, 1, 1, alpha * breathe)
 
 	func _draw() -> void:
-		# 锚点刻度:红色小方块 + 基线细线(标注的"落点",与网格刻度同语言)
+		# 锚点刻度:红色小方块 + 基线细线 + 到底板的竖向牵引线(标注的"落点")
 		draw_rect(Rect2(-5, 0, 10, 10), Color(Ui.RED, 0.9))
 		draw_line(Vector2(-52, 18), Vector2(52, 18), Color(Ui.PAPER, 0.22), 1.5)
+		draw_line(Vector2(0, -24), Vector2(0, -2), Color(Ui.PAPER, 0.30), 1.5)

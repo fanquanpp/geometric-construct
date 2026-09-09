@@ -2,21 +2,26 @@ class_name GeometryPanel
 extends CanvasLayer
 ## 档案几何页(v0.13.2 整合):「档案」(几何档案)+「回廊」(剧情回廊)
 ## 双页签二级页面。档案页左侧大幅几何肖像,右侧代号 / 定位 / 台词 /
-## 属性行 / 特性要点;回廊页 = 全部剧本列表(Konado 重看)。
+## 属性行 / 特性要点;回廊页 = 全部剧本列表,选中即打开**全文本阅读器**
+## (v0.15:整段剧本文本展开,台词按角色着色、按分拍分段,不再重播对话)。
 ## 可从标题菜单或暂停菜单进入;档案页 A/D 或方向键切换、1-4 直达、
-## 滚轮翻页;Esc / C 返回;底部 ◀ ▶ / 关闭 按钮(触摸屏可用)。
+## 滚轮翻页;Esc / C 返回(阅读器内先回回廊);底部 ◀ ▶ / 关闭 按钮(触摸屏可用)。
 
 signal closed
-signal story_requested(kind: String)
 
 ## 全部剧本档案(改剧本 = 改这里与 story/*.ks、docs/design/story.md 同步)。
+## beats:分拍名(按剧本注释分拍顺序);阅读器按对话节点源行号跳变(≥3 行 =
+## 跨过分拍注释)切段并逐段配名,拍数对不上时退回序号。
 const STORIES := [
 	{"kind": "prologue", "title": "序幕 · 空白与降临",
-		"sub": "七个拍子——空白、降临、相认、规则、缺口、约定、出发"},
+		"sub": "七个拍子——空白、降临、相认、规则、缺口、约定、出发",
+		"beats": ["空白", "降临", "相认", "规则", "缺口", "约定", "出发"]},
 	{"kind": "act1", "title": "第一幕 · 开演",
-		"sub": "引力排练开演之前,四个几何体的约定"},
+		"sub": "引力排练开演之前,四个几何体的约定",
+		"beats": ["巨构降临", "分位规则", "各自出发"]},
 	{"kind": "rogue_intro", "title": "重跑 · 序说",
-		"sub": "单人重跑——每一局,选中谁,谁就走一遍只属于自己的路"},
+		"sub": "单人重跑——每一局,选中谁,谁就走一遍只属于自己的路",
+		"beats": ["另一种演法", "刻度残留", "红色刻度与落幕", "第五刻度闪现"]},
 	{"kind": "rogue_dash", "title": "重跑 · 疾之章",
 		"sub": "原来我一直跑,不是怕孤独追上我"},
 	{"kind": "rogue_spring", "title": "重跑 · 跃之章",
@@ -31,7 +36,7 @@ const STORIES := [
 
 var current := 0
 var is_open := false
-var _tab := "dossier"        # dossier 档案 / gallery 回廊
+var _tab := "dossier"        # dossier 档案 / gallery 回廊 / story 阅读器
 
 var _root: Control
 var _content: Control
@@ -51,6 +56,11 @@ var _btn_row: HBoxContainer
 var _tab_dossier_btn: Button
 var _tab_gallery_btn: Button
 var _gallery_root: Control
+var _story_root: Control
+var _story_title: Label
+var _story_sub: Label
+var _story_scroll: ScrollContainer
+var _story_list: VBoxContainer
 var _tween: Tween
 
 
@@ -128,12 +138,17 @@ func _ready() -> void:
 	tab_row.add_child(_tab_dossier_btn)
 	tab_row.add_child(_tab_gallery_btn)
 
-	# —— 回廊页(剧情列表,默认隐藏) ——
+	# —— 回廊页(剧情列表,默认隐藏)+ 全文本阅读器 ——
 	_gallery_root = Control.new()
 	_gallery_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_gallery_root.visible = false
 	_content.add_child(_gallery_root)
 	_build_gallery()
+	_story_root = Control.new()
+	_story_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_story_root.visible = false
+	_content.add_child(_story_root)
+	_build_story_reader()
 
 	# —— 左侧:大幅几何肖像(固定列宽,垂直居中) ——
 	var portrait_zone := CenterContainer.new()
@@ -259,12 +274,13 @@ func _apply_tab() -> void:
 	_hints.visible = dossier
 	_btn_row.visible = dossier
 	_index_label.visible = dossier
-	_gallery_root.visible = not dossier
+	_gallery_root.visible = _tab == "gallery"
+	_story_root.visible = _tab == "story"
 	_tab_dossier_btn.set_pressed_no_signal(dossier)
 	_tab_gallery_btn.set_pressed_no_signal(not dossier)
 
 
-## 回廊页:全部剧本列表(两列网格,重看走 story_requested → Main.play_story)。
+## 回廊页:全部剧本列表(两列网格,选中即打开全文本阅读器)。
 func _build_gallery() -> void:
 	# 卡片区夹在页眉之下、页脚之上,不与标题 / 页签重叠
 	var zone := Control.new()
@@ -329,7 +345,7 @@ func _build_gallery() -> void:
 		b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 		b.pressed.connect(func() -> void:
 			Sfx.play("ui_click")
-			story_requested.emit(str(s["kind"])))
+			_open_story(s))
 		grid.add_child(b)
 		var sub := Ui.l(s["sub"], 10, Ui.LIGHT, Ui.DIM)
 		sub.position = Vector2(46, 38)
@@ -349,6 +365,183 @@ func _build_gallery() -> void:
 		_switch_tab("dossier"))
 	back_row.add_child(back)
 	vb.add_child(back_row)
+
+
+## 全文本阅读器骨架(内容按剧本在 _open_story 时装填):
+## 红色题头(剧名 + 副题)→ 可滚动正文(滚轮 / 触屏拖动)→ 底部返回行。
+## 与回廊卡片同一构成主义语言:墨色实心底板 + 细线外框 + 红色刻度。
+func _build_story_reader() -> void:
+	var zone := Control.new()
+	zone.anchor_left = 0.0
+	zone.anchor_right = 1.0
+	zone.anchor_top = 0.0
+	zone.anchor_bottom = 1.0
+	zone.offset_left = 24
+	zone.offset_right = -24
+	zone.offset_top = 108
+	zone.offset_bottom = -34
+	_story_root.add_child(zone)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	zone.add_child(center)
+
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(1040, 0)
+	card.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+	center.add_child(card)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 8)
+	card.add_child(vb)
+
+	var title_bar := PanelContainer.new()
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 8))
+	var tcol := VBoxContainer.new()
+	tcol.add_theme_constant_override("separation", 2)
+	_story_title = Ui.l("", 22, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_story_sub = Ui.l("", 12, Ui.LIGHT, Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER)
+	tcol.add_child(_story_title)
+	tcol.add_child(_story_sub)
+	title_bar.add_child(tcol)
+	vb.add_child(title_bar)
+
+	# 正文滚动区:固定高度(设计稿 720 内:题头 + 正文 + 返回行 ≈ 560)
+	_story_scroll = ScrollContainer.new()
+	_story_scroll.custom_minimum_size = Vector2(1040, 412)
+	_story_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_story_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	vb.add_child(_story_scroll)
+	var body_wrap := MarginContainer.new()
+	body_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body_wrap.add_theme_constant_override("margin_left", 28)
+	body_wrap.add_theme_constant_override("margin_right", 28)
+	body_wrap.add_theme_constant_override("margin_top", 10)
+	body_wrap.add_theme_constant_override("margin_bottom", 18)
+	_story_scroll.add_child(body_wrap)
+	_story_list = VBoxContainer.new()
+	_story_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_story_list.add_theme_constant_override("separation", 9)
+	body_wrap.add_child(_story_list)
+
+	var foot := PanelContainer.new()
+	foot.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 18, 10))
+	var foot_row := HBoxContainer.new()
+	foot_row.add_theme_constant_override("separation", 12)
+	var tip := Ui.l("滚轮 / 拖动翻阅      Esc · 返回回廊", 12, Ui.LIGHT, Ui.DIM) \
+		if not DisplayServer.is_touchscreen_available() \
+		else Ui.l("上下拖动翻阅全文", 12, Ui.LIGHT, Ui.DIM)
+	tip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	foot_row.add_child(tip)
+	var back := Button.new()
+	back.text = "« 返回回廊"
+	back.custom_minimum_size = Vector2(150, 40)
+	back.add_theme_font_size_override("font_size", 15)
+	Ui.wire_button(back)
+	back.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
+	back.pressed.connect(func() -> void:
+		Sfx.play("ui_click")
+		_switch_tab("gallery"))
+	foot_row.add_child(back)
+	var close_btn := Button.new()
+	close_btn.text = "关 闭"
+	close_btn.custom_minimum_size = Vector2(110, 40)
+	close_btn.add_theme_font_size_override("font_size", 15)
+	Ui.wire_button(close_btn)
+	close_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
+	close_btn.pressed.connect(func() -> void:
+		Sfx.play("ui_click")
+		close())
+	foot_row.add_child(close_btn)
+	foot.add_child(foot_row)
+	vb.add_child(foot)
+
+
+## 打开一段剧本的全文本:从 Konado 剧本资源读取对话节点(导出包内 .ks 已
+## 加密重映射,只能走资源解密路径,不能读原文),仅取普通对话行;
+## 按源行号跳变(≥3 行 = 越过分拍注释)切段,段首配拍名;台词按角色着色。
+func _open_story(story: Dictionary) -> void:
+	_story_title.text = str(story["title"])
+	_story_sub.text = str(story["sub"])
+	for c in _story_list.get_children():
+		c.queue_free()
+	var shot: KND_Shot = load("res://story/%s.ks" % story["kind"])
+	if shot == null:
+		_story_list.add_child(Ui.l("剧本缺失 · %s" % story["kind"], 16, Ui.BODY, Ui.RED))
+	else:
+		var beats: Array = story.get("beats", [])
+		var last_line := -1
+		var beat := 0
+		for d in shot.dialogues:
+			if d.dialog_type != KND_Dialogue.Type.ORDINARY_DIALOG:
+				continue
+			var line: int = d.source_file_line
+			if last_line < 0 or (line >= 0 and line - last_line >= 3):
+				beat += 1
+				_story_list.add_child(_beat_header(beat, beats))
+			last_line = line if line >= 0 else last_line
+			# 普通对话的说话人存在 character_id(对话盒也直接拿它当显示名)
+			_story_list.add_child(_story_line(str(d.character_id), str(d.dialog_content)))
+		if beat == 0:
+			_story_list.add_child(Ui.l("(本段没有台词)", 15, Ui.BODY, Ui.DIM))
+	_story_scroll.scroll_vertical = 0
+	_tab = "story"
+	Sfx.play("ui_page")
+	_apply_tab()
+
+
+## 分拍题头:红色短线 + "第 N 拍 · 名"(拍名列表对不上时只给序号)。
+func _beat_header(n: int, beats: Array) -> Control:
+	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 10)
+	if n > 1:
+		var spacer := Control.new()
+		spacer.custom_minimum_size = Vector2(0, 6)
+		_story_list.add_child(spacer)
+	var rule := ColorRect.new()
+	rule.color = Ui.RED
+	rule.custom_minimum_size = Vector2(28, 3)
+	rule.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hb.add_child(rule)
+	var title := "第 %d 拍" % n
+	if n - 1 < beats.size():
+		title += " · " + str(beats[n - 1])
+	hb.add_child(Ui.l(title, 13, Ui.HEAD, Color(Ui.PAPER, 0.70)))
+	return hb
+
+
+## 一行台词:角色色块 + 角色名(几何体按其色,旁白纸白减淡)+ 正文自动换行。
+func _story_line(who: String, text: String) -> Control:
+	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 12)
+	var col := Color(Ui.PAPER, 0.55)
+	for gd in Geometries.ALL:
+		if gd.name == who:
+			col = gd.color
+			break
+	var mark := ColorRect.new()
+	mark.color = col
+	mark.custom_minimum_size = Vector2(8, 8)
+	mark.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var mark_wrap := MarginContainer.new()
+	mark_wrap.add_theme_constant_override("margin_top", 8)
+	mark_wrap.add_child(mark)
+	hb.add_child(mark_wrap)
+	var name_label := Ui.l(who, 15, Ui.HEAD, col)
+	name_label.custom_minimum_size = Vector2(52, 0)
+	name_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	hb.add_child(name_label)
+	var body := Ui.l(text, 16, Ui.BODY, Color(Ui.PAPER, 0.90 if who != "旁白" else 0.72),
+		HORIZONTAL_ALIGNMENT_LEFT, false, 4)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.custom_minimum_size = Vector2(760, 0)
+	hb.add_child(body)
+	return hb
 
 
 func open(index := 0, tab := "dossier") -> void:
@@ -491,7 +684,11 @@ func _input(event: InputEvent) -> void:
 		match k:
 			KEY_ESCAPE, KEY_C:
 				get_viewport().set_input_as_handled()
-				close()
+				# 阅读器内先退回回廊列表,再按一次才关面板(返回语义逐级 pop)
+				if _tab == "story":
+					_switch_tab("gallery")
+				else:
+					close()
 			KEY_A, KEY_LEFT:
 				if _tab == "dossier":
 					_switch(-1)

@@ -46,7 +46,8 @@ BootIntro(60) ── 开屏,点按跳过
 └─→ 标题菜单 MenuLayer(20)═══ Root · Main.State = MENU
     ├─ 剧目行(ACTS,四幕)──二级面板:场次列表 act panel
     │    └─ 选场 → start_level() ⇒ 关卡 Screen
-    ├─ 剧情回廊 story panel ─→ StoryLayer(45) 播放(任意 .ks)
+    ├─ 剧情回廊(档案几何 · 回廊页签)→ 全文本阅读器(同面板内,整段
+    │    文本展开,台词按角色着色;不再走 StoryLayer 对话重演,v0.15)
     ├─ 几何档案 GeometryPanel(35)[C 键 / 菜单入口,翻页]
     ├─ 设置 SettingsPanel(38)[S 键 / 菜单入口]
     ├─ 重跑入口(肉鸽)→ RogueLayer 流程(30):

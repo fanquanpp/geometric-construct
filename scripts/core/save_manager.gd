@@ -3,7 +3,7 @@ class_name SaveManager
 ## 结构变更时递增 SAVE_VERSION,并在 _migrate 里补一条迁移分支;
 ## 规范见 docs/UPDATE.md。
 
-const SAVE_VERSION := 3
+const SAVE_VERSION := 4
 const SAVE_PATH := "user://speed-rouge.cfg"
 const LEGACY_PATH := "user://lonelyblocks.cfg"  # v1 存档(旧《孤独的方块》)
 const STYLE_COST := 25                          # 结算页装饰版式(落款红章)
@@ -173,6 +173,11 @@ func _migrate(from_version: int, _cfg: ConfigFile) -> void:
 	if from_version < 3:
 		# v2 → v3:新增肉鸽区段(残段 / 解锁 / 剧情旗标),全部默认值
 		pass
+	if from_version < 4:
+		# v3 → v4:序章由 4 场扩为 6 场(v0.15),第一幕关卡下标整体 +2;
+		# 旧档解锁进度若已进第一幕(≥4)同步后移,序章内进度不变
+		if unlocked >= 4:
+			unlocked += 2
 	unlocked = maxi(unlocked, 0)
 	rogue_shards = maxi(rogue_shards, 0)
 	rogue_best_chapter = clampi(rogue_best_chapter, 0, 3)

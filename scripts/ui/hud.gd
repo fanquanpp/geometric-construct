@@ -5,6 +5,7 @@ extends CanvasLayer
 
 var _roster: HBoxContainer
 var _level_num: Label
+var _level_total: Label
 var _level_name: Label
 var _hint_row: HBoxContainer
 var _coords: Label
@@ -63,6 +64,7 @@ func _ready() -> void:
 	var total := Ui.l("/ %02d" % LevelData.LEVELS.size(), 16, Ui.HEAD, Ui.DIM)
 	total.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	title_row.add_child(total)
+	_level_total = total
 
 	_level_name = Ui.l("", 22, Ui.HEAD, Ui.PAPER)
 	_level_name.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -399,9 +401,19 @@ func _rebuild_touch_hints(def: LevelDef) -> void:
 		add_text.call("轮盘拉满 · 自动加速")
 
 
+## 右上章节徽章:官方关按"幕内场次 / 幕内总场"编号(序章 01–06,第一幕
+## 01–06),肉鸽等自定义标签直接显示;不在任何幕的关卡退回全局序号。
 func set_level_info(def: LevelDef, num_label := "") -> void:
-	_level_num.text = num_label if not num_label.is_empty() \
-		else "%02d" % (LevelData.LEVELS.find(def) + 1)
+	var li := LevelData.LEVELS.find(def)
+	if not num_label.is_empty():
+		_level_num.text = num_label
+		_level_total.visible = false
+	else:
+		var act := LevelData.act_index_of(li)
+		_level_num.text = "%02d" % LevelData.scene_no_of(li)
+		_level_total.text = "/ %02d" % ((LevelData.ACTS[act]["levels"] as Array).size() \
+			if act >= 0 else LevelData.LEVELS.size())
+		_level_total.visible = true
 	_level_name.text = def.name
 	_rebuild_hints(def)
 

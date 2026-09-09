@@ -24,7 +24,8 @@ var exits: Array = []      # Array[[角色下标, Vector2 门中心]]
 ##          phase: float 相位, lane?, who?}]
 var movers: Array = []
 ## 开关门(structures.md §5,动态构件):
-##   Array[{lever: Rect2 踩踏开关板, door: 组件字典(rect/lane/who…),
+##   Array[{lever: Rect2 踩踏开关板 | levers: Array[Rect2] 多只开关(任一踩下即开,
+##          v0.15 气闸式互让题), door: 组件字典(rect/lane/who…),
 ##          invert: bool 释放=开(缺省 false:踩下=门开)}]
 var lever_gates: Array = []
 ## 限时桥(structures.md §5,动态构件):

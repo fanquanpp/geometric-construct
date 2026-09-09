@@ -3,7 +3,9 @@
 > 状态:现行(v0.12) · 剧本源:`story/prologue.ks` / `story/epilogue.ks` /
 > `story/act1.ks` / `story/rogue_intro.ks`(Konado KS)
 > 播放入口:`Main.show_story(kind)` → StoryLayer(播放时世界暂停);
-> 回看入口:标题菜单「剧情回廊」。
+> 回看入口:标题菜单 → 档案几何 → 回廊页签(**全文本阅读器**,v0.15 起
+> 直接整段展开剧本文本,不再重播对话——几何体台词按角色着色,分拍标题
+> 保留;首次观看仍走对话,回看只读文本)。
 
 ## 1. 世界观(定稿)
 
