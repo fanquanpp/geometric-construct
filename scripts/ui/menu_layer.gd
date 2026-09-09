@@ -1,7 +1,7 @@
 class_name MenuLayer
 extends CanvasLayer
 ## 标题菜单:构成主义海报式排版。
-## 右下:开始/继续、档案几何(几何档案 × 剧情回廊,GeometryPanel)、设置。
+## 右下:开始/继续、档案几何(几何 × 建筑 × 机关 × 剧情,ArchivePanel)、设置。
 ## 左侧:动态大字标题(TitleMark)+ 定位语;右侧:剧目行(序章 + 三幕)+ 主按钮。
 ## 剧目行是"一级目录":点开剧目进入二级菜单(关卡列),再选场开演;
 ## 未上演的幕没有二级菜单,点击给错误音 + toast 反馈。
@@ -204,7 +204,7 @@ func _ready() -> void:
 	panel_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 	panel_btn.pressed.connect(func() -> void:
 		Sfx.play("ui_click")
-		m.open_geometry_panel())
+		m.open_archive())
 	content.add_child(panel_btn)
 
 	var settings_btn := Button.new()

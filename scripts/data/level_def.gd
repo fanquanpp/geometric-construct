@@ -42,4 +42,8 @@ var piano_tiles: Array = []
 ## 教学悬浮提示(地图内世界坐标,靠近渐显):
 ##   Array[{pos: Vector2 锚点, text: String 键盘文案, touch: String 触屏文案(缺省同 text)}]
 var hints: Array = []
+## 命名分区坐标系(levels.md §8.2,坐标化辅助设计):
+##   Array[{rect: Rect2(整格吸附), name: String 关内唯一, layer: int 缺省4}]
+##   分区名标注在网格分区左上格点;HUD 读数与 tours/hints 引用分区名。
+var zones: Array = []
 var spawns: Array = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]

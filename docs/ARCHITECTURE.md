@@ -23,6 +23,7 @@ geometric-construct/
 │   ├── data/                # 纯数据层(无节点逻辑,可安全做内容包)
 │   │   ├── geometry_def.gd  #   几何体定义类(含属性规范与方案行生成)
 │   │   ├── geometries.gd    #   几何体数据表(四人,弹性 0.5 / 跃 2.0 固定)
+│   │   ├── archive_data.gd  #   档案几何条目表(建筑 / 机关 / 剧情目录,纯字典)
 │   │   ├── level_def.gd     #   关卡定义类(含 movers 移动构件字段)
 │   │   ├── level_data.gd    #   关卡数据表(序章 4 场 + 第一幕 6 场巨构)
 │   │   ├── component.gd     #   地图组件语义组 v3:id/layer(八层定值)/faces/who 集合(levels.md §7.10)
@@ -42,7 +43,8 @@ geometric-construct/
 │   │   ├── hud.gd           #   游戏 HUD(队伍 chips/章节徽章/按键提示/开场/结算)
 │   │   ├── menu_layer.gd    #   标题菜单(动态标题 TitleMark + 分层入场演出)
 │   │   ├── title_mark.gd    #   动态标题:逐字落位 / 呼吸浮动 / 印刷错位 / 红块节拍
-│   │   ├── geometry_panel.gd  # 几何档案页(属性条 + 几何肖像 + 翻页按钮)
+│   │   ├── archive_panel.gd #   档案几何(四页签:几何体 / 建筑物 / 机关 / 剧情;
+│   │   │                    #   图鉴主从页 + 机关两态预览;数据只读自 ArchiveData)
 │   │   ├── touch_controls.gd#   虚拟按键层(TouchScreenButton → InputMap 动作)
 │   │   ├── story_layer.gd   #   Konado 剧情层(story/*.ks,播放时暂停世界)
 │   │   ├── rogue_layer.gd   #   肉鸽 UI:选主角 / 选路卡 / 词条三选一 / 结算页
@@ -64,6 +66,8 @@ geometric-construct/
 │   └── epilogue.ks          #   尾声(通关画面播放)
 ├── assets/
 │   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入)
+│   ├── archive/             # 档案几何示例图(aseprite 导出的 200×200 PNG,
+│   │                        #   唯一入引擎的 aseprite 衍生素材;源在 art/tiles_v2)
 │   ├── tiles/               # (废止)v0.12 aseprite 瓦片存档,.gdignore 不导入,
 │   │                        #   仅历史留档 —— 地图全 _draw 渲染(art-style.md §6)
 │   ├── fonts/               # NotoSansSC 可变字体
@@ -147,7 +151,7 @@ A 跳,X 冲刺,LB/RB 切换,Back 召回,Start 暂停。
   已解锁词条 / 最远章节 / 剧情旗标),迁移分支给默认值。
 - **调试钩子**(命令行 user args,`--` 之后):
   `--autotest=N` 自动通关测试 · `--autoshot=N` 关卡截图 · `--menushot` 菜单截图 ·
-  `--panelshot` 档案页截图 · `--introshot` 开场卡截图 · `--doorshot` 门特写 ·
+  `--panelshot` 档案几何截图(全页签) · `--introshot` 开场卡截图 · `--doorshot` 门特写 ·
   `--tourshot` 巨构巡航截图 · `--laneshot` 分层 v3 八层验收截图 · `--recalltest` 召回链路自测 ·
   `--zoom=N` 锁定镜头变焦 · `--rogueshot` 肉鸽 UI 截图 ·
   `--rogueautotest[=N]` 肉鸽按主角自动跑整局 · `--shotdir=<path>` 输出目录。

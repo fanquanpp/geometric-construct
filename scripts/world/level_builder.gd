@@ -5,8 +5,23 @@ const BOUNDARY_BIT := 1 << 30
 ## 碰撞签名位分配上限(bit29,共 27 槽):与磁界等特权位彻底隔离,
 ## 超限构建期报错并丢弃多余签名(§7.10 位上限守卫)。
 const MAX_COMBO_BIT := 29
+
+## —— 引擎光影参数(v0.19,art-style.md §8)——
+## 亮度模型:最终色 = 本体色 ×(环境档 + 光照档)。
+## 受光区 ≈ AMBIENT + SUN(约 1.0,色板还原且带轻微冷暖分离);
+## 阴影区只剩 AMBIENT(冷色压暗)= 引擎实算的硬边投影。
+## 方向:rotation 0 = 光正下;负角把光转向右上 → 影子投向右下
+## (沿袭旧硬投影 offset(7,8) 的方向约定)。
+const LIGHT_AMBIENT := Color(0.68, 0.71, 0.82)
+const LIGHT_SUN_COLOR := Color(1.0, 0.97, 0.9)
+const LIGHT_SUN_ENERGY := 0.36
+const LIGHT_SUN_ROTATION := -0.70   # rad ≈ -40°
+## L1/L2 深远景(基础透明度 ≤0.34)不挂遮挡体:雾化剪影若投出全强度
+## 硬影会与档位失配;L3 起的可见实体件均挂(所见即所影)。
 ## 把 LevelDef 数据实例化为节点树:平台 / 曲面跳跃板 / 加速门 / 门 / 几何体 / 相机。
-## 渲染规范:棱角分明的平面石板 + 硬投影,无圆角无柔光。
+## 渲染规范:棱角分明的平面石板,直角硬边;投影一律由引擎光影实算
+## (CanvasModulate 压暗 + DirectionalLight2D 抬亮 + LightOccluder2D 遮挡,
+## shadow_filter NONE 硬边,art-style.md §8),不再手绘偏移暗块。
 ## 关卡背景带 1 格 = 100 px 的定位网格(与 HUD 坐标读数对齐)。
 ##
 ## 分层语义 v3(levels.md §7.10):八层定值 × 双归属 + 组件编号 ——
@@ -24,9 +39,23 @@ static func build(def: LevelDef) -> Node2D:
 	var root := Node2D.new()
 	root.name = "Level"
 
-	# —— 定位网格(最底层装饰,坐标与 HUD 读数对齐) ——
+	# —— 引擎光影 rig(v0.19 art-style §8):环境冷档 + 定向平行光,
+	#    遮挡体处实算硬边投影(方向恒定,沿用旧硬投影的右下约定) ——
+	var ambient := CanvasModulate.new()
+	ambient.color = LIGHT_AMBIENT
+	root.add_child(ambient)
+	var sun := DirectionalLight2D.new()
+	sun.rotation = LIGHT_SUN_ROTATION
+	sun.color = LIGHT_SUN_COLOR
+	sun.energy = LIGHT_SUN_ENERGY
+	sun.shadow_enabled = true
+	sun.shadow_filter = DirectionalLight2D.SHADOW_FILTER_NONE   # 禁模糊纪律:硬边
+	root.add_child(sun)
+
+	# —— 定位网格(最底层装饰,坐标与 HUD 读数对齐;§8.2 分区标注) ——
 	var grid := GridLayer.new()
 	grid.level_size = def.size
+	grid.zones = def.zones
 	root.add_child(grid)
 
 	# —— 语义编译:分层语义 v3(§7.10),签名 = (layer, who),仅实体层占位 ——
@@ -56,6 +85,9 @@ static func build(def: LevelDef) -> Node2D:
 		var it := Comp.normalize(it0)
 		_assign_id(it, used_ids, layer_seq)
 		items.append(it)
+		if it["faces"] != Comp.FACES_NONE \
+				and int(it["layer"]) >= Comp.LAYER_BACK:
+			root.add_child(_rect_occluder(it["rect"]))
 		if not Comp.is_solid_layer(it["layer"]) \
 				or it["faces"] == Comp.FACES_NONE:
 			continue    # 景观层 / 纯装饰:无碰撞(所见即所碰)
@@ -229,6 +261,14 @@ static func build(def: LevelDef) -> Node2D:
 	focus.entries = focus_entries
 	root.add_child(focus)
 
+	# —— 坐标化调试叠加层(--debug-grid:组件 id·层 标注,§8.3) ——
+	root.set_meta("items", items)   # HUD 层签名读数经此取组件
+	var dbg := DebugGridOverlay.new()
+	dbg.items = items
+	dbg.entries = focus_entries
+	dbg.z_index = 20
+	root.add_child(dbg)
+
 	# —— 相机 ——
 	var cam := CameraRig.new()
 	cam.limit_left = 0
@@ -360,14 +400,28 @@ static func _rect_shape(r: Rect2, faces: String) -> CollisionShape2D:
 	return cs
 
 
-## 绘制一层平台:硬投影 + 平面石板 + 顶缘亮线,全部直角。
-## 八层定值表(§7.10):每层一个渲染器,items 已按层过滤,只画本层组件。
-## 实体层(L4–L7)组件按高亮三档呈现:
+## 矩形遮挡体(引擎光影 v0.19,art-style.md §8):世界坐标矩形 →
+## 顺时针绕行的闭合遮挡多边形;cull_mode 挡掉自身受影(平台顶面
+## 不被自己的遮挡体压出暗带)。
+static func _rect_occluder(r: Rect2) -> LightOccluder2D:
+	var occ := LightOccluder2D.new()
+	var poly := OccluderPolygon2D.new()
+	poly.polygon = PackedVector2Array([
+		r.position, Vector2(r.end.x, r.position.y),
+		r.end, Vector2(r.position.x, r.end.y)])
+	poly.cull_mode = OccluderPolygon2D.CULL_CLOCKWISE
+	occ.occluder = poly
+	return occ
+
+
+## 绘制一层平台:平面石板 + 顶缘亮线,全部直角;投影由引擎光影实算
+## (Level 根节点的 CanvasModulate + DirectionalLight2D + 平台遮挡体,
+## art-style.md §8)。八层定值表(§7.10):每层一个渲染器,items 已按层
+## 过滤,只画本层组件。实体层(L4–L7)组件按高亮三档呈现:
 ##   专属(who 含受控者)= 专属色描边脉冲;共享(who 空)= 常亮;
 ##   无关 = 幽灵暗度(所见即所碰);景观层常驻,深度梯度由 modulate /
 ##   基础透明度表达(L1 最暗 → L3 背景压亮度,L8 前景躲入降透明)。
 ## 切换受控几何体时按距离波次交叉淡化(近处先动,≤0.3s)。
-## 组块连接和谐化:投影先画 / 立块横向投影 / 45° 裙角(同 v2)。
 class LaneRenderer extends Node2D:
 	var layer := Comp.LAYER_MAIN
 	var items: Array = []            # 本层归一化组件字典(构建期按 layer 过滤)
@@ -482,19 +536,7 @@ class LaneRenderer extends Node2D:
 		return _alpha[i] > 0.012
 
 	func _draw() -> void:
-		# —— 第一遍:硬投影(整体位移的实心暗块,无模糊) ——
-		for i in items.size():
-			if not _visible(i):
-				continue
-			var it: Dictionary = items[i]
-			if it["faces"] == Comp.FACES_NONE:
-				continue
-			var r: Rect2 = it["rect"]
-			var off := Vector2(7, 8)
-			if _rests_on(i):
-				off.y = 0.0    # 有承接面:只横向投影,不在对方顶缘留暗带
-			draw_rect(Rect2(r.position + off, r.size), Color(0, 0, 0, 0.38 * _alpha[i]))
-		# —— 第二遍:主体 + 上层亮面板 + 顶缘亮线(大块先画,小块的顶线不被吞) ——
+		# —— 第一遍:主体 + 上层亮面板 + 顶缘亮线(大块先画,小块的顶线不被吞) ——
 		var order: Array = []
 		for i in items.size():
 			if _visible(i):
@@ -537,11 +579,11 @@ class LaneRenderer extends Node2D:
 				draw_rect(Rect2(r.position + Vector2(mark_x, 0), Vector2(14, 3)),
 					Color(Ui.RED, 0.55 * a))
 				mark_x += 480.0
-		# —— 第三遍:专属高亮描边(呼吸脉冲,受控几何体专属色,§7.10) ——
+		# —— 第二遍:专属高亮描边(呼吸脉冲,受控几何体专属色,§7.10) ——
 		for i in items.size():
 			if _hl[i] and _visible(i):
 				LevelBuilder.draw_focus(self, items[i]["rect"], _hl_col[i])
-		# —— 第四遍:接触裙角 —— 立块底缘两侧的 45° 硬折线小裙边(主体同色),
+		# —— 第三遍:接触裙角 —— 立块底缘两侧的 45° 硬折线小裙边(主体同色),
 		# 把立块"种"进承接面,消除生硬的竖直接缝
 		for i in items.size():
 			if not _visible(i) or items[i]["faces"] == Comp.FACES_NONE:
@@ -560,7 +602,7 @@ class LaneRenderer extends Node2D:
 				Vector2(r.end.x + f, by)]), Color("262B34", a))
 
 	## items[i] 是否坐落在**同层且可见**的另一个组块上(底缘贴着对方顶缘,
-	## 水平方向有实质搭接)—— 承接块淡出后,投影/裙角随之还原为落地态。
+	## 水平方向有实质搭接)—— 承接块淡出后,裙角随之还原为落地态。
 	func _rests_on(i: int) -> bool:
 		var r: Rect2 = items[i]["rect"]
 		for j in items.size():
@@ -599,23 +641,21 @@ class Ramp extends StaticBody2D:
 			])
 			cs.shape = shape
 			add_child(cs)
+		# 遮挡体(引擎光影 v0.19):与绘制主体同形的实体多边形
+		if pts.size() >= 2:
+			var occ := LightOccluder2D.new()
+			var poly := OccluderPolygon2D.new()
+			poly.cull_mode = OccluderPolygon2D.CULL_CLOCKWISE
+			var body := PackedVector2Array(pts)
+			body.append(Vector2(pts[pts.size() - 1].x, base_y))
+			body.append(Vector2(pts[0].x, base_y))
+			poly.polygon = body
+			occ.occluder = poly
+			add_child(occ)
 
 	func _draw() -> void:
 		if pts.size() < 2:
 			return
-		# 硬投影(坐落在平台上的曲面只横向偏移,不在承接面顶缘拖出暗带)
-		var contact := false
-		for p in pts:
-			if _over_platform(p.x, base_y):
-				contact = true
-				break
-		var soff := Vector2(7, 0) if contact else Vector2(7, 8)
-		var shadow := PackedVector2Array()
-		for p in pts:
-			shadow.append(p + soff)
-		shadow.append(Vector2(pts[pts.size() - 1].x + soff.x, base_y + soff.y))
-		shadow.append(Vector2(pts[0].x + soff.x, base_y + soff.y))
-		draw_colored_polygon(shadow, Color(0, 0, 0, 0.38))
 		# 主体填充(曲面到基线)
 		var poly := PackedVector2Array(pts)
 		poly.append(Vector2(pts[pts.size() - 1].x, base_y))
@@ -636,19 +676,6 @@ class Ramp extends StaticBody2D:
 		LevelBuilder.draw_focus(self, LevelBuilder._ramp_bounds(pts, base_y), hl_color)
 
 	const THICKNESS := 48.0
-
-	## 曲面是否搭在某块平台之上(x 落在平台范围内,且平台顶缘就在基线附近)。
-	## 读当前装载的关卡数据(肉鸽片段 / 实验室也正确),平台项可为语义字典。
-	func _over_platform(x: float, y: float) -> bool:
-		var m = Main.I
-		if m == null or m._level_def == null:
-			return false
-		for r0 in m._level_def.platforms:
-			var r: Rect2 = Comp.rect_of(r0)
-			if x >= r.position.x and x <= r.end.x \
-					and y >= r.position.y - 8.0 and y <= r.position.y + 60.0:
-				return true
-		return false
 
 
 ## 移动构件:单轴往返的动平台(AnimatableBody2D + sync_to_physics,
@@ -673,6 +700,8 @@ class Mover extends AnimatableBody2D:
 		shape.size = rect.size
 		cs.shape = shape
 		add_child(cs)
+		# 遮挡体(引擎光影 v0.19):居中于石板,随平台一起动,投影由引擎实算
+		add_child(LevelBuilder._rect_occluder(Rect2(-rect.size / 2.0, rect.size)))
 		var renderer := MoverSlab.new()
 		renderer.size = rect.size
 		add_child(renderer)
@@ -684,8 +713,8 @@ class Mover extends AnimatableBody2D:
 		position = rect.get_center() + travel * s
 
 
-## 移动石板外观:与静态平台同语言(硬投影 + 亮面板 + 顶缘亮线),
-## 侧缘红色刻度块标出"正在移动"的身份。
+## 移动石板外观:与静态平台同语言(亮面板 + 顶缘亮线),
+## 侧缘红色刻度块标出"正在移动"的身份;投影由引擎光影实算。
 class MoverSlab extends Node2D:
 	var size := Vector2.ZERO
 	var _base: StyleBoxFlat
@@ -699,7 +728,6 @@ class MoverSlab extends Node2D:
 
 	func _draw() -> void:
 		var r := Rect2(-size / 2.0, size)
-		draw_rect(Rect2(r.position + Vector2(7, 8), r.size), Color(0, 0, 0, 0.38))
 		draw_style_box(_base, r)
 		var slab := minf(size.y * 0.4, 22.0)
 		if slab > 2.0:
@@ -749,6 +777,7 @@ class TimedBridge extends StaticBody2D:
 	var _t := 0.0
 	var _solid := true
 	var _beat_phase := 0.0   # 启动时对齐到的节拍相位
+	var _occ: LightOccluder2D   # 遮挡体随实/虚切换(虚化 = 不投影)
 
 	func _ready() -> void:
 		collision_layer = 1 << (layer_bit - 1)
@@ -760,6 +789,8 @@ class TimedBridge extends StaticBody2D:
 		cs.shape = shape
 		add_child(cs)
 		position = Vector2.ZERO
+		_occ = LevelBuilder._rect_occluder(slab_rect)
+		add_child(_occ)
 		if sync_beat and Sfx.beat_period() > 0.0:
 			_beat_phase = Sfx.beat_time()
 			_t = _beat_phase
@@ -773,6 +804,7 @@ class TimedBridge extends StaticBody2D:
 			_solid = solid
 			# 运行时碰撞位切换(levels.md §7.6):虚化 = 全体不可踩
 			set_collision_layer_value(layer_bit, solid)
+			_occ.visible = solid   # 虚化态不投影(与线框虚化语言一致)
 			queue_redraw()
 			if not solid:
 				Sfx.play("ui_page", -8.0)
@@ -787,7 +819,6 @@ class TimedBridge extends StaticBody2D:
 		draw_rect(Rect2(Vector2(r.end.x + 6, r.get_center().y - 1),
 			Vector2(4, 2)), Color(Ui.RED, 0.55))
 		if _solid:
-			draw_rect(Rect2(r.position + Vector2(7, 8), r.size), Color(0, 0, 0, 0.38))
 			draw_rect(r, Color("2B3140"))
 			draw_rect(Rect2(r.position, Vector2(r.size.x, 4)), Color("3A4254"))
 			draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.42))
@@ -820,6 +851,7 @@ class LeverGate extends Node2D:
 	var hl_color := Color(0, 0, 0, 0)   # 门板专属高亮色(FocusDriver 写入,§7.10)
 	var _riders: Array = []  # 每只开关上的几何体集合({body: true})
 	var _door_body: StaticBody2D
+	var _door_occ: LightOccluder2D   # 门板遮挡体随开关切换(门开 = 不投影)
 	var _open := false
 
 	func _ready() -> void:
@@ -834,6 +866,8 @@ class LeverGate extends Node2D:
 		cs.shape = shape
 		_door_body.add_child(cs)
 		add_child(_door_body)
+		_door_occ = LevelBuilder._rect_occluder(Rect2(-r.size / 2.0, r.size))
+		_door_body.add_child(_door_occ)
 		# 踩踏开关:检测几何体站上(检测位 = 玩家层,位 2),逐只开关记录乘员
 		for i in lever_rects.size():
 			var lever_rect: Rect2 = lever_rects[i]
@@ -880,6 +914,7 @@ class LeverGate extends Node2D:
 		_open = open
 		# 运行时碰撞位切换:门板虚化 = 全体不可撞(levels.md §7.6)
 		_door_body.set_collision_layer_value(layer_bit, not open)
+		_door_occ.visible = not open   # 门开不投影(与线框虚化语言一致)
 		queue_redraw()
 
 	func _draw() -> void:
@@ -889,7 +924,6 @@ class LeverGate extends Node2D:
 			draw_rect(r, Color(Ui.PAPER, 0.06))
 			draw_rect(r, Color(Ui.PAPER, 0.14), false, 1.5)
 		else:
-			draw_rect(Rect2(r.position + Vector2(7, 8), r.size), Color(0, 0, 0, 0.38))
 			draw_rect(r, Color("262B34"))
 			draw_rect(Rect2(r.position, Vector2(r.size.x, 4)), Color("313845"))
 			draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.30))
@@ -906,8 +940,8 @@ class LeverGate extends Node2D:
 			var lx1 := maxf(lr.get_center().x, r.get_center().x)
 			draw_rect(Rect2(Vector2(lx0, link_y), Vector2(lx1 - lx0, 2)),
 				Color(Ui.RED if pressed else Ui.PAPER, 0.22 if pressed else 0.10))
-			draw_rect(Rect2(lr.position + Vector2(-3, 7), lr.size + Vector2(6, 3)),
-				Color(0, 0, 0, 0.38))
+			draw_rect(Rect2(Vector2(lr.position.x - 3, lr.end.y - 3),
+				Vector2(lr.size.x + 6, 3)), Color(0, 0, 0, 0.38))
 			draw_rect(Rect2(lr.position + Vector2(0, sink), lr.size),
 				Color("313845") if not pressed else Color("3A4254"))
 			draw_rect(Rect2(lr.position + Vector2(0, sink),
@@ -988,6 +1022,7 @@ class PianoTile extends StaticBody2D:
 		shape.size = slab_rect.size
 		cs.shape = shape
 		add_child(cs)
+		add_child(LevelBuilder._rect_occluder(slab_rect))   # 引擎光影遮挡体(v0.19)
 		if note.is_empty() and Main.I != null and Main.I._level_def != null:
 			note = Sfx.note_for_height(slab_rect.position.y, Main.I._level_def.size.y)
 
@@ -1054,7 +1089,6 @@ class PianoTile extends StaticBody2D:
 
 	func _draw() -> void:
 		var r := Rect2(slab_rect.position, slab_rect.size)
-		draw_rect(Rect2(r.position + Vector2(6, 6), r.size), Color(0, 0, 0, 0.30))
 		draw_rect(r, Color("262B34"))
 		draw_rect(Rect2(r.position, Vector2(r.size.x, 3)), Color("313845"))
 		# 顶缘亮线:基态克制,触发时脉冲提亮(motion.md 玩法演出,M5 量级)
@@ -1124,6 +1158,48 @@ class FocusDriver extends Node2D:
 			_hl[i] = want.a > 0.0
 			if _hl[i] or changed or was_hl:
 				node.queue_redraw()   # 高亮脉冲逐帧重绘;退出高亮补一帧清框
+
+
+## 坐标化调试叠加层(--debug-grid,levels.md §8.3):组件左上格点标注
+## `id·层`,who 非空组件加首位几何体色点并附 who 名单;机关物同款。
+## 默认关闭,命令行 `--debug-grid` 开启后逐帧重绘。
+class DebugGridOverlay extends Node2D:
+	var items: Array = []    # 归一化平台组件(Comp.normalize)
+	var entries: Array = []  # 机关物条目 {item: {layer, who, id?}, rect}
+	var _on := false
+
+	func _process(_delta: float) -> void:
+		var m = Main.I
+		var on: bool = m != null and m.debug_grid
+		if on != _on:
+			_on = on
+		if on:
+			queue_redraw()
+
+	func _draw() -> void:
+		if not _on:
+			return
+		for it in items:
+			var r: Rect2 = it["rect"]
+			var who: Array = it["who"]
+			var mark := str(it["id"]) + "·L" + str(it["layer"])
+			if not who.is_empty():
+				var names := PackedStringArray()
+				for g in who:
+					names.append(Geometries.ALL[clampi(int(g), 0,
+						Geometries.ALL.size() - 1)].name)
+				mark += "·{" + "+".join(names) + "}"
+				var gc: Color = Geometries.ALL[clampi(int(who[0]), 0,
+					Geometries.ALL.size() - 1)].color
+				draw_circle(r.position + Vector2(-5, -5), 3.5, Color(gc, 0.9))
+			draw_string(Ui.HEAD, r.position + Vector2(5, 13), mark,
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Ui.PAPER, 0.6))
+		for e in entries:
+			var er: Rect2 = e["rect"]
+			var it2: Dictionary = e["item"]
+			draw_string(Ui.HEAD, er.position + Vector2(5, 13),
+				str(int(it2.get("id", 0))) + "·L" + str(Comp.layer_of(it2)),
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Ui.PAPER, 0.6))
 
 
 ## 镜头:始终以受控几何体为画面中心,带左右前瞻偏移与速度变焦;
@@ -1200,6 +1276,7 @@ class CameraRig extends Camera2D:
 ## 近景 = 1 格细线 + 5 格主线;中景 = 仅 5 格主线;远景 = 10 格点阵 + 缘坐标数字。
 class GridLayer extends Node2D:
 	var level_size := Vector2.ZERO
+	var zones: Array = []   # 命名分区 [{rect, name, layer}](levels.md §8.2)
 	var _tier := 0    # 0 近景 / 1 中景 / 2 远景
 
 	func _ready() -> void:
@@ -1259,6 +1336,16 @@ class GridLayer extends Node2D:
 		# 原点十字
 		draw_line(Vector2(0, 0), Vector2(26, 0), Color(Ui.RED, 0.55), 2.0)
 		draw_line(Vector2(0, 0), Vector2(0, 26), Color(Ui.RED, 0.55), 2.0)
+		# —— 分区坐标系(§8.2):边界竖线 + 分区名(近景 LOD 显示)——
+		if _tier == 0:
+			for z in zones:
+				var zr: Rect2 = z["rect"]
+				draw_line(Vector2(zr.position.x, 0),
+					Vector2(zr.position.x, level_size.y), Color(Ui.PAPER, 0.13), 1.0)
+				if Ui.HEAD != null:
+					draw_string(Ui.HEAD, zr.position + Vector2(10, 30),
+						str(z["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15,
+						Color(Ui.PAPER, 0.30))
 
 	## 上 / 左双缘坐标数字(levels.md §8.2;游戏内仅远景边缘显示)。
 	func _draw_edge_numbers(w: int, h: int, step: int) -> void:

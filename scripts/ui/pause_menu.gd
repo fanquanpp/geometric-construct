@@ -1,6 +1,6 @@
 class_name PauseMenu
 extends CanvasLayer
-## 暂停菜单:继续 / 重开 / 几何档案 / 虚拟按键 / 返回标题。树暂停时仍可交互。
+## 暂停菜单:继续 / 重开 / 档案几何 / 虚拟按键 / 返回标题。树暂停时仍可交互。
 
 var m: Main
 
@@ -68,7 +68,7 @@ func _ready() -> void:
 	_resume = _make_button("继 续", func() -> void: m.resume_game())
 	body.add_child(_resume)
 	body.add_child(_make_button("重 新 开 始", func() -> void: m.restart_from_pause()))
-	body.add_child(_make_button("档 案 几 何", func() -> void: m.open_geometry_panel()))
+	body.add_child(_make_button("档 案 几 何", func() -> void: m.open_archive()))
 	body.add_child(_make_button("设 置", func() -> void: m.open_settings()))
 	body.add_child(_make_button("返 回 标 题", func() -> void: m.quit_to_menu()))
 	var touch_btn := _make_button("虚拟按键 · 关", func() -> void: pass)
@@ -143,9 +143,9 @@ func _input(ev: InputEvent) -> void:
 		return
 	if ev is InputEventKey:
 		if ev.pressed and (ev.keycode == KEY_ESCAPE or ev.keycode == KEY_P):
-			# 几何档案 / 设置面板打开时,Esc 交给对应面板处理
-			if Main.I != null and Main.I.geometry_panel != null \
-					and Main.I.geometry_panel.is_open:
+			# 档案几何 / 设置面板打开时,Esc 交给对应面板处理
+			if Main.I != null and Main.I.archive_panel != null \
+					and Main.I.archive_panel.is_open:
 				return
 			if Main.I != null and Main.I.settings_panel != null \
 					and Main.I.settings_panel.is_open:

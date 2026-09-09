@@ -146,6 +146,14 @@ static func _static_init() -> void:
 			{"pos": Vector2(11250, 1600), "text": "限时桥周期通断;掉坑按召回(R)回出生点"},
 			{"pos": Vector2(11050, 950), "text": "疾:贴塔缓降,按跳攀爬 8 格"},
 		],
+		[   # zones:命名分区坐标系(levels.md §8.2,整格吸附,列带全高)
+			{"rect": Rect2(0, 0, 1400, 2200), "name": "Z0 出生"},
+			{"rect": Rect2(1400, 0, 3000, 2200), "name": "Z1 八层展区"},
+			{"rect": Rect2(4400, 0, 2200, 2200), "name": "Z2 置换走廊"},
+			{"rect": Rect2(6600, 0, 3600, 2200), "name": "Z3 机关物"},
+			{"rect": Rect2(10200, 0, 2000, 2200), "name": "Z4 双子磁界"},
+			{"rect": Rect2(12200, 0, 1150, 2200), "name": "Z5 归门"},
+		],
 	))
 	LEVELS[0].piano_tiles = [
 		{"rect": Rect2(6650, 1800, 100, 400), "note": "C4", "id": 407},
@@ -208,6 +216,10 @@ static func from_json_text(text: String) -> LevelDef:
 		if h.has("touch"):
 			hd["touch"] = str(h["touch"])
 		def.hints.append(hd)
+	for z in d.get("zones", []):
+		def.zones.append({"rect": _json_rect(z.get("rect",
+				{"x": 0, "y": 0, "w": 100, "h": 100})),
+			"name": str(z.get("name", "")), "layer": int(z.get("layer", 4))})
 	return def
 
 
@@ -236,7 +248,8 @@ static func _json_comp(p) -> Dictionary:
 
 static func _make(name: String, focus: int, intro: String, size: Vector2,
 		roster: Array, platforms: Array, ramps: Array, gates: Array, exits: Array,
-		spawns: Array, movers: Array = [], hints: Array = []) -> LevelDef:
+		spawns: Array, movers: Array = [], hints: Array = [],
+		zones: Array = []) -> LevelDef:
 	var def := LevelDef.new()
 	def.name = name
 	def.focus = focus
@@ -250,4 +263,5 @@ static func _make(name: String, focus: int, intro: String, size: Vector2,
 	def.spawns = spawns
 	def.movers = movers
 	def.hints = hints
+	def.zones = zones
 	return def

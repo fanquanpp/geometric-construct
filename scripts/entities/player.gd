@@ -91,7 +91,7 @@ var _roll_speed := 0.0        # 圆球角速度(rad/s):地面 = v/r 纯滚动,�
 var _roll_loop: AudioStreamPlayer  # 圆球滚动轰鸣(音量/音高随速度连续调制)
 var _trail: Array = []        # 高速残影的位置记录 [{pos, size}]
 var _piano_touch: Array = []  # 上一帧接触的钢琴砖(接触沿判定,防静止连响)
-var _shadow_dist: float = INF
+var _occluder: LightOccluder2D  # 引擎光影遮挡体:形体即影子(art-style.md §8)
 var _body_box: StyleBoxFlat
 
 
@@ -136,6 +136,7 @@ func _ready() -> void:
 		rect.size = def.size
 		shape_node.shape = rect
 	add_child(shape_node)
+	_init_occluder()
 
 	_body_box = StyleBoxFlat.new()
 	_body_box.bg_color = def.color
@@ -149,9 +150,40 @@ func _ready() -> void:
 		_roll_loop.play()
 
 
-## 挤压 / 缩小 / 残影都需要逐帧重绘。
+## 引擎光影遮挡体(v0.19 art-style §8):形体即影子 —— 多边形与碰撞形一致,
+## 顺时针绕行;cull_mode 挡掉自投影(本体不被自己的遮挡体压暗)。
+func _init_occluder() -> void:
+	_occluder = LightOccluder2D.new()
+	var poly := OccluderPolygon2D.new()
+	poly.cull_mode = OccluderPolygon2D.CULL_CLOCKWISE
+	var hw := def.size.x * 0.5
+	var hh := def.size.y * 0.5
+	if def.shape == GeometryDef.Shape.BALL:
+		var pts := PackedVector2Array()
+		for i in 18:
+			var a := TAU * float(i) / 18.0
+			pts.append(Vector2(cos(a) * hw, sin(a) * hh))
+		poly.polygon = pts
+	elif def.shape == GeometryDef.Shape.TRIANGLE:
+		# 界(天花板)= 倒三角▽平边贴顶;边(地面)= 正三角△平边落地
+		poly.polygon = PackedVector2Array([
+			Vector2(-hw, -hh), Vector2(hw, -hh), Vector2(0, hh)]) \
+			if pair_half == 0 else PackedVector2Array([
+			Vector2(0, -hh), Vector2(hw, hh), Vector2(-hw, hh)])
+	else:
+		poly.polygon = PackedVector2Array([
+			Vector2(-hw, -hh), Vector2(hw, -hh), Vector2(hw, hh), Vector2(-hw, hh)])
+	_occluder.occluder = poly
+	add_child(_occluder)
+
+
+## 挤压 / 缩小 / 残影都需要逐帧重绘;遮挡体随挤压与进门缩小同步,
+## 死亡淡出时收掉影子(淡走的是整个存在)。
 func _process(_delta: float) -> void:
 	queue_redraw()
+	if _occluder != null:
+		_occluder.scale = Vector2(_squash_x, _squash_y) * shrink
+		_occluder.visible = visible and not dying and shrink > 0.09
 
 
 func _physics_process(delta: float) -> void:
@@ -159,7 +191,6 @@ func _physics_process(delta: float) -> void:
 	if in_exit or dying or Main.I == null:
 		return
 
-	_update_ground_shadow()
 	var vel := velocity
 
 	var move_input := Vector2.ZERO
@@ -717,17 +748,6 @@ func _squash(sx: float, sy: float) -> void:
 	_squash_y = sy
 
 
-## 向下(重力方向)射线找地面,供 _Draw 绘制脚下投影。
-## 查询走自身碰撞位:对我不适用的组件既不碰撞也不投影(视觉即机制)。
-func _update_ground_shadow() -> void:
-	var down := Vector2(0, gravity_dir)
-	var q := PhysicsRayQueryParameters2D.create(
-		position, position + down * 460.0, collision_mask)
-	q.exclude = [get_rid()]
-	var hit := get_world_2d().direct_space_state.intersect_ray(q)
-	_shadow_dist = position.distance_to(hit["position"]) if not hit.is_empty() else INF
-
-
 func die() -> void:
 	if dying or in_exit or arrived:
 		return
@@ -878,19 +898,6 @@ func _draw() -> void:
 		return
 	var size := Vector2(def.size.x * _squash_x, def.size.y * _squash_y) * shrink
 
-	# 脚下硬投影(几何色块,随离地高度缩小)
-	if _shadow_dist < 440.0 and shrink > 0.4:
-		var k := 1.0 - _shadow_dist / 440.0
-		var w := size.x * (0.55 + 0.35 * k)
-		draw_set_transform(Vector2(0, (size.y / 2.0 + 5.0) * gravity_dir), 0.0,
-			Vector2(w, w * 0.26))
-		var shadow_col := Color(0, 0, 0, 0.34 * k)
-		if def.shape == GeometryDef.Shape.BALL:
-			draw_circle(Vector2.ZERO, 1.0, shadow_col)
-		else:
-			draw_rect(Rect2(-1.0, -1.0, 2.0, 2.0), shadow_col)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
 	# 高速残影(构成主义式的速度拖尾)
 	var trail_n := _trail.size()
 	for i in trail_n:
@@ -927,7 +934,7 @@ func _draw_box(size: Vector2) -> void:
 
 	# 精度与对比度:底部暗带(接地体量)+ 左上高光条 + 右缘窄暗边,
 	# 让形体在深色场地上"立"起来(全部硬边色块,无渐变)。
-	# 局内自机不带图案:印刷错位主纹只出现在档案肖像(GeometryPanel.GeoPortrait)。
+	# 局内自机不带图案:印刷错位主纹只出现在档案几何的 aseprite 肖像(assets/archive/geo_*.png)。
 	draw_rect(Rect2(body.position.x, body.end.y - body.size.y * 0.24,
 		body.size.x, body.size.y * 0.24), Color(0, 0, 0, 0.18))
 	draw_rect(Rect2(body.end.x - maxf(2.0, u * 0.045), body.position.y,

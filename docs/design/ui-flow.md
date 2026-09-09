@@ -15,7 +15,7 @@
 | 游戏带 | 10–12 | Hud(10)· TouchControls(12) | 玩法伴随层,只在局内可见 |
 | 菜单带 | 20 | MenuLayer(标题 / 剧目二级 / 剧情回廊 / toast) | **前端根**:MENU 态的宿主 |
 | 流程带 | 30 | PauseMenu(30)· RogueLayer(30) | 子流程覆盖页(暂停 / 肉鸽四页 + 局内状态条) |
-| 面板带 | 35–38 | GeometryPanel(35)· SettingsPanel(38) | **跨父全局面板**(标题菜单与暂停菜单共用) |
+| 面板带 | 35–38 | ArchivePanel 档案几何(35)· SettingsPanel(38) | **跨父全局面板**(标题菜单与暂停菜单共用) |
 | 叙事带 | 45–46+ | StoryLayer(45,对话子层 46+i) | 模态剧情,横切一切(见 §4 规则 5) |
 | 引导带 | 60 | BootIntro | 开屏揭示,最高权 |
 
@@ -23,7 +23,7 @@
 
 1. 数字段即权限域:高带盖低带;新页面**先落既有带**,确需新段先在本表登记。
 2. Overlay 型页面必须实现 `open() / close() / is_open` + 输入独占声明
-   (现状约定:`Main._physics_process` 开头 `geometry_panel.is_open or
+   (现状约定:`Main._physics_process` 开头 `archive_panel.is_open or
    settings_panel.is_open → return`,面板优先吃输入)。
 3. 同带互斥:同一带内同时只应有一个页面可见(现状例外见 §5 隐患 R1)。
 4. Screen 型切换永远经 `Main.State` 流转,禁止页面互相拉起屏幕。
@@ -34,7 +34,7 @@
 |---|---|---|---|
 | **Screen 独占屏** | 一屏一页,切换即换态 | Boot · 标题菜单 · 关卡(PLAYING) | `Main.State`(MENU/PLAYING/PAUSED/TRANSITION/WIN) |
 | **Flow 流程页** | 子流程的步骤页,不改 Main.State | 肉鸽:选主角 / 选路 / 词条 / 结算(+局内状态条) · WIN 画面 | RogueDirector.phase(含 auto 模式回调链) |
-| **Overlay 覆盖层** | 可叠加,带返回语义,不改变所属屏 | PauseMenu · SettingsPanel · GeometryPanel · StoryLayer · Hud 开场卡与旁白(非阻塞) | 打开者 push,Esc/完成 pop |
+| **Overlay 覆盖层** | 可叠加,带返回语义,不改变所属屏 | PauseMenu · SettingsPanel · ArchivePanel · StoryLayer · Hud 开场卡与旁白(非阻塞) | 打开者 push,Esc/完成 pop |
 
 划分判据:独占输入吗(是→Screen)?有父屏幕且可返回吗(是→Overlay)?
 是某个子流程的固定一步吗(是→Flow)?
@@ -46,9 +46,10 @@ BootIntro(60) ── 开屏,点按跳过
 └─→ 标题菜单 MenuLayer(20)═══ Root · Main.State = MENU
 	├─ 剧目行(ACTS,四幕)──二级面板:场次列表 act panel
 	│    └─ 选场 → start_level() ⇒ 关卡 Screen
-	├─ 剧情回廊(档案几何 · 回廊页签)→ 全文本阅读器(同面板内,整段
+	├─ 剧情回顾(档案几何 · 剧情页签)→ 全文本阅读器(同面板内,整段
 	│    文本展开,台词按角色着色;不再走 StoryLayer 对话重演,v0.15)
-	├─ 几何档案 GeometryPanel(35)[C 键 / 菜单入口,翻页]
+	├─ 档案几何 ArchivePanel(35)[C 键 / 菜单入口;四页签:
+	│    几何体档案 / 建筑物图鉴 / 机关图鉴(两态预览 · 动态精灵)/ 剧情回顾,v0.19]
 	├─ 设置 SettingsPanel(38)[S 键 / 菜单入口]
 	├─ 重跑入口(肉鸽)→ RogueLayer 流程(30):
 	│    ├─ 序说 rogue_intro(45,仅首局)
@@ -84,7 +85,7 @@ rogue_intro 与单章剧(肉鸽流程内)/ epilogue(WIN)——统一走
 | StoryLayer | 结束本段对话(剧本内推进) |
 | SettingsPanel(父=暂停)▲ | 回暂停 |
 | SettingsPanel(父=菜单) | 关面板回菜单 |
-| GeometryPanel | 关面板回菜单 |
+| ArchivePanel | 关面板回菜单(阅读器内先回剧情目录) |
 | act panel / story panel | 关二级面板回标题 |
 | 关卡 PLAYING | 暂停(PauseMenu) |
 | PauseMenu ▲ | 继续游戏(现状仅按钮,补键盘路径) |

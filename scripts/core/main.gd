@@ -1,6 +1,6 @@
 class_name Main
 extends Node2D
-## 游戏总控:菜单 ↔ 关卡流转、几何体切换、进度存档、几何档案 / 剧情入口、自动测试钩子。
+## 游戏总控:菜单 ↔ 关卡流转、几何体切换、进度存档、档案几何 / 剧情入口、自动测试钩子。
 
 static var I  # Main 单例
 
@@ -12,7 +12,7 @@ var _level_root: Node2D
 var _hud: Hud
 var _menu: MenuLayer
 var _pause: PauseMenu
-var geometry_panel: GeometryPanel
+var archive_panel: ArchivePanel
 var settings_panel: SettingsPanel
 var touch_controls: TouchControls
 var _save: SaveManager
@@ -25,6 +25,7 @@ var debug_move := Vector2.ZERO
 var debug_jump := false
 ## 镜头变焦覆盖(>0 时镜头锁定该 zoom):网格 LOD / 远景档截图验证用。
 var debug_zoom := 0.0
+var debug_grid := false   # --debug-grid:组件 id·层 标注叠加层(levels.md §8.3)
 var frame_no := 0
 
 var players: Array = []
@@ -98,8 +99,8 @@ func _ready() -> void:
 	_menu = MenuLayer.new()
 	_menu.m = self
 	add_child(_menu)
-	geometry_panel = GeometryPanel.new()
-	add_child(geometry_panel)
+	archive_panel = ArchivePanel.new()
+	add_child(archive_panel)
 	settings_panel = SettingsPanel.new()
 	add_child(settings_panel)
 	_pause = PauseMenu.new()
@@ -140,7 +141,7 @@ func _show_menu() -> void:
 	_clear_level()
 	_hud.visible = false
 	touch_controls.set_in_game(false)
-	geometry_panel.close()
+	archive_panel.close()
 	settings_panel.close()
 	_menu.visible = true
 	_menu.set_unlocked(_unlocked)
@@ -185,7 +186,7 @@ func start_level(index: int, intro := true) -> void:
 
 	_menu.visible = false
 	_menu.close_act_panel()
-	geometry_panel.close()
+	archive_panel.close()
 	settings_panel.close()
 	_hud.visible = true
 	touch_controls.set_in_game(true)
@@ -228,7 +229,7 @@ func start_rogue_fragment(def: LevelDef, elite_title := "") -> void:
 
 	_menu.visible = false
 	_menu.close_act_panel()
-	geometry_panel.close()
+	archive_panel.close()
 	settings_panel.close()
 	_hud.visible = true
 	touch_controls.set_in_game(true)
@@ -355,7 +356,7 @@ func _key_pressed(k: Key) -> bool:
 
 func _physics_process(_delta: float) -> void:
 	frame_no += 1
-	if geometry_panel.is_open or settings_panel.is_open:
+	if archive_panel.is_open or settings_panel.is_open:
 		return
 	if _state == State.PLAYING:
 		_check_deaths()
@@ -380,7 +381,7 @@ func _physics_process(_delta: float) -> void:
 			return
 		# 数字键:二级菜单开着时直达该_choose剧目内的场次;否则快速选剧目
 		# (1=序章开演 → 进二级菜单,2-4 未上演幕同样给出 toast 反馈);
-		# C 打开几何档案;S 打开设置;Esc 关二级菜单 / 退出游戏
+		# C 打开档案几何;S 打开设置;Esc 关二级菜单 / 退出游戏
 		if _menu.is_act_panel_open():
 			for i in 4:
 				if _key_pressed(KEY_1 + i):
@@ -392,7 +393,7 @@ func _physics_process(_delta: float) -> void:
 			if _key_pressed(KEY_1 + i):
 				_menu.try_open_act(i)
 		if _key_pressed(KEY_C):
-			open_geometry_panel()
+			open_archive()
 		if _key_pressed(KEY_S):
 			open_settings()
 		if Input.is_action_just_pressed("ui_cancel"):
@@ -453,8 +454,8 @@ func start_chapter(index: int) -> void:
 	start_level(index)
 
 
-func open_geometry_panel() -> void:
-	geometry_panel.open(_unlocked)
+func open_archive() -> void:
+	archive_panel.open(_unlocked)
 
 
 ## 打开设置面板(标题菜单 / 暂停菜单共用)。
@@ -492,7 +493,7 @@ func quit_to_menu() -> void:
 
 ## 播放剧情:暂停世界,叠放 Konado 对话层;结束后恢复。
 ## kind:"act1" 开演剧(首进第一幕)/ "epilogue" 尾声(通关画面)/
-## "rogue_*" 肉鸽序说与单章。回看走档案几何回廊页的全文本阅读器,不经此处。
+## "rogue_*" 肉鸽序说与单章。回看走档案几何剧情页的全文本阅读器,不经此处。
 func show_story(kind: String) -> void:
 	var story := StoryLayer.new()
 	story.m = self
@@ -771,6 +772,8 @@ func _parse_auto_shot() -> void:
 			_tour_shot = true
 		elif raw == "--laneshot":
 			_lane_shot = true
+		elif raw == "--debug-grid":
+			debug_grid = true
 		elif raw == "--perflog":
 			_perf_log = true
 		elif raw.begins_with("--zoom="):
@@ -1086,23 +1089,39 @@ func _run_lane_shot() -> void:
 	get_tree().quit()
 
 
-## 截取几何档案页(全部页)。
+## 截取档案几何(全部页签,含动态精灵)。
 func _run_panel_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
 	await get_tree().create_timer(0.6).timeout
-	geometry_panel.open(0)
+	archive_panel.open(0)
 	await get_tree().create_timer(0.5).timeout
-	await _shot("panel_char0")
+	await _shot("panel_geo0")
 	for page in range(1, Geometries.ALL.size()):
-		geometry_panel._switch(1)
+		archive_panel._switch(1)
 		await get_tree().create_timer(0.4).timeout
-		await _shot("panel_char%d" % page)
-	# 回廊页签(档案几何整合页)+ 全文本阅读器(序幕)
-	geometry_panel.open(0, "gallery")
+		await _shot("panel_geo%d" % page)
+	# 建筑图鉴 + 机关图鉴(两态静帧 + 动态精灵各拍一帧)
+	archive_panel.open(0, "bld")
+	await get_tree().create_timer(0.5).timeout
+	await _shot("panel_bld0")
+	archive_panel.open(0, "mech")
+	await get_tree().create_timer(0.5).timeout
+	await _shot("panel_mech0")
+	var refs: Dictionary = archive_panel._pages["mech"].get_meta("refs")
+	(refs["toggle"] as Button).button_pressed = true
+	archive_panel._refresh_codex("mech")
+	await get_tree().create_timer(0.4).timeout
+	await _shot("panel_mech_f2")
+	archive_panel._sel["mech"] = ArchiveData.MECHS.size() - 1  # 传送对(规划中·动态)
+	archive_panel._refresh_codex("mech")
+	await get_tree().create_timer(1.2).timeout
+	await _shot("panel_mech_portal")
+	# 剧情目录 + 全文本阅读器(序幕)
+	archive_panel.open(0, "gallery")
 	await get_tree().create_timer(0.5).timeout
 	await _shot("panel_gallery")
-	geometry_panel._open_story(GeometryPanel.STORIES[0])
+	archive_panel._open_story(ArchiveData.STORIES[0])
 	await get_tree().create_timer(0.5).timeout
 	await _shot("panel_story")
 	get_tree().quit()

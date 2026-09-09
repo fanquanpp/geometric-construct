@@ -89,7 +89,7 @@ func _ready() -> void:
 	_coords.anchor_bottom = 1.0
 	_coords.offset_left = 24
 	_coords.offset_top = -44
-	_coords.offset_right = 460
+	_coords.offset_right = 760
 	_coords.offset_bottom = -10
 	root.add_child(_coords)
 
@@ -297,8 +297,28 @@ func _process(_delta: float) -> void:
 		_coords.text = ""
 		return
 	var p: Player = m.players[m._active_slot]
-	_coords.text = "%s · x %.2f, y %.2f" % [p.def.name,
-		p.position.x / Geometries.UNIT_PX, p.position.y / Geometries.UNIT_PX]
+	var zone := ""
+	var sig := ""
+	if m._level_def != null:
+		for z in m._level_def.zones:
+			if (z["rect"] as Rect2).has_point(p.position):
+				zone = str(z["name"]) + " · "
+				break
+	if m._level_root != null and m._level_root.has_meta("items"):
+		for it in m._level_root.get_meta("items"):
+			if not Comp.solid_for(it, p.index):
+				continue
+			var feet: Vector2 = p.position + Vector2(0, p.def.size.y * 0.5 * p.gravity_dir)
+			if not (it["rect"] as Rect2).grow(2.0).has_point(feet):
+				continue
+			var who: Array = it["who"]
+			var names := PackedStringArray()
+			for g in who:
+				names.append(Geometries.ALL[clampi(int(g), 0, Geometries.ALL.size() - 1)].name)
+			sig = " · L%d·%s" % [it["layer"], "共享" if names.is_empty() else "+".join(names)]
+			break
+	_coords.text = "%s · %sx %.2f, y %.2f%s" % [p.def.name, zone,
+		p.position.x / Geometries.UNIT_PX, p.position.y / Geometries.UNIT_PX, sig]
 
 
 ## 按键提示条:按当前关卡的角色能力动态生成。
