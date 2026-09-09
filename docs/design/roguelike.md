@@ -1,6 +1,7 @@
 # 肉鸽系统设计 · ROGUELIKE
 
-> 状态:现行(v0.12 实装 · 技术方案见 `docs/ROADMAP.md` §4;本档是**设计侧**唯一权威)
+> 状态:现行(v0.12 实装 · v0.17 起**入口隐藏 + 关卡片段清空**,随机制完善期之后重新设计;
+> 系统代码 RogueDirector / RunState / RunModifiers / rogue_layer 保留休眠;本档仍是设计侧唯一权威)
 > 一句话:一局制肉鸽 = **单人独立几何体**(选一位主角跑完全程)× 随机路线 ×
 > 局内词条 × 局外解锁;死亡即结算。
 > 实装:`scripts/modes/rogue/`(RunState / RogueDirector)+

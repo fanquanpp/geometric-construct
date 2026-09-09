@@ -907,7 +907,13 @@ func _run_rogue_shot() -> void:
 	rogue_dir.run.add_mod(RunModifiers.ALL[1])
 	rogue_dir.run.add_mod(RunModifiers.ALL[4])
 	get_tree().paused = false
-	start_rogue_fragment(RogueFragments.chapter_routes(0, 1)[0]["def"])
+	# v0.17 片段库已清空:状态条 mock 照常截图,真片段装载跳过
+	var _routes: Array = RogueFragments.chapter_routes(0, 1)
+	if _routes.is_empty():
+		print("ROGUESHOT: 片段库已清空,跳过片段装载")
+		get_tree().quit()
+		return
+	start_rogue_fragment(_routes[0]["def"])
 	rogue_layer.refresh_status(rogue_dir.run)
 	await get_tree().create_timer(0.6).timeout
 	await _shot("rogue_status")
