@@ -29,20 +29,32 @@
 
 内容 = 纯数据,零逻辑改动。这是"更新包"的基本形态:
 
-- **关卡包**:在 `scripts/data/level_data.gd` 追加 `_make(...)`,遵守 `LevelDef`
-  字段;教程关保持占位规范(见 docs/DESIGN.md)。关卡按数组顺序编号,
+- **关卡包**:在 `scripts/data/level_data.gd` 追加关卡(遵守 `LevelDef`
+  字段,分层语义见 levels.md §7.10)。关卡按数组顺序编号,
   **只能在尾部追加**,不得在中间插入(会破坏玩家解锁进度——解锁存的是下标)。
+  当前「关卡设计」幕锁定、唯一在演 = 机制试炼场,演出关卡随机制达标后重启
+  (见 ROADMAP §7)。
 - **几何体包**:在 `scripts/data/geometries.gd` 追加 `_make(...)`,并提供
   `assets/svg/characters/<slug>-flat.svg`。几何体下标同样只能追加
   (`spawns`/存档按位掩码记录)。
+- **档案几何条目**:建筑物 / 机关图鉴条目是纯字典表(`ArchiveData`),
+  新增条目零代码——补 aseprite 源与 PNG(见 §4)后改数据表即可。
 - 新增实体类型(如新机关):`scripts/entities/` 加类,`LevelDef` 加数组字段,
   `level_builder.gd` 加一段实例化——此类变更属于 MINOR。
 
 ## 4. 素材更新
 
-- 全部 SVG 由 `tools/gen_svgs.py` 生成:改素材先改生成器再执行
-  `python tools/gen_svgs.py`,禁止手改 svg 成品(会被覆盖)。
-- SVG 渲染器(ThorVG)**不支持 `<text>`**,文字一律用折线字形。
+素材分两条互不重叠的管线:
+
+- **SVG(UI 图标 / 角色徽标)**:全部由 `tools/gen_svgs.py` 生成——
+  改素材先改生成器再执行 `python tools/gen_svgs.py`,禁止手改 svg 成品
+  (会被覆盖)。SVG 渲染器(ThorVG)**不支持 `<text>`**,文字一律用折线字形。
+- **aseprite 图鉴插图(档案几何专用,v0.19 立)**:源
+  `assets/art/tiles_v2/*.aseprite`(bld_* 建筑 / mech_* 机关 / geo_* 几何肖像,
+  清单见其 README)→ 导出 1x PNG(统一 200×200 画布;动态帧加 `_f2`/`_f3`
+  后缀)到 `assets/archive/`——**唯一入引擎的 aseprite 衍生素材目录**,
+  地图 / 实体不得引用;显示纪律与图层规范见 art-style.md §6.1。
+  地图本身仍**全 `_draw()` 程序化渲染**,本条不构成瓦片管线重启。
 - 素材变更后必须执行 `godot --headless --path . --import` 再测试。
 
 ## 5. 发布前检查单
@@ -50,8 +62,9 @@
 - [ ] `version.gd` 已按第 1 节规则升级
 - [ ] `CHANGELOG.md` 已补条目
 - [ ] 存档迁移:删掉 `user://speed-rouge.cfg` 与保留旧档两种情况下,游戏都能正常启动
-- [ ] `--autotest=0..3` 全部 LEVEL COMPLETE(见 docs/ARCHITECTURE.md 运行命令)
-- [ ] `--menushot / --panelshot / --autoshot=0..3` 截图人工过目(风格锚定不跑偏)
-- [ ] 新增素材已进 `gen_svgs.py`,无游离的手改 svg
+- [ ] `--autotest=0` LEVEL COMPLETE(机制试炼场,当前唯一在演关;见 docs/ARCHITECTURE.md 运行命令)
+- [ ] `--menushot` / `--panelshot`(档案几何全页签)/ `--autoshot=0` / `--tourshot` 截图人工过目(风格锚定不跑偏)
+- [ ] 新增 SVG 已进 `gen_svgs.py`,无游离的手改 svg;新增图鉴插图源在
+      `assets/art/tiles_v2/` 且 PNG 已导出到 `assets/archive/`(地图零贴图纪律不破)
 - [ ] Android:导出段显式 `texture_format/etc2_astc=true`、`rendering/viewport/hdr_2d` 关闭(核对项见 docs/ROADMAP.md §5「Android 性能」)
-- [ ] Android 真机抽查:`--perflog` 基线 + `dumpsys gfxinfo` 帧时间无异常 jank(钩子落地后生效)
+- [ ] Android 真机抽查:`--perflog` 基线 + `dumpsys gfxinfo` 帧时间无异常 jank

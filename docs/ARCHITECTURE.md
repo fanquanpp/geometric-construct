@@ -58,7 +58,7 @@ geometric-construct/
 │   │       └── rogue_director.gd # 流程:选路→片段→奖励→精英考→结算
 │   └── net/    (预留)       # 跨设备联机(设计权威 docs/design/net.md;
 │                            #   里程碑 N0–N3 见 ROADMAP §3)
-├── story/                    # Konado KS 剧本(剧情回廊可回看)
+├── story/                    # Konado KS 剧本(档案几何 · 剧情回顾页签可回看)
 │   ├── prologue.ks          #   序幕(标题菜单)
 │   ├── act1.ks              #   第一幕开演剧(首次进第一幕自动播放)
 │   ├── rogue_intro.ks       #   重跑序说(首次进重跑自动播放)
@@ -174,7 +174,7 @@ A 跳,X 冲刺,LB/RB 切换,Back 召回,Start 暂停。
 # 运行
 godot --path .
 
-# 全关自动通关测试(应看到 4 次 LEVEL COMPLETE 与 end state=WIN)
+# 自动通关测试(机制试炼场单关,应看到 LEVEL COMPLETE 与 end state=WIN)
 godot --path . -- --autotest=0
 
 # 修改 SVG/字体等资源后,先触发导入再截图
