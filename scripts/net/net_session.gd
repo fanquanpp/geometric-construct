@@ -12,7 +12,7 @@ extends Node
 ##   事件   —— 死亡/到站/离站/进门/强化/封印/过关 走可靠 RPC,远端复现
 ##             Main 既有回调;
 ##   movers —— 零带宽:主机随快照携带关卡时钟 t,客机端指数靠拢,动平台
-##             / 限时桥按共享时钟取值(LevelBuilder.Mover/TimedBridge);
+##             / 限时桥按共享时钟取值(Mover/TimedBridge);
 ##   生成   —— 无 MultiplayerSpawner:两端由同一 LevelDef 同步 build
 ##             (版本 + 关卡哈希门禁 D7 保证一致),缺省 spawn 全免。
 ##

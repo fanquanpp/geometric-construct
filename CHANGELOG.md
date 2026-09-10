@@ -3,6 +3,27 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.22.1(2026-09-10)
+
+> **Sprint 1 · LevelBuilder 拆分**(统合重构终案):1497 行装配器拆为
+> 管线 435 行 + 14 个独立文件,零行为变化——拆分前后 `--laneshot`
+> 七分镜像素 diff 与同代码两次运行的时变噪底同量级(高亮呼吸脉冲 /
+> 提示牌随机相位为唯一时变源),gridcheck / layer_check / recalltest /
+> autotest 全绿。
+
+### 变更
+- 机关物独立成文件(scripts/world/mechanisms/:ramp / mover(+slab·track)
+  / timed_bridge / lever_gate / piano_tile / mag_boundary),渲染层
+  (scripts/world/render/:lane_renderer / focus_driver / grid_layer /
+  debug_grid_overlay)与 camera_rig / hint_marker 单列;全部升为全局
+  class_name;构建管线与 draw_focus / BOUNDARY_BIT 等 static 留守
+  level_builder(调用点零改动)。
+- 外部引用同步:player / tests(layer_check·mover_check)的
+  `LevelBuilder.Xxx` 限定名改为全局类名。
+
+### 文档
+- ARCHITECTURE 目录树 world/ 块按新结构重写。
+
 ## v0.22.0(2026-09-10)
 
 > **联机底座收口**(net.md N0–N3 的第一档地基):输入槽抽象实装 +

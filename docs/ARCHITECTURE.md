@@ -37,8 +37,14 @@ geometric-construct/
 │   │   │                    #   双体两半都到站才算满,离门即取消——未满员同样成立)
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)
 │   ├── world/               # 关卡装配与环境
-│   │   ├── level_builder.gd #   LevelDef → 节点树(八层 LaneRenderer/平台/机关物/FocusDriver 高亮/动态构件/门/几何体/相机;
+│   │   ├── level_builder.gd #   LevelDef → 节点树装配编排 + 碰撞签名编译(§7.10);
 │   │   │                    #   渲染唯一管线 = LaneRenderer _draw 程序化绘制(art-style.md §6)
+│   │   ├── render/          #   渲染层:lane_renderer(八层渲染)/ focus_driver(高亮三档)
+│   │   │                    #   / grid_layer(定位网格 LOD)/ debug_grid_overlay(--debug-grid)
+│   │   ├── mechanisms/      #   机关物:ramp / mover(+slab·track) / timed_bridge
+│   │   │                    #   / lever_gate / piano_tile / mag_boundary
+│   │   ├── camera_rig.gd    #   镜头(前瞻偏移/速度变焦/双人动态缩放框)
+│   │   ├── hint_marker.gd   #   教学悬浮提示牌
 │   │   └── backdrop.gd      #   构成主义几何背景(视差)
 │   ├── ui/                  # 全部 UI(CanvasLayer)
 │   │   ├── ui.gd            #   主题工厂:调色板/字体/StyleBox/Theme/文字组件

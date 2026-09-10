@@ -10,7 +10,7 @@ func _initialize() -> void:
 	var level: Node2D = LevelBuilder.build(LevelData.LEVELS[1])
 	root.add_child(level)
 	for n in level.get_children():
-		if n is LevelBuilder.Mover:
+		if n is Mover:
 			_mover = n
 
 

@@ -495,9 +495,9 @@ func _physics_process(delta: float) -> void:
 	for i in get_slide_collision_count():
 		var col := get_slide_collision(i)
 		var obj = col.get_collider()
-		if obj is LevelBuilder.PianoTile and col.get_normal().dot(up_direction) > 0.7:
+		if obj is PianoTile and col.get_normal().dot(up_direction) > 0.7:
 			piano_now.append(obj)
-			(obj as LevelBuilder.PianoTile).strike(self, vel.length())
+			(obj as PianoTile).strike(self, vel.length())
 	for t in _piano_touch:
 		if not piano_now.has(t):
 			t.release(body_key())

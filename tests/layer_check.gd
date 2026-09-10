@@ -26,8 +26,8 @@ var _bottom_probe: CharacterBody2D
 var _bottom_landed := false
 var _who_pass: CharacterBody2D
 var _who_block: CharacterBody2D
-var _gate: LevelBuilder.LeverGate
-var _bridge: LevelBuilder.TimedBridge
+var _gate: LeverGate
+var _bridge: TimedBridge
 var _t_gate := 0.0
 
 
@@ -125,7 +125,7 @@ func _process(delta: float) -> bool:
 			if _mask_of(0) & LevelBuilder.BOUNDARY_BIT == 0:
 				_fail("疾的 mask 应含磁界位")
 			for n in _level.get_children():
-				if n is StaticBody2D and not (n is LevelBuilder.MagBoundary) \
+				if n is StaticBody2D and not (n is MagBoundary) \
 						and (n as StaticBody2D).collision_layer & LevelBuilder.BOUNDARY_BIT != 0:
 					_fail("存在签名碰撞体侵占磁界特权位(位上限守卫失效)")
 			_stage = 1
@@ -177,7 +177,7 @@ func _process(delta: float) -> bool:
 					_fail("faces=bottom 逆未能落在天花板底面")
 				_stage = 5
 				for n in _level.get_children():
-					if n is LevelBuilder.LeverGate:
+					if n is LeverGate:
 						_gate = n
 				if _gate == null:
 					_fail("LeverGate 未实例化")
@@ -201,7 +201,7 @@ func _process(delta: float) -> bool:
 		7:
 			# —— 限时桥:数秒内至少各出现一次实心 / 虚化 ——
 			for n in _level.get_children():
-				if n is LevelBuilder.TimedBridge:
+				if n is TimedBridge:
 					_bridge = n
 			if _bridge == null:
 				_fail("TimedBridge 未实例化")
@@ -265,11 +265,11 @@ func _check_semantics() -> bool:
 	var ids_l4: Array = []
 	var ids_l5: Array = []
 	for nn in _level.get_children():
-		if nn is LevelBuilder.LaneRenderer and (nn as LevelBuilder.LaneRenderer).layer == 4:
-			for it in (nn as LevelBuilder.LaneRenderer).items:
+		if nn is LaneRenderer and (nn as LaneRenderer).layer == 4:
+			for it in (nn as LaneRenderer).items:
 				ids_l4.append(Comp.id_of(it))
-		if nn is LevelBuilder.LaneRenderer and (nn as LevelBuilder.LaneRenderer).layer == 5:
-			for it in (nn as LevelBuilder.LaneRenderer).items:
+		if nn is LaneRenderer and (nn as LaneRenderer).layer == 5:
+			for it in (nn as LaneRenderer).items:
 				ids_l5.append(Comp.id_of(it))
 	if not ids_l4.has(401):
 		_fail("自动编号未按层分段(缺 401)")
@@ -279,11 +279,11 @@ func _check_semantics() -> bool:
 	var zs := {}
 	var focus_found := false
 	for nn in _level.get_children():
-		if nn is LevelBuilder.LaneRenderer:
+		if nn is LaneRenderer:
 			zs[(nn as Node2D).z_index] = true
-		if nn is LevelBuilder.FocusDriver:
+		if nn is FocusDriver:
 			focus_found = true
-			if ((nn as LevelBuilder.FocusDriver).entries as Array).size() != 2:
+			if ((nn as FocusDriver).entries as Array).size() != 2:
 				_fail("FocusDriver 应登记 2 件机关(开关门 + 限时桥)")
 	if not focus_found:
 		_fail("FocusDriver 不在树")

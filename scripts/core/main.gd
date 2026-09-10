@@ -29,7 +29,7 @@ var debug_grid := false   # --debug-grid:组件 id·层 标注叠加层(levels.m
 var frame_no := 0
 
 var players: Array = []
-var camera_rig = null            # LevelBuilder.CameraRig,切换时触发过渡动画
+var camera_rig = null            # CameraRig,切换时触发过渡动画
 var _doors := {}                 # geo_index -> ExitDoor
 var _complete_seq := 0           # 通关链序列号:重开/换关时作废待执行的自动流转
 var _death_hinted := false       # 序章首摔安抚旁白已播(每次启动一次)
