@@ -3,6 +3,32 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.25.0(2026-09-11)
+
+> **Sprint 4 · shot_harness 迁出**(统合重构终案):main.gd 的开发钩子
+> 实现群(--*shot / --autotest / --recalltest / --laneshot / --tourshot
+> 等 19 个执行器,约 470 行)整体迁至 `scripts/dev/shot_harness.gd`,
+> main.gd 1226 → 781 行;导出包剥离 scripts/dev/ —— 分镜钩子不再入包。
+
+### 新增
+- **`scripts/dev/shot_harness.gd`**:开发钩子执行器(RefCounted,经
+  `Main._dev_harness()` 运行时 load 软引用装载;导出包缺文件 → null
+  → 钩子整体关闭,主流程零感知)。旗标解析留守 Main
+  (`_parse_auto_shot`),本文件只管执行;`_run_perf_log` 留守 Main
+  (Android debug 真机自动 PERF 日志不依赖钩子包)。
+- export_presets 两预设 exclude_filter 追加 `scripts/dev/*`。
+
+### 变更
+- main.gd `_parse_auto_shot` 分派尾改为 `h.run_xxx()` 软分派。
+- ARCHITECTURE scripts/ 树登记 dev/;README 版本行同步。
+
+### 验收
+- 五钩子同构抽查:recalltest 三链路 PASS / autotest=0 / --menushot /
+  --panelshot(12 分镜)/ --laneshot(7 分镜)全部零脚本错误出片;
+  像素差异与运行间噪底同量级(桥 / 门周期相位)。
+- 导出 apk 63,656,660 B(较 v0.23 出口 63,668,769 反降,harness 源
+  确认不入包);真机 K60 冒烟:启动 → 进关 → logcat 零错误。
+
 ## v0.24.0(2026-09-11)
 
 > **Sprint 3 · RosterController 抽取**(统合重构终案):名册域

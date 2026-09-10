@@ -17,11 +17,14 @@ geometric-construct/
 │   ├── core/                # 总控与系统层
 │   │   ├── main.gd          #   状态机:MENU/PLAYING/PAUSED/TRANSITION/WIN,
 │   │   │                    #   标准闯关与肉鸽局(rogue 分支)流转、
-│   │   │                    #   输入边沿检测、调试钩子(名册域委托 roster)
+│   │   │                    #   输入边沿检测、调试钩子分派(实现迁 scripts/dev/,
+│   │   │                    #   导出剥离;名册域委托 roster)
 │   │   ├── roster_controller.gd # 名册域:切换/召回/到站/记录点(v0.24.0;
 │   │   │                    #   Main 保留同名委托与数据 getter,调用点零改动)
 │   │   ├── version.gd       #   语义化版本号唯一来源(MAJOR.MINOR.PATCH + CHANNEL)
 │   │   └── save_manager.gd  #   存档读写 + 版本化迁移(SAVE_VERSION)
+│   ├── dev/                 # 开发钩子执行器(shot_harness:--*shot/autotest
+│   │                        #   实现;export_presets 剥离,不入导出包)
 │   ├── data/                # 纯数据层(无节点逻辑,可安全做内容包)
 │   │   ├── geometry_def.gd  #   几何体定义类(含属性规范与方案行生成)
 │   │   ├── geometries.gd    #   几何体数据表(四人,弹性 0.5 / 跃 2.0 固定)
