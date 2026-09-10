@@ -75,34 +75,40 @@ func _pair_total() -> int:
 	return maxi(n, 1)
 
 
+## 到站满员态统一刷新(双体契约:两半都到站才满,characters.md §5)。
+## 只在满员状态翻转时切换演出,避免逐帧重放粒子。
+func _refresh_fill() -> void:
+	var full := _arrived_set.size() >= _pair_total()
+	if full == _filled:
+		return
+	_filled = full
+	_burst.emitting = full
+	_icon.visible = not full
+	_check.visible = full
+
+
 func _on_body_entered(body: Node2D) -> void:
 	if body is Player:
 		var p := body as Player
 		if p.index == geo_index and not p.in_exit and not p.arrived and not p.dying:
 			# 到达待命(勾选):不收取,保持可操控;全员到齐后由 Main 统一吸入
 			_arrived_set[p] = true
-			if not _filled and _arrived_set.size() >= _pair_total():
-				_filled = true
-				_burst.emitting = true
-				_icon.visible = false
-				_check.visible = true
+			_refresh_fill()
 			p.arrive_at(self)
 
 
 func _on_body_exited(body: Node2D) -> void:
-	if not _filled or sealed:
-		return
+	if sealed:
+		return   # 终点已激活:到站状态封印,不可撤销
 	if body is Player:
 		var p := body as Player
 		if p.index == geo_index and p.arrived:
-			# 玩家把到站几何体走出门区:取消到站,可再次进入
+			# 玩家把到站几何体走出门区:取消到站,可再次进入。
+			# 不满员也必须走这里(旧实现提前 return,到站卡死 → 召回被拒、
+			# 死亡判定被跳过,双体单半到站时必现)
 			_arrived_set.erase(p)
-			if _arrived_set.size() < _pair_total():
-				_filled = false
-				_burst.emitting = false
-				_icon.visible = true
-				_check.visible = false
 			p.depart_exit()
+			_refresh_fill()
 
 
 func _process(delta: float) -> void:
@@ -115,10 +121,12 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var r := Rect2(-size / 2.0, size)
 
-	# 门腔(墨色) + 几何体色内框
+	# 门腔(墨色) + 几何体色内框;三档就绪态(FbW 双门等待语义):
+	# 空 = 暗框 / 半就绪(有人到站未满员,如双子单半)= 中亮 / 满员 = 亮框
 	draw_rect(r, Color(Ui.INK, 0.94))
 	var inner := r.grow(-5.0)
-	draw_rect(inner, Color(_color, 0.30 if not _filled else 0.55), false, 2.0)
+	var inner_alpha := 0.55 if _filled else (0.42 if not _arrived_set.is_empty() else 0.30)
+	draw_rect(inner, Color(_color, inner_alpha), false, 2.0)
 
 	# 腔内发光核心:几何方点,呼吸缩放
 	var pulse := 0.5 + 0.5 * sin(_t * 3.0)

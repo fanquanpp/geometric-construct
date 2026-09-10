@@ -80,6 +80,16 @@ static func by_weight() -> Array:
 	return copy
 
 
+## 名册展开后的"体"数(双体每位两具,characters.md §5):
+## 切换可用性 / 切换提示的判断基准 —— 纯双子阵容 roster 只有 1 位,
+## 体数却是 2,按 roster 长度判断会误判为"单人无切换"。
+static func roster_body_total(roster: Array) -> int:
+	var n := 0
+	for i in roster:
+		n += get_def(int(i)).bodies()
+	return n
+
+
 static func _make(index: int, geo_name: String, full_name: String, slug: String,
 		note: String, shape: GeometryDef.Shape, color_hex: String, size: Vector2, gravity_dir: int,
 		base_speed: float, sprint_speed: float, buff_sprint_speed: float,

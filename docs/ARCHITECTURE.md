@@ -30,8 +30,11 @@ geometric-construct/
 │   │   ├── run_modifiers.gd #   肉鸽词条表(通用 + 主角专属,稀有度)
 │   │   └── rogue_fragments.gd # 肉鸽单人片段库(按主角分组的快/稳排法 + 精英考)
 │   ├── entities/            # 场景内实体
-│   │   ├── player.gd        #   几何体控制器:加速度/惯性/二段跳/超载减半/置换/滚动/承载
-│   │   ├── exit_door.gd     #   几何体专属终点门(到站不收取,可撤销;sealed 终点激活)
+│   │   ├── player.gd        #   几何体控制器:加速度/惯性/二段跳/超载减半/置换/滚动/承载;
+│   │   │                    #   body_key() 体身份键(v0.21.0,双体契约 characters.md §5):
+│   │   │                    #   逐体状态(记录点/琴键接触)唯一键,BODY_STRIDE 预留多体
+│   │   ├── exit_door.gd     #   几何体专属终点门(到站不收取,可撤销;sealed 终点激活;
+│   │   │                    #   双体两半都到站才算满,离门即取消——未满员同样成立)
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)
 │   ├── world/               # 关卡装配与环境
 │   │   ├── level_builder.gd #   LevelDef → 节点树(八层 LaneRenderer/平台/机关物/FocusDriver 高亮/动态构件/门/几何体/相机;

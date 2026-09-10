@@ -219,6 +219,13 @@ static func build(def: LevelDef) -> Node2D:
 	# —— 几何体:collision_mask = 适用组合位并集,出生算定一次(§7.6) ——
 	for idx in def.roster:
 		var cd: GeometryDef = Geometries.ALL[idx]
+		# spawns 契约:按下标索引;缺项退回原点并告警(spawns 按下标的坑,
+		# layer_check 教训;数据契约见 levels.md)
+		if idx >= def.spawns.size():
+			push_warning("LevelBuilder: spawns[%d] 缺项(名册 %s)—— 退回原点" %
+				[idx, cd.name])
+			while def.spawns.size() <= idx:
+				def.spawns.append(Vector2.ZERO)
 		if cd.paired:
 			# 双子(伍):界生于天花板(a,重力反向挂顶面),边生于地面(b);
 			# 两顶之间张成磁力边界,横跨上下两层(characters.md §5)
@@ -229,6 +236,10 @@ static func build(def: LevelDef) -> Node2D:
 				pa = def.spawns[idx]["a"]
 				pb = def.spawns[idx]["b"]
 			else:
+				# 数据契约:paired 几何体必须给 {a,b} 双点;裸点 = 界从地面
+				# 兜底点起飞(设计契约见 levels.md,JSON 同构亦支持字典)
+				push_warning("LevelBuilder: 双子(%s)spawns[%d] 未给 {a,b} 字典"
+					% [cd.name, idx] + " —— 界将从地面兜底点起飞")
 				pa = def.spawns[idx]
 				pb = pa + Vector2(90, 0)
 			for half in 2:
@@ -977,6 +988,13 @@ class MagBoundary extends StaticBody2D:
 	func _physics_process(_dt: float) -> void:
 		if a == null or b == null or not is_instance_valid(a) or not is_instance_valid(b):
 			return
+		# 任一半死亡 / 进门:磁界收线(两端并拢 = 不再阻隔任何人),
+		# 防止重生瞬间线横跨全图把无关几何体挡在半路(对象失效防护)
+		if a.dying or b.dying or a.in_exit or b.in_exit:
+			_seg.a = Vector2.ZERO
+			_seg.b = Vector2.ZERO
+			queue_redraw()
+			return
 		_seg.a = to_local(a.boundary_anchor())
 		_seg.b = to_local(b.boundary_anchor())
 		queue_redraw()
@@ -1010,8 +1028,9 @@ class PianoTile extends StaticBody2D:
 	var layer_value := 1
 	var hl_color := Color(0, 0, 0, 0)   # 专属高亮色(FocusDriver 写入,§7.10)
 	var _pulse := 0.0         # 顶缘亮线脉冲剩余时间
-	var _last_played := {}    # player index -> 上次触发时刻(秒)
-	var _in_contact := {}    # player index -> 是否接触中(接触沿判定,v0.16)
+	var _last_played := {}    # 体身份键(body_key)-> 上次触发时刻(秒)
+	var _in_contact := {}    # 体身份键 -> 是否接触中(接触沿判定,v0.16;
+	                         # 双体两半各占一键,互不吞接触沿)
 
 	func _ready() -> void:
 		collision_layer = layer_value
@@ -1030,14 +1049,14 @@ class PianoTile extends StaticBody2D:
 	## 接触沿触发一次;持续接触仅圆的滚奏(移动中)按 0.075s 重触发。
 	func strike(player: Player, impact: float) -> void:
 		var now := Time.get_ticks_msec() / 1000.0
-		var idx := player.index
-		var entering: bool = not _in_contact.get(idx, false)
-		_in_contact[idx] = true
+		var bk: int = player.body_key()
+		var entering: bool = not _in_contact.get(bk, false)
+		_in_contact[bk] = true
 		if not entering:
 			var rolling: bool = player.def.shape == GeometryDef.Shape.BALL 				and absf(player.velocity.x) > 60.0
-			if not rolling or _last_played.has(idx) 					and now - _last_played[idx] < 0.075:
+			if not rolling or _last_played.has(bk) 					and now - _last_played[bk] < 0.075:
 				return
-		_last_played[idx] = now
+		_last_played[bk] = now
 		_pulse = 0.4
 		queue_redraw()
 		_note_burst(player)
@@ -1047,8 +1066,9 @@ class PianoTile extends StaticBody2D:
 			Sfx.play_chord([note, Sfx.note_shift(note, 4)], vol * 0.8)
 
 	## 玩家离砖(由 Player 在接触结束时调用):复位接触沿,下次踩上重新触发。
-	func release(idx: int) -> void:
-		_in_contact[idx] = false
+	## key = 体身份键(body_key):双体两半的接触沿互不牵连。
+	func release(key: int) -> void:
+		_in_contact[key] = false
 
 	## 音符粒子:纸白小方块自砖顶缘散出(audio.md §4 触发演出)。
 	func _note_burst(_player: Player) -> void:

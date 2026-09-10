@@ -80,6 +80,13 @@ var name_half := ""
 var quote_half := ""
 
 
+## 该几何体一位出生几具身体(双体系统契约,characters.md §5):
+## 切换可用性 / 到站满员 / 名册体数统计的唯一权威;未来特殊几何体
+## (多体/共生)只需覆写派生规则,调用点不得再手写 2 或 paired 判断。
+func bodies() -> int:
+	return 2 if paired else 1
+
+
 ## 底部长度 / 高度,单位:格。
 func bottom_units() -> float:
 	return size.x / Geometries.UNIT_PX

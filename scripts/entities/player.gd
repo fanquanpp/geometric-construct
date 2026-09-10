@@ -67,6 +67,18 @@ var input_x := 0.0            # 本帧水平输入(载体侧刚性随动的自�
 ## 双子(伍·界/边,characters.md §5):-1 非双子;0 = 界(上三角) 1 = 边(下三角)
 var pair_half := -1
 var partner: Player = null    # 另一半(双体专用)
+
+
+## 体身份键(双体系统契约,characters.md §5):凡按"个体"区分的状态
+## (记录点 / 琴键接触沿 / 任何逐体登记)一律以此键存取——
+## 双体两半共享 index 但各占一键;普通体 pair_half = -1 退化为 index*STRIDE。
+## STRIDE 是体数跨度:预留每一下标至多 4 具;未来出现更多体的特殊几何体
+## 只需扩此常数,body_key 永不跨下标冲突(Godot 社区多角色架构惯例:
+## 逐体状态用稳定身份键,不用几何体下标)。
+const BODY_STRIDE := 4
+
+func body_key() -> int:
+	return index * BODY_STRIDE + clampi(pair_half, 0, BODY_STRIDE - 1)
 ## 逐帧物理探针(自动化验证用)。
 var debug_probe := false
 var _coyote := 0.0
@@ -478,7 +490,7 @@ func _physics_process(delta: float) -> void:
 			(obj as LevelBuilder.PianoTile).strike(self, vel.length())
 	for t in _piano_touch:
 		if not piano_now.has(t):
-			t.release(index)
+			t.release(body_key())
 	_piano_touch = piano_now
 
 	# ———— 可推动(肆·圆,characters.md §4):地面水平推挤圆球 → 传速滚动。
@@ -804,7 +816,7 @@ func _reset_for_respawn() -> void:
 	_squash_x = 1.0
 	_squash_y = 1.0
 	for t in _piano_touch:
-		t.release(index)
+		t.release(body_key())
 	_piano_touch.clear()
 	_trail.clear()
 

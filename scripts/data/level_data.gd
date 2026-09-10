@@ -207,9 +207,16 @@ static func from_json_text(text: String) -> LevelDef:
 	for e in d.get("exits", []):
 		def.exits.append([int(e[0]), _json_vec2(e[1])])
 	var spawns: Array = []
-	for i in maxi(d.get("spawns", []).size(), def.roster.size()):
-		var sp = d.get("spawns", [])[i] if i < d.get("spawns", []).size() else null
-		spawns.append(_json_vec2(sp) if sp != null else Vector2.ZERO)
+	var raw_spawns: Array = d.get("spawns", [])
+	for i in maxi(raw_spawns.size(), def.roster.size()):
+		var sp = raw_spawns[i] if i < raw_spawns.size() else null
+		if sp == null:
+			spawns.append(Vector2.ZERO)
+		elif sp is Dictionary and sp.has("a"):
+			# 双子(伍)双体出生点 {a: 界(天花), b: 边(地面)} —— JSON 同构
+			spawns.append({"a": _json_vec2(sp["a"]), "b": _json_vec2(sp["b"])})
+		else:
+			spawns.append(_json_vec2(sp))
 	def.spawns = spawns
 	for h in d.get("hints", []):
 		var hd := {"pos": _json_vec2(h.get("pos", {"x": 0, "y": 0})),

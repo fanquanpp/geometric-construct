@@ -175,6 +175,7 @@ func start_level(index: int, intro := true) -> void:
 			push_warning("start_level: --leveljson 打开失败 %s" % _json_level_path)
 	_clear_level()
 	_doors.clear()
+	_checkpoints.clear()   # 换关作废记录点:陈旧坐标会把召回/重生送进异世界
 	_level_root = LevelBuilder.build(_level_def)
 	add_child(_level_root)
 	_collect_players()
@@ -190,8 +191,10 @@ func start_level(index: int, intro := true) -> void:
 	settings_panel.close()
 	_hud.visible = true
 	touch_controls.set_in_game(true)
-	# 单人阵容没有"切换"可言:隐藏左侧切换钮,避免无效按键
-	touch_controls.set_switch_available(_level_def.roster.size() > 1)
+	# 体数 > 1 才有"切换"可言(双子一位两具):按 roster 长度判断会把
+	# 纯双子阵容误判成"单人无切换"(v0.21.0 修正)
+	touch_controls.set_switch_available(
+		Geometries.roster_body_total(_level_def.roster) > 1)
 	_hud.show_win(false)
 	_hud.set_level_info(_level_def)
 	_refresh_roster()
@@ -220,6 +223,7 @@ func start_rogue_fragment(def: LevelDef, elite_title := "") -> void:
 	_level_def = def
 	_clear_level()
 	_doors.clear()
+	_checkpoints.clear()   # 肉鸽片段换载:记录点同样作废
 	_level_root = LevelBuilder.build(def)
 	add_child(_level_root)
 	_collect_players()
@@ -233,9 +237,9 @@ func start_rogue_fragment(def: LevelDef, elite_title := "") -> void:
 	settings_panel.close()
 	_hud.visible = true
 	touch_controls.set_in_game(true)
-	touch_controls.set_switch_available(true)
 	_hud.show_win(false)
 	_hud.set_level_info(def, "考" if not elite_title.is_empty() else "重跑")
+	touch_controls.set_switch_available(Geometries.roster_body_total(def.roster) > 1)
 	_refresh_roster()
 	_hud.fade_from_black()
 	var kicker := "重跑 · 精英考 · %s" % elite_title \
@@ -294,16 +298,11 @@ func _switch_to(slot: int, quiet := false) -> void:
 
 ## 数字键 / 点按 chips 切换(v0.17.2):按几何体下标直达;
 ## 双子(伍)同下标两具 —— 已选中其一时再点即换另一位。
-var _switch_ms := 0
-
-
+## 无全局防抖:chips 侧已有 120ms 防抖 + accept_event 吞模拟鼠标双发,
+## 这里的旧 150ms 防抖会把"快速再点同芯片切另一体"吞掉(切换失灵)。
 func switch_to_geo(index: int) -> void:
 	if _state != State.PLAYING or players.is_empty():
 		return
-	var now := Time.get_ticks_msec()
-	if now - _switch_ms < 150:
-		return   # 触摸 + 模拟鼠标双发防抖
-	_switch_ms = now
 	var candidates: Array = []
 	for i in players.size():
 		var p: Player = players[i]
@@ -368,9 +367,12 @@ func _physics_process(_delta: float) -> void:
 		if Input.is_action_just_pressed("switch_prev"):
 			_cycle_slot(-1)
 
-		for i in mini(players.size(), 5):
-			if _key_pressed(KEY_1 + i) and i < _level_def.roster.size():
-				_switch_to(i)
+		# 数字键按名册位直达(v0.21.0):KEY_1..5 = roster[0..4] 的几何体;
+		# 双子(伍)同位两具 —— 再按同键即换另一半。旧实现映射槽位,
+		# 双体展开后第 6 具(边)永远够不到。
+		for i in mini(_level_def.roster.size(), 5):
+			if _key_pressed(KEY_1 + i):
+				switch_to_geo(int(_level_def.roster[i]))
 
 		if Input.is_action_just_pressed("recall"):
 			recall_active()
@@ -644,11 +646,13 @@ func on_respawn_done() -> void:
 		return
 
 
-var _checkpoints := {}   # geo index -> Vector2 最近记录点(关卡内记录点实体未来接入)
+var _checkpoints := {}   # 体身份键(Player.body_key)-> Vector2 最近记录点
+                         # (关卡内记录点信标实体未来接入;双体两半各占一键)
 
 
 ## 召回(v0.17.3):右上按钮 / R 键 —— 当前受控几何体传送回最近记录点;
-## 尚无关卡内记录点系统,默认回到其出生点。到站 / 进门 / 死亡中不可召回。
+## 尚无关卡内记录点信标,默认回到其出生点。到站 / 进门 / 死亡中不可召回。
+## 双体(伍)两半各回各的出生点 / 各自的记录点(body_key 隔离)。
 func recall_active() -> void:
 	if _state != State.PLAYING or players.is_empty():
 		return
@@ -657,13 +661,14 @@ func recall_active() -> void:
 	var p: Player = players[_active_slot]
 	if p == null or p.in_exit or p.dying or p.arrived:
 		return
-	p.recall_to(_checkpoints.get(p.index, p.spawn_pos))
+	p.recall_to(_checkpoints.get(p.body_key(), p.spawn_pos))
 	Sfx.play("switch")
 
 
-## 记录点登记(关卡内记录点实体未来接入):index = 几何体下标。
-func set_checkpoint(index: int, pos: Vector2) -> void:
-	_checkpoints[index] = pos
+## 记录点登记(关卡内记录点信标实体未来接入):
+## key = Player.body_key() —— 双体两半各占一键,不得用几何体下标。
+func set_checkpoint(body_key: int, pos: Vector2) -> void:
+	_checkpoints[body_key] = pos
 
 
 ## 加速门首次强化时的旁白提示。
@@ -1143,27 +1148,69 @@ func _run_panel_shot() -> void:
 
 
 ## 传送到出口门前,验证门的渲染与过关文字。
-## 召回链路自测(headless):动作注册 → 按下 → 召回至出生点。
+## 召回链路自测(headless):动作注册 → 按下 → 召回至出生点;
+## v0.21.0 扩展双体链路:chips 同位再点即切另一半,界/边各回各的
+## 出生点(body_key 隔离),重力方向随各半基准复位。
 func _run_recall_test() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = ".shots_v17"
 	start_level(0, false)
 	await get_tree().create_timer(0.5).timeout
+	var fails := 0
+	# ① 单体(疾):召回出生点
 	var p: Player = players[_active_slot]
 	p.position = p.spawn_pos + Vector2(600, -300)
+	await _recall_keypress()
+	var ok: bool = p.position.distance_to(p.spawn_pos) < 2.0 and not p.dying
+	print("RECALLTEST 疾 ", "PASS" if ok else "FAIL",
+		" pos=", p.position, " spawn=", p.spawn_pos)
+	if not ok:
+		fails += 1
+	# ② 双子:点伍芯片(= switch_to_geo(4))→ 默认选中界;召回回天花出生点 a
+	switch_to_geo(4)
 	await get_tree().physics_frame
+	var jie: Player = players[_active_slot]
+	var ok_jie: bool = jie.pair_half == 0
+	jie.position = jie.spawn_pos + Vector2(600, 0)
+	await _recall_keypress()
+	ok_jie = ok_jie and jie.position.distance_to(jie.spawn_pos) < 2.0 \
+		and jie.gravity_dir == -1 and not jie.dying
+	print("RECALLTEST 界 ", "PASS" if ok_jie else "FAIL",
+		" pos=", jie.position, " spawn=", jie.spawn_pos,
+		" g=", jie.gravity_dir)
+	if not ok_jie:
+		fails += 1
+	# ③ 同键再点(切换另一半语义)→ 边;召回回地面出生点 b
+	switch_to_geo(4)
 	await get_tree().physics_frame
-	# 走真实输入管线(R 键):action_press 从 idle 协程调用会错过 just_pressed 物理帧比对
+	var bian: Player = players[_active_slot]
+	var ok_bian: bool = bian.pair_half == 1
+	bian.position = bian.spawn_pos + Vector2(-300, 0)
+	await _recall_keypress()
+	ok_bian = ok_bian and bian.position.distance_to(bian.spawn_pos) < 2.0 \
+		and bian.gravity_dir == 1 and not bian.dying
+	print("RECALLTEST 边 ", "PASS" if ok_bian else "FAIL",
+		" pos=", bian.position, " spawn=", bian.spawn_pos,
+		" g=", bian.gravity_dir)
+	if not ok_bian:
+		fails += 1
+	get_tree().quit(0 if fails == 0 else 1)
+
+
+## 真实输入管线按一次 R(动作 recall):idle 协程直调 action_press 会错过
+## just_pressed 的物理帧比对,必须 parse_input_event + 物理帧等待;按后抬起。
+func _recall_keypress() -> void:
 	var ev := InputEventKey.new()
 	ev.physical_keycode = KEY_R
 	ev.pressed = true
 	Input.parse_input_event(ev)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
-	var ok: bool = p.position.distance_to(p.spawn_pos) < 2.0 and not p.dying
-	print("RECALLTEST ", "PASS" if ok else "FAIL",
-		" pos=", p.position, " spawn=", p.spawn_pos)
-	get_tree().quit(0 if ok else 1)
+	var up := InputEventKey.new()
+	up.physical_keycode = KEY_R
+	up.pressed = false
+	Input.parse_input_event(up)
+	await get_tree().physics_frame
 
 
 func _run_door_shot() -> void:

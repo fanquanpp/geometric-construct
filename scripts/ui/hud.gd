@@ -317,7 +317,8 @@ func _process(_delta: float) -> void:
 				names.append(Geometries.ALL[clampi(int(g), 0, Geometries.ALL.size() - 1)].name)
 			sig = " · L%d·%s" % [it["layer"], "共享" if names.is_empty() else "+".join(names)]
 			break
-	_coords.text = "%s · %sx %.2f, y %.2f%s" % [p.def.name, zone,
+	# 坐标读数用 display_name():双体当前半体显示"界"/"边",不再恒显示"界"
+	_coords.text = "%s · %sx %.2f, y %.2f%s" % [p.display_name(), zone,
 		p.position.x / Geometries.UNIT_PX, p.position.y / Geometries.UNIT_PX, sig]
 
 
@@ -370,7 +371,8 @@ func _rebuild_hints(def: LevelDef) -> void:
 		add_key.call("key-shift")
 		add_text.call("冲刺")
 		add_sep.call()
-	if def.roster.size() > 1:
+	# 切换提示按"体数"判断(双子一位两具):纯双子阵容也必须给出切换键
+	if Geometries.roster_body_total(def.roster) > 1:
 		add_key.call("key-tab")
 		add_text.call("切换")
 		add_sep.call()
@@ -457,10 +459,25 @@ func refresh_roster(roster: Array, active: int, exited_mask: int) -> void:
 			Color(Ui.PAPER, 0.95) if is_active else Color(Ui.PAPER, 0.16),
 			2 if is_active else 1, 14, 8))
 		var lab: Label = c["label"]
+		# 双体芯片文字随当前半体切换(v0.21.0):操控界显示"界"、操控边
+		# 显示"边",否则并示"界/边" —— 消除"切了半体 HUD 仍显示界"的错位
+		if c.get("paired", false):
+			lab.text = _pair_chip_text(idx)
 		lab.add_theme_font_override("font", Ui.HEAD if is_active else Ui.BODY)
 		lab.add_theme_color_override("font_color",
 			Color.WHITE if is_active else Color(Ui.PAPER, 0.75))
 		(c["check"] as TextureRect).visible = exited
+
+
+## 双体芯片文字:当前受控者是该 index 的某一半时显示该半代号。
+func _pair_chip_text(idx: int) -> String:
+	var m = Main.I
+	if m != null and m._active_slot >= 0 and m._active_slot < m.players.size():
+		var ap: Player = m.players[m._active_slot]
+		if ap != null and ap.index == idx:
+			return ap.display_name()
+	var cd: GeometryDef = Geometries.ALL[idx]
+	return cd.name + " / " + cd.name_half
 
 
 func _rebuild_chips(roster: Array) -> void:
@@ -495,8 +512,9 @@ func _rebuild_chips(roster: Array) -> void:
 		block.custom_minimum_size = Vector2(20, 20)
 		block.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		hb.add_child(block)
-		var lab := Ui.l(c.name, 20, Ui.BODY, Color(Ui.PAPER, 0.75),
-			HORIZONTAL_ALIGNMENT_LEFT)
+		var lab := Ui.l(
+			c.name + " / " + c.name_half if c.paired else c.name, 20,
+			Ui.BODY, Color(Ui.PAPER, 0.75), HORIZONTAL_ALIGNMENT_LEFT)
 		hb.add_child(lab)
 		var check := TextureRect.new()
 		check.texture = Ui.icon("icons/check-flat.svg")
@@ -508,7 +526,8 @@ func _rebuild_chips(roster: Array) -> void:
 		hb.add_child(check)
 		chip.add_child(hb)
 		_roster.add_child(chip)
-		_chips[i] = {"panel": chip, "label": lab, "check": check}
+		_chips[i] = {"panel": chip, "label": lab, "check": check,
+			"paired": c.paired}
 
 
 func narration(text: String, color: Color, dur := 3.2) -> void:
