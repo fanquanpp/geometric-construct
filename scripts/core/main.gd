@@ -19,7 +19,9 @@ var _save: SaveManager
 var _ambience: Ambience
 var _current := -1
 var _unlocked := 0
-var _active_slot := 0
+var _active_slot: int:
+	get:
+		return roster.active_slot
 var _auto_shot := false
 var debug_move := Vector2.ZERO
 var debug_jump := false
@@ -28,9 +30,14 @@ var debug_zoom := 0.0
 var debug_grid := false   # --debug-grid:组件 id·层 标注叠加层(levels.md §8.3)
 var frame_no := 0
 
-var players: Array = []
+var roster: RosterController  # 名册域控制器(Sprint 3):切换/召回/到站/记录点真身
+var players: Array:
+	get:
+		return roster.players
 var camera_rig = null            # CameraRig,切换时触发过渡动画
-var _doors := {}                 # geo_index -> ExitDoor
+var _doors: Dictionary:
+	get:
+		return roster.doors
 var _complete_seq := 0           # 通关链序列号:重开/换关时作废待执行的自动流转
 var _death_hinted := false       # 序章首摔安抚旁白已播(每次启动一次)
 
@@ -75,6 +82,10 @@ var _auto_test := false
 func _ready() -> void:
 	I = self
 	Ui.init_font()
+	# 名册域控制器最先装配(Sprint 3):切换 / 召回 / 到站 / 记录点真身
+	roster = RosterController.new()
+	roster.main = self
+	add_child(roster)
 	# 移动端传感器横屏(重力感应双横屏;桌面无效果)
 	DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
 	add_child(Backdrop.new())
@@ -251,19 +262,7 @@ func start_rogue_fragment(def: LevelDef, elite_title := "") -> void:
 
 
 func _collect_players() -> void:
-	players.clear()
-	_doors.clear()
-	for n in _level_root.get_children():
-		if n is Player:
-			players.append(n as Player)
-		elif n is ExitDoor:
-			_doors[(n as ExitDoor).geo_index] = n
-	# 双子(伍)两具同 index:按 pair_half 稳定排序,界恒先于边
-	players.sort_custom(func(a: Player, b: Player) -> bool:
-		if a.index != b.index:
-			return a.index < b.index
-		return a.pair_half < b.pair_half)
-	_active_slot = 0
+	roster.collect_players(_level_root)
 
 
 # ———————————————— 几何体切换 ————————————————
@@ -272,17 +271,14 @@ func _collect_players() -> void:
 ## "看谁"。单机 = 受控槽 _active_slot 透传(行为不变);同屏双人(N1)
 ## 将按视口返回各自绑定槽。
 func view_slot() -> int:
-	return _active_slot
+	return roster.view_slot()
 
 
 ## 取景目标集(net.md §3 相机插槽预埋):相机 / HUD 超距指示统一经此取。
 ## 单机 = 受控几何体单元素(与旧 _active_slot 直读逐位同行为,含越界钳制);
 ## 同屏双人(N1)将返回两具绑定体,相机经 targets.size()>1 自动分流双人缩放。
 func camera_targets() -> Array:
-	if players.is_empty():
-		return []
-	var p: Player = players[clampi(_active_slot, 0, players.size() - 1)]
-	return [] if p == null else [p]
+	return roster.camera_targets()
 
 
 ## 槽位输入模式网关(net.md §2 N1 预埋):true 时输入槽 0 改读 p1_*
@@ -297,27 +293,7 @@ func slot_actions() -> bool:
 ## 伍(界/边)是双子:两具身体在切换循环中各占一位、独立操控
 ## (characters.md §5);磁力边界始终张在两顶之间,不随操控改变。
 func _switch_to(slot: int, quiet := false) -> void:
-	if _state != State.PLAYING or players.is_empty():
-		return
-	var n := players.size()
-	# 第一遍:找健康几何体(含已到达待命者);第二遍:接受正在重生中的几何体
-	for pass_i in 2:
-		for k in n:
-			var p: Player = players[(slot + k) % n]
-			var ok: bool = (not p.in_exit and not p.dying) \
-				if pass_i == 0 else (not p.in_exit)
-			if not ok:
-				continue
-			_active_slot = players.find(p)
-			for j in n:
-				players[j].is_active = j == _active_slot
-			_refresh_roster()
-			if not quiet:
-				Sfx.play("switch")
-				_hud.narration(p.quote_text(), p.def.color)
-				if camera_rig != null:
-					camera_rig.on_switch()
-			return
+	roster.switch_to(slot, quiet)
 
 
 ## 数字键 / 点按 chips 切换(v0.17.2):按几何体下标直达;
@@ -325,42 +301,15 @@ func _switch_to(slot: int, quiet := false) -> void:
 ## 无全局防抖:chips 侧已有 120ms 防抖 + accept_event 吞模拟鼠标双发,
 ## 这里的旧 150ms 防抖会把"快速再点同芯片切另一体"吞掉(切换失灵)。
 func switch_to_geo(index: int) -> void:
-	if _state != State.PLAYING or players.is_empty():
-		return
-	var candidates: Array = []
-	for i in players.size():
-		var p: Player = players[i]
-		if p.index == index and not p.in_exit and not p.dying:
-			candidates.append(i)
-	if candidates.is_empty():
-		return
-	var target: int = candidates[0]
-	if candidates.size() > 1 and candidates.has(_active_slot):
-		target = candidates[1] if _active_slot == candidates[0] else candidates[0]
-	_switch_to(target)
+	roster.switch_to_geo(index)
 
 
 func _cycle_slot(dir: int) -> void:
-	if players.is_empty():
-		return
-	_switch_to(((_active_slot + dir) % players.size() + players.size()) % players.size())
+	roster.cycle_slot(dir)
 
 
 func _refresh_roster() -> void:
-	var mask := 0
-	for p in players:
-		if p.in_exit or p.arrived:
-			# 双体(伍):同一 index 的两半全部到站才点亮名册勾选
-			var all_in := true
-			for q in players:
-				if q.index == p.index and not (q.in_exit or q.arrived):
-					all_in = false
-					break
-			if all_in:
-				mask |= 1 << p.index
-	var active: int = players[_active_slot].index \
-		if (_active_slot >= 0 and _active_slot < players.size()) else -1
-	_hud.refresh_roster(_level_def.roster, active, mask)
+	roster.refresh_roster()
 
 
 # ———————————————— 输入 ————————————————
@@ -434,15 +383,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func _check_deaths() -> void:
-	var def: LevelDef = _level_def
-	for p in players:
-		if p.dying or p.in_exit or p.arrived:
-			continue
-		# 死亡判定按各几何体"当前"重力方向(置换会翻转)
-		if p.gravity_dir > 0 and p.position.y > def.kill_y:
-			p.die()
-		elif p.gravity_dir < 0 and p.position.y < def.top_kill_y:
-			p.die()
+	roster.check_deaths(_level_def)
 
 
 func _restart_level() -> void:
@@ -598,101 +539,49 @@ func _ambience_motif(motif_name: String) -> void:
 # ———————————————— 事件回调 ————————————————
 
 func on_player_died(p: Player) -> void:
-	if _auto_test:
-		print("TEST: ", p.def.name, " died/respawned")
-	if _state == State.PLAYING:
-		# v0.17.3:死亡不再自动切换几何体(操控权保持,由玩家手动切换)
-		# 序章首摔安抚(每次启动至多一次):把序幕"重拼"规则说成玩法语言,
-		# 新手第一次摔碎时不至于以为出了错
-		if not _death_hinted and not _rogue and LevelData.act_index_of(_current) <= 0:
-			_death_hinted = true
-			_hud.narration("摔碎不是终结 · 空白处会把你在起点重新拼好", Ui.RED, 3.4)
-	_refresh_roster()
-	# 肉鸽:重拼消耗一段红色刻度,耗尽则本局落幕
-	if _rogue:
-		rogue_dir.on_player_died()
+	roster.on_player_died(p)
 
 
 ## 到达专属终点门:原地待命(仍可被切换控制),全员到齐后终点激活。
 func on_player_arrived(p: Player) -> void:
-	if _auto_test:
-		print("TEST: ", p.def.name, " arrived at exit")
-	if _state != State.PLAYING:
-		return
-	# v0.17.3:到站不再自动切换几何体(玩家手动点 chips / 数字键切换)
-	_refresh_roster()
-	_check_all_arrived()
+	roster.on_player_arrived(p)
 
 
 ## 已到站几何体离开门区:取消到站(终点未激活时随时可以再回来)。
 func on_player_departed(p: Player) -> void:
-	if _auto_test:
-		print("TEST: ", p.def.name, " left the exit")
-	_refresh_roster()
+	roster.on_player_departed(p)
 
 
 func on_player_exited(p: Player) -> void:
-	if _auto_test:
-		print("TEST: ", p.def.name, " entered exit")
-	_refresh_roster()
+	roster.on_player_exited(p)
 
 
 ## 全员到站 → 终点激活:封印各门 → 依次吸入各自的终点门 → 结算。
 func _check_all_arrived() -> void:
-	if _state != State.PLAYING:
-		return
-	for p in players:
-		if not p.arrived:
-			return
-	# 终点激活:封印门区,到达状态不再可撤销
-	for idx in _doors:
-		var d: ExitDoor = _doors[idx]
-		if is_instance_valid(d):
-			d.sealed = true
-	for i in players.size():
-		var p: Player = players[i]
-		var door: ExitDoor = _doors.get(p.index)
-		if door == null:
-			continue
-		var delay := 0.08 + 0.18 * i
-		get_tree().create_timer(delay).timeout.connect(func() -> void:
-			if is_instance_valid(p) and is_instance_valid(door):
-				p.enter_exit(door))
-	get_tree().create_timer(0.08 + 0.18 * players.size() + 0.55).timeout.connect(
-		func() -> void:
-			if _state == State.PLAYING:
-				_check_complete())
+	roster.check_all_arrived()
 
 
 ## 重生完成:v0.17.3 起不再自动切换——死亡几何体保持操控权,原地复活续玩。
 func on_respawn_done() -> void:
-	if _state != State.PLAYING:
-		return
+	roster.on_respawn_done()
 
 
-var _checkpoints := {}   # 体身份键(Player.body_key)-> Vector2 最近记录点
-						 # (关卡内记录点信标实体未来接入;双体两半各占一键)
+var _checkpoints: Dictionary:
+	get:
+		return roster.checkpoints
 
 
 ## 召回(v0.17.3):右上按钮 / R 键 —— 当前受控几何体传送回最近记录点;
 ## 尚无关卡内记录点信标,默认回到其出生点。到站 / 进门 / 死亡中不可召回。
 ## 双体(伍)两半各回各的出生点 / 各自的记录点(body_key 隔离)。
 func recall_active() -> void:
-	if _state != State.PLAYING or players.is_empty():
-		return
-	if _active_slot < 0 or _active_slot >= players.size():
-		return
-	var p: Player = players[_active_slot]
-	if p == null or p.in_exit or p.dying or p.arrived:
-		return
-	p.recall_to(_checkpoints.get(p.body_key(), p.spawn_pos))
-	Sfx.play("switch")
+	roster.recall_active()
 
 
 ## 记录点登记(关卡内记录点信标实体未来接入):
 ## key = Player.body_key() —— 双体两半各占一键,不得用几何体下标。
 func set_checkpoint(body_key: int, pos: Vector2) -> void:
-	_checkpoints[body_key] = pos
+	roster.set_checkpoint(body_key, pos)
 
 
 ## 加速门首次强化时的旁白提示。

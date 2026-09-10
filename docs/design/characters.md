@@ -239,6 +239,10 @@
 > 秒级重试环、Death Squared 连坐死亡(**本作不取**——双体是两位独立的
 > 个体,连坐会让天花 / 地面双线进度互相摧毁)、Thomas Was Alone 的
 > 直达键 + 循环切换编制。
+>
+> 实装位置(v0.24.0 起):名册域逻辑(切换 / 召回 / 到站 / 记录点)在
+> `scripts/core/roster_controller.gd`(RosterController),Main 保留
+> 同名委托与数据 getter;本契约条款仍为唯一真源。
 
 1. **体身份**:一位名册、两具身体。一切按"个体"区分的状态(记录点、
    琴键接触沿、逐体登记)以 `Player.body_key()` 为唯一键

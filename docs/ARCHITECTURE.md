@@ -17,7 +17,9 @@ geometric-construct/
 │   ├── core/                # 总控与系统层
 │   │   ├── main.gd          #   状态机:MENU/PLAYING/PAUSED/TRANSITION/WIN,
 │   │   │                    #   标准闯关与肉鸽局(rogue 分支)流转、
-│   │   │                    #   角色切换、输入边沿检测、调试钩子
+│   │   │                    #   输入边沿检测、调试钩子(名册域委托 roster)
+│   │   ├── roster_controller.gd # 名册域:切换/召回/到站/记录点(v0.24.0;
+│   │   │                    #   Main 保留同名委托与数据 getter,调用点零改动)
 │   │   ├── version.gd       #   语义化版本号唯一来源(MAJOR.MINOR.PATCH + CHANNEL)
 │   │   └── save_manager.gd  #   存档读写 + 版本化迁移(SAVE_VERSION)
 │   ├── data/                # 纯数据层(无节点逻辑,可安全做内容包)

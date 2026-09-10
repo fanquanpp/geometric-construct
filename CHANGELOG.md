@@ -3,6 +3,38 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.24.0(2026-09-11)
+
+> **Sprint 3 · RosterController 抽取**(统合重构终案):名册域
+> (切换 / 召回 / 到站 / 记录点)从 main.gd 收敛为独立控制器,
+> main.gd 1313 → 1226 行;body_key 双体身份契约一字不动,
+> 对外调用点(hud / net / tests / 截图钩子)零改动。
+
+### 新增
+- **`scripts/core/roster_controller.gd`**:名册状态四件(players /
+  active_slot / doors / checkpoints)+ 全部名册职责(收集排序 / 切换 /
+  下标直达 / 循环切换 / 名册刷新 / 死亡巡查 / 死亡·到站·离站·进门
+  回调 / 全员到站 / 重生完成 / 召回 / 记录点登记)的唯一归属地;
+  跨域引用(HUD 旁白 / 相机过渡 / 肉鸽结算 / 自动测试打印)经 main
+  引用转接。
+- InputRouter 审计结论随抽取归档(controller 头注):名册指令入口已
+  收敛 —— 键盘 / chips / 召回按钮 / 测试钩子全部经 Main 同名委托进
+  同一实现;设备级输入分流由 InputSource(net.md §2 N0)承担,
+  不再需要第二个路由层。
+
+### 变更
+- main.gd:名册状态改为 getter 委托(players / _active_slot / _doors /
+  _checkpoints 直读 roster 真身),名册方法改一行委托 —— 全部既有
+  调用点(含 tests/level_shot 的 _switch_to、net_session 的 _doors
+  直读)零改动。
+- characters.md §5 双体契约补实装位置;ARCHITECTURE core/ 块登记
+  roster_controller。
+
+### 验收
+- recalltest 三链路(疾 / 界 / 边)PASS;autotest / laneshot 零脚本
+  错误,像素差异与运行间噪底同量级(桥 / 门周期相位);真机 K60
+  切换链走查 PASS(chips 点按 → 选中框 / 旁白 / 相机 / 读数全联动)。
+
 ## v0.23.0(2026-09-11)
 
 > **Sprint 2 · 机制运行时契约 + gravity 修饰键**(统合重构终案):
