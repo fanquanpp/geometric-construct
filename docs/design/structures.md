@@ -1,6 +1,6 @@
 # 特殊建筑物设计 · STRUCTURES
 
-> 状态:现行(v0.8)· 数据源:`scripts/entities/*`、`scripts/world/level_builder.gd`
+> 状态:现行(v0.23)· 数据源:`scripts/entities/*`、`scripts/world/mechanisms/*`(kind → 脚本注册表 `MechanismRegistry`)
 > 关卡里除地面平台外的一切可交互构件,统一在本文登记;新构件先立项再实现。
 > v0.13 增补:§0 组件语义统一 + §5 新增动态构件(开关门 / 限时桥)。
 
@@ -36,7 +36,7 @@
 | 效果 | 速度上限立即抬升至 `buff_sprint_speed`(永久,死亡重生失效);只加速不影响重量 |
 | 演出 | 首次触发:HUD 旁白 + buff 音效;速度线残影自然出现(>1.2×) |
 
-## 3. 曲面跳跃板 Ramp(`scripts/world/level_builder.gd` Ramp)
+## 3. 曲面跳跃板 Ramp(`scripts/world/mechanisms/ramp.gd`)
 
 | 项 | 内容 |
 |---|---|
@@ -44,7 +44,7 @@
 | 物理 | 逐段实心凸四边形碰撞;圆球贴坡时速度对齐切线,滑出沿切线飞出 |
 | buff | 踩上:速度上限 ×1.5 + 等效重量减半;离开后残留 1.5s;与加速门/冲刺叠乘(取最高再 ×1.5) |
 
-## 4. 移动构件 Mover(v0.8 新增,`level_builder.gd`)
+## 4. 移动构件 Mover(v0.8 新增,`scripts/world/mechanisms/mover.gd`)
 
 | 项 | 内容 |
 |---|---|
@@ -73,8 +73,43 @@
 
 ## 6. 命名与登记规则
 
-- 新构件:实体脚本进 `scripts/entities/`,纯绘制辅助留在 `level_builder.gd` 内部类。
+- 新构件:实体脚本进 `scripts/entities/`,地图机关进 `scripts/world/mechanisms/`
+  并在 `MechanismRegistry` 登记(kind → 脚本一行,structures.md §7);
+  渲染辅助进 `scripts/world/render/`。
 - LevelDef 新字段必须可被 JSON 同构表达(未来数据互通的前置)。
 - 构件外观 = 引擎侧 `_draw()` 程序化绘制(art-style.md §6);
   **零贴图,像素素材不入渲染**。
 - 本文档同步追加"外观 / 物理 / 演出"三行,缺一不收。
+
+## 7. 机制生命周期契约与标签(v0.23.0,统合重构终案 Sprint 2)
+
+一切地图机关(`scripts/world/mechanisms/`)遵循统一契约;注册表
+`MechanismRegistry`(`scripts/world/mechanism_registry.gd`)是 kind → 脚本
+的唯一映射。新机制三步:新建脚本 → 注册表登记一行 → 本文档补条目。
+
+### 生命周期(鸭子类型,机制脚本可选实现)
+
+| 钩子 | 签名 | 语义 |
+|---|---|---|
+| setup | `setup(comp: Dictionary)` | 装配期注入归一化组件字典(新机制优先用它替代多参 setter 链) |
+| tick | `tick(delta: float)` | 帧逻辑;联机时主机权威,客机不跑判定 |
+| net_apply | 按事件定制(范本 `LeverGate.net_apply_open(open)`) | 客机复现主机事件:只播声画,碰撞语义归主机 |
+| teardown | `teardown()` | 关卡卸载前清理(现有机件默认无需) |
+
+纪律:**机制状态变更必须可被 net_apply 复现**(主机权威,net.md §6)
+—— 联机就绪不变式;做不到同步的状态不许进机制。
+
+### 语义标签(Comp.tags 通路)
+
+标签常量登记于 `MechanismTags`(`scripts/data/mechanism_tags.gd`)。
+纪律:**StringName 一旦写入即稳定契约,改名 = 破坏性变更** —— 只加不改
+不删;命名 flat snake_case,不搞层级(2026-09-10 甄别结论:项目规模下
+层级查询零收益)。
+
+| 标签 | 语义 | 现状 |
+|---|---|---|
+| timed / trigger | 周期切换 / 触发型 | 预留(限时桥 / 开关门) |
+| speed_gate / speed_ramp | 加速门 / 曲面加速 | 预留 |
+| pushable / slippery | 可推挤 / 低摩擦 | 预留(推箱 / 滑雪落地时启用) |
+| portal_source / portal_target | 传送对两端 | 预留 |
+| bouncy / conveyor | 高弹性 / 持续水平推力 | 预留 |

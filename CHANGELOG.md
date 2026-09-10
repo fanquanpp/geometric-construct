@@ -3,6 +3,37 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.23.0(2026-09-11)
+
+> **Sprint 2 · 机制运行时契约 + gravity 修饰键**(统合重构终案):
+> 机制拿到统一的生命周期契约与注册表,标签获得稳定命名纪律;
+> 三段重力倍率收编进词条修饰链 —— 滑雪等机制修饰从此有现成插槽。
+> 玩家可见行为零变化(gravity 默认值与原常量逐位一致,modifier_check
+> 机器断言)。
+
+### 新增
+- **机制注册表 `MechanismRegistry`**(scripts/world/mechanism_registry.gd):
+  kind → 脚本唯一映射 + 生命周期契约落档(setup / tick / net_apply /
+  teardown,鸭子类型;联机就绪不变式 = 状态变更必须可被 net_apply
+  复现)。新机制三步:新脚本 → 注册表一行 → structures.md 补条目。
+- **标签常量表 `MechanismTags`**(scripts/data/mechanism_tags.gd):
+  Comp.tags 通路的 StringName 命名登记(timed / trigger / speed_gate /
+  speed_ramp 在用语义 + pushable / slippery / portal 对 / bouncy /
+  conveyor 预留占位);**写入即稳定契约,只加不改不删**。
+- **修饰链校验器 `tests/modifier_check.gd`**:无局直通恒等 / gravity
+  默认值逐位 / add·mul 覆盖 / 标尺钳制 / flag 词条,五组机器断言。
+
+### 变更
+- **gravity 入修饰链**:player 三段重力的 FALL 1.24 / APEX 0.86 从
+  硬编码常量收编为 `RunState.DEFAULTS.gravity_fall_mult /
+  gravity_apex_mult`,读取走 `modified()` —— 滑雪 / 传送门等机制的
+  物理修饰插槽就位;无词条时逐位等值,零行为变化。
+- structures.md:机关脚本路径同步 Sprint 1 拆分(§3/§4/§6/头部),
+  新增 §7「机制生命周期契约与标签」。
+- `tests/mover_check.gd` 修复复活:原硬编码 LEVELS[1]("02 章")自
+  v0.17 关卡清空起即越界失效,改采样现行试炼场 + 入树前剔除教学牌
+  (裸 SceneTree 无 Ui 主题)+ 无 Mover 显式失败(退出码 1)。
+
 ## v0.22.1(2026-09-10)
 
 > **Sprint 1 · LevelBuilder 拆分**(统合重构终案):1497 行装配器拆为

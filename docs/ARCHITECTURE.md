@@ -27,6 +27,7 @@ geometric-construct/
 │   │   ├── level_def.gd     #   关卡定义类(含 movers 移动构件字段)
 │   │   ├── level_data.gd    #   关卡数据表(序章 4 场 + 第一幕 6 场巨构)
 │   │   ├── component.gd     #   地图组件语义组 v3:id/layer(八层定值)/faces/who 集合(levels.md §7.10)
+│   │   ├── mechanism_tags.gd#   机制标签常量表(Comp.tags 通路;StringName 稳定契约,structures.md §7)
 │   │   ├── run_modifiers.gd #   肉鸽词条表(通用 + 主角专属,稀有度)
 │   │   └── rogue_fragments.gd # 肉鸽单人片段库(按主角分组的快/稳排法 + 精英考)
 │   ├── entities/            # 场景内实体
@@ -43,6 +44,7 @@ geometric-construct/
 │   │   │                    #   / grid_layer(定位网格 LOD)/ debug_grid_overlay(--debug-grid)
 │   │   ├── mechanisms/      #   机关物:ramp / mover(+slab·track) / timed_bridge
 │   │   │                    #   / lever_gate / piano_tile / mag_boundary
+│   │   ├── mechanism_registry.gd # 机制注册表(kind → 脚本)+ 生命周期契约落档(structures.md §7)
 │   │   ├── camera_rig.gd    #   镜头(前瞻偏移/速度变焦/双人动态缩放框)
 │   │   ├── hint_marker.gd   #   教学悬浮提示牌
 │   │   └── backdrop.gd      #   构成主义几何背景(视差)

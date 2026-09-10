@@ -18,6 +18,8 @@ const DEFAULTS := {
 	"swap_cooldown": 0.25,    # 置换冷却(秒)
 	"air_jumps": 1.0,         # 空中跳次数(二段跳的第 2 跳)
 	"gate_mult": 1.0,         # 加速门效果倍率
+	"gravity_fall_mult": 1.24,  # 三段重力:下落加重(跳-落曲线不对称,更利落)
+	"gravity_apex_mult": 0.86,  # 三段重力:抛物线顶点轻微悬停(目标感)
 }
 ## 受标尺 0.0–2.0 约束的属性键(数值纪律:覆盖后不突破标尺)。
 const SCALED_KEYS := ["base_speed", "bounce", "jump_units", "weight", "carry",

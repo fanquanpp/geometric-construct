@@ -29,8 +29,8 @@ const CLIMB_SLIDE := 55.0     # 爬墙:只按方向贴墙时的缓降速度
 const RAMP_BUFF_TIME := 1.5   # 曲面 buff:离开曲面后残留时长(秒)
 const RAMP_BOOST := 1.5       # 曲面 buff:速度上限倍率
 const RAMP_WEIGHT_RATIO := 0.5  # 曲面 buff:等效重量倍率(减半)
-const FALL_GRAVITY_MULT := 1.24 # 三段重力:下落加重,跳-落曲线不对称(更利落)
-const APEX_GRAVITY_MULT := 0.86 # 三段重力:抛物线顶点轻微悬停(目标感)
+# 三段重力倍率(FALL 1.24 / APEX 0.86)走 RunState 修饰链
+# (DEFAULTS.gravity_fall_mult / gravity_apex_mult,Sprint 2 入链)
 const APEX_WINDOW := 110.0      # 顶点判定窗口(|vy| 低于此值)
 ## 词条「玻璃疾走」:重落地即碎的冲击阈值。
 const GLASS_IMPACT := 620.0
@@ -244,11 +244,12 @@ func _physics_process(delta: float) -> void:
 	var g_mult := 1.0
 	if vel.y * gravity_dir < 0.0:
 		if absf(vel.y) < APEX_WINDOW:
-			g_mult = APEX_GRAVITY_MULT
+			g_mult = RunState.modified(def, "gravity_apex_mult")
 		vel.y += Geometries.GRAVITY * g_mult * gravity_dir * dt
 	else:
 		var v_n := clampf(absf(vel.y) / MAX_FALL, 0.0, 1.0)   # 归一化落速 v/v∞
-		var a_fall := Geometries.GRAVITY * FALL_GRAVITY_MULT * (1.0 - v_n * v_n)
+		var a_fall := Geometries.GRAVITY \
+			* RunState.modified(def, "gravity_fall_mult") * (1.0 - v_n * v_n)
 		vel.y += a_fall * gravity_dir * dt
 		if absf(vel.y) > MAX_FALL:
 			vel.y = MAX_FALL * signf(vel.y)   # 极端帧安全阀(渐近线之内)
