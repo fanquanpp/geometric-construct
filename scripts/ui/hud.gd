@@ -93,6 +93,24 @@ func _ready() -> void:
 	_coords.offset_bottom = -10
 	root.add_child(_coords)
 
+	# —— 右上第三行:联机徽标(主机/客机 + 房名,net.md §7)——
+	_net_badge = Ui.l("", 13, Ui.HEAD, Ui.ORANGE)
+	_net_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_net_badge.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_net_badge.anchor_left = 1.0
+	_net_badge.anchor_right = 1.0
+	_net_badge.offset_left = -24
+	_net_badge.offset_right = -24
+	_net_badge.offset_top = 92
+	_net_badge.visible = false
+	root.add_child(_net_badge)
+
+	# —— 双人超距方向指示(net.md §3):目标分头跑出画面时指路 ——
+	_edge = EdgeIndicator.new()
+	_edge.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_edge)
+
 	# —— 底部:旁白(触屏时上移,避开轮盘 / 按键) ——
 	_narration = Ui.l("", 22, Ui.HEAD, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, true, 6)
 	_narration.anchor_left = 0.08
@@ -293,11 +311,11 @@ func _process(_delta: float) -> void:
 	if _intro.visible:
 		_layout_intro_skip()
 	var m = Main.I
-	if m == null or m.players.is_empty() or m._active_slot < 0 \
-			or m._active_slot >= m.players.size():
+	if m == null or m.players.is_empty() or m.view_slot() < 0 \
+			or m.view_slot() >= m.players.size():
 		_coords.text = ""
 		return
-	var p: Player = m.players[m._active_slot]
+	var p: Player = m.players[m.view_slot()]
 	var zone := ""
 	var sig := ""
 	if m._level_def != null:
@@ -443,22 +461,42 @@ signal chip_tapped(index: int)
 
 var _chips := {}          # geo_index -> {panel, label, check}
 var _chip_roster: Array = []
+var _net_badge: Label
+var _edge: Control        # 双人超距方向指示(net.md §3)
 
 
-func refresh_roster(roster: Array, active: int, exited_mask: int) -> void:
+## 双人绑定点亮(binds = [{slot: 0/1, geo: 下标}]):各绑定色描边
+## (P1 纸白 / P2 橙),net.md §3「roster chips 双人高亮」。
+## 单机模式 binds 为空 = 原行为不变。
+func refresh_roster(roster: Array, active: int, exited_mask: int,
+		binds: Array = []) -> void:
 	if _chip_roster != roster or _chips.is_empty():
 		_chip_roster = roster.duplicate()
 		_rebuild_chips(roster)
+	var bind_of := {}    # geo_index -> bind 字典
+	for b in binds:
+		bind_of[int(b["geo"])] = b
 	for idx in _chips:
 		var c: Dictionary = _chips[idx]
 		var is_active: bool = idx == active
 		var exited: bool = (exited_mask & (1 << idx)) != 0
 		var panel: PanelContainer = c["panel"]
 		panel.modulate = Color(1, 1, 1, 0.5) if exited else Color.WHITE
+		var border_col: Color = Color(Ui.PAPER, 0.16)
+		var border_w := 1
+		var filled := is_active
+		var bind = bind_of.get(idx)
+		if bind != null:
+			border_col = Color(Ui.PAPER, 0.95) if int(bind["slot"]) == 0 \
+				else Ui.ORANGE
+			border_w = 2
+			filled = true
+		if is_active:
+			border_col = Color(Ui.PAPER, 0.98)
+			border_w = 3 if bind != null else 2
 		panel.add_theme_stylebox_override("panel", Ui.sb(
-			Color(Ui.INK_2, 0.92 if is_active else 0.7), 0,
-			Color(Ui.PAPER, 0.95) if is_active else Color(Ui.PAPER, 0.16),
-			2 if is_active else 1, 14, 8))
+			Color(Ui.INK_2, 0.92 if filled else 0.7),
+			0, border_col, border_w, 14, 8))
 		var lab: Label = c["label"]
 		# 双体芯片文字随当前半体切换(v0.21.0):操控界显示"界"、操控边
 		# 显示"边",否则并示"界/边" —— 消除"切了半体 HUD 仍显示界"的错位
@@ -473,8 +511,8 @@ func refresh_roster(roster: Array, active: int, exited_mask: int) -> void:
 ## 双体芯片文字:当前受控者是该 index 的某一半时显示该半代号。
 func _pair_chip_text(idx: int) -> String:
 	var m = Main.I
-	if m != null and m._active_slot >= 0 and m._active_slot < m.players.size():
-		var ap: Player = m.players[m._active_slot]
+	if m != null and m.view_slot() >= 0 and m.view_slot() < m.players.size():
+		var ap: Player = m.players[m.view_slot()]
 		if ap != null and ap.index == idx:
 			return ap.display_name()
 	var cd: GeometryDef = Geometries.ALL[idx]
@@ -620,3 +658,69 @@ func fade_to_black(dur: float, on_done: Callable) -> void:
 	var tw := create_tween()
 	tw.tween_property(_fade, "color:a", 1.0, dur)
 	tw.tween_callback(on_done)
+
+
+## 联机徽标:主机/客机 + 房名(net.md §7 房间 UI 的局内延伸)。
+func set_net_badge(text: String) -> void:
+	_net_badge.text = text
+	_net_badge.visible = not text.is_empty()
+
+
+## 双人超距方向指示(net.md §3「超距时给方向指示」):
+## 两取景点相距超出屏幕对角 1.4 倍且镜头已拉到下限时,在画面边缘
+## 指向另一方。纯 HUD 演出,不参与机制。
+class EdgeIndicator extends Control:
+	const TRIG_MULT := 1.4
+	var _show := false
+
+	func _process(_delta: float) -> void:
+		var show := false
+		var m = Main.I
+		if m != null and visible:
+			var targets: Array = m.camera_targets()
+			if targets.size() == 2:
+				var cam := get_viewport().get_camera_2d()
+				if cam != null and cam.zoom.x <= 0.64:
+					var d: float = targets[0].position.distance_to(targets[1].position)
+					var diag: float = get_viewport_rect().size.length()
+					if d > diag * TRIG_MULT:
+						show = true
+						set_meta("to", targets[1].position)
+						set_meta("from", targets[0].position)
+		if show != _show:
+			_show = show
+			queue_redraw()
+		elif show:
+			queue_redraw()   # 呼吸脉冲需逐帧
+
+	func _draw() -> void:
+		if not _show or not has_meta("to"):
+			return
+		var cam := get_viewport().get_camera_2d()
+		if cam == null:
+			return
+		var vp := get_viewport_rect().size
+		var to_p: Vector2 = cam.unproject_position(get_meta("to"))
+		var from_p: Vector2 = cam.unproject_position(get_meta("from"))
+		var dir := (to_p - from_p).normalized()
+		if dir == Vector2.ZERO:
+			return
+		# 求射线与画面内缩矩形的交点(边缘留白 46px)
+		var k := INF
+		if dir.x > 0.01:
+			k = minf(k, (vp.x - 46.0 - from_p.x) / dir.x)
+		elif dir.x < -0.01:
+			k = minf(k, (46.0 - from_p.x) / dir.x)
+		if dir.y > 0.01:
+			k = minf(k, (vp.y - 46.0 - from_p.y) / dir.y)
+		elif dir.y < -0.01:
+			k = minf(k, (46.0 - from_p.y) / dir.y)
+		if k == INF or k < 0.0:
+			return
+		var tip := from_p + dir * k
+		var pulse := 0.55 + 0.35 * sin(Time.get_ticks_msec() / 260.0)
+		draw_line(tip - dir * 30.0, tip - dir * 10.0, Color(Ui.RED, 0.9 * pulse), 3.0)
+		draw_line(tip - dir * 10.0, tip + Vector2(-dir.y, dir.x) * 7.0,
+			Color(Ui.RED, 0.9 * pulse), 3.0)
+		draw_line(tip - dir * 10.0, tip + Vector2(dir.y, -dir.x) * 7.0,
+			Color(Ui.RED, 0.9 * pulse), 3.0)

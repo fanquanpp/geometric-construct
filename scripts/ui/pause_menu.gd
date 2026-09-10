@@ -6,6 +6,8 @@ var m: Main
 
 var _root: Control
 var _resume: Button
+var _restart_btn: Button
+var _leave_btn: Button
 var _panel: PanelContainer
 var _dim: ColorRect
 var _open_tween: Tween
@@ -67,10 +69,12 @@ func _ready() -> void:
 
 	_resume = _make_button("继 续", func() -> void: m.resume_game())
 	body.add_child(_resume)
-	body.add_child(_make_button("重 新 开 始", func() -> void: m.restart_from_pause()))
+	_restart_btn = _make_button("重 新 开 始", func() -> void: m.restart_from_pause())
+	body.add_child(_restart_btn)
 	body.add_child(_make_button("档 案 几 何", func() -> void: m.open_archive()))
 	body.add_child(_make_button("设 置", func() -> void: m.open_settings()))
-	body.add_child(_make_button("返 回 标 题", func() -> void: m.quit_to_menu()))
+	_leave_btn = _make_button("返 回 标 题", func() -> void: m.quit_to_menu())
+	body.add_child(_leave_btn)
 	var touch_btn := _make_button("虚拟按键 · 关", func() -> void: pass)
 	touch_btn.pressed.connect(func() -> void: _toggle_touch(touch_btn))
 	body.add_child(touch_btn)
@@ -107,6 +111,13 @@ func _make_button(text: String, on_click: Callable) -> Button:
 
 
 func open() -> void:
+	# 联机角色差异(net.md §5/§7):客机不能重开主机权威的关卡;
+	# 房内返回标题语义 = 离开房间
+	var client := NetSession.I != null and NetSession.I.is_net() \
+		and not NetSession.I.is_host()
+	_restart_btn.visible = not client
+	_leave_btn.text = "离开房间" if NetSession.I != null and NetSession.I.is_net() \
+		else "返 回 标 题"
 	_root.visible = true
 	Sfx.play("pause")
 	_resume.grab_focus()

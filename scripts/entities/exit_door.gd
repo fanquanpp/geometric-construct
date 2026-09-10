@@ -87,7 +87,16 @@ func _refresh_fill() -> void:
 	_check.visible = full
 
 
+## 客机侧门区判定抑制:到站/离站/进门由主机权威触发(事件 RPC 复现),
+## 客机端几何体是被快照搬运的,本地 Area 触发不可信(net.md §6 D2)。
+static func net_suppressed() -> bool:
+	return NetSession.I != null and NetSession.I.is_net() \
+		and not NetSession.I.is_host()
+
+
 func _on_body_entered(body: Node2D) -> void:
+	if net_suppressed():
+		return
 	if body is Player:
 		var p := body as Player
 		if p.index == geo_index and not p.in_exit and not p.arrived and not p.dying:
@@ -98,6 +107,8 @@ func _on_body_entered(body: Node2D) -> void:
 
 
 func _on_body_exited(body: Node2D) -> void:
+	if net_suppressed():
+		return
 	if sealed:
 		return   # 终点已激活:到站状态封印,不可撤销
 	if body is Player:

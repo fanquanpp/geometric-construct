@@ -4,8 +4,8 @@ class_name Version
 ## 纯内容包(关卡/角色数据)升 PATCH。
 
 const MAJOR := 0
-const MINOR := 21
-const PATCH := 2
+const MINOR := 22
+const PATCH := 0
 ## 渠道后缀:正式发布为空串,开发期可用 "-dev"、"-wip"。
 const CHANNEL := ""
 

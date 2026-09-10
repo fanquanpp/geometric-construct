@@ -3,6 +3,40 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.22.0(2026-09-10)
+
+> **联机底座收口**(net.md N0–N3 的第一档地基):输入槽抽象实装 +
+> 会话 / 信标 / 事件通道骨架预埋。本版**无玩家可见变化**——全部联机
+> 代码处于「预埋未接线」态:无 UI 入口、单机不可达,门禁全绿逐位回归。
+
+### 新增
+- **N0 输入槽(net.md §2)**:`InputSource`(LOCAL / REMOTE 双型,
+  move_axis / jump_pressed / jump_held / sprint 四读口)注入 Player,
+  本地默认 `InputSource.local(0)` 单机行为逐位不变;远端驱动体走
+  快照跟随(`remote_driven` 早退 + `_net_follow`),不做本地物理。
+- **scripts/net/ 五件套**:`net_config`(端口 / 魔数 / 版本+关卡哈希
+  门禁 D7)、`peer_factory`(ENet 唯一创建入口)、`lan_beacon`(LAN
+  发现信标)、`net_session`(主机权威会话:20Hz 运动快照 + 事件可靠
+  RPC EV_DIED..EV_LEVER + 共享关卡时钟 D8)、`input_source`(N0)。
+- **权威守卫预埋**:LeverGate 主机判定 + 事件复现(`net_apply_open`),
+  终门 / 加速闸客机抑制,暂停菜单客机隐藏「重新开始」+「离开房间」
+  语义,movers / 限时桥共享时钟取值(单机本地累计不变),HUD 联机
+  徽标位与双人超距方向指示,chips 双人绑定描边接口(单机 binds 空
+  = 原样)。
+- Main 预埋联机插槽访问器:`view_slot()`(取景槽)、
+  `camera_targets()`(取景目标集,单机单元素)、`slot_actions()`
+  (槽位输入模式网关,恒 false);net 侧的 `net_*` 主机回调
+  (net_recall / net_post_setup / net_show_complete 等)随 N1/N2 接线。
+
+### 变更
+- HUD / 相机 / 分镜取景点从 `_active_slot` 直读改为经 `view_slot()`
+  / `camera_targets()` 透传(单机行为不变,N1 视口分区的插槽)。
+- `.gitignore` 收编兄弟仓库 `speed-dev/`(独立 .git,不入本库)。
+
+### 文档
+- net.md 状态行:N0 已实装 + N1/N2 骨架预埋;ARCHITECTURE 目录树
+  scripts/net/ 由「预留」改为实装清单。
+
 ## v0.21.2(2026-09-10)
 
 > **档案几何 · 键位指南页签**(多端一册):把散在 HUD 提示条、设置面板与

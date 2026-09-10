@@ -153,6 +153,7 @@ static func build(def: LevelDef) -> Node2D:
 	for li in def.lever_gates.size():
 		var lg = def.lever_gates[li]
 		var gate := LeverGate.new()
+		gate.gate_id = li
 		var levers: Array = lg.get("levers", [])
 		if levers.is_empty():
 			levers = [lg["lever"]]
@@ -471,7 +472,7 @@ class LaneRenderer extends Node2D:
 		# start_level 装配时序:渲染器 _ready 先于 _collect_players(),
 		# players 可能为空 —— active 一律走与 _process 相同的守卫
 		var m = Main.I
-		var slot: int = m._active_slot if m != null and not m.players.is_empty() else -1
+		var slot: int = m.view_slot() if m != null and not m.players.is_empty() else -1
 		_last_slot = slot
 		var geo := _geo_of(slot)
 		for i in n:
@@ -486,7 +487,6 @@ class LaneRenderer extends Node2D:
 			return -1
 		var p: Player = m.players[slot]
 		return p.index if p != null else -1
-
 	func _target_alpha(i: int, slot: int, geo: int) -> float:
 		var it: Dictionary = items[i]
 		var base: float = Comp.LAYER_BASE_ALPHA.get(layer, 1.0)
@@ -506,7 +506,7 @@ class LaneRenderer extends Node2D:
 
 	func _process(delta: float) -> void:
 		var m = Main.I
-		var slot: int = m._active_slot if m != null and not m.players.is_empty() else -1
+		var slot: int = m.view_slot() if m != null and not m.players.is_empty() else -1
 		var geo := _geo_of(slot)
 		if slot != _last_slot:
 			_last_slot = slot
@@ -718,7 +718,12 @@ class Mover extends AnimatableBody2D:
 		add_child(renderer)
 
 	func _physics_process(delta: float) -> void:
-		_t += delta
+		# 联机(net.md §6):两端按共享关卡时钟取值,零带宽零漂移;
+		# 单机 = 本地累计(行为不变)。
+		if NetSession.I != null and NetSession.I.is_net():
+			_t = NetSession.I._clock
+		else:
+			_t += delta
 		# 余弦往返:s ∈ [0,1],端点速度为零
 		var s := 0.5 - 0.5 * cos(TAU * (_t / maxf(period, 0.1) + phase))
 		position = rect.get_center() + travel * s
@@ -807,7 +812,11 @@ class TimedBridge extends StaticBody2D:
 			_t = _beat_phase
 
 	func _physics_process(delta: float) -> void:
-		_t += delta
+		# 联机同 Mover:共享关卡时钟(单机本地累计不变)
+		if NetSession.I != null and NetSession.I.is_net():
+			_t = NetSession.I._clock
+		else:
+			_t += delta
 		var cycle := maxf(on_time + off_time, 2.0)
 		var t := fposmod(_t + phase, cycle)
 		var solid := t < on_time
@@ -859,6 +868,7 @@ class LeverGate extends Node2D:
 	var door_item := {}      # Comp.normalize 后的门板组件字典
 	var invert := false      # false:踩下 = 门开;true:踩下 = 门关
 	var layer_bit := 1
+	var gate_id := 0         # 关内序号(联机事件按此寻址)
 	var hl_color := Color(0, 0, 0, 0)   # 门板专属高亮色(FocusDriver 写入,§7.10)
 	var _riders: Array = []  # 每只开关上的几何体集合({body: true})
 	var _door_body: StaticBody2D
@@ -866,6 +876,8 @@ class LeverGate extends Node2D:
 	var _open := false
 
 	func _ready() -> void:
+		add_to_group("levergate")
+		set_meta("gate_id", gate_id)
 		var r: Rect2 = door_item["rect"]
 		_door_body = StaticBody2D.new()
 		_door_body.collision_layer = 1 << (layer_bit - 1)
@@ -907,17 +919,29 @@ class LeverGate extends Node2D:
 		return false
 
 	func _on_body_entered(body: Node, i: int) -> void:
+		# 联机:开关判定只在主机算,客机经事件 RPC 复现门态(net.md §6)
+		if NetSession.I != null and NetSession.I.is_net() and not NetSession.I.is_host():
+			return
 		_riders[i][body] = true
 		_apply(not invert)
 		Sfx.play("ui_click")
+		_net_report()
 		queue_redraw()
 
 	func _on_body_exited(body: Node, i: int) -> void:
+		if NetSession.I != null and NetSession.I.is_net() and not NetSession.I.is_host():
+			return
 		_riders[i].erase(body)
 		if not _any_pressed():
 			_apply(_initial_open())
 			Sfx.play("ui_close", -6.0)
+		_net_report()
 		queue_redraw()
+
+	## 主机侧把门态广播给客机(事件可靠通道)。
+	func _net_report() -> void:
+		if NetSession.I != null and NetSession.I.is_host():
+			NetSession.I.emit_event(NetSession.EV_LEVER, gate_id, 1 if _open else 0)
 
 	func _apply(open: bool) -> void:
 		if _open == open:
@@ -927,6 +951,13 @@ class LeverGate extends Node2D:
 		_door_body.set_collision_layer_value(layer_bit, not open)
 		_door_occ.visible = not open   # 门开不投影(与线框虚化语言一致)
 		queue_redraw()
+
+	## 客机端复现门态(事件 RPC 调用):只播声与画,碰撞语义由主机权威。
+	func net_apply_open(open: bool) -> void:
+		if _open == open:
+			return
+		_apply(open)
+		Sfx.play("ui_click" if open else "ui_close", -6.0)
 
 	func _draw() -> void:
 		var r: Rect2 = door_item["rect"]
@@ -1030,11 +1061,12 @@ class PianoTile extends StaticBody2D:
 	var _pulse := 0.0         # 顶缘亮线脉冲剩余时间
 	var _last_played := {}    # 体身份键(body_key)-> 上次触发时刻(秒)
 	var _in_contact := {}    # 体身份键 -> 是否接触中(接触沿判定,v0.16;
-	                         # 双体两半各占一键,互不吞接触沿)
+							 # 双体两半各占一键,互不吞接触沿)
 
 	func _ready() -> void:
 		collision_layer = layer_value
 		collision_mask = 0
+		add_to_group("piano")   # 联机客机端琴键声效自查(Player._piano_cosmetic)
 		var cs := CollisionShape2D.new()
 		cs.position = slab_rect.get_center()
 		var shape := RectangleShape2D.new()
@@ -1148,11 +1180,11 @@ class FocusDriver extends Node2D:
 		for i in _hl.size():
 			_hl[i] = false
 		var m = Main.I
-		_last_slot = m._active_slot if m != null and not m.players.is_empty() else -1
+		_last_slot = m.view_slot() if m != null and not m.players.is_empty() else -1
 
 	func _process(delta: float) -> void:
 		var m = Main.I
-		var slot: int = m._active_slot if m != null and not m.players.is_empty() else -1
+		var slot: int = m.view_slot() if m != null and not m.players.is_empty() else -1
 		var geo := -1
 		if m != null and slot >= 0 and slot < m.players.size() \
 				and m.players[slot] != null:
@@ -1248,13 +1280,12 @@ class CameraRig extends Camera2D:
 		var m = Main.I
 		if m == null or m.players.is_empty():
 			return
-		var slot: int = clampi(m._active_slot, 0, m.players.size() - 1)
-		var p: Player = m.players[slot]
-		if p == null:
+		var targets: Array = m.camera_targets()
+		if targets.is_empty():
 			return
 
 		if not _snapped:
-			position = p.position
+			position = _frame_center(targets)
 			_look = Vector2.ZERO
 			_snapped = true
 			return
@@ -1267,27 +1298,53 @@ class CameraRig extends Camera2D:
 		elif offset != Vector2.ZERO:
 			offset = offset.lerp(Vector2.ZERO, 1.0 - exp(-14.0 * delta))
 
-		# 左右前瞻:随水平速度偏移一点,增加行驶感与手感
-		var look_target := Vector2(
-			clampf(p.velocity.x * 0.24, -130.0, 130.0),
-			clampf(p.velocity.y * 0.06, -40.0, 56.0))
+		# 左右前瞻:随水平速度偏移一点,增加行驶感与手感(多目标取均值)
+		var look_target := Vector2.ZERO
+		var v_avg := Vector2.ZERO
+		var v_main: Player = targets[0]
+		for t in targets:
+			v_avg += t.velocity
+		v_avg /= targets.size()
+		look_target = Vector2(
+			clampf(v_avg.x * 0.24, -130.0, 130.0),
+			clampf(v_avg.y * 0.06, -40.0, 56.0))
 		_look = _look.lerp(look_target, 1.0 - exp(-4.0 * delta))
 
 		# 变焦:速度越快视野略拉远;切换瞬间轻微收缩再回弹
 		# (debug_zoom > 0:调试锁定变焦 —— 网格 LOD / 远景档截图验证用)
-		var speed_mult := absf(p.velocity.x) / Geometries.RUN_SPEED
-		var target_zoom := clampf(1.02 - 0.085 * maxf(speed_mult, p.def.base_speed),
+		var speed_mult := absf(v_avg.x) / Geometries.RUN_SPEED
+		var target_zoom := clampf(1.02 - 0.085 * maxf(speed_mult, v_main.def.base_speed),
 			0.80, 1.0)
 		if _pulse > 0.0:
 			target_zoom *= 0.94
 		if m.debug_zoom > 0.0:
 			zoom = Vector2(m.debug_zoom, m.debug_zoom)
 			target_zoom = m.debug_zoom
+		elif targets.size() > 1:
+			# 双人动态缩放框(net.md §3):夹住所有取景点,超距拉远到下限
+			target_zoom = minf(target_zoom, _fit_zoom(targets))
 
 		var k := 1.0 - exp((-9.0 if _pulse > 0.0 else -5.5) * delta)
-		position = position.lerp(p.position + _look, k)
+		position = position.lerp(_frame_center(targets) + _look, k)
 		var z := lerpf(zoom.x, target_zoom, 1.0 - exp(-3.5 * delta))
 		zoom = Vector2(z, z)
+
+	## 多目标取景中心(单目标 = 其位置)。
+	func _frame_center(targets: Array) -> Vector2:
+		var c := Vector2.ZERO
+		for t in targets:
+			c += t.position
+		return c / targets.size()
+
+	## 双人动态缩放框:视口恰好夹住全部目标(+ 边距),钳在 [0.62, 1]。
+	func _fit_zoom(targets: Array) -> float:
+		var vp := get_viewport_rect().size
+		var c := _frame_center(targets)
+		var need := Vector2.ZERO
+		for t in targets:
+			need = (need.max((t.position - c).abs() * 2.0
+				+ Vector2(320, 260)))
+		return clampf(minf(vp.x / maxf(need.x, 1.0), vp.y / maxf(need.y, 1.0)), 0.62, 1.0)
 
 
 ## 定位网格:1 格 = 100 px 的世界坐标网格,次格细线、5 格主线、
@@ -1426,8 +1483,8 @@ class HintMarker extends Node2D:
 		var alpha := 0.0
 		var m = Main.I
 		if m != null and not m.players.is_empty() \
-				and m._active_slot >= 0 and m._active_slot < m.players.size():
-			var d: float = m.players[m._active_slot].position.distance_to(global_position)
+				and m.view_slot() >= 0 and m.view_slot() < m.players.size():
+			var d: float = m.players[m.view_slot()].position.distance_to(global_position)
 			alpha = clampf(1.35 - d / FADE_RADIUS, 0.0, 1.0)
 		# 呼吸:透明度 ±8% 波动(周期 ≈2.2s,幅度 ≤10%,M5 动效法则)
 		var breathe := 0.92 + 0.08 * sin(_t * 2.85)

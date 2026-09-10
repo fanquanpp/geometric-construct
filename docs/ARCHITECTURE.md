@@ -59,8 +59,13 @@ geometric-construct/
 │   │   └── rogue/            #   肉鸽「重跑 RE-RUN」(单人独立几何体)
 │   │       ├── run_state.gd      # 一局状态 + 属性钩子覆盖层 modified()
 │   │       └── rogue_director.gd # 流程:选路→片段→奖励→精英考→结算
-│   └── net/    (预留)       # 跨设备联机(设计权威 docs/design/net.md;
-│                            #   里程碑 N0–N3 见 ROADMAP §3)
+│   └── net/                  # 跨设备联机底座(设计权威 docs/design/net.md;
+│                             #   里程碑 N0–N3 见 ROADMAP §3;v0.22.0 预埋未接线)
+│       ├── input_source.gd   #   N0 输入槽(LOCAL/REMOTE,Player 四读口注入)
+│       ├── net_session.gd    #   主机权威会话:20Hz 快照 + 事件可靠 RPC + 共享关卡时钟
+│       ├── lan_beacon.gd     #   LAN 发现信标(版本+关卡哈希门禁 D7)
+│       ├── peer_factory.gd   #   ENet peer 唯一创建入口
+│       └── net_config.gd     #   端口/魔数/版本门禁常量
 ├── story/                    # Konado KS 剧本(档案几何 · 剧情回顾页签可回看)
 │   ├── prologue.ks          #   序幕(标题菜单)
 │   ├── act1.ks              #   第一幕开演剧(首次进第一幕自动播放)

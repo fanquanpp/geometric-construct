@@ -64,6 +64,13 @@ var shrink := 1.0
 
 var facing := 1.0
 var input_x := 0.0            # 本帧水平输入(载体侧刚性随动的自走判定)
+## 输入槽注入(net.md §2 N0):null = 本地槽位 0(既有动作,行为零变化);
+## 联机时主机侧客机绑定体 = RemoteInputSource,同屏双人 = 分区 LocalInputSource。
+var input_source: InputSource = null
+## 远端驱动(客机端一切几何体):不做本地物理,跟随主机快照(net.md §6 D2)。
+var remote_driven := false
+var _net_pos := Vector2.ZERO
+var _net_vel := Vector2.ZERO
 ## 双子(伍·界/边,characters.md §5):-1 非双子;0 = 界(上三角) 1 = 边(下三角)
 var pair_half := -1
 var partner: Player = null    # 另一半(双体专用)
@@ -201,6 +208,9 @@ func _process(_delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	var dt := delta
 	if in_exit or dying or Main.I == null:
+		return
+	if remote_driven:
+		_net_follow(dt)
 		return
 
 	var vel := velocity
@@ -736,23 +746,73 @@ func _update_trail(vel: Vector2) -> void:
 		_trail.pop_front()
 
 
-# ———— 输入:统一走 InputMap 动作(键盘 / 手柄 / 虚拟触摸按键共用) ————
+# ———— 输入:统一走输入槽(net.md §2 N0),本地 / 触屏 / 远端共用 ————
+
+func _src() -> InputSource:
+	if input_source == null:
+		input_source = InputSource.local(0)
+	return input_source
+
 
 func _read_move() -> Vector2:
-	return Vector2(Input.get_axis("move_left", "move_right"), 0)
+	return Vector2(_src().move_axis(), 0)
 
 
 func _read_sprint() -> bool:
-	return Input.is_action_pressed("sprint")
+	return _src().sprint()
 
 
 ## 跳跃键按下沿(真实输入)。调试输入由 debug_jump 在外层合成边沿。
 func _read_jump_edge() -> bool:
-	return Input.is_action_just_pressed("jump")
+	return _src().jump_pressed()
 
 
 func _read_jump_held() -> bool:
-	return Input.is_action_pressed("jump")
+	return _src().jump_held()
+
+
+## 主机快照落地(net.md §6):登记目标态,由 _net_follow 逐帧靠拢。
+func net_apply_state(pos: Vector2, vel: Vector2, gdir: int, face: float, flags: int) -> void:
+	_net_pos = pos
+	_net_vel = vel
+	gravity_dir = gdir
+	up_direction = Vector2(0, -gravity_dir)
+	facing = face
+	speed_buffed = speed_buffed or (flags & 1) != 0
+
+
+## 远端驱动跟随:速度外推 + 位置误差指数收敛(20Hz 快照间不跳步),
+## 外观件(滚动角 / 残影 / 琴键接触 / 挤压恢复)照常运行,物理判定全免。
+func _net_follow(dt: float) -> void:
+	position += velocity * dt
+	var err := _net_pos - position
+	position += err * (1.0 - exp(-14.0 * dt))
+	velocity = _net_vel
+	input_x = 0.0
+	if absf(velocity.x) > 12.0:
+		facing = signf(velocity.x)
+	if def.shape == GeometryDef.Shape.BALL:
+		var target := velocity.x / (def.size.x * 0.5) if is_on_floor() else _roll_speed
+		_roll_speed = move_toward(_roll_speed, target, 6.0 * dt)
+		_roll_angle += _roll_speed * dt
+	_piano_cosmetic(dt)
+	_squash_x = move_toward(_squash_x, 1.0, dt * 3.2)
+	_squash_y = move_toward(_squash_y, 1.0, dt * 3.2)
+	_update_trail(velocity)
+
+
+## 客机端琴键声效跟随:主机不转发琴音事件,按几何位置自查接触(audio.md §4)。
+func _piano_cosmetic(_dt: float) -> void:
+	var foot := position + Vector2(0, def.size.y * 0.5 * gravity_dir)
+	var now: Array = []
+	for tile in get_tree().get_nodes_in_group("piano"):
+		if tile.slab_rect.grow(6.0).has_point(foot):
+			now.append(tile)
+			tile.strike(self, velocity.length())
+	for t in _piano_touch:
+		if not now.has(t):
+			t.release(body_key())
+	_piano_touch = now
 
 
 func _squash(sx: float, sy: float) -> void:

@@ -28,9 +28,14 @@ func _ready() -> void:
 
 
 func _on_body_entered(body: Node2D) -> void:
+	# 联机:强化只在主机判定,客机经事件复现(net.md §6)
+	if NetSession.I != null and NetSession.I.is_net() and not NetSession.I.is_host():
+		return
 	if body is Player:
 		_bodies[body] = true
 		(body as Player).apply_speed_gate()
+		if NetSession.I != null and NetSession.I.is_host() and Main.I != null:
+			NetSession.I.emit_event(NetSession.EV_BUFFED, Main.I.players.find(body))
 
 
 func _on_body_exited(body: Node2D) -> void:

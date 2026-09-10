@@ -42,3 +42,6 @@ __pycache__/
 
 # AI 助手项目级 skills(GodotPrompter,机器本地工具配置,不入游戏仓库)
 .zcode/skills/
+
+# ===== 兄弟仓库(独立 .git,不入本库) =====
+speed-dev/
