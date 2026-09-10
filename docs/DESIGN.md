@@ -18,7 +18,7 @@
 | 特殊建筑物(终点门 / 加速门 / 曲面板 / 移动构件 / 动态构件 / 规划) | [design/structures.md](design/structures.md) |
 | 关卡设计(数据规范 / 写作流程 / 动态地图原则 / 八层分层系统 / 网格量尺) | [design/levels.md](design/levels.md) |
 | 多人联机(三档连接 / 输入槽 / LAN 发现 / 同步规格 / 中继服) | [design/net.md](design/net.md) |
-| UI 流与层级(三型页面 / 层带规范 / 导航语义 / 档案几何四页签) | [design/ui-flow.md](design/ui-flow.md) |
+| UI 流与层级(三型页面 / 层带规范 / 导航语义 / 档案几何五页签) | [design/ui-flow.md](design/ui-flow.md) |
 | 动效与特效(程序化管线 / 资产清单 / 转场规范 / 性能预算 / 玩法配合) | [design/motion.md](design/motion.md) |
 | 音频设计(七音符体系 / 音高审计 / BGM 序列器 / 钢琴地板) | [design/audio.md](design/audio.md) |
 | 氛围设计(背景装饰迭代 / 结构剪影 / 构成主义光影) | [design/atmosphere.md](design/atmosphere.md) |

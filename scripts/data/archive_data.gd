@@ -1,9 +1,10 @@
 class_name ArchiveData
 ## 「档案几何」数据表(纯数据层,无节点逻辑 —— 分层规则:data 仅标准库)。
-## 「档案几何」(ArchivePanel)四个页签的全部条目来源:
+## 「档案几何」(ArchivePanel)五个页签的全部条目来源:
 ##   GEOMETRIES 直接引用 Geometries.ALL(几何属性唯一权威在 geometry_def);
 ##   BUILDINGS / MECHS 为土建构件图鉴条目(建筑 = 地形与景观,机关 = 可交互构件);
-##   STORIES 为剧情回顾目录(与 story/*.ks 一一对应)。
+##   STORIES 为剧情回顾目录(与 story/*.ks 一一对应);
+##   CONTROLS 为键位指南(多端一册,与 project.godot 输入映射对表)。
 ## 示例图片:assets/archive/*.png,全部由 aseprite 源(tiles_v2 + geo_*)绘制,
 ## 统一 200×200 画布(= 2×2 格,1 格 = Geometries.UNIT_PX 100px),
 ## 调色板与 art-style.md §1 同源;工程源文件见 assets/art/tiles_v2/README.md。
@@ -126,6 +127,54 @@ const STORIES := [
 		"sub": "一个人滚,更快"},
 	{"kind": "epilogue", "title": "尾声 · 全员归位",
 		"sub": "四门归位之后的回声,与第五个形状的刻度"},
+]
+
+
+# ———— 键位指南(多端一册;「键位」页签数据源,与 project.godot 输入映射对表) ————
+# kind: pc / pad = 键帽芯片行,touch = 触屏操作行(无键帽,note 即操作说明)。
+# 行字段:act 动作名;keys 键帽文本列表(touch 区留空);note 补充说明(可省)。
+const CONTROLS := [
+	{"title": "PC · 键鼠", "en": "KEYBOARD & MOUSE", "kind": "pc", "rows": [
+		{"act": "移动", "keys": ["A", "D", "←", "→"]},
+		{"act": "跳跃 · 二段跳", "keys": ["空格", "W", "↑"],
+			"note": "轻点小跳 · 长按全高;落地重置次数"},
+		{"act": "置换(逆)", "keys": ["空格"], "note": "「逆」专属 —— 在上下平台间翻转"},
+		{"act": "冲刺", "keys": ["Shift"], "note": "按住;部分几何体专属"},
+		{"act": "贴墙攀爬", "keys": ["空格"], "note": "贴墙时按住即沿墙上爬(有高度预算)"},
+		{"act": "切换几何体", "keys": ["Tab", "E", "Q"],
+			"note": "Tab / E 下一个 · Q 上一个 · Shift+Tab 反向;双子再按同键换另一半"},
+		{"act": "名册直达", "keys": ["1–5"], "note": "按名册位直达;双子同位再按换另一半"},
+		{"act": "召回", "keys": ["R"], "note": "全员收回记录点(无记录点回出生点)"},
+		{"act": "暂停", "keys": ["Esc", "P"]},
+	]},
+	{"title": "手柄", "en": "GAMEPAD", "kind": "pad", "rows": [
+		{"act": "移动", "keys": ["左摇杆", "十字键"]},
+		{"act": "跳跃 · 二段跳", "keys": ["A 键"], "note": "轻点小跳 · 长按全高"},
+		{"act": "置换(逆)", "keys": ["A 键"]},
+		{"act": "冲刺", "keys": ["X 键"], "note": "按住"},
+		{"act": "切换几何体", "keys": ["RB", "LB"], "note": "RB 下一个 · LB 上一个"},
+		{"act": "召回", "keys": ["Back"], "note": "即 View / Select 键"},
+		{"act": "暂停", "keys": ["Start"]},
+	]},
+	{"title": "触屏 · 安卓", "en": "TOUCH", "kind": "touch", "rows": [
+		{"act": "移动",
+			"note": "左下轮盘 —— 轻推慢走、松手即停;拉满自动加速。浮动布局:左半屏按住就地展开"},
+		{"act": "跳跃 · 二段跳",
+			"note": "点按 = 小跳 · 长按 = 全高。固定布局:轮盘触控区外全屏可点;浮动布局:右半屏点按"},
+		{"act": "置换(逆)", "note": "点按屏幕,与跳跃同键"},
+		{"act": "贴墙攀爬", "note": "贴墙时长按屏幕"},
+		{"act": "切换几何体", "note": "点按左上队伍芯片;双子同位芯片再点一次换另一半"},
+		{"act": "召回 / 暂停", "note": "右上按钮行;结算页右上为「重来 / 暂停」"},
+		{"act": "轮盘布局", "note": "设置面板可切换 固定 / 浮动,提示文案随模式自适应"},
+	]},
+	{"title": "界面导航", "en": "INTERFACE", "kind": "ui", "rows": [
+		{"act": "主菜单", "keys": ["1–4"], "note": "选剧目;C 档案几何 · S 设置 · Esc 退出"},
+		{"act": "档案几何", "keys": ["A", "D", "滚轮"],
+			"note": "切条目 / 翻页;1–9 直达;Q / E 或 LB / RB 切页;Esc / B 返回"},
+		{"act": "剧情阅读器", "keys": ["滚轮"], "note": "或上下拖动翻阅;Esc 返回目录"},
+		{"act": "暂停菜单", "keys": ["Esc", "P"], "note": "恢复游戏"},
+		{"act": "触屏", "note": "全部界面均有可点按的按钮 / 页签,无键盘依赖"},
+	]},
 ]
 
 

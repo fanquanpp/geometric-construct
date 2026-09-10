@@ -268,6 +268,30 @@ func _collect_players() -> void:
 
 # ———————————————— 几何体切换 ————————————————
 
+## 当前取景槽位(net.md §3 视口插槽预埋):HUD / 相机 / 分镜统一经此取
+## "看谁"。单机 = 受控槽 _active_slot 透传(行为不变);同屏双人(N1)
+## 将按视口返回各自绑定槽。
+func view_slot() -> int:
+	return _active_slot
+
+
+## 取景目标集(net.md §3 相机插槽预埋):相机 / HUD 超距指示统一经此取。
+## 单机 = 受控几何体单元素(与旧 _active_slot 直读逐位同行为,含越界钳制);
+## 同屏双人(N1)将返回两具绑定体,相机经 targets.size()>1 自动分流双人缩放。
+func camera_targets() -> Array:
+	if players.is_empty():
+		return []
+	var p: Player = players[clampi(_active_slot, 0, players.size() - 1)]
+	return [] if p == null else [p]
+
+
+## 槽位输入模式网关(net.md §2 N1 预埋):true 时输入槽 0 改读 p1_*
+## 分区动作(键盘分区让位 P2)。同屏双人未接线前恒 false = 单机输入
+## 路径逐位不变。
+func slot_actions() -> bool:
+	return false
+
+
 ## 切换操控:已到达终点门待命的几何体仍然可以被选中(终点激活前不收取);
 ## 只跳过正在进门 / 死亡中的几何体。
 ## 伍(界/边)是双子:两具身体在切换循环中各占一位、独立操控
@@ -647,7 +671,7 @@ func on_respawn_done() -> void:
 
 
 var _checkpoints := {}   # 体身份键(Player.body_key)-> Vector2 最近记录点
-                         # (关卡内记录点信标实体未来接入;双体两半各占一键)
+						 # (关卡内记录点信标实体未来接入;双体两半各占一键)
 
 
 ## 召回(v0.17.3):右上按钮 / R 键 —— 当前受控几何体传送回最近记录点;
@@ -1106,21 +1130,31 @@ func _run_panel_shot() -> void:
 		archive_panel._switch(1)
 		await get_tree().create_timer(0.4).timeout
 		await _shot("panel_geo%d" % page)
-	# 页签真实点击回归:模拟触屏(走鼠标模拟管线)点「机关」页签中心。
-	# v0.19.1 教训:整页容器默认 STOP 吞点击,页签真机失灵——open() 直调
-	# 的分镜测不出这类 GUI 管线问题,必须走一次真实输入。
-	var tab_center := Vector2(1050, 66)
-	var tap := InputEventScreenTouch.new()
-	tap.position = tab_center
-	tap.pressed = true
-	Input.parse_input_event(tap)
+	# 页签真实点击回归:走 GUI 输入管线点「键位」页签中心(v0.19.1 教训:
+	# 整页容器默认 STOP 吞点击,open() 直调的分镜测不出,必须过一遍真实
+	# 输入命中测试)。v0.21.2 教训:① 坐标不能硬编码 —— 真机 = (设计+160)×2、
+	# 桌面窗口 = 设计×1.25,两套映射只对一端成立,改取按钮全局矩形中心;
+	# ② 桌面窗口里 parse_input_event(ScreenTouch) 不产生 GUI 点击(旧分镜
+	# 从未点中过)—— 桌面必须注入鼠标事件并做画布→窗口变换,真机触屏
+	# 回归仍由 adb 点按另行走查。
+	var keys_tab: Button = archive_panel._tab_btns["keys"]
+	var tab_center: Vector2 = keys_tab.get_global_rect().get_center()
+	var to_window: Transform2D = get_viewport().get_final_transform()
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = to_window * tab_center
+	Input.parse_input_event(press)
 	await get_tree().process_frame
-	var lift := InputEventScreenTouch.new()
-	lift.position = tab_center
-	lift.pressed = false
-	Input.parse_input_event(lift)
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.pressed = false
+	release.position = to_window * tab_center
+	Input.parse_input_event(release)
 	await get_tree().create_timer(0.4).timeout
-	await _shot("panel_tab_tap")
+	# 一镜两用:既证明真实输入点按成功落在「键位」页签上(点击回归),
+	# 也是键位指南页的常规分镜(文档名沿用 panel_keys 惯例)。
+	await _shot("panel_keys")
 	# 建筑图鉴 + 机关图鉴(两态静帧 + 动态精灵各拍一帧)
 	archive_panel.open(0, "bld")
 	await get_tree().create_timer(0.5).timeout

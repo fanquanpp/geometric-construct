@@ -25,7 +25,7 @@
 | [characters.md](characters.md) | 几何体角色设计:属性标尺与利用率 / 手感公约数 / 射程矩阵 / 承载链 / 角色×系统配合矩阵 / 档案台词 / 新角色立项约束 | 策划 / 程序 |
 | [structures.md](structures.md) | 特殊建筑物:终点门 / 加速门 / 曲面跳跃板 / 移动构件 / 动态构件(开关门·限时桥)/ 规划中构件 | 关卡 / 程序 |
 | [levels.md](levels.md) | 关卡设计:关卡数据规范 / 教学节奏 / 现有关卡解析 / 组件语义与八层分层系统(layer·faces·who 集合·组件 id)/ 坐标化辅助设计(Dimensions 量尺·zones·gridcheck) | 关卡策划 |
-| [ui-flow.md](ui-flow.md) | UI 流与层级:三型页面(Screen/Flow/Overlay)/ 层带规范 / Esc 与输入路由 / 档案几何(四页签全面档案库) | UI / 程序 |
+| [ui-flow.md](ui-flow.md) | UI 流与层级:三型页面(Screen/Flow/Overlay)/ 层带规范 / Esc 与输入路由 / 档案几何(五页签全面档案库) | UI / 程序 |
 | [motion.md](motion.md) | 动效与特效:程序化管线四件套 / 动效资产清单 / 页面转场规范 / 性能预算 / 玩法系统配合矩阵 | UI / 程序 / 美术 |
 | [audio.md](audio.md) | 音频设计:七音符体系(C 大调统一音高)/ 现有音效音高审计 / BGM 序列器 / 钢琴地板砖(玩家即配乐)/ 配合与兼容 | 音频 / 程序 |
 | [atmosphere.md](atmosphere.md) | 氛围设计:背景装饰视差分层 / 结构剪影层(背景讲关卡的剧)/ 构成主义光影(天光带 / 区域明度 / 章节光色) | 美术 / 关卡 / 程序 |

@@ -46,7 +46,7 @@ geometric-construct/
 │   │   ├── hud.gd           #   游戏 HUD(队伍 chips/章节徽章/按键提示/开场/结算)
 │   │   ├── menu_layer.gd    #   标题菜单(动态标题 TitleMark + 分层入场演出)
 │   │   ├── title_mark.gd    #   动态标题:逐字落位 / 呼吸浮动 / 印刷错位 / 红块节拍
-│   │   ├── archive_panel.gd #   档案几何(四页签:几何体 / 建筑物 / 机关 / 剧情;
+│   │   ├── archive_panel.gd #   档案几何(五页签:几何体 / 建筑物 / 机关 / 键位 / 剧情;
 │   │   │                    #   图鉴主从页 + 机关两态预览;数据只读自 ArchiveData)
 │   │   ├── touch_controls.gd#   虚拟按键层(TouchScreenButton → InputMap 动作)
 │   │   ├── story_layer.gd   #   Konado 剧情层(story/*.ks,播放时暂停世界)
