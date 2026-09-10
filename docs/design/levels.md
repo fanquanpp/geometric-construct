@@ -13,6 +13,9 @@
   与 TWA 的"相机四锁即世界"一致;平台摆出界没有意义。
 - `LevelDef` 字段:`name / focus / intro / size / roster / platforms / ramps / gates /
   exits / spawns / movers(v0.8)`。全部可 JSON 同构(数据互通的前置条件)。
+- **契约版本(v0.26.0)**:JSON 根对象可带 `"version": 1`;读取侧接受
+  缺失(视作 1)与当前版本,**更高版本拒绝装载**(构建期断言)——
+  未来契约不得静默误读(与 speed-dev data-contract.md §5 对齐)。
 - **spawns 契约(v0.21.0)**:按下标对应 roster;**paired 几何体(伍)必须给
   `{a: 界出生点(天花), b: 边出生点(地面)}` 字典**,缺字典 = 构建期告警、
   界从地面兜底点(a + 90px)起飞;JSON 同构同样接受字典形态

@@ -397,7 +397,7 @@ static func _mask_for(combos: Dictionary, geo_index: int) -> int:
 
 
 ## 平台碰撞形状:full 四面实心;top / bottom 为单向面
-## (bottom 旋转 PI,阻挡面朝下 —— 逆的重力天花板)。
+## (bottom 阻挡面朝下 —— 逆的重力天花板)。
 static func _rect_shape(r: Rect2, faces: String) -> CollisionShape2D:
 	var cs := CollisionShape2D.new()
 	cs.position = r.get_center()
@@ -408,7 +408,9 @@ static func _rect_shape(r: Rect2, faces: String) -> CollisionShape2D:
 		cs.one_way_collision = true
 		cs.one_way_collision_margin = 8.0
 		if faces == Comp.FACES_BOTTOM:
-			cs.rotation = PI
+			# 4.7 起直接设方向免旋转节点(GH-104736):旧实现 rotation = PI,
+			# 等价于把局部阻挡方向 (0,1) 旋到 (0,-1),行为逐位一致
+			cs.one_way_collision_direction = Vector2(0, -1)
 	return cs
 
 

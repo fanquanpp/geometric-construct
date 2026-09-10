@@ -3,6 +3,26 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.26.0(2026-09-11)
+
+> **Sprint 5 · P2 捆绑**(统合重构终案收官):one-way 方向向量简化 +
+> 关卡 JSON 契约版本化。mods 类型化按 2026-09-10 甄别裁决继续缓议
+> (现数据表驱动无行为收益,随下次肉鸽词条扩展顺手做)。
+
+### 变更
+- **one-way 方向简化(GH-104736,4.7 新特性)**:`_rect_shape` 的
+  bottom 单向面以 `one_way_collision_direction = (0,-1)` 替代
+  `rotation = PI`(局部阻挡方向旋转向量守恒,行为逐位一致);
+  layer_check 底面物理探针 PASS(逆的天花板)。
+- **关卡 JSON 契约版本**:`from_json_text` 校验根对象 `version`——
+  缺失(视作 1)与 1 收,> 1 构建期断言拒绝(未来契约不静默误读);
+  `levels/pair_trial.json` 补 `version: 1` 实证;levels.md §0 与
+  speed-dev data-contract.md §5 双落档(读取侧语义两仓对齐)。
+
+### 验收
+- gridcheck(12 WARN 基线)/ layer_check(bottom 探针)/ recalltest
+  三链路全绿;--leveljson+trialshot 走 version 字段路径零错误出片。
+
 ## v0.25.0(2026-09-11)
 
 > **Sprint 4 · shot_harness 迁出**(统合重构终案):main.gd 的开发钩子

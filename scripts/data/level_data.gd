@@ -172,6 +172,12 @@ static func _static_init() -> void:
 	LEVELS[0].kill_y = 2400.0
 
 
+## 关卡 JSON 契约版本(levels.md §0 / speed-dev data-contract.md §5):
+## 读取侧接受缺失(视作 1)与当前版本;更高版本拒绝装载(未来契约
+## 不得静默误读)。
+const SCHEMA_VERSION := 1
+
+
 ## JSON 同构装载(关卡编辑器数据契约前置,editor-plan.md §2 / levels.md §0):
 ## 字段名与 LevelDef 一致;Vector2 = {x,y}、Rect2 = {x,y,w,h};
 ## 组件 = 语义字典(rect 必填,id/layer/faces/who/tags 可选);spawns 缺项 = Vector2.ZERO。
@@ -179,6 +185,9 @@ static func from_json_text(text: String) -> LevelDef:
 	var parsed = JSON.parse_string(text)
 	assert(parsed is Dictionary, "level json: root must be object")
 	var d: Dictionary = parsed
+	assert(int(d.get("version", 1)) <= SCHEMA_VERSION,
+		"level json: schema v%d 高于本构建支持的 v%d,拒绝装载" %
+		[int(d.get("version", 1)), SCHEMA_VERSION])
 	var def := LevelDef.new()
 	def.name = str(d.get("name", ""))
 	def.focus = int(d.get("focus", 0))
