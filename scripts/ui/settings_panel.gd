@@ -105,7 +105,7 @@ func _ready() -> void:
 
 	_vib_btn = _toggle_btn()
 	_vib_btn.toggled.connect(func(on: bool) -> void:
-		Sfx.play("ui_click")
+		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 		SettingsManager.set_vibration(on))
 	body.add_child(_row("触感反馈(按键轻震)", _vib_btn))
 
@@ -125,7 +125,7 @@ func _ready() -> void:
 		body.add_child(_row("窗口分辨率", res_row))
 		_fs_btn = _toggle_btn()
 		_fs_btn.toggled.connect(func(on: bool) -> void:
-			Sfx.play("ui_click")
+			Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 			SettingsManager.set_fullscreen(on))
 		body.add_child(_row("全屏", _fs_btn))
 		body.add_child(_rule())
@@ -136,7 +136,6 @@ func _ready() -> void:
 	_sfx_slider.value_changed.connect(func(v: float) -> void:
 		SettingsManager.set_sfx_volume(v)
 		_sfx_value.text = "%d%%" % roundi(v * 100.0))
-	_sfx_slider.drag_ended.connect(func(_changed: bool) -> void: Sfx.play("ui_click"))
 	_sfx_value = Ui.l("100%", 15, Ui.HEAD, Ui.PAPER)
 	_sfx_value.custom_minimum_size = Vector2(56, 0)
 	_sfx_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -158,7 +157,7 @@ func _ready() -> void:
 	var dbg_btn := _toggle_btn()
 	dbg_btn.button_pressed = Main.I != null and Main.I.debug_grid
 	dbg_btn.toggled.connect(func(on: bool) -> void:
-		Sfx.play("ui_click")
+		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 		if Main.I != null:
 			Main.I.debug_grid = on)
 	body.add_child(_row("调试网格(组件 id·层 标注)", dbg_btn))
@@ -180,10 +179,7 @@ func _ready() -> void:
 	close_btn.custom_minimum_size = Vector2(120, 42)
 	close_btn.add_theme_font_size_override("font_size", 16)
 	Ui.wire_button(close_btn)
-	close_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	close_btn.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		close())
+	close_btn.pressed.connect(func() -> void: close())
 	foot.add_child(close_btn)
 	body.add_child(foot)
 
@@ -238,13 +234,13 @@ func _mode_btn(text: String) -> Button:
 	b.custom_minimum_size = Vector2(132, 40)
 	b.add_theme_font_size_override("font_size", 15)
 	Ui.wire_button(b)
-	b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 	return b
 
 
 func _toggle_btn() -> CheckButton:
 	var c := CheckButton.new()
 	c.toggle_mode = true
+	Ui.wire_button(c, "")   # 开关音按新状态在 toggled 自播(on/off 两音)
 	return c
 
 
@@ -265,6 +261,8 @@ func _volume_slider() -> HSlider:
 	fill.content_margin_bottom = 3
 	s.add_theme_stylebox_override("grabber_area", fill)
 	s.add_theme_stylebox_override("grabber_area_highlight", fill)
+	# 棘轮刻度音:拖动跨过步进格即一声轻咔哒(音量滑杆拖动本身即试听)
+	s.value_changed.connect(func(_v: float) -> void: Sfx.play("ui_slider"))
 	return s
 
 
@@ -316,7 +314,6 @@ func _sync_from_settings() -> void:
 
 
 func _set_resolution(v: Vector2i) -> void:
-	Sfx.play("ui_click")
 	SettingsManager.set_resolution(v)
 	for i in _res_btns.size():
 		var r: Vector2i = SettingsManager.RESOLUTIONS[i]
@@ -324,7 +321,6 @@ func _set_resolution(v: Vector2i) -> void:
 
 
 func _set_wheel(mode: String) -> void:
-	Sfx.play("ui_click")
 	SettingsManager.set_wheel_mode(mode)
 	# 按钮状态由 toggle_mode 自动跟随;另一颗按钮取消按下态
 	_wheel_fixed_btn.set_pressed_no_signal(mode == SettingsManager.WHEEL_FIXED)

@@ -1,6 +1,7 @@
 # 音频设计 · AUDIO
 
-> 状态:现行(v0.12 实装 · 2026-09-09 七音符体系与钢琴地板规划定稿)
+> 状态:现行(v0.12 实装 · 2026-09-09 七音符体系与钢琴地板规划定稿;
+> v0.21.1 增补 UI 音效语义与统一接线纪律,见 §2.1)
 > 现状权威:`scripts/fx/sfx.gd`(合成引擎 / 音效库)+ `scripts/fx/ambience.gd`(垫乐),
 > 实现约定见 `docs/ARCHITECTURE.md`「音频架构」;本文是**设计权威**——
 > 音高体系、音效与 BGM 的音乐规范、钢琴地板构件、与各系统的配合与后续兼容。
@@ -61,6 +62,23 @@
 - **音级语义化**(映射背后的规则,新音效必守):上行 = 获得/强化(jump/buff/
   complete),下行 = 失去/坠落(die/bounce/restart),同音重复 = 持续状态
   (climb),三度跳进 = 二段/强化,五度 = 确认/开启(ui_open = C4→G4)。
+
+### 2.1 UI 音效语义与统一接线(v0.21.1 增补)
+
+- **新增四条 UI 语义音**(全部调内,零音频文件):
+  `ui_back` = F4→C4 下行四度(返回是轻导航,与 ui_close 的"关面板收束"
+  区分);`ui_toggle_on` = C4→E4 上行三度 / `ui_toggle_off` = E4→C4 下行
+  (开关状态可"听"出来,CheckButton 类专用);`ui_slider` = F6 极短棘轮
+  咔哒(HSlider 按步进逐格触发,拖动即反馈)。
+- **接线纪律**:按钮声音统一由 `Ui.wire_button(b, click_sfx := "ui_click")`
+  接线——悬停 ui_hover、点击 click_sfx 自动连接;传其他音名换语义音
+  ("ui_back" / "ui_error" / "ui_page"),传 "" 退出自动点击音,给处理器
+  自播条件音效的按钮(解锁判定 → error、词条兑换 → buff、开关 →
+  on/off 双音)。**禁止在 wire 之外手接 ui_hover / ui_click**(会双响)。
+  新按钮一律走 wire_button,天然有声;条件音效按钮显式传 ""。
+- **分工表**:click = 通用确认 / hover = 悬停提示 / open·close = 面板
+  开关 / page = 翻页·切条目·切页签 / back = 返回上级 / toggle_on·off =
+  状态开关 / slider = 滑杆刻度 / error = 拒绝·未解锁。
 
 ## 3. BGM:七音符序列器(Ambience 升级规划)
 

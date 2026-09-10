@@ -125,7 +125,12 @@ A 跳,X 冲刺,LB/RB 切换,Back 召回,Start 暂停。
 - **音效清单**:玩法 jump / jump2 / bounce / land / climb / swap / buff /
   die / enter / arrive / switch;流程 complete(过关号角)/ fanfare(通关)/
   start / restart / pause / resume;UI ui_click / ui_hover / ui_open /
-  ui_close / ui_page / ui_error;剧情 story_next。
+  ui_close / ui_page / ui_error / ui_back / ui_toggle_on / ui_toggle_off /
+  ui_slider;剧情 story_next。
+- **按钮音效接线纪律(v0.21.1)**:按钮的声音统一由 `Ui.wire_button(b,
+  click_sfx := "ui_click")` 接线(悬停 ui_hover + 点击 click_sfx 自动连接);
+  传 "" 退出自动点击音,用于处理器自播条件音效的按钮(解锁判定 /
+  buff / 开关 on·off 双音)。禁止在 wire 之外手接 ui_hover / ui_click(双响)。
 - 新增音效:在 `init()` 追加 `_reg(...)`,层规格字段见 `_layer` 注释。
 
 ## 分层规则

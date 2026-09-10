@@ -167,8 +167,7 @@ func _card_shell(min_size: Vector2) -> Button:
 	b.add_theme_stylebox_override("hover", Ui.sb(Color(Ui.INK_3, 0.99), 0, Ui.RED, 2, 0, 0))
 	b.add_theme_stylebox_override("pressed",
 		Ui.sb(Color(Ui.INK_3, 0.99), 0, Color(Ui.RED, 0.6), 2, 0, 0))
-	Ui.wire_button(b)
-	b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
+	Ui.wire_button(b, "")   # 卡片自管语义音:选体/选路 = click,词条 = buff
 	return b
 
 
@@ -213,7 +212,6 @@ func show_geo_pick(on_pick: Callable, shards: int, runs: int) -> void:
 		c.add_child(quote)
 		b.add_child(c)
 		b.pressed.connect(func() -> void:
-			Sfx.play("ui_click")
 			_close_overlay()
 			on_pick.call(idx))
 		row.add_child(b)
@@ -257,7 +255,6 @@ func show_route(chapter: int, options: Array, on_pick: Callable) -> void:
 		b.add_child(tag)
 		b.add_child(c)
 		b.pressed.connect(func() -> void:
-			Sfx.play("ui_click")
 			_close_overlay()
 			on_pick.call(opt))
 		row.add_child(b)
@@ -379,9 +376,7 @@ func show_settle(summary: Dictionary, on_done: Callable) -> void:
 	done.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	done.add_theme_font_size_override("font_size", 16)
 	Ui.wire_button(done)
-	done.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 	done.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
 		_close_overlay()
 		on_done.call())
 	col.add_child(done)
@@ -420,7 +415,7 @@ func _build_shop(summary: Dictionary) -> Control:
 		btn.text = "兑换 %d" % m["cost"]
 		btn.custom_minimum_size = Vector2(96, 30)
 		btn.add_theme_font_size_override("font_size", 13)
-		Ui.wire_button(btn)
+		Ui.wire_button(btn, "")   # 兑换成功给 buff、残段不足给拒绝音,条件自管
 		btn.pressed.connect(func() -> void:
 			if save.unlock_mod(m["id"]):
 				Sfx.play("buff")
@@ -444,7 +439,7 @@ func _build_shop(summary: Dictionary) -> Control:
 		btn.text = "兑换 %d" % SaveManager.STYLE_COST
 		btn.custom_minimum_size = Vector2(96, 30)
 		btn.add_theme_font_size_override("font_size", 13)
-		Ui.wire_button(btn)
+		Ui.wire_button(btn, "")   # 兑换成功给 buff、残段不足给拒绝音,条件自管
 		btn.pressed.connect(func() -> void:
 			if save.unlock_style():
 				Sfx.play("buff")

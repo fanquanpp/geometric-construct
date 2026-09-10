@@ -322,10 +322,8 @@ func _build_codex_page(kind: String) -> void:
 			Ui.sb(Color(Ui.INK_3, 1.0), 0, Color(Ui.PAPER, 0.55), 1, 10, 6))
 		b.icon = _codex_icon(str(e["id"]))
 		b.pivot_offset = Vector2(12, 26)
-		Ui.wire_button(b)
-		b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
+		Ui.wire_button(b, "ui_page")
 		b.pressed.connect(func() -> void:
-			Sfx.play("ui_page")
 			_sel[kind] = i
 			_refresh_codex(kind))
 		list.add_child(b)
@@ -389,10 +387,9 @@ func _build_codex_page(kind: String) -> void:
 		state_toggle.toggle_mode = true
 		state_toggle.custom_minimum_size = Vector2(132, 34)
 		state_toggle.add_theme_font_size_override("font_size", 13)
-		Ui.wire_button(state_toggle)
-		state_toggle.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-		state_toggle.toggled.connect(func(_on: bool) -> void:
-			Sfx.play("ui_click")
+		Ui.wire_button(state_toggle, "")   # 开关音按新状态在 toggled 自播
+		state_toggle.toggled.connect(func(on: bool) -> void:
+			Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 			_refresh_codex(kind))
 		under.add_child(state_toggle)
 
@@ -609,10 +606,7 @@ func _build_gallery_page() -> void:
 		b.text = s["title"]
 		b.pivot_offset = Vector2(12, 26)
 		Ui.wire_button(b)
-		b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-		b.pressed.connect(func() -> void:
-			Sfx.play("ui_click")
-			_open_story(s))
+		b.pressed.connect(func() -> void: _open_story(s))
 		grid.add_child(b)
 		var sub := Ui.l(s["sub"], 10, Ui.LIGHT, Ui.DIM)
 		sub.position = Vector2(46, 38)
@@ -698,21 +692,15 @@ func _build_story_page() -> void:
 	back.text = "« 返回目录"
 	back.custom_minimum_size = Vector2(150, 40)
 	back.add_theme_font_size_override("font_size", 15)
-	Ui.wire_button(back)
-	back.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	back.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		_switch_tab("gallery"))
+	Ui.wire_button(back, "")   # 返回目录即翻页,ui_page 由 _switch_tab 播
+	back.pressed.connect(func() -> void: _switch_tab("gallery"))
 	foot_row.add_child(back)
 	var close_btn := Button.new()
 	close_btn.text = "关 闭"
 	close_btn.custom_minimum_size = Vector2(110, 40)
 	close_btn.add_theme_font_size_override("font_size", 15)
 	Ui.wire_button(close_btn)
-	close_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	close_btn.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		close())
+	close_btn.pressed.connect(func() -> void: close())
 	foot_row.add_child(close_btn)
 	foot.add_child(foot_row)
 	vb.add_child(foot)
@@ -822,21 +810,17 @@ func _tab_button(text: String) -> Button:
 	b.custom_minimum_size = Vector2(104, 44)
 	b.add_theme_font_size_override("font_size", 16)
 	b.add_theme_font_override("font", Ui.HEAD)
-	Ui.wire_button(b)
-	b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
+	Ui.wire_button(b, "")   # 页签切换音在 _switch_tab 播(键盘 Q/E 切页同源)
 	return b
 
 
-func _nav_button(text: String, on_click: Callable) -> Button:
+func _nav_button(text: String, on_click: Callable, click_sfx := "ui_click") -> Button:
 	var b := Button.new()
 	b.text = text
 	b.custom_minimum_size = Vector2(0, 42)
 	b.add_theme_font_size_override("font_size", 15)
-	Ui.wire_button(b)
-	b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	b.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		on_click.call())
+	Ui.wire_button(b, click_sfx)
+	b.pressed.connect(func() -> void: on_click.call())
 	return b
 
 
@@ -865,8 +849,8 @@ func _build_footer() -> void:
 	_btn_row.offset_bottom = -24
 	_btn_row.alignment = BoxContainer.ALIGNMENT_END
 	_content.add_child(_btn_row)
-	_btn_row.add_child(_nav_button("◀ 上一页", func() -> void: _switch(-1)))
-	_btn_row.add_child(_nav_button("下一页 ▶", func() -> void: _switch(1)))
+	_btn_row.add_child(_nav_button("◀ 上一页", func() -> void: _switch(-1), ""))
+	_btn_row.add_child(_nav_button("下一页 ▶", func() -> void: _switch(1), ""))
 	_btn_row.add_child(_nav_button("关 闭", func() -> void: close()))
 
 

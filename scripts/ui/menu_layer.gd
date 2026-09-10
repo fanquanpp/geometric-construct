@@ -137,9 +137,8 @@ func _ready() -> void:
 		b.add_theme_constant_override("h_separation", 14)
 		b.icon = Ui.icon(act["icon"])
 		b.pivot_offset = Vector2(12, 31)
-		Ui.wire_button(b)
+		Ui.wire_button(b, "")   # try_open_act 自播 click / error(开演与拒绝语义不同)
 		b.pressed.connect(func() -> void: try_open_act(idx))
-		b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 		b.focus_entered.connect(func() -> void: show_act_hint(idx))
 		list.add_child(b)
 		_act_btns.append(b)
@@ -166,10 +165,7 @@ func _ready() -> void:
 	start.add_theme_stylebox_override("pressed", Ui.sb(Color(Ui.RED, 0.65), 0, null, 0, 20, 8))
 	start.add_theme_color_override("font_color", Color.WHITE)
 	Ui.wire_button(start)
-	start.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	start.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		m.start_game())
+	start.pressed.connect(func() -> void: m.start_game())
 	content.add_child(start)
 
 	# 肉鸽(重跑)入口移除 —— 机制完善期之后随关卡设计一起回归(v0.17.3)
@@ -189,10 +185,7 @@ func _ready() -> void:
 	rogue_btn.add_theme_stylebox_override("pressed",
 		Ui.sb(Color(Ui.RED, 0.68), 0, Ui.RED, 1, 20, 8))
 	Ui.wire_button(rogue_btn)
-	rogue_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	rogue_btn.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		m.start_rogue_run())
+	rogue_btn.pressed.connect(func() -> void: m.start_rogue_run())
 	content.add_child(rogue_btn)
 
 	var panel_btn := Button.new()
@@ -201,10 +194,7 @@ func _ready() -> void:
 	panel_btn.position = Vector2(670, 610)
 	panel_btn.add_theme_font_size_override("font_size", 18)
 	Ui.wire_button(panel_btn)
-	panel_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	panel_btn.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		m.open_archive())
+	panel_btn.pressed.connect(func() -> void: m.open_archive())
 	content.add_child(panel_btn)
 
 	var settings_btn := Button.new()
@@ -213,10 +203,7 @@ func _ready() -> void:
 	settings_btn.position = Vector2(930, 610)
 	settings_btn.add_theme_font_size_override("font_size", 18)
 	Ui.wire_button(settings_btn)
-	settings_btn.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	settings_btn.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		m.open_settings())
+	settings_btn.pressed.connect(func() -> void: m.open_settings())
 	content.add_child(settings_btn)
 
 	_build_act_panel(root)
@@ -377,11 +364,8 @@ func _build_act_panel(root: Control) -> void:
 	back.text = "«  返回剧目"
 	back.custom_minimum_size = Vector2(170, 42)
 	back.add_theme_font_size_override("font_size", 16)
-	Ui.wire_button(back)
-	back.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
-	back.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		close_act_panel())
+	Ui.wire_button(back, "ui_back")
+	back.pressed.connect(func() -> void: close_act_panel())
 	back_row.add_child(back)
 	var keys_hint := "1-%d 直达 · Esc 返回" % LevelData.ACTS[0]["levels"].size()
 	_act_keys_hint = Ui.l(keys_hint, 12, Ui.LIGHT, Color(Ui.DIM, 0.9))
@@ -458,9 +442,8 @@ func _populate_act_rows(idx: int) -> void:
 		b.text = "%02d   %s" % [k + 1, def.name]
 		b.pivot_offset = Vector2(12, 27)
 		b.self_modulate = Color(1, 1, 1, 1.0 if unlocked else 0.45)
-		Ui.wire_button(b)
+		Ui.wire_button(b, "")   # 未解锁给拒绝音、可演给确认音,条件音效自管
 		b.mouse_entered.connect(func() -> void:
-			Sfx.play("ui_hover")
 			_act_level_hint.text = def.intro.replace("\n", "  "))
 		b.focus_entered.connect(func() -> void:
 			_act_level_hint.text = def.intro.replace("\n", "  "))
@@ -500,12 +483,10 @@ func _add_wip_row(k: int) -> void:
 	b.add_theme_font_size_override("font_size", 19)
 	b.text = "%02d   —— 未上演 · 排练中 ——" % (k + 1)
 	b.self_modulate = Color(1, 1, 1, 0.28)
-	Ui.wire_button(b)
+	Ui.wire_button(b, "ui_error")
 	b.mouse_entered.connect(func() -> void:
-		Sfx.play("ui_hover")
 		_act_level_hint.text = "这一场还在排练——巨构尚未搭完。")
 	b.pressed.connect(func() -> void:
-		Sfx.play("ui_error")
 		toast("%02d — 未上演,敬请期待" % (k + 1)))
 	_act_rows.add_child(b)
 

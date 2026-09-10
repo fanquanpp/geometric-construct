@@ -189,6 +189,7 @@ func _ready() -> void:
 	_intro_skip.add_theme_color_override("font_color", Color(Ui.PAPER, 0.85))
 	_intro_skip.add_theme_color_override("font_hover_color", Color.WHITE)
 	_intro_skip.add_theme_color_override("font_pressed_color", Color.WHITE)
+	Ui.wire_button(_intro_skip)
 	_intro_skip.pressed.connect(_dismiss_intro)
 	_intro_skip.visible = false
 	_intro.add_child(_intro_skip)

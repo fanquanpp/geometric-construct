@@ -220,8 +220,12 @@ static func make_theme(size := 18) -> Theme:
 # ———— 按钮微交互 ————
 
 ## 统一按钮反馈:悬停/聚焦微抬 3%,按下压 97%,松开回弹;pivot 始终跟随尺寸居中。
-## 纯视觉(声音由调用方接 ui_click / ui_hover),移动端按下另有触感反馈。
-static func wire_button(b: Button) -> void:
+## 声音也在此统一接线(音效纪律 v0.21.1):悬停 ui_hover;点击( pressed )自动播
+## click_sfx,默认 "ui_click";传其他音名换语义音("ui_back" 返回 / "ui_error"
+## 拒绝 / "ui_page" 翻页),传 "" 退出自动点击音——用于处理器自播条件音效
+## (解锁判定 / 强化 buff / 开关 on·off)的按钮。新按钮一律走本函数,禁止
+## 手接 ui_hover / ui_click 后再 wire(会双响)。移动端按下另有触感反馈。
+static func wire_button(b: Button, click_sfx := "ui_click") -> void:
 	b.pivot_offset = b.size / 2.0
 	b.resized.connect(func() -> void: b.pivot_offset = b.size / 2.0)
 	b.mouse_entered.connect(func() -> void: _button_scale(b, 1.03))
@@ -230,6 +234,9 @@ static func wire_button(b: Button) -> void:
 	b.focus_exited.connect(func() -> void: _button_scale(b, 1.0))
 	b.button_down.connect(func() -> void: _button_scale(b, 0.97))
 	b.button_up.connect(func() -> void: _button_scale(b, 1.0))
+	b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
+	if click_sfx != "":
+		b.pressed.connect(func() -> void: Sfx.play(click_sfx))
 
 
 static func _button_scale(b: Button, target: float) -> void:

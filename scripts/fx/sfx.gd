@@ -230,6 +230,26 @@ static func init(parent: Node) -> void:
 	_reg(parent, "story_next", [
 		{"w": "tri", "note": "C5", "dur": 0.03, "vol": 0.22, "dec": 44.0},
 	], -16.0, 0.0)
+	# 返回:下行四度(F4→C4),与 ui_close 的"收束"区分——back 是轻导航,close 是关面板
+	_reg(parent, "ui_back", [
+		{"w": "tri", "note": "F4", "f1": 261.63, "dur": 0.08,
+			"vol": 0.4, "dec": 22.0},
+	], -12.0, 0.0)
+	# 开关语义音:开 = 上行三度(C4→E4),关 = 下行三度(E4→C4)——状态可"听"出来
+	_reg(parent, "ui_toggle_on", [
+		{"w": "square", "duty": 0.4, "note": "C4", "dur": 0.04, "vol": 0.4, "dec": 26.0},
+		{"w": "square", "duty": 0.4, "note": "E4", "dur": 0.06, "vol": 0.45, "dec": 20.0,
+			"t0": 0.04},
+	], -11.0, 0.0)
+	_reg(parent, "ui_toggle_off", [
+		{"w": "square", "duty": 0.4, "note": "E4", "dur": 0.04, "vol": 0.4, "dec": 26.0},
+		{"w": "square", "duty": 0.4, "note": "C4", "dur": 0.06, "vol": 0.45, "dec": 20.0,
+			"t0": 0.04},
+	], -11.0, 0.0)
+	# 滑杆刻度:极短高频棘轮咔哒(HSlider 按步进拖动时逐格触发)
+	_reg(parent, "ui_slider", [
+		{"w": "tri", "note": "F6", "dur": 0.018, "vol": 0.3, "dec": 70.0},
+	], -16.0, 0.0)
 
 	# ———— 音符播放池:首帧前预烘焙核心 14 条(7 音 × 短/长档,audio.md §6) ————
 	for octave in [4, 5]:

@@ -150,9 +150,8 @@ func _add_skip_button(box: Control, box_h: float) -> void:
 	skip.add_theme_color_override("font_color", Color(Ui.PAPER, 0.92))
 	skip.add_theme_color_override("font_hover_color", Color.WHITE)
 	skip.add_theme_color_override("font_pressed_color", Color.WHITE)
-	skip.pressed.connect(func() -> void:
-		Sfx.play("ui_click")
-		_abort())
+	Ui.wire_button(skip)
+	skip.pressed.connect(func() -> void: _abort())
 	if box != null:
 		box.add_child(skip)
 		# 盒顶缘 = 屏幕底往上 box_h:按钮上缘高出顶缘 30px、下缘压住顶缘 12px
