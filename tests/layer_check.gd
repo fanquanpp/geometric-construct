@@ -110,7 +110,7 @@ func _process(delta: float) -> bool:
 				var expect := 2 | LevelBuilder._mask_for(_combos, idx)
 				var cd: GeometryDef = Geometries.ALL[idx]
 				if not cd.can_pass_boundary:
-					expect |= LevelBuilder.BOUNDARY_BIT
+					expect |= TerrainKit.BOUNDARY_BIT
 				if _mask_of(idx) != expect:
 					_fail("几何体 %d 的 mask 与编译预期不一致" % idx)
 				if _mask_of(idx) & 2 == 0:
@@ -120,13 +120,13 @@ func _process(delta: float) -> bool:
 			if _mask_of(2) == _mask_of(3):
 				_fail("逆与圆的 mask 相同:L5 逆专属墙 / L6 圆高台未编译")
 			# 磁界特权位:逆穿透;疾 / 圆受阻;任何签名体都不得侵占该位
-			if _mask_of(2) & LevelBuilder.BOUNDARY_BIT != 0:
+			if _mask_of(2) & TerrainKit.BOUNDARY_BIT != 0:
 				_fail("逆的 mask 不应含磁界位(穿透失效)")
-			if _mask_of(0) & LevelBuilder.BOUNDARY_BIT == 0:
+			if _mask_of(0) & TerrainKit.BOUNDARY_BIT == 0:
 				_fail("疾的 mask 应含磁界位")
 			for n in _level.get_children():
 				if n is StaticBody2D and not (n is MagBoundary) \
-						and (n as StaticBody2D).collision_layer & LevelBuilder.BOUNDARY_BIT != 0:
+						and (n as StaticBody2D).collision_layer & TerrainKit.BOUNDARY_BIT != 0:
 					_fail("存在签名碰撞体侵占磁界特权位(位上限守卫失效)")
 			_stage = 1
 		1:
