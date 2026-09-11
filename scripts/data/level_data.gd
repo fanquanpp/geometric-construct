@@ -174,6 +174,27 @@ static func from_json_text(text: String) -> LevelDef:
 		def.roster.append(int(r))
 	for p in d.get("platforms", []):
 		def.platforms.append(_json_comp(p))
+	for r in d.get("ramps", []):
+		var pts: Array = []
+		for pt in r.get("pts", []):
+			pts.append(_json_vec2(pt))
+		def.ramps.append({"pts": pts, "base": float(r.get("base", 0.0))})
+	for lg in d.get("lever_gates", []):
+		var levers: Array = []
+		for lv in lg.get("levers", []):
+			levers.append(_json_rect(lv))
+		var door = _json_comp(lg.get("door", {}))
+		def.lever_gates.append({"levers": levers, "door": door,
+			"invert": bool(lg.get("invert", false))})
+	for tb in d.get("timed_bridges", []):
+		def.timed_bridges.append({"rect": _json_rect(tb.get("rect",
+				{"x": 0, "y": 0, "w": 100, "h": 20})),
+			"on_time": float(tb.get("on_time", 2.0)),
+			"off_time": float(tb.get("off_time", 2.0)),
+			"phase": float(tb.get("phase", 0.0)),
+			"sync_beat": bool(tb.get("sync_beat", false))})
+	if d.has("art"):
+		def.art = str(d["art"])
 	for m in d.get("movers", []):
 		var md: Dictionary = _json_comp(m)
 		md["offset"] = _json_vec2(m.get("offset", {"x": 0, "y": -100}))

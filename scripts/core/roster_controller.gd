@@ -147,9 +147,9 @@ func on_player_died(p: Player) -> void:
 		# v0.17.3:死亡不再自动切换几何体(操控权保持,由玩家手动切换)
 		# 序章首摔安抚(每次启动至多一次):把序幕"重拼"规则说成玩法语言,
 		# 新手第一次摔碎时不至于以为出了错
-		if not main._death_hinted and not main._rogue \
+		if not death_hinted and not main._rogue \
 				and LevelData.act_index_of(main._current) <= 0:
-			main._death_hinted = true
+			death_hinted = true
 			main._hud.narration("摔碎不是终结 · 空白处会把你在起点重新拼好",
 				Ui.RED, 3.4)
 	refresh_roster()
