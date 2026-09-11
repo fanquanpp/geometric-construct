@@ -205,7 +205,7 @@ func _ready() -> void:
 	dual_btn.add_theme_stylebox_override("pressed",
 		Ui.sb(Color(Ui.ORANGE, 0.68), 0, Ui.ORANGE, 1, 20, 8))
 	Ui.wire_button(dual_btn)
-	dual_btn.pressed.connect(func() -> void: m.start_level_dual())
+	dual_btn.pressed.connect(func() -> void: _open_dual_pick())
 	content.add_child(dual_btn)
 
 	var panel_btn := Button.new()
@@ -227,6 +227,7 @@ func _ready() -> void:
 	content.add_child(settings_btn)
 
 	_build_act_panel(root)
+	_build_dual_pick_panel(root)
 
 	# —— 漂浮几何徽标(常驻慢速旋转 + 浮动,方向/速率各异) ——
 	var xs := [0.05, 0.42, 0.95, 0.80]
@@ -395,6 +396,130 @@ func _build_act_panel(root: Control) -> void:
 
 func is_act_panel_open() -> bool:
 	return _act_open
+
+
+
+
+# ———————————————— 双人试炼 · 联接方式选择(net.md §1 前两档) ————————————————
+
+## 点击「双人试炼」先选联接方式:同设备(桌面专属)/ 跨设备(同网直连)。
+## 设备判断在此处收口:触屏设备无分区键鼠 / 双手柄前提,同设备项置灰不可用。
+var _dual_root: Control
+var _dual_shade: ColorRect
+var _dual_card: PanelContainer
+var _dual_same: Button
+var _dual_open := false
+
+
+func _build_dual_pick_panel(root: Control) -> void:
+	_dual_root = Control.new()
+	_dual_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_dual_root.theme = Ui.make_theme()
+	_dual_root.visible = false
+	_dual_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(_dual_root)
+
+	_dual_shade = ColorRect.new()
+	_dual_shade.color = Color(Ui.INK, 0.92)
+	_dual_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dual_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_dual_root.add_child(_dual_shade)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dual_root.add_child(center)
+
+	_dual_card = PanelContainer.new()
+	_dual_card.custom_minimum_size = Vector2(780, 0)
+	_dual_card.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+	_dual_card.mouse_filter = Control.MOUSE_FILTER_STOP
+	center.add_child(_dual_card)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 12)
+	_dual_card.add_child(vb)
+
+	var title_bar := PanelContainer.new()
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.ORANGE, 0, null, 0, 24, 12))
+	var title_vb := VBoxContainer.new()
+	title_vb.add_child(Ui.l("双人试炼", 32, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
+	title_vb.add_child(Ui.l("TWO PLAYERS · 选择联接方式", 13, Ui.LIGHT,
+		Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER))
+	title_bar.add_child(title_vb)
+	vb.add_child(title_bar)
+
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 12)
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_left", 40)
+	pad.add_theme_constant_override("margin_right", 40)
+	pad.add_theme_constant_override("margin_top", 24)
+	pad.add_theme_constant_override("margin_bottom", 28)
+	pad.add_child(body)
+	vb.add_child(pad)
+
+	# 选项一:同设备双人(桌面专属;触屏设备置灰,文案在 open 时按设备态刷新)
+	_dual_same = Button.new()
+	_dual_same.custom_minimum_size = Vector2(0, 86)
+	_dual_same.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_dual_same.add_theme_font_override("font", Ui.HEAD)
+	_dual_same.add_theme_font_size_override("font_size", 22)
+	Ui.wire_button(_dual_same)
+	_dual_same.pressed.connect(func() -> void:
+		close_dual_pick()
+		m.start_level_dual())
+	body.add_child(_dual_same)
+
+	# 选项二:跨设备双人(同网直连:LAN 搜索 / 手动 IP)
+	var cross := Button.new()
+	cross.custom_minimum_size = Vector2(0, 86)
+	cross.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	cross.text = "跨设备双人\n      同网直连 · 局域网搜索附近房间,或手动输入 IP"
+	cross.add_theme_font_override("font", Ui.HEAD)
+	cross.add_theme_font_size_override("font_size", 22)
+	Ui.wire_button(cross)
+	cross.pressed.connect(func() -> void:
+		Sfx.play("ui_open")
+		close_dual_pick()
+		m.open_net_room())
+	body.add_child(cross)
+
+	var hint := Ui.l("Esc 返回", 13, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	vb.add_child(hint)
+
+
+func _open_dual_pick() -> void:
+	Sfx.play("ui_open")
+	_dual_open = true
+	var touch := Adaptive.is_touch_mode()
+	_dual_same.text = "同设备双人\n      %s" % (
+		"移动端不可用 · 同屏分区需键鼠 / 双手柄" if touch
+		else "同屏分键 · P1 键盘左区 + P2 右区 / 双手柄")
+	_dual_same.disabled = touch
+	_dual_same.modulate = Color(1, 1, 1, 0.42 if touch else 1.0)
+	_dual_root.visible = true
+	_dual_shade.modulate.a = 0.0
+	_dual_card.modulate.a = 0.0
+	_dual_card.pivot_offset = _dual_card.size / 2.0
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(_dual_shade, "modulate:a", 1.0, 0.16)
+	tw.tween_property(_dual_card, "modulate:a", 1.0, 0.18)
+	tw.tween_property(_dual_card, "scale", Vector2.ONE, 0.26) \
+		.from(Vector2(0.95, 0.95)).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func close_dual_pick() -> void:
+	if not _dual_open:
+		return
+	_dual_open = false
+	_dual_root.visible = false
+
+
+func is_dual_pick_open() -> bool:
+	return _dual_open
 
 
 

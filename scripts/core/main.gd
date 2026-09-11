@@ -4,7 +4,7 @@ extends Node2D
 
 static var I  # Main 单例
 
-enum State { MENU, PLAYING, PAUSED, TRANSITION, WIN }
+enum State { MENU, ROOM, PLAYING, PAUSED, TRANSITION, WIN }
 
 var _state: State = State.MENU
 
@@ -44,6 +44,10 @@ var _rogue := false              # 当前片段是肉鸽局内关卡(不走标�
 var _level_def: LevelDef         # 当前装载的关卡数据(标准关 = LEVELS[_current])
 var _pending_rogue_pick := false # 剧情播完后弹出"选本局主角"
 var _pending_rogue_focus := -1   # 已选主角:个人单章剧播完后开跑
+
+# ———— 联机(net.md,N2 同网直连) ————
+var net_session: NetSession      # 会话中枢(Main 创建,两端路径一致才能 RPC 寻址)
+var net_room_layer: NetRoomLayer # 房间流程页(流程带 30,与 RogueLayer 同带互斥)
 
 # ———— 自动化测试 ————
 ## 测试模式:屏蔽真实键盘的切换/重开/暂停输入,避免外部按键干扰自动验证。
@@ -125,6 +129,13 @@ func _ready() -> void:
 	rogue_dir.main = self
 	rogue_dir.layer = rogue_layer
 	add_child(rogue_dir)
+
+	# 联机:会话中枢 + 房间流程页(net.md;path 一致,RPC 才能寻址)
+	net_session = NetSession.new()
+	add_child(net_session)
+	net_room_layer = NetRoomLayer.new()
+	net_room_layer.m = self
+	add_child(net_room_layer)
 
 	_save = SaveManager.new()
 	_save.load_save()
@@ -219,6 +230,10 @@ func start_level(index: int, intro := true) -> void:
 		var focus: GeometryDef = Geometries.get_def(_level_def.focus)
 		_hud.narration(focus.quote, focus.color, 3.8)
 	_switch_to(0, true)
+	# 联机(N2):两端装配完成后算定绑定 / 标注 remote_driven / 注入输入源
+	# (net.md §6 生成免 Spawner 的收尾;on_level_built 两端各自调用)
+	if NetSession.I != null and NetSession.I.is_net():
+		NetSession.I.on_level_built()
 	# 第一幕首次开演:先看开演剧,再上手(序幕钩子的下一拍)
 	if _current == LevelData.first_level_of_act(1) and intro and not _save.seen_act1:
 		_save.note_story("act1")
@@ -366,10 +381,96 @@ func start_level_dual() -> void:
 	_refresh_roster()   # 补一次名册刷新:chips 走 binds 双人高亮(单机高亮已被 start_level 刷过)
 
 
+# ———————————————— 联机(N2 同网直连,net.md §4/§7) ————————————
+
+## 菜单「双人试炼 → 跨设备双人」入口:进入房间流程页(创建 / 加入)。
+func open_net_room() -> void:
+	if _state != State.MENU:
+		return
+	_state = State.ROOM
+	_menu.visible = false
+	net_room_layer.open()
+
+
+## 两端 start_level 装配完成后的联机收尾(NetSession.on_level_built 调用):
+## 主机点亮自己绑定集的首具操控体;客机镜像上传槽为取景 / 名牌语义槽。
+func net_post_setup() -> void:
+	touch_controls.set_switch_available(true)   # 绑定集 > 1 体,集合内可切
+	if NetSession.I.is_host():
+		var own: Array = NetSession.I.own_slots_arr()
+		if not own.is_empty():
+			roster.switch_to(own[0], true)
+	else:
+		roster.active_slot = NetSession.I.active_slot()
+		for i in players.size():
+			players[i].is_active = i == roster.active_slot
+	_refresh_roster()
+
+
+## 客机召回执行(主机侧,NetSession._do_recall 调用):传送 + 快照回传。
+func net_recall(slot: int) -> void:
+	if slot < 0 or slot >= players.size():
+		return
+	var p: Player = players[slot]
+	if p == null or p.in_exit or p.dying or p.arrived:
+		return
+	p.recall_to(roster.checkpoints.get(p.body_key(), p.spawn_pos))
+	Sfx.play("switch")
+
+
+## 客机结算画面复现(主机经 EV_COMPLETE 触发;流转由主机驱动)。
+func net_show_complete() -> void:
+	_state = State.TRANSITION
+	Sfx.play("complete")
+	_hud.show_complete("通过。")
+
+
+## 两端回房间(联机通关流转终点:不开下一关,主机可再开演)。
+func net_back_to_room() -> void:
+	get_tree().paused = false
+	_clear_level()
+	_state = State.ROOM
+	_hud.visible = false
+	touch_controls.set_in_game(false)
+	_hud.set_net_badge("")
+	NetSession.I.back_to_lobby()
+	net_room_layer.reopen_after_game()
+
+
+## 主机侧:客机掉线(§11 待议项的临时拍板 = 整队弹回房间,可再开演)。
+func net_peer_lost() -> void:
+	if _state == State.PLAYING or _state == State.PAUSED or _state == State.TRANSITION:
+		get_tree().paused = false
+		_pause.close()
+		net_back_to_room()
+		net_room_layer.toast_line("对手掉线,已返回房间")
+	else:
+		net_room_layer.toast_line("对手掉线")
+
+
+## 客机侧:主机掉线 —— 弹回标题菜单 + 明确提示(net.md §5)。
+func net_host_lost(was_in_game: bool) -> void:
+	get_tree().paused = false
+	_pause.close()
+	_clear_level()
+	_hud.visible = false
+	touch_controls.set_in_game(false)
+	_hud.set_net_badge("")
+	_state = State.MENU
+	_menu.visible = true
+	_menu.set_unlocked(_unlocked)
+	_menu.toast("主机已离开房间" if was_in_game else "与主机的连接已断开")
+
+
 ## N1 退出双人不切换——切靠除役(双活模型,无"另一个受控")。
 func _cycle_slot(dir: int) -> void:
-	if not dual_mode:
-		roster.cycle_slot(dir)
+	if dual_mode:
+		return
+	# 联机(N2):绑定集合内切换(主机切本地操控,客机切上传槽)
+	if NetSession.I != null and NetSession.I.in_game():
+		NetSession.I.cycle_own_slot(dir)
+		return
+	roster.cycle_slot(dir)
 
 
 ## 切换操控:已到达终点门待命的几何体仍然可以被选中(终点激活前不收取);
@@ -385,6 +486,9 @@ func _switch_to(slot: int, quiet := false) -> void:
 ## 无全局防抖:chips 侧已有 120ms 防抖 + accept_event 吞模拟鼠标双发,
 ## 这里的旧 150ms 防抖会把"快速再点同芯片切另一体"吞掉(切换失灵)。
 func switch_to_geo(index: int) -> void:
+	if NetSession.I != null and NetSession.I.in_game():
+		NetSession.I.switch_to_geo(index)
+		return
 	roster.switch_to_geo(index)
 
 
@@ -431,12 +535,22 @@ func _physics_process(_delta: float) -> void:
 			recall_active()
 		if Input.is_action_just_pressed("pause"):
 			_open_pause()
+	elif _state == State.ROOM:
+		if debug_solo:
+			return
+		# 房间流程页:Esc = 返回上一步(选页 → 关房/停搜 → 标题菜单)
+		if Input.is_action_just_pressed("ui_cancel"):
+			net_room_layer.back_out()
 	elif _state == State.MENU:
 		if debug_solo:
 			return
 		# 数字键:二级菜单开着时直达该_choose剧目内的场次;否则快速选剧目
 		# (1=序章开演 → 进二级菜单,2-4 未上演幕同样给出 toast 反馈);
 		# C 打开档案几何;S 打开设置;Esc 关二级菜单 / 退出游戏
+		if _menu.is_dual_pick_open():
+			if Input.is_action_just_pressed("ui_cancel"):
+				_menu.close_dual_pick()
+			return
 		if _menu.is_act_panel_open():
 			for i in 4:
 				if _key_pressed(KEY_1 + i):
@@ -533,6 +647,10 @@ func quit_to_menu() -> void:
 	if _rogue:
 		_rogue = false
 		rogue_dir.exit_run()
+	# 联机:离开即散房(关 peer / 停信标);主机散房 → 客机收 server_disconnected
+	if NetSession.I != null and NetSession.I.is_net():
+		NetSession.I.leave("")
+		_hud.set_net_badge("")
 	_show_menu()
 
 
@@ -619,20 +737,30 @@ func _ambience_motif(motif_name: String) -> void:
 # ———————————————— 事件回调 ————————————————
 
 func on_player_died(p: Player) -> void:
+	# 联机事件漏斗(net.md §6):主机权威事件经可靠 RPC 在客机复现;
+	# 客机侧 arrive_at 等回灌本函数时 is_host() 为假,emit 自然no-op。
+	if NetSession.I != null and NetSession.I.is_host() and NetSession.I.in_game():
+		NetSession.I.emit_event(NetSession.EV_DIED, players.find(p))
 	roster.on_player_died(p)
 
 
 ## 到达专属终点门:原地待命(仍可被切换控制),全员到齐后终点激活。
 func on_player_arrived(p: Player) -> void:
+	if NetSession.I != null and NetSession.I.is_host() and NetSession.I.in_game():
+		NetSession.I.emit_event(NetSession.EV_ARRIVED, players.find(p))
 	roster.on_player_arrived(p)
 
 
 ## 已到站几何体离开门区:取消到站(终点未激活时随时可以再回来)。
 func on_player_departed(p: Player) -> void:
+	if NetSession.I != null and NetSession.I.is_host() and NetSession.I.in_game():
+		NetSession.I.emit_event(NetSession.EV_DEPARTED, players.find(p))
 	roster.on_player_departed(p)
 
 
 func on_player_exited(p: Player) -> void:
+	if NetSession.I != null and NetSession.I.is_host() and NetSession.I.in_game():
+		NetSession.I.emit_event(NetSession.EV_EXITED, players.find(p))
 	roster.on_player_exited(p)
 
 
@@ -655,6 +783,10 @@ var _checkpoints: Dictionary:
 ## 尚无关卡内记录点信标,默认回到其出生点。到站 / 进门 / 死亡中不可召回。
 ## 双体(伍)两半各回各的出生点 / 各自的记录点(body_key 隔离)。
 func recall_active() -> void:
+	# 联机(N2):客机召回 = 上传请求,主机执行 teleport 后快照回传落位
+	if NetSession.I != null and NetSession.I.in_game():
+		NetSession.I.request_recall(roster.active_slot)
+		return
 	roster.recall_active()
 
 
@@ -700,6 +832,17 @@ func _check_complete() -> void:
 	if _auto_test:
 		print("TEST: LEVEL COMPLETE ", _current)
 	_hud.show_complete("归位。" if _current == LevelData.LEVELS.size() - 1 else "通过。")
+	# 联机(N2):客机由 EV_COMPLETE 复现结算画面;两端都不自动进下一关,
+	# 停留片刻后回房间等待主机再开演(net.md §7 主机选关)。
+	if NetSession.I != null and NetSession.I.is_net():
+		if NetSession.I.is_host():
+			NetSession.I.emit_event(NetSession.EV_COMPLETE)
+		_complete_seq += 1
+		var seq_n := _complete_seq
+		get_tree().create_timer(2.1).timeout.connect(func() -> void:
+			if seq_n == _complete_seq:
+				net_back_to_room())
+		return
 	if _current + 1 > _unlocked:
 		_unlocked = mini(_current + 1, LevelData.LEVELS.size() - 1)
 		_save.unlocked = _unlocked

@@ -64,21 +64,40 @@ func camera_targets() -> Array:
 ## 只跳过正在进门 / 死亡中的几何体。
 ## 伍(界/边)是双子:两具身体在切换循环中各占一位、独立操控
 ## (characters.md §5);磁力边界始终张在两顶之间,不随操控改变。
+## 联机绑定集过滤(N2,net.md §8 首版对半分):返回本机可操控的
+## players 下标集合;非联机返回空数组 = 不过滤。判定的唯一入口,
+## switch_to / check_deaths 共用。
+func net_allowed_slots() -> Array:
+	if NetSession.I == null or not NetSession.I.in_game():
+		return []
+	return NetSession.I.own_slots_arr() if NetSession.I.is_host() \
+		else NetSession.I.own_slots_arr()
+
+
+## 联机中本机是否主机权威编排方(到站编排 / 死亡判定只在主机跑)。
+static func net_host_authority() -> bool:
+	return NetSession.I == null or not NetSession.I.is_net() or NetSession.I.is_host()
+
+
 func switch_to(slot: int, quiet := false) -> void:
 	if main.dual_mode:
 		return   # 同屏双人:切换除役(双活模型)
 	if main._state != Main.State.PLAYING or players.is_empty():
 		return
+	var allowed := net_allowed_slots()
 	var n := players.size()
 	# 第一遍:找健康几何体(含已到达待命者);第二遍:接受正在重生中的几何体
 	for pass_i in 2:
 		for k in n:
-			var p: Player = players[(slot + k) % n]
+			var i := (slot + k) % n
+			if not allowed.is_empty() and not allowed.has(i):
+				continue   # 联机:绑定集之外的几何体不可选中
+			var p: Player = players[i]
 			var ok: bool = (not p.in_exit and not p.dying) \
 				if pass_i == 0 else (not p.in_exit)
 			if not ok:
 				continue
-			active_slot = players.find(p)
+			active_slot = i
 			for j in n:
 				players[j].is_active = j == active_slot
 			refresh_roster()
@@ -150,6 +169,10 @@ func check_deaths(def: LevelDef) -> void:
 	for p in players:
 		if p.dying or p.in_exit or p.arrived:
 			continue
+		# 联机:死亡判定主机权威(net.md §6),客机侧几何体由快照搬运,
+		# 本地判定不可信 —— 跳过,由主机经 EV_DIED 复现。
+		if not net_host_authority():
+			return
 		# 死亡判定按各几何体"当前"重力方向(置换会翻转)
 		if p.gravity_dir > 0 and p.position.y > def.kill_y:
 			p.die()
@@ -200,8 +223,12 @@ func on_player_exited(p: Player) -> void:
 
 
 ## 全员到站 → 终点激活:封印各门 → 依次吸入各自的终点门 → 结算。
+## 联机:主机权威编排(net.md §6),客机由 EV_SEAL / EV_EXITED / EV_COMPLETE
+## 事件复现,本函数在客机侧直返。
 func check_all_arrived() -> void:
 	if main._state != Main.State.PLAYING:
+		return
+	if not net_host_authority():
 		return
 	for p in players:
 		if not p.arrived:

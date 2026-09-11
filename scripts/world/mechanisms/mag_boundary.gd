@@ -1,65 +1,94 @@
 class_name MagBoundary
-extends StaticBody2D
+extends Node2D
 
 ## 磁力边界(伍·界/边,characters.md §5):两半顶部之间的阻隔线,
-## 随两半移动逐帧伸缩;碰撞位 BOUNDARY_BIT(逆与双体自身的 mask 不含它)。
-## v1 纪律:线只阻挡不推移——两半快速分开时,原线处的几何体不会被扫飞。
+## 随两半移动逐帧伸缩;除逆(can_pass_boundary)与双子自身外人人受阻。
+##
+## v2 修法②(characters.md §5 候选②,根治扫掠推挤):不再挂
+## StaticBody2D —— 逐帧重设端点后,物理引擎的去穿透扫掠会把贴线
+## 几何体沿最短向量推出去;渐进扫掠(每帧 < 120px)不触发旧收线守卫,
+## 推挤逐帧累积(~1/3 flaky 的根因)。改为【自定义速度投影】:
+## 受阻几何体在自身物理步进之前(process_physics_priority = -10)
+## 对本线做穿越判定,试图穿越者把速度沿线方向投影(削去法向分量),
+## 沿线滑行 —— 线只阻挡不推移,端点任何速度都不再"搬运"贴线体。
+## 收线语义保留:任一半死亡 / 进门期间两端并拢,不阻隔任何人。
 
 var a: Player
 var b: Player
-var _seg := SegmentShape2D.new()
+
+var _seg_a := Vector2.ZERO   # 端点(全局坐标;本节点恒在原点)
+var _seg_b := Vector2.ZERO
+var _active := false         # 线是否张成(收线时 false,只画不拦)
+
 
 func _ready() -> void:
-	collision_layer = TerrainKit.BOUNDARY_BIT
-	collision_mask = 0
-	var cs := CollisionShape2D.new()
-	cs.shape = _seg
-	add_child(cs)
 	z_index = 4
+	process_physics_priority = -10   # 先于各玩家的 _physics_process 执行
 
-var _recover := 0.0   # 端点大位移后的收线余量(秒):线只阻挡不推移(v0.21.1 隐患修复)
-var _last_a := Vector2.ZERO
-var _last_b := Vector2.ZERO
-var _has_last := false
 
 func _physics_process(dt: float) -> void:
 	if a == null or b == null or not is_instance_valid(a) or not is_instance_valid(b):
 		return
-	# 任一半死亡 / 进门:磁界收线(两端并拢 = 不再阻隔任何人),
-	# 防止重生瞬间线横跨全图把无关几何体挡在半路(对象失效防护)
+	# 任一半死亡 / 进门:磁界收线(两端并拢 = 不再阻隔任何人)
 	if a.dying or b.dying or a.in_exit or b.in_exit:
-		_seg.a = Vector2.ZERO
-		_seg.b = Vector2.ZERO
+		_active = false
 		queue_redraw()
 		return
-	var na := to_local(a.boundary_anchor())
-	var nb := to_local(b.boundary_anchor())
-	# 候选修法落地(characters.md §5 已知隐患):召回 / 置换等造成端点
-	# 单帧大位移时,磁界收线 0.2s——运动静态体的去穿透扫掠会"推挤"
-	# 另一半,违背"线只阻挡不推移"纪律。与上次活跃端点比较(而非已
-	# 归零的 _seg),稳定 0.2s 后即恢复;首帧直设,不吞正常移动。
-	if _has_last and _recover <= 0.0 and (
-			na.distance_to(_last_a) > 120.0 or nb.distance_to(_last_b) > 120.0):
-		_recover = 0.2
-	if _recover > 0.0:
-		_recover = maxf(_recover - dt, 0.0)
-		_seg.a = Vector2.ZERO
-		_seg.b = Vector2.ZERO
-		queue_redraw()
-		return
-	_seg.a = na
-	_seg.b = nb
-	_last_a = na
-	_last_b = nb
-	_has_last = true
+	_seg_a = a.boundary_anchor()
+	_seg_b = b.boundary_anchor()
+	_active = true
+	_project_bodies(dt)
 	queue_redraw()
 
+
+## 阻挡判定 + 速度投影:几何体本帧的运动轨迹若穿越磁界线(按自身
+## 半宽 r 膨胀,端点按圆帽处理),削去法向分速度,只保留沿线分量。
+func _project_bodies(dt: float) -> void:
+	var players: Array = Main.I.players if Main.I != null else []
+	if players.is_empty():
+		return
+	var d := _seg_b - _seg_a
+	var length := d.length()
+	if length < 8.0:
+		return   # 两半几乎并拢:不构成阻隔
+	var dn := d / length
+	for node in players:
+		var p := node as Player
+		if p == null or p == a or p == b:
+			continue
+		# 与 player.gd _ready 的 BOUNDARY_BIT 判据一致:逆可穿、双子豁免
+		if p.pair_half >= 0 or p.def.can_pass_boundary:
+			continue
+		# 联机:客机侧几何体由快照搬运,不参与本地投影(主机权威)
+		if p.remote_driven:
+			continue
+		var r := minf(p.def.size.x, p.def.size.y) * 0.5
+		var now := p.global_position - _seg_a
+		var side_now := dn.cross(now)            # 带符号垂距(法向)
+		var side_nxt := dn.cross(now + p.velocity * dt)
+		# 已在线半径之内(线从身上扫过):不推,放行 —— 线只阻挡不推移
+		if side_now > -r and side_now < r:
+			continue
+		# 本帧轨迹穿越 r 壳层才拦(两侧同号 = 未穿越)
+		if (side_now > 0.0) == (side_nxt > 0.0):
+			continue
+		if absf(side_now) < r:
+			continue
+		# 穿越点须落在段范围 + 圆帽半径内
+		var t_c := side_now / (side_now - side_nxt)
+		var u := now.lerp(now + p.velocity * dt, t_c).dot(dn)
+		if u < -r or u > length + r:
+			continue
+		# 速度投影:削去法向分量,保留沿线分量(线只阻挡不推移)
+		p.velocity = p.velocity.project(dn)
+
+
 func _draw() -> void:
-	if a == null or b == null:
+	if a == null or b == null or not _active:
 		return
 	var col: Color = a.def.color
-	var pa := _seg.a
-	var pb := _seg.b
+	var pa := _seg_a
+	var pb := _seg_b
 	var d := pb - pa
 	if d.length() < 8.0:
 		return

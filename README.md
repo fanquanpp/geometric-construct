@@ -11,7 +11,7 @@
 分层、机关物、几何体特性全部达到完美与正常后,才重启关卡与剧情设计(2026-09-10 决策)。
 **肉鸽模式「重跑 RE-RUN」暂入休眠**:系统代码保留,入口随机制达标后重开。
 
-当前版本 **v0.28.1**(唯一来源 `scripts/core/version.gd`,变更明细见 [CHANGELOG.md](CHANGELOG.md))。
+当前版本 **v0.28.2**(唯一来源 `scripts/core/version.gd`,变更明细见 [CHANGELOG.md](CHANGELOG.md))。
 
 ## 预览
 

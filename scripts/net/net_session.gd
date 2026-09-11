@@ -171,6 +171,73 @@ func active_slot() -> int:
 	return _net_active
 
 
+## —— N2 绑定集内切换(net.md §8 首版:对半分绑定集合,集合内自由切) ——
+## 主机:在自己绑定体间切本地操控(物理 is_active);
+## 客机:切换输入上传目标槽(_net_active),画面跟随同步镜像。
+
+## 循环切换(dir = ±1):chips 直达走 switch_to_geo。
+func cycle_own_slot(dir: int) -> void:
+	if _own_slots.is_empty():
+		return
+	var idx := _own_slots.find(_view_slot_local())
+	idx = wrapi(idx + dir, 0, _own_slots.size())
+	_select_own(idx)
+
+
+## chips / 数字键按几何体下标直达(绑定集内;双子同下标换另一半)。
+func switch_to_geo(index: int) -> void:
+	var cands: Array = []
+	for slot: int in _own_slots:
+		if slot >= 0 and slot < _m.players.size() and _m.players[slot].index == index \
+				and not _m.players[slot].in_exit and not _m.players[slot].dying:
+			cands.append(slot)
+	if cands.is_empty():
+		return
+	var cur := _view_slot_local()
+	var target: int = cands[0]
+	if cands.size() > 1 and cands.has(cur):
+		target = cands[(cands.find(cur) + 1) % cands.size()]
+	_select_own(_own_slots.find(target))
+
+
+func _select_own(own_idx: int) -> void:
+	var slot: int = _own_slots[clampi(own_idx, 0, _own_slots.size() - 1)]
+	if is_host():
+		_m.roster.switch_to(slot, false)
+	else:
+		_net_active = slot
+		_mirror_view()
+		Sfx.play("switch")
+
+
+## 客机侧视角镜像:is_active 只作画面语义(名牌 / 芯片),物理不读
+## (remote_driven 提前 return);active_slot 供相机 / HUD / 磁界取景。
+func _mirror_view() -> void:
+	roster_active_mirror(_net_active)
+
+
+func roster_active_mirror(slot: int) -> void:
+	_m.roster.active_slot = slot
+	for i in _m.players.size():
+		_m.players[i].is_active = i == slot
+	_m._refresh_roster()
+
+
+## 本机"当前操控体"players 下标:主机 = roster 受控槽,客机 = 上传槽。
+func _view_slot_local() -> int:
+	return roster_active_local() if is_host() else _net_active
+
+
+func roster_active_local() -> int:
+	return _m.roster.active_slot
+
+
+## 通关后两端回到房间(联机流转:不开下一关,回房间等待主机再开演)。
+func back_to_lobby() -> void:
+	if mode == Mode.IN_GAME:
+		mode = Mode.LOBBY
+
+
 # ———————————————— 关卡生命周期 ————————————————
 
 ## 主机开演:可靠 RPC 令两端同步 start_level(同一 LevelDef,D7 门禁)。

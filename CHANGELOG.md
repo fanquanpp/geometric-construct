@@ -32,6 +32,21 @@
 - 旧图标源 `assets/art/icon_jasmine.aseprite`(四叶茉莉 v2,
   被 v3 构成徽章取代)。
 
+## v0.28.2(2026-09-12)
+
+### 修复
+- **开屏引擎署名图标纠错**:BOOT INTRO 底部 "POWERED BY GODOT ENGINE"
+  旁应为 Godot 引擎官方 logo(署名对象是引擎),v0.28.1 起错挂了游戏
+  图标——改回 `Godot_logo_icon.svg`(用户指出)。
+- **磁界扫掠推挤根治**(characters.md §5 候选修法②落地):MagBoundary
+  弃用 StaticBody2D 逐帧重设端点(去穿透扫掠会把贴线体沿最短向量推出;
+  渐进扫掠每帧 <120px 不触发旧收线守卫,推挤累积 = ~1/3 flaky 根因),
+  改为**自定义速度投影**——受阻几何体在自身物理步进前(process_physics_priority
+  -10)对磁界线做穿越判定,试图穿越者削去法向分速度沿线滑行,线只阻挡
+  不推移;死亡 / 进门收线语义保留,120px 收线守卫退役。验收:
+  recalltest 连续 10 次 30/30 全 PASS(旧守卫下时好时坏),dualtest /
+  gridcheck / laneshot 全绿。
+
 ## v0.28.0(2026-09-12)
 
 > **N1 同屏双人实装**:菜单「双人试炼」入口,双活模型(各控各的,
