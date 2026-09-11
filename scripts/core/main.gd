@@ -82,6 +82,7 @@ func _ready() -> void:
 	roster = RosterController.new()
 	roster.main = self
 	add_child(roster)
+	_setup_dual_input()   # N1 分区动作注册(WASD / 方向键)
 	# 移动端传感器横屏(重力感应双横屏;桌面显示服务器不支持,守卫后不再告警)
 	if OS.has_feature("mobile"):
 		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
@@ -282,7 +283,51 @@ func camera_targets() -> Array:
 ## 分区动作(键盘分区让位 P2)。同屏双人未接线前恒 false = 单机输入
 ## 路径逐位不变。
 func slot_actions() -> bool:
-	return false
+	return dual_mode
+
+
+## N1 同屏双人:注册 p1_*/p2_* 分区动作(InputMap,仅首次)。
+## P1 = WASD + 左Shift;P2 = 方向键 + 右Ctrl。
+func _setup_dual_input() -> void:
+	for action in ["p1_move_left", "p1_move_right", "p1_jump", "p1_sprint",
+			"p2_move_left", "p2_move_right", "p2_jump", "p2_sprint"]:
+		if not InputMap.has_action(action):
+			InputMap.add_action(action, 0.4)
+	_pkey("p1_move_left", KEY_A)
+	_pkey("p1_move_right", KEY_D)
+	_pkey("p1_jump", KEY_W)
+	_pkey("p1_sprint", KEY_SHIFT)
+	_pkey("p2_move_left", KEY_LEFT)
+	_pkey("p2_move_right", KEY_RIGHT)
+	_pkey("p2_jump", KEY_UP)
+	_pkey("p2_sprint", KEY_CTRL)
+
+
+func _pkey(action: String, key: Key) -> void:
+	if InputMap.action_get_events(action).is_empty():
+		var ev := InputEventKey.new()
+		ev.physical_keycode = key
+		InputMap.action_add_event(action, ev)
+
+
+## 启动同屏双人(net.md §3):管道测试道 Z0 双分位,
+## P1 = roster 偶数下标链,P2 = roster 奇数下标链。
+func start_level_dual() -> void:
+	dual_mode = true
+	start_level(0)
+	# 双活:两个 InputSource 分槽注入,双 is_active = true
+	var playable := roster.players.duplicate()
+	if playable.size() >= 2:
+		for i in playable.size():
+			var p := playable[i] as Player
+			p.input_source = InputSource.local(i % 2)
+			p.is_active = true
+
+
+## N1 退出双人不切换——切靠除役(双活模型,无"另一个受控")。
+func _cycle_slot(dir: int) -> void:
+	if not dual_mode:
+		roster.cycle_slot(dir)
 
 
 ## 切换操控:已到达终点门待命的几何体仍然可以被选中(终点激活前不收取);
@@ -299,10 +344,6 @@ func _switch_to(slot: int, quiet := false) -> void:
 ## 这里的旧 150ms 防抖会把"快速再点同芯片切另一体"吞掉(切换失灵)。
 func switch_to_geo(index: int) -> void:
 	roster.switch_to_geo(index)
-
-
-func _cycle_slot(dir: int) -> void:
-	roster.cycle_slot(dir)
 
 
 func _refresh_roster() -> void:
@@ -761,6 +802,7 @@ func _run_perf_log() -> void:
 		])
 
 
+var dual_mode := false   # N1 同屏双人:双活绑定(各控各的,不切换)
 var _dev_h: RefCounted = null
 var _dev_h_tried := false
 

@@ -52,6 +52,8 @@ func view_slot() -> int:
 ## 单机 = 受控几何体单元素(含越界钳制);同屏双人(N1)将返回两具
 ## 绑定体,相机经 targets.size()>1 自动分流双人缩放。
 func camera_targets() -> Array:
+	if main.dual_mode and players.size() >= 2:
+		return [players[0], players[1]]   # 双人:双取景(镜头动态缩放)
 	if players.is_empty():
 		return []
 	var p: Player = players[clampi(active_slot, 0, players.size() - 1)]
@@ -63,6 +65,8 @@ func camera_targets() -> Array:
 ## 伍(界/边)是双子:两具身体在切换循环中各占一位、独立操控
 ## (characters.md §5);磁力边界始终张在两顶之间,不随操控改变。
 func switch_to(slot: int, quiet := false) -> void:
+	if main.dual_mode:
+		return   # 同屏双人:切换除役(双活模型)
 	if main._state != Main.State.PLAYING or players.is_empty():
 		return
 	var n := players.size()
