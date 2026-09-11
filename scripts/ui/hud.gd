@@ -265,13 +265,13 @@ func _ready() -> void:
 	shapes_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	shapes_row.add_theme_constant_override("separation", 26)
 	for c in Geometries.ALL:
-		var tr := TextureRect.new()
-		tr.texture = Ui.icon("characters/%s-flat.svg" % c.slug)
-		tr.custom_minimum_size = Vector2(52, 52)
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		shapes_row.add_child(tr)
+		var ico := TextureRect.new()
+		ico.texture = Ui.icon("characters/%s-flat.svg" % c.slug)
+		ico.custom_minimum_size = Vector2(52, 52)
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		shapes_row.add_child(ico)
 	wvb.add_child(shapes_row)
 	if _touch_mode():
 		wvb.add_child(Ui.l("右上 重来 · 再走一遍        右上 暂停 · 回到标题", 16,
@@ -359,13 +359,13 @@ func _rebuild_hints(def: LevelDef) -> void:
 		can_sprint = can_sprint or (cd.can_sprint and cd.sprint_speed > cd.base_speed)
 
 	var add_key := func(key_name: String):
-		var tr := TextureRect.new()
-		tr.texture = Ui.icon("keys/%s-flat.svg" % key_name)
-		tr.custom_minimum_size = Vector2(26, 26)
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		_hint_row.add_child(tr)
+		var ico := TextureRect.new()
+		ico.texture = Ui.icon("keys/%s-flat.svg" % key_name)
+		ico.custom_minimum_size = Vector2(26, 26)
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ico.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_hint_row.add_child(ico)
 	var add_text := func(s: String):
 		_hint_row.add_child(Ui.l(s, 13, Ui.BODY, Ui.DIM, HORIZONTAL_ALIGNMENT_LEFT))
 	var add_sep := func():
@@ -674,7 +674,7 @@ class EdgeIndicator extends Control:
 	var _show := false
 
 	func _process(_delta: float) -> void:
-		var show := false
+		var show_edge := false
 		var m = Main.I
 		if m != null and visible:
 			var targets: Array = m.camera_targets()
@@ -684,13 +684,13 @@ class EdgeIndicator extends Control:
 					var d: float = targets[0].position.distance_to(targets[1].position)
 					var diag: float = get_viewport_rect().size.length()
 					if d > diag * TRIG_MULT:
-						show = true
+						show_edge = true
 						set_meta("to", targets[1].position)
 						set_meta("from", targets[0].position)
-		if show != _show:
-			_show = show
+		if show_edge != _show:
+			_show = show_edge
 			queue_redraw()
-		elif show:
+		elif show_edge:
 			queue_redraw()   # 呼吸脉冲需逐帧
 
 	func _draw() -> void:

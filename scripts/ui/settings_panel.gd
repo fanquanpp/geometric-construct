@@ -187,8 +187,8 @@ func _ready() -> void:
 # ———— 行 / 控件工厂 ————
 
 func _section_label(text: String) -> Control:
-	var wrap := VBoxContainer.new()
-	wrap.add_theme_constant_override("separation", 4)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 4)
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 8)
 	var mark := ColorRect.new()
@@ -197,8 +197,8 @@ func _section_label(text: String) -> Control:
 	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(mark)
 	hb.add_child(Ui.l(text, 16, Ui.HEAD, Ui.PAPER))
-	wrap.add_child(hb)
-	return wrap
+	col.add_child(hb)
+	return col
 
 
 func _caption(text: String) -> Label:

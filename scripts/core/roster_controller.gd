@@ -22,6 +22,7 @@ var players: Array = []
 var active_slot := 0
 var doors := {}          # geo_index -> ExitDoor
 var checkpoints := {}    # 体身份键 -> Vector2(双体两半各占一键)
+var death_hinted := false   # 序章首摔安抚旁白已播(每次启动一次;自 Main 迁入)
 
 
 func collect_players(level_root: Node2D) -> void:

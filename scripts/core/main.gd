@@ -19,9 +19,6 @@ var _save: SaveManager
 var _ambience: Ambience
 var _current := -1
 var _unlocked := 0
-var _active_slot: int:
-	get:
-		return roster.active_slot
 var _auto_shot := false
 var debug_move := Vector2.ZERO
 var debug_jump := false
@@ -39,7 +36,6 @@ var _doors: Dictionary:
 	get:
 		return roster.doors
 var _complete_seq := 0           # 通关链序列号:重开/换关时作废待执行的自动流转
-var _death_hinted := false       # 序章首摔安抚旁白已播(每次启动一次)
 
 # ———— 肉鸽模式(RogueDirector 驱动,modes/rogue) ————
 var rogue_layer: RogueLayer
@@ -86,8 +82,9 @@ func _ready() -> void:
 	roster = RosterController.new()
 	roster.main = self
 	add_child(roster)
-	# 移动端传感器横屏(重力感应双横屏;桌面无效果)
-	DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
+	# 移动端传感器横屏(重力感应双横屏;桌面显示服务器不支持,守卫后不再告警)
+	if OS.has_feature("mobile"):
+		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
 	add_child(Backdrop.new())
 	Sfx.init(self)
 	var amb := Ambience.new()
@@ -605,10 +602,10 @@ func _check_complete() -> void:
 	if _rogue:
 		_state = State.TRANSITION
 		_complete_seq += 1
-		var seq := _complete_seq
+		var seq_r := _complete_seq
 		var elite := rogue_dir.in_elite
 		get_tree().create_timer(0.9).timeout.connect(func() -> void:
-			if seq == _complete_seq and rogue_dir != null:
+			if seq_r == _complete_seq and rogue_dir != null:
 				if elite:
 					rogue_dir.on_elite_complete()
 				else:

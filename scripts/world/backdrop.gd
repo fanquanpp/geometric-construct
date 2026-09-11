@@ -86,8 +86,8 @@ func _process(delta: float) -> void:
 	var target := Vector2(
 		clampf(-g.y / 9.81, -1.0, 1.0), clampf(g.x / 9.81, -1.0, 1.0))
 	_gyro_off = _gyro_off.lerp(target, 1.0 - exp(-3.0 * delta))
-	for layer: Dictionary in _gyro_layers:
-		(layer["node"] as Parallax2D).scroll_offset = _gyro_off * layer["depth"]
+	for entry: Dictionary in _gyro_layers:
+		(entry["node"] as Parallax2D).scroll_offset = _gyro_off * entry["depth"]
 
 
 func _motes(amount: int, scale_max: float, alpha: float, lifetime: float) -> CPUParticles2D:

@@ -172,7 +172,7 @@ func run_tour_shot() -> void:
 	for wp in waypoints:
 		if m.players.is_empty():
 			break
-		var p: Player = m.players[m._active_slot]
+		var p: Player = m.players[m.view_slot()]
 		p.position = wp[1]
 		p.velocity = Vector2.ZERO
 		await m.get_tree().create_timer(0.55).timeout
@@ -323,7 +323,7 @@ func run_recall_test() -> void:
 	await m.get_tree().create_timer(0.5).timeout
 	var fails := 0
 	# ① 单体(疾):召回出生点
-	var p: Player = m.players[m._active_slot]
+	var p: Player = m.players[m.view_slot()]
 	p.position = p.spawn_pos + Vector2(600, -300)
 	await _recall_keypress()
 	var ok: bool = p.position.distance_to(p.spawn_pos) < 2.0 and not p.dying
@@ -334,7 +334,7 @@ func run_recall_test() -> void:
 	# ② 双子:点伍芯片(= m.switch_to_geo(4))→ 默认选中界;召回回天花出生点 a
 	m.switch_to_geo(4)
 	await m.get_tree().physics_frame
-	var jie: Player = m.players[m._active_slot]
+	var jie: Player = m.players[m.view_slot()]
 	var ok_jie: bool = jie.pair_half == 0
 	jie.position = jie.spawn_pos + Vector2(600, 0)
 	await _recall_keypress()
@@ -348,7 +348,7 @@ func run_recall_test() -> void:
 	# ③ 同键再点(切换另一半语义)→ 边;召回回地面出生点 b
 	m.switch_to_geo(4)
 	await m.get_tree().physics_frame
-	var bian: Player = m.players[m._active_slot]
+	var bian: Player = m.players[m.view_slot()]
 	var ok_bian: bool = bian.pair_half == 1
 	bian.position = bian.spawn_pos + Vector2(-300, 0)
 	await _recall_keypress()
@@ -431,8 +431,8 @@ func run_auto_test() -> void:
 		await m.get_tree().create_timer(0.55).timeout
 		tick += 1
 		if tick % 3 == 0 and m.players.size() > 0:
-			print("TEST: pos=", m.players[m._active_slot].position,
-				" onFloor=", m.players[m._active_slot].is_on_floor())
+			print("TEST: pos=", m.players[m.view_slot()].position,
+				" onFloor=", m.players[m.view_slot()].is_on_floor())
 	print("TEST: end state=", Main.State.keys()[m._state])
 	m.get_tree().quit()
 

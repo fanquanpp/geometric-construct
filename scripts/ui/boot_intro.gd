@@ -25,14 +25,14 @@ func _ready() -> void:
 
 	# 自动化模式(--*shot / --autotest / --autoshot)跳过开屏,不挡截图钩子;
 	# --bootshot 例外:专为截取开屏动画本身,照常播放
-	var _skip := false
+	var skip_boot := false
 	for a in OS.get_cmdline_user_args():
 		if a == "--bootshot":
-			_skip = false
+			skip_boot = false
 			break
 		if a.begins_with("--") and (a.contains("shot") or a.begins_with("--autotest")):
-			_skip = true
-	if _skip:
+			skip_boot = true
+	if skip_boot:
 		queue_free()
 		return
 

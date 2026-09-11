@@ -170,7 +170,7 @@ func wheel_mode() -> String:
 
 
 ## 单人阵容没有切换可言:v0.17.2 起切换走队伍 chips 点按,此钮已移除(接口保留兼容)。
-func set_switch_available(on: bool) -> void:
+func set_switch_available(_on: bool) -> void:
 	pass
 
 

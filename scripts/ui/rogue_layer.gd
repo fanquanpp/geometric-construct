@@ -196,13 +196,13 @@ func show_geo_pick(on_pick: Callable, shards: int, runs: int) -> void:
 		var c := VBoxContainer.new()
 		c.alignment = BoxContainer.ALIGNMENT_CENTER
 		c.add_theme_constant_override("separation", 8)
-		var tr := TextureRect.new()
-		tr.texture = Ui.icon("characters/%s-flat.svg" % g.slug)
-		tr.custom_minimum_size = Vector2(64, 64)
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		c.add_child(tr)
+		var ico := TextureRect.new()
+		ico.texture = Ui.icon("characters/%s-flat.svg" % g.slug)
+		ico.custom_minimum_size = Vector2(64, 64)
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ico.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		c.add_child(ico)
 		c.add_child(Ui.l(g.name, 40, Ui.TITLE, g.color, HORIZONTAL_ALIGNMENT_CENTER))
 		c.add_child(Ui.l(g.role, 14, Ui.HEAD, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER))
 		var quote := Ui.l(g.quote, 12, Ui.LIGHT, Color(Ui.PAPER, 0.72),
@@ -392,13 +392,13 @@ func _build_shop(summary: Dictionary) -> Control:
 	var style_locked: bool = not save.rogue_style
 	if locked.is_empty() and not style_locked:
 		return null
-	var wrap := PanelContainer.new()
-	wrap.custom_minimum_size = Vector2(660, 0)
-	wrap.add_theme_stylebox_override("panel",
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(660, 0)
+	card.add_theme_stylebox_override("panel",
 		Ui.sb(Color(Ui.INK, 0.6), 0, Color(Ui.PAPER, 0.12), 1, 16, 10))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)
-	wrap.add_child(col)
+	card.add_child(col)
 	col.add_child(Ui.l("残留兑换 · 刻度残段 %d" % save.rogue_shards, 14, Ui.HEAD, Ui.YELLOW))
 	for m in locked:
 		var row := HBoxContainer.new()
@@ -421,7 +421,7 @@ func _build_shop(summary: Dictionary) -> Control:
 				Sfx.play("buff")
 				btn.text = "已入池"
 				btn.disabled = true
-				_refresh_shop_balance(wrap, summary)
+				_refresh_shop_balance(card, summary)
 			else:
 				Sfx.play("ui_error"))
 		row.add_child(btn)
@@ -445,17 +445,17 @@ func _build_shop(summary: Dictionary) -> Control:
 				Sfx.play("buff")
 				btn.text = "已收藏"
 				btn.disabled = true
-				_refresh_shop_balance(wrap, summary)
+				_refresh_shop_balance(card, summary)
 			else:
 				Sfx.play("ui_error"))
 		row.add_child(btn)
 		col.add_child(row)
-	return wrap
+	return card
 
 
-func _refresh_shop_balance(wrap: Control, summary: Dictionary) -> void:
+func _refresh_shop_balance(panel: Control, summary: Dictionary) -> void:
 	# 兑换后刷新头部余额(浅遍历找到标题行)
-	for row in (wrap.get_child(0) as VBoxContainer).get_children():
+	for row in (panel.get_child(0) as VBoxContainer).get_children():
 		if row is Label:
 			(row as Label).text = "残留兑换 · 刻度残段 %d" % SaveManager.I.rogue_shards
 	summary["balance"] = SaveManager.I.rogue_shards

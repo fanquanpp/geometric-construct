@@ -125,10 +125,10 @@ static func l(text: String, size: int, font: Font = null, color = null,
 ## 海报字:特粗平面大字 + 左侧红色方块标记(可选)。
 static func poster_label(text: String, size: int, color := PAPER,
 		mark := true, mark_color := RED) -> Control:
-	var wrap := Control.new()
-	wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var box := Control.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var label := l(text, size, weight(900, 2), color, HORIZONTAL_ALIGNMENT_LEFT, false)
-	wrap.add_child(label)
+	box.add_child(label)
 	var pad := 0.0
 	if mark:
 		pad = size * 0.42
@@ -137,10 +137,10 @@ static func poster_label(text: String, size: int, color := PAPER,
 		block.position = Vector2(0, size * 0.30)
 		block.size = Vector2(size * 0.22, size * 0.22)
 		block.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		wrap.add_child(block)
+		box.add_child(block)
 	label.position = Vector2(pad, 0)
-	wrap.custom_minimum_size = label.get_minimum_size() + Vector2(pad, 0)
-	return wrap
+	box.custom_minimum_size = label.get_minimum_size() + Vector2(pad, 0)
+	return box
 
 
 ## 构成主义细线分隔条。

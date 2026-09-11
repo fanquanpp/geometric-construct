@@ -213,19 +213,19 @@ func _ready() -> void:
 	var ys := [0.22, 0.07, 0.62, 0.06]
 	for i in 4:
 		var s := 34.0 + i * 10.0
-		var tr := TextureRect.new()
-		tr.texture = Ui.icon("characters/%s-flat.svg" % Geometries.ALL[i].slug)
-		tr.modulate = Color(1, 1, 1, 0.30)
-		tr.custom_minimum_size = Vector2(s, s)
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		tr.pivot_offset = Vector2(s / 2.0, s / 2.0)
-		tr.position = Vector2(xs[i] * 1280.0, ys[i] * 720.0)
-		content.add_child(tr)
-		_floaters.append(tr)
+		var ico := TextureRect.new()
+		ico.texture = Ui.icon("characters/%s-flat.svg" % Geometries.ALL[i].slug)
+		ico.modulate = Color(1, 1, 1, 0.30)
+		ico.custom_minimum_size = Vector2(s, s)
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ico.pivot_offset = Vector2(s / 2.0, s / 2.0)
+		ico.position = Vector2(xs[i] * 1280.0, ys[i] * 720.0)
+		content.add_child(ico)
+		_floaters.append(ico)
 		_floater_seed.append({"spin": (0.22 if i % 2 == 0 else -0.16) * (1.0 + i * 0.12),
-			"phase": i * 1.7, "base_y": tr.position.y})
+			"phase": i * 1.7, "base_y": ico.position.y})
 
 	# 适配:可见区变化(旋转 / 改窗口)时重新缩放居中
 	Adaptive.fit_design(content)
@@ -263,10 +263,10 @@ func _process(delta: float) -> void:
 	_t += delta
 	# 漂浮徽标:慢速旋转 + 呼吸浮动(M5:周期 2s 上下,永不抢焦点)
 	for i in _floaters.size():
-		var tr: TextureRect = _floaters[i]
+		var fl: TextureRect = _floaters[i]
 		var seed_d: Dictionary = _floater_seed[i]
-		tr.rotation += seed_d["spin"] * delta
-		tr.position.y = seed_d["base_y"] + sin(_t * 1.4 + seed_d["phase"]) * 6.0
+		fl.rotation += seed_d["spin"] * delta
+		fl.position.y = seed_d["base_y"] + sin(_t * 1.4 + seed_d["phase"]) * 6.0
 
 
 ## 打开剧目:先进入二级菜单(关卡列)选场,不直接开演;
@@ -523,7 +523,7 @@ func show_act_hint(idx: int) -> void:
 	_chapter_hint.text = LevelData.ACTS[idx]["hint"]
 
 
-func _outline_rect(pos: Vector2, size_: Vector2, parent: Control) -> Control:
+func _outline_rect(pos: Vector2, size_: Vector2, _parent: Control) -> Control:
 	var box := Control.new()
 	box.position = pos
 	box.size = size_

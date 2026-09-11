@@ -70,6 +70,7 @@ static func note_shift(note_name: String, steps: int) -> String:
 	if li < 0:
 		return "C4"
 	var total := li + steps + octave * 7
+	@warning_ignore("integer_division")
 	return "%s%d" % [NOTE_LETTERS[total % 7], total / 7]
 
 
@@ -279,7 +280,7 @@ static func _reg(parent: Node, sfx_name: String, layers: Array, base_db: float,
 
 ## 总线名(总线布局缺失时回落 Master,保证 headless / 裸配置可跑)。
 static func _bus_name(want: String) -> StringName:
-	return want if AudioServer.get_bus_index(want) >= 0 else &"Master"
+	return StringName(want) if AudioServer.get_bus_index(want) >= 0 else &"Master"
 
 
 static func play(sfx_name: String, vol_offset := 0.0, pitch := 1.0) -> void:
@@ -320,13 +321,13 @@ static func play_chord(notes: Array, vol := 1.0) -> void:
 static func _note_player(note_name: String, long: bool) -> AudioStreamPlayer:
 	if _note_pool.is_empty():
 		for i in 8:
-			var p := AudioStreamPlayer.new()
-			p.bus = _bus_name("SFX")
-			p.volume_db = -6.0
-			p.process_mode = Node.PROCESS_MODE_ALWAYS
+			var np := AudioStreamPlayer.new()
+			np.bus = _bus_name("SFX")
+			np.volume_db = -6.0
+			np.process_mode = Node.PROCESS_MODE_ALWAYS
 			# 池化播放器挂在根场景上不可靠(static 无节点),挂在引擎根:
-			Engine.get_main_loop().root.add_child(p)
-			_note_pool.append(p)
+			Engine.get_main_loop().root.add_child(np)
+			_note_pool.append(np)
 	var key := "%s|%s" % [note_name, "l" if long else "s"]
 	if not _note_streams.has(key):
 		_note_streams[key] = _note_stream(note_name, long)
