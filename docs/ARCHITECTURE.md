@@ -36,9 +36,13 @@ geometric-construct/
 │   │   ├── run_modifiers.gd #   肉鸽词条表(通用 + 主角专属,稀有度)
 │   │   └── rogue_fragments.gd # 肉鸽单人片段库(按主角分组的快/稳排法 + 精英考)
 │   ├── entities/            # 场景内实体
-│   │   ├── player.gd        #   几何体控制器:加速度/惯性/二段跳/超载减半/置换/滚动/承载;
+│   │   ├── player.gd        #   几何体控制器(编排+跳跃/爬墙/置换/承载状态机;
 │   │   │                    #   body_key() 体身份键(v0.21.0,双体契约 characters.md §5):
-│   │   │                    #   逐体状态(记录点/琴键接触)唯一键,BODY_STRIDE 预留多体
+│   │   │                    #   逐体状态(记录点/琴键接触)唯一键,BODY_STRIDE 预留多体;
+│   │   │                    #   v0.29.0 REFACTOR P4 拆四片,见 entities/player/)
+│   │   ├── player/          #   movement_core(重力/摩擦公式+手感常量)/ player_input
+│   │   │                    #   (InputSource 读数)/ player_cosmetics(爆点/残影/绘制)/
+│   │   │                    #   mechanism_surface(墙面/曲面/钢琴表面查询)
 │   │   ├── exit_door.gd     #   几何体专属终点门(到站不收取,可撤销;sealed 终点激活;
 │   │   │                    #   双体两半都到站才算满,离门即取消——未满员同样成立)
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)
@@ -57,6 +61,7 @@ geometric-construct/
 │   │   ├── ui.gd            #   主题工厂:调色板/字体/StyleBox/Theme/文字组件
 │   │   ├── adaptive.gd      #   移动端自适应:设计稿缩放居中 / 安全区避让
 │   │   ├── hud.gd           #   游戏 HUD(队伍 chips/章节徽章/按键提示/开场/结算)
+│   │   ├── net_room_layer.gd#   N2 房间流程页(带 30:选择/创建/加入/等待;Flow 型)
 │   │   ├── menu_layer.gd    #   标题菜单(动态标题 TitleMark + 分层入场演出)
 │   │   ├── title_mark.gd    #   动态标题:逐字落位 / 呼吸浮动 / 印刷错位 / 红块节拍
 │   │   ├── archive_panel.gd #   档案几何(五页签:几何体 / 建筑物 / 机关 / 键位 / 剧情;
@@ -73,10 +78,10 @@ geometric-construct/
 │   │       ├── run_state.gd      # 一局状态 + 属性钩子覆盖层 modified()
 │   │       └── rogue_director.gd # 流程:选路→片段→奖励→精英考→结算
 │   └── net/                  # 跨设备联机底座(设计权威 docs/design/net.md;
-│                             #   里程碑 N0–N3 见 ROADMAP §3;v0.22.0 预埋未接线)
+│                             #   N0/N1/N2 已实装,N3 预埋未接线)
 │       ├── input_source.gd   #   N0 输入槽(LOCAL/REMOTE,Player 四读口注入)
 │       ├── net_session.gd    #   主机权威会话:20Hz 快照 + 事件可靠 RPC + 共享关卡时钟
-│       ├── lan_beacon.gd     #   LAN 发现信标(版本+关卡哈希门禁 D7)
+│       ├── lan_beacon.gd     #   LAN 发现信标(版本+关卡哈希门禁 D7;多网卡按网段广播)
 │       ├── peer_factory.gd   #   ENet peer 唯一创建入口
 │       └── net_config.gd     #   端口/魔数/版本门禁常量
 ├── story/                    # Konado KS 剧本(档案几何 · 剧情回顾页签可回看)

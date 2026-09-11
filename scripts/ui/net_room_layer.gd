@@ -93,6 +93,12 @@ func open() -> void:
 	_show_pick()
 
 
+## 分镜钩子(--roomshot):仅停发现信标,不动会话状态。
+func beacon_stop_only() -> void:
+	NetSession.I.beacon.stop()
+	_phase = Phase.NONE
+
+
 ## 自动化钩子(--netauto):跳过选择页直接建房并展示等待页。
 func autostart_host() -> void:
 	visible = true

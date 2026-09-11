@@ -484,6 +484,34 @@ func run_net_join(ip := "") -> void:
 	m.get_tree().quit(1)
 
 
+## N2 房间流程页分镜(--roomshot):双人联接选择面板 → 房间四页
+## (选择 / 创建等待 / 加入搜索),配 UI 图册与 ui-flow 页面规范对照。
+func run_room_shot() -> void:
+	if m._shot_dir.is_empty():
+		m._shot_dir = "res://.shots"
+	await m.get_tree().create_timer(0.6).timeout
+	m._menu._open_dual_pick()
+	await m.get_tree().create_timer(0.6).timeout
+	await _shot("room_pick")
+	m._menu.close_dual_pick()
+	m._state = Main.State.ROOM
+	m._menu.visible = false
+	m.net_room_layer.open()
+	await m.get_tree().create_timer(0.5).timeout
+	await _shot("room_mode")
+	m.net_room_layer.autostart_host()
+	await m.get_tree().create_timer(0.5).timeout
+	await _shot("room_host")
+	m.net_room_layer.beacon_stop_only()
+	m._state = Main.State.ROOM
+	m.net_room_layer.open()
+	m.net_room_layer.autostart_join()
+	await m.get_tree().create_timer(1.2).timeout
+	await _shot("room_join")
+	m.net_room_layer.close_to_menu()
+	m.get_tree().quit()
+
+
 ## N2 主机自动化(--netauto,headless 可用):自动建房,对手加入即自动
 ## 开演(首版固定试炼场)——供真机联测时 PC 端无人值守当主机。
 func run_net_auto() -> void:
