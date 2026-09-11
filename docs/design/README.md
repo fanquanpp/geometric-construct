@@ -29,6 +29,7 @@
 | [motion.md](motion.md) | 动效与特效:程序化管线四件套 / 动效资产清单 / 页面转场规范 / 性能预算 / 玩法系统配合矩阵 | UI / 程序 / 美术 |
 | [audio.md](audio.md) | 音频设计:七音符体系(C 大调统一音高)/ 现有音效音高审计 / BGM 序列器 / 钢琴地板砖(玩家即配乐)/ 配合与兼容 | 音频 / 程序 |
 | [atmosphere.md](atmosphere.md) | 氛围设计:背景装饰视差分层 / 结构剪影层(背景讲关卡的剧)/ 构成主义光影(天光带 / 区域明度 / 章节光色) | 美术 / 关卡 / 程序 |
+| [presentation/00-presentation-master-plan.md](presentation/00-presentation-master-plan.md) | **表现系统总设计方案**:MOTION GRAMMAR 六基础动作 / UI MOTION 八子域(构成主义五拍入场·Hover 几何关系·Click 六步·反馈十五态)/ 几何点击波纹 / 五形角色动画语法(形变即表演·疾学会停的动画叙事·伍五态)/ 建筑九动作与呼吸 / 限时桥五态 SOP / 光影八类(禁 Bloom·阴影方向异常)/ Shader 库十枚(Deconstruct≠溶解·Reconstruction 五联)/ 粒子七类 / 镜头九式与 Freeze 舞台感 / 转场七式(UI 是世界的一部分)/ BEAT EVENT / 七幕 Motion Identity / VFX 十族与 FX-0~5 强度 / 效果规格单模板 | 程序 / 美术 / UI / 音频 |
 | [ui/00-ui-master-plan.md](ui/00-ui-master-plan.md) | **UI/UX 总规范**:六大 UX 空间信息架构 / 12 文件逐项盘点与 A·B·C 迁移矩阵 / 设计·组件·交互·状态四系统 / FocusManager 与统一 Action 语义 / 九态模型(UNKNOWN 进阶链)/ RERUN 独立 UI 语言 / 十二条 UI 规则 / Page Spec 模板 / UiRouter 触发线 | UI / 程序 / 策划(UI 动笔先读) |
 | [bible.md](bible.md) | **游戏剧情圣经**:核心命题(定义与自由)/ 六层文学来源体系与 ZATO 研究层 / 五层真相 / 八角色圣经(形状即心理)/ 人物关系网 / 七幕哲学问题 / 伏笔网络 / 重跑叙事(玩家=隐藏变量)/ 台词圣经 / 信息控制总表 / 创作十戒 | 叙事 / 策划(剧情动笔先读) |
 | [art-audio.md](art-audio.md) | **美术与音频总计划**:L0 视觉 DNA / 八套艺术语言融合矩阵(强度+领地+禁止边界)/ 角色视觉母条目 / 六种基础动作动画语言 / 音乐五层分层+角色音乐画像+伍双声部+第七形不完整句 / 音效四分类 / 四套语言融合模型 / ART-与 AUDIO-优先级 / 生产系统四件 | 美术 / 音频 / 策划 |
