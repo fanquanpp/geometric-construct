@@ -3,6 +3,34 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.29.1(2026-09-12)
+
+> **地图皮组件细化 + 分辨率升格**:MapSkin 画布从半分辨率(3200×540,
+> 1px = 2 引擎px)升格为**全分辨率(6400×1080,1px = 1 引擎像素)**,
+> 各组件借成倍的像素预算做一轮细节升级;契约随之定格
+> 「PNG = 全分辨率 1:1,引擎 scale ×1」。
+
+### 新增(组件细节规范,art-style.md §6.2 同步)
+- `terrain`:受光带 6px + 受光过渡缝(1px INK_2)+ 板缝沟槽
+  (2×10,480 节奏)+ 板角铆钉(3×3)+ 墙基接缝;
+- `bg_towers`:窗槽双排(少量 LIT2 微亮「住人」窗)+ 左缘受光 +
+  桅杆信标(塔高 ≥320);
+- `bg_mid`:管线 2px + 法兰 + 吊杆;Z4 桁架双弦 + 节点板;Z1 雪纹 2px;
+  Z2 导轨双线 + 枕木;传送菱标加芯;**圣环 12 径向刻度**;
+- `edge`:纸白缘 2px + 坑壁竖缘 + 角部回包;`accent`:红刻度 6×4、
+  坑肩警示 4×8、出生倒三角;`fx`:星阵三档(微点/方点/十字闪点)。
+
+### 变更
+- **MapSkin 尺寸契约定格全分辨率**:`LevelBuilder` 皮肤 `scale`
+  `×2 → ×1`(PNG = 世界尺寸 1:1);`assets/levels/trial_v5.png`
+  重导为 6400×1080。沿革:v0.27 全分辨率误配 ×2(双倍放大)→
+  v0.29 半分辨率 ×2 → v0.29.1 全分辨率 ×1(源画布即引擎所见,
+  禁止任何导出缩放)。
+- README 四张预览图重拍(tourshot 新机位);art-style.md §6.2
+  契约与细节规范同步;ASSETS.md 计数更新。
+- 门禁:grid_check PASS(11 warn 均既有)、tourshot 13 节拍
+  截图走查通过(spawn / pushbox / portal / exits 逐点目检)。
+
 ## v0.29.0(2026-09-12)
 
 > **地图皮 MapSkin v2 重绘 + 素材链补全**:以 Journey / GRIS / Thomas Was
@@ -105,7 +133,14 @@
 - **暂停菜单联机态**(预埋接线):联机局内隐藏「重新开始」,「返回标题」
   语义变「离开房间」。
 
-### 变更
+- **REFACTOR Phase 4 第一刀 · player.gd 拆分**(1077→754 行):按拆分
+  施工图落四片——`movement_core`(三段重力 / 水平加速 / 摩擦系数公式,
+  手感常量权威随之下沉,Player 以别名引用零改调用点)/ `player_input`
+  (InputSource 读数搬运)/ `player_cosmetics`(爆点×4 / 残影 / 滚动
+  轰鸣 / 挤压恢复 / 形体绘制与名牌)/ `mechanism_surface`(墙面法线 /
+  曲面接触 / 钢琴接触沿)。Player 保留编排与跳跃 / 爬墙 / 置换 / 承载
+  状态机;行为逐位不变(dualtest ×2 / recalltest / gridcheck /
+  laneshot 全绿)。
 - start_level 两端装配完成后调用 NetSession.on_level_built(算定绑定 /
   标注 remote_driven / 注入输入源,net.md §6 生成免 Spawner 收尾)。
 - quit_to_menu 联机局内先散房(关 peer / 停信标)。

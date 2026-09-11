@@ -163,9 +163,13 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
 
 ### Phase 4 · 代码层(2–3 天,风险最高,逐文件小步)
 
-1. `player.gd`(1073)→ 拆 `movement_core`(物理三段/摩擦/承载)/
-   `player_input`(经 InputSource)/ `player_cosmetics`(拖尾/挤压/情绪)/
-   机制交互(surface 查询)。行为逐位不变,验收=autotest+手感走查。
+1. ✅ `player.gd`(1073)→ 已拆(v0.29.0):`movement_core`(三段重力 /
+   水平加速 / 摩擦系数公式 + 手感常量权威)/ `player_input`(InputSource
+   读数搬运)/ `player_cosmetics`(爆点×4 / 残影 / 滚动轰鸣 / 挤压恢复 /
+   形体绘制与名牌)/ `mechanism_surface`(墙面法线 / 曲面接触 / 钢琴接触沿)。
+   Player 保留编排与承载 / 跳跃 / 爬墙 / 置换状态机,常量以别名引用,
+   存量调用点零改动;行为逐位不变(验收:dualtest / recalltest /
+   gridcheck / laneshot 全绿,1077→754 行)。
 2. `hud.gd`(~700)按域拆 chips / EdgeIndicator / narration / 提示条。
 3. `ui.gd` 主题工厂拆 palette(Phase 2 已动)/ typography / widgets。
 4. `main.gd`(781)→ game_flow(幕流转/通关)/ 输入路由残留归 08。
