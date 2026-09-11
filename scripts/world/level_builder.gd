@@ -46,8 +46,7 @@ static func build(def: LevelDef) -> Node2D:
 			var skin := Sprite2D.new()
 			skin.texture = tex
 			skin.centered = false
-			skin.scale = Vector2(1, 1)   # 契约:PNG = 全分辨率(1 像素 = 1 引擎像素,v0.29.1 细化)
-			skin.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # 像素纪律:禁柔化
+			skin.scale = Vector2(2, 2)   # aseprite 半分辨率绘制 ×2(1 像素 = 2 引擎像素)
 			skin.z_index = -1
 			root.add_child(skin)
 

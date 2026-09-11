@@ -90,7 +90,10 @@ func host_room(p_room_name: String) -> bool:
 	mode = Mode.LOBBY
 	# 主机手机保活(net.md §4.3-4):屏幕常亮
 	DisplayServer.screen_set_keep_on(true)
-	beacon.start_host(room_name, NetConfig.ENET_PORT)
+	# 信标绑定失败 = 局内能玩但"附近房间"搜不到(net.md §4.3-2 类设备问题)
+	# 必须显式告知,不能静默吞掉 —— 用户会误以为一切正常。
+	if not beacon.start_host(room_name, NetConfig.ENET_PORT):
+		net_message.emit("注意:发现信标未启动,对手只能手动输 IP 直连")
 	net_message.emit("房间已创建 · 等待对手加入")
 	return true
 
@@ -267,13 +270,17 @@ func on_level_built() -> void:
 	var split := split_roster(_m._level_def.roster)
 	_client_slots_clear()
 	_own_slots.clear()
+	# 绑定分边必须按本机角色算:同一 split 两侧各取各的集合 ——
+	# 主机 own = split[0] / client = split[1];客机 own = split[1](上传目标)
+	# / client = split[0](主机钳制 rpc_input 的合法目标集)。
 	for i in _m.players.size():
 		var p: Player = _m.players[i]
 		var client_side: bool = (split[1] as Array).has(p.index)
-		if client_side:
-			_client_slots.append(i)
-		else:
+		var mine := client_side if not is_host() else not client_side
+		if mine:
 			_own_slots.append(i)
+		else:
+			_client_slots.append(i)
 	# 主机权威:主机端全部实体本地物理;客机绑定体吃远端输入源。
 	# 客机端全部实体 remote_driven(D2:只发输入、收状态)。
 	for i in _m.players.size():
@@ -335,10 +342,14 @@ func _upload_input(_delta: float) -> void:
 	var slot := _net_active
 	if slot < 0 or slot >= _m.players.size():
 		return
-	var axis := Input.get_axis("p1_move_left", "p1_move_right")
-	var edge := Input.is_action_just_pressed("p1_jump")
-	var held := Input.is_action_pressed("p1_jump")
-	var sprint := Input.is_action_pressed("p1_sprint")
+	# 客机本机操控 = 自己设备的 P1:桌面读分区动作(键盘分区让位 P2 语义),
+	# 触屏设备读全局动作(TouchControls 只注入既有动作,net.md §3 首版)。
+	var touch := Adaptive.is_touch_mode()
+	var axis := Input.get_axis("move_left" if touch else "p1_move_left",
+		"move_right" if touch else "p1_move_right")
+	var edge := Input.is_action_just_pressed("jump" if touch else "p1_jump")
+	var held := Input.is_action_pressed("jump" if touch else "p1_jump")
+	var sprint := Input.is_action_pressed("sprint" if touch else "p1_sprint")
 	rpc_input.rpc_id(1, slot, axis, edge, held, sprint)
 
 

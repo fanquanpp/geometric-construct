@@ -63,6 +63,9 @@ var _recall_shot := false       # --recalltest:召回链路自测(动作注册/�
 var _dual_test := false         # --dualtest:同屏双人自测(绑定/分区/禁切/死亡/到站)
 var _dual_shot := false         # --dualshot:同屏双人视觉分镜(chips 双高亮/双取景)
 var _net_test := false          # --nettest:LAN 发现 / ENet 传输回环自测(net.md §4.3-2)
+var _net_auto := false
+var _net_join := false
+var _net_join_ip := ""          # --netauto:主机自动化(自动建房 + 满员自动开演,联测用)
 var _panel_shot := false
 var _set_shot := false
 var _act_shot := false
@@ -78,6 +81,7 @@ var _json_level_path := ""      # --leveljson=<res://...>:JSON 关卡覆盖(edit
 var _trial_shot := false        # --trialshot:JSON 关卡出生点连拍(双体/磁界验证)
 var _tour_shot := false
 var _lane_shot := false
+var _tap_shot := false          # --tapshot:点按粒子反馈分镜(TouchControls 触点反馈)
 var _perf_log := false
 var _auto_test := false
 
@@ -232,8 +236,10 @@ func start_level(index: int, intro := true) -> void:
 		_hud.narration(focus.quote, focus.color, 3.8)
 	_switch_to(0, true)
 	# 联机(N2):两端装配完成后算定绑定 / 标注 remote_driven / 注入输入源
-	# (net.md §6 生成免 Spawner 的收尾;on_level_built 两端各自调用)
+	# (net.md §6 生成免 Spawner 的收尾;on_level_built 两端各自调用);
+	# 客机经 rpc_start_level 直达此处,房间页须在这里收起(主机路径自关)
 	if NetSession.I != null and NetSession.I.is_net():
+		net_room_layer.visible = false
 		NetSession.I.on_level_built()
 	# 第一幕首次开演:先看开演剧,再上手(序幕钩子的下一拍)
 	if _current == LevelData.first_level_of_act(1) and intro and not _save.seen_act1:
@@ -894,6 +900,13 @@ func _parse_auto_shot() -> void:
 			_dual_shot = true
 		elif raw == "--nettest":
 			_net_test = true
+		elif raw == "--netauto":
+			_net_test = true
+			_net_auto = true
+		elif raw.begins_with("--netjoin"):
+			_net_test = true
+			_net_join = true
+			_net_join_ip = raw.substr(10) if raw.contains("=") else ""
 		elif raw == "--panelshot":
 			_panel_shot = true
 		elif raw == "--setshot":
@@ -920,6 +933,8 @@ func _parse_auto_shot() -> void:
 			_tour_shot = true
 		elif raw == "--laneshot":
 			_lane_shot = true
+		elif raw == "--tapshot":
+			_tap_shot = true
 		elif raw == "--debug-grid":
 			debug_grid = true
 		elif raw == "--perflog":
@@ -947,12 +962,19 @@ func _parse_auto_shot() -> void:
 			h.run_door_shot()
 		if _recall_shot:
 			h.run_recall_test()
+		if _tap_shot:
+			h.run_tap_shot()
 		if _dual_test:
 			h.run_dual_test()
 		if _dual_shot:
 			h.run_dual_shot()
 		if _net_test:
-			net_session.run_self_test()
+			if _net_auto:
+				h.run_net_auto()
+			elif _net_join:
+				h.run_net_join(_net_join_ip)
+			else:
+				net_session.run_self_test()
 		if _trial_shot:
 			h.run_trial_shot()
 		if _panel_shot:

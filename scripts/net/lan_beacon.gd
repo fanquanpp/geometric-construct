@@ -94,6 +94,14 @@ func _occupancy() -> int:
 
 
 func _broadcast() -> void:
+	# 多网卡机器(以太网 + WiFi + 热点适配器并存很常见):受限广播
+	# 只走默认路由,常落到错的网卡 —— 按每个本地网段各发一份,
+	# 再补全网广播(net.md D5:受限广播兜底 Manual IP 之外的第三重)。
+	for ip in NetConfig.local_ips():
+		var parts := ip.split(".")
+		var bcast := "%s.%s.%s.255" % [parts[0], parts[1], parts[2]]
+		_client.set_dest_address(bcast, NetConfig.BEACON_PORT)
+		_client.put_packet(DISCOVER_PKT.to_utf8_buffer())
 	_client.set_dest_address("255.255.255.255", NetConfig.BEACON_PORT)
 	_client.put_packet(DISCOVER_PKT.to_utf8_buffer())
 

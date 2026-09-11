@@ -93,6 +93,19 @@ func open() -> void:
 	_show_pick()
 
 
+## 自动化钩子(--netauto):跳过选择页直接建房并展示等待页。
+func autostart_host() -> void:
+	visible = true
+	if NetSession.I.host_room("试炼房间"):
+		_show_host()
+
+
+## 自动化钩子(--netjoin):跳过选择页直接开始搜索附近房间。
+func autostart_join() -> void:
+	visible = true
+	_show_join()
+
+
 ## 联机对局结束后回房:主机回 HOST 等待页,客机回 LOBBY 等待页。
 func reopen_after_game() -> void:
 	visible = true
@@ -259,7 +272,7 @@ func _show_join() -> void:
 	_body.add_child(_big_btn("返回", "回到上一步",
 		func() -> void: back_out()))
 	NetSession.I.beacon.start_seek()
-	NetSession.I.rooms_changed.connect(_refresh_rooms)
+	NetSession.I.beacon.rooms_changed.connect(_refresh_rooms)
 	_refresh_rooms()
 	_refresh_status_line()
 
@@ -308,7 +321,13 @@ func _show_lobby() -> void:
 	_title_of("已连接", "LOBBY · 等待主机开演")
 	_clear_body()
 	_ensure_status()
-	_lobby_line = Ui.l("你将操控:跃 · 逆 · 伍(绑定集合内可切换)", 15, Ui.HEAD, Ui.PAPER)
+	var names := PackedStringArray()
+	if NetSession.I != null and m != null and not m.players.is_empty():
+		for slot: int in NetSession.I.own_slots_arr():
+			names.append(m.players[slot].display_name())
+	_lobby_line = Ui.l("你将操控:%s(绑定集合内可切换)" % " / ".join(names)
+		if not names.is_empty() else "你将操控:绑定集合(由主机分派)",
+		15, Ui.HEAD, Ui.PAPER)
 	_body.add_child(_lobby_line)
 	_body.add_child(_big_btn("离开房间", "断开连接,返回标题菜单",
 		func() -> void: back_out()))

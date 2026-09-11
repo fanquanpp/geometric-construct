@@ -458,6 +458,55 @@ func run_dual_shot() -> void:
 	m.get_tree().quit()
 
 
+## N2 客机自动化(--netjoin,headless 可用):广播发现附近房间 →
+## 自动加入第一个版本兼容的房间 → 等待主机开演(net.md §4.1:PC 客机
+## 发广播,手机当主机)。
+func run_net_join(ip := "") -> void:
+	await m.get_tree().create_timer(0.8).timeout
+	m._state = Main.State.ROOM
+	m._menu.visible = false
+	m.net_room_layer.open()
+	m.net_room_layer.autostart_join()
+	if not ip.is_empty():
+		print("NETJOIN: direct connect ", ip)
+		NetSession.I.join_room(ip)
+	else:
+		print("NETJOIN: discovering...")
+	for i in 240:
+		await m.get_tree().create_timer(0.5).timeout
+		if NetSession.I != null and NetSession.I.in_game():
+			print("NETJOIN: in game, done")
+			return
+		if not ip.is_empty() and NetSession.I != null and NetSession.I.mode == NetSession.Mode.LOBBY:
+			print("NETJOIN: connected to host, waiting for start")
+			ip = ""
+	print("NETJOIN: timeout")
+	m.get_tree().quit(1)
+
+
+## N2 主机自动化(--netauto,headless 可用):自动建房,对手加入即自动
+## 开演(首版固定试炼场)——供真机联测时 PC 端无人值守当主机。
+func run_net_auto() -> void:
+	await m.get_tree().create_timer(0.8).timeout
+	m._state = Main.State.ROOM
+	m._menu.visible = false
+	m.net_room_layer.open()
+	m.net_room_layer.autostart_host()
+	# 等对手加入 → 自动开演(最多 120s)
+	for i in 240:
+		await m.get_tree().create_timer(0.5).timeout
+		if NetSession.I != null and NetSession.I.in_game():
+			print("NETAUTO: in game, done")
+			return
+		if NetSession.I != null and NetSession.I.is_host() \
+				and NetSession.I.member_count() >= NetConfig.MAX_PLAYERS \
+				and m.net_room_layer.visible:
+			m.net_room_layer.visible = false   # 同「开演」钮:先收房间页
+			NetSession.I.host_start_level(0)
+	print("NETAUTO: timeout waiting for peer")
+	m.get_tree().quit(1)
+
+
 func run_door_shot() -> void:
 	if m._shot_dir.is_empty():
 		m._shot_dir = "res://.shots"
@@ -469,6 +518,25 @@ func run_door_shot() -> void:
 	await _shot("door")
 	await m.get_tree().create_timer(1.1).timeout
 	await _shot("complete")
+	m.get_tree().quit()
+
+
+## 点按粒子反馈分镜(--tapshot):在屏内三点程序化触发 TouchControls
+## 的触点反馈(菱形回包 + 方块迸散),验证爆发与消散全程(开发验收用)。
+func run_tap_shot() -> void:
+	if m._shot_dir.is_empty():
+		m._shot_dir = "res://.shots"
+	m.start_level(0, false)
+	await m.get_tree().create_timer(0.5).timeout
+	var pts := [Vector2(1180, 560), Vector2(1420, 720), Vector2(980, 430)]
+	for k in pts.size():
+		m.touch_controls.tap_burst_at(pts[k])
+		await m.get_tree().create_timer(0.09).timeout
+	await _shot("tapfx")
+	await m.get_tree().create_timer(0.6).timeout
+	m.touch_controls.tap_burst_at(Vector2(1300, 640))
+	await m.get_tree().create_timer(0.05).timeout
+	await _shot("tapfx_late")
 	m.get_tree().quit()
 
 
