@@ -49,6 +49,11 @@ static func set_volume_scale(scale: float) -> void:
 	_volume_scale = clampf(scale, 0.0, 1.0)
 	var idx := AudioServer.get_bus_index("SFX")
 	if idx >= 0:
+		# 全局柔化(v0.27 用户定稿"不要太刺耳"):SFX 总线挂低通,
+		# 5.2kHz 以上毛刺削平——芯片音色骨架不变,尖峰消失
+		var lp := AudioEffectLowPassFilter.new()
+		lp.cutoff_hz = 5200.0
+		AudioServer.add_bus_effect(idx, lp)
 		AudioServer.set_bus_volume_db(idx,
 			linear_to_db(maxf(_volume_scale, 0.0001)) if _volume_scale > 0.001 else -80.0)
 
@@ -103,8 +108,8 @@ static func beat_time() -> float:
 static func init(parent: Node) -> void:
 	# ———— 玩法音(音高按 audio.md §2 迁入 C 大调:上行=获得,下行=失去) ————
 	_reg(parent, "jump", [
-		{"w": "square", "duty": 0.35, "note": "C4", "f1": 523.25, "dur": 0.13,
-			"vol": 0.8, "dec": 14.0, "harm": [[2.0, 0.15]]},
+		{"w": "tri", "note": "C4", "f1": 523.25, "dur": 0.13,
+			"vol": 0.65, "dec": 12.0, "harm": [[2.0, 0.12]]},
 	], -6.0, 0.04)
 	_reg(parent, "jump2", [
 		{"w": "square", "duty": 0.30, "note": "E4", "f1": 659.26, "dur": 0.11,
@@ -120,21 +125,21 @@ static func init(parent: Node) -> void:
 		{"w": "sine", "note": "C3", "f1": 65.41, "dur": 0.08, "vol": 0.5, "dec": 22.0},
 	], -9.0, 0.06)
 	_reg(parent, "climb", [
-		{"w": "square", "duty": 0.5, "note": "F5", "dur": 0.035, "vol": 0.4, "dec": 30.0},
+		{"w": "tri", "note": "F5", "dur": 0.035, "vol": 0.3, "dec": 26.0},
 	], -10.0, 0.08)
 	_reg(parent, "swap", [
-		{"w": "square", "duty": 0.4, "note": "G4", "f1": 261.63, "dur": 0.17,
+		{"w": "tri", "note": "G4", "f1": 261.63, "dur": 0.17,
 			"vol": 0.7, "dec": 9.0},
 		{"w": "tri", "note": "G5", "f1": 523.25, "dur": 0.17, "vol": 0.35, "dec": 9.0},
 	], -6.0, 0.03)
 	# 强化 = 上行三度跳进(G4-C5-E5)+ E6 上滑(既有合规音级,登记保留)
 	_reg(parent, "buff", [
-		{"w": "square", "duty": 0.4, "note": "G4", "dur": 0.09, "vol": 0.5, "dec": 18.0},
-		{"w": "square", "duty": 0.4, "note": "C5", "dur": 0.09, "vol": 0.5, "dec": 18.0,
+		{"w": "tri", "note": "G4", "dur": 0.09, "vol": 0.5, "dec": 16.0},
+		{"w": "tri", "note": "C5", "dur": 0.09, "vol": 0.5, "dec": 16.0,
 			"t0": 0.055},
-		{"w": "square", "duty": 0.4, "note": "E5", "dur": 0.12, "vol": 0.55, "dec": 14.0,
+		{"w": "tri", "note": "E5", "dur": 0.12, "vol": 0.55, "dec": 13.0,
 			"t0": 0.11},
-		{"w": "tri", "note": "E6", "f1": 1760.0, "dur": 0.18, "vol": 0.2, "dec": 10.0,
+		{"w": "sine", "note": "E6", "f1": 1760.0, "dur": 0.18, "vol": 0.18, "dec": 10.0,
 			"t0": 0.13},
 	], -7.0, 0.0)
 	_reg(parent, "die", [

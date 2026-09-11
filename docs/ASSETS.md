@@ -21,8 +21,8 @@
 | 幕(七幕主纲) | 7(2 已演 + 5 规划)| `story.md` §1.5 |
 | 关卡(在演) | 1(机制试炼场 v4,分区 Z0–Z5)| `level_data.gd` LEVELS |
 | 关卡(历史文件未接线) | 1(伍试水 · 界与边)| `levels/pair_trial.json` |
-| 图鉴插图(入引擎) | 31 张 png | `assets/archive/` |
-| aseprite 源 | 22 个(tiles_v2 21 + hearts_4)| `assets/art/` |
+| 图鉴插图(入引擎) | 34 张 png | `assets/archive/` |
+| aseprite 源 | 23 个(tiles_v2 21 + icon_jasmine + levels/trial_v5)| `assets/art/`、`assets/art/levels/` |
 | svg 图标 | 69 个(7 类)| `assets/svg/` |
 | 字体 | 1(NotoSansSC-VF)| `assets/fonts/` |
 
@@ -196,10 +196,10 @@
 | 资产 | 数量 | 路径 | 说明 |
 |---|---|---|---|
 | 几何体肖像 svg | 5 | `assets/svg/characters/` | dash / spring / fall / roll / pair |
-| 图鉴插图 png | **31** | `assets/archive/` | 建筑 6 + 几何体 5 + 机关 20 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200 |
+| 图鉴插图 png | **34** | `assets/archive/` | 建筑 6 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200 |
 | 图鉴 aseprite 源 | 21 | `assets/art/tiles_v2/` | `bld_*` 6 + `geo_*` 5 + `mech_*` 10 |
-| 遗留瓦片图 | — | `assets/tiles/`、`assets/art/tiles/` | v0.13.2 前历史素材,已废止仅留档 |
-| 其他 aseprite | 1 | `assets/art/hearts_4.aseprite` | 生命图标 |
+| 关卡美术层 | 1 | `assets/levels/trial_v5.png`(源 `assets/art/levels/trial_v5.aseprite`)| 试炼场 v5 管道测试道地形外观(v0.27,aseprite 地图首例)|
+| 游戏图标 | 1 | `icon.png`(源 `assets/art/icon_jasmine.aseprite`)| 四叶茉莉:北极星红芯 + 菱形纸瓣 + 镂空蓝小瓣(v0.27)|
 | svg 图标 | **69** | `assets/svg/` | arrows 7 / audio 4 / buttons 18 / characters 5 / icons 14 / keys 10 / objects 5 / ui 6 |
 | svg 场景物件 | 5 | `assets/svg/objects/` | exit-door / platform / portal / spike / spring |
 | 字体 | 1 | `assets/fonts/NotoSansSC-VF.ttf` | 思源黑体可变字重(全游戏唯一字体)|

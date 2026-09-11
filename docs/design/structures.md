@@ -110,6 +110,15 @@
 |---|---|---|
 | timed / trigger | 周期切换 / 触发型 | 预留(限时桥 / 开关门) |
 | speed_gate / speed_ramp | 加速门 / 曲面加速 | 预留 |
-| pushable / slippery | 可推挤 / 低摩擦 | 预留(推箱 / 滑雪落地时启用) |
-| portal_source / portal_target | 传送对两端 | 预留 |
+| pushable / slippery | 可推挤 / 低摩擦 | **v0.27 实装**(PushBox / SkiPatch) |
+| portal_source / portal_target | 传送对两端 | **v0.27 实装**(PortalPair,速度保留+出口外推) |
 | bouncy / conveyor | 高弹性 / 持续水平推力 | 预留 |
+
+### v0.27 机制群实装(scripts/world/mechanisms/)
+
+| 机制 | 玩法 | 关键参数 |
+|---|---|---|
+| 推箱 PushBox | 侧面顶入,整格滑动(100px),遇墙 / 另一箱即停 | bit31 挡人;0.18s 补间;格逻辑确定性 |
+| 滑雪带 SkiPatch | 踩入低摩擦态(摩擦 ×0.12 / 加速 ×0.4),出带 0.2s 恢复 | 覆盖带 Rect2;RunState.friction 链 |
+| 传送对 PortalPair | 进 A 出 B,速度矢量保留;双向可穿 | 出口外推 46px + 0.5s 冷却防乒乓 |
+| 弹射板 LaunchPad | 踩上获数据给定发射矢量(愤怒的小鸟式抛物的固定向量版) | 0.6s 冷却;板上箭头即弹道 |

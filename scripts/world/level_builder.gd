@@ -39,6 +39,19 @@ static func build(def: LevelDef) -> Node2D:
 	var root := Node2D.new()
 	root.name = "Level"
 
+	# —— 测试关美术层(MapSkin v0.27):aseprite 地图接管地形外观 ——
+	# 碰撞照走平台组件;LaneRenderer 让位(机构物 / 玩家照常引擎绘制);
+	# z=-1 沉到网格之下(网格线仍覆在美术上,与 HUD 读数对齐)
+	if not def.art.is_empty():
+		var tex: Texture2D = load(def.art)
+		if tex != null:
+			var skin := Sprite2D.new()
+			skin.texture = tex
+			skin.centered = false
+			skin.scale = Vector2(2, 2)   # aseprite 半分辨率绘制 ×2(1 像素 = 2 引擎像素)
+			skin.z_index = -1
+			root.add_child(skin)
+
 	# —— 引擎光影 rig(v0.19 art-style §8):环境冷档 + 定向平行光,
 	#    遮挡体处实算硬边投影(方向恒定,沿用旧硬投影的右下约定) ——
 	var ambient := CanvasModulate.new()
@@ -100,6 +113,8 @@ static func build(def: LevelDef) -> Node2D:
 	# 每层一个渲染器,只画自己层的组件 —— 实体层按高亮三档呈现
 	# (专属亮 / 共享常 / 无关暗),档间转移走交叉淡化(§7.10)
 	for layer in [1, 2, 3, 4, 5, 6, 7, 8]:
+		if not def.art.is_empty():
+			continue   # 美术层接管地形外观(碰撞不变)
 		var renderer := LaneRenderer.new()
 		renderer.layer = layer
 		renderer.items = items.filter(func(it: Dictionary) -> bool:
@@ -194,6 +209,30 @@ static func build(def: LevelDef) -> Node2D:
 			"item": {"layer": Comp.layer_of(pt), "who": Comp.who_of(pt)},
 			"rect": pt["rect"]})
 
+	# —— 推箱 / 滑雪带 / 传送对 / 弹射板(v0.27 机制群,structures.md §7)——
+	for pb in def.push_boxes:
+		var box := PushBox.new()
+		box.cell = pb["cell"]
+		box.z_index = Comp.LAYER_Z[Comp.LAYER_MAIN]
+		root.add_child(box)
+		focus_entries.append({"node": box,
+			"item": {"layer": Comp.LAYER_MAIN, "who": []},
+			"rect": Rect2(box.cell - Vector2(50, 50), Vector2(100, 100))})
+	for sp in def.ski_patches:
+		var ski := SkiPatch.new()
+		ski.rect = sp
+		root.add_child(ski)
+	for pp in def.portals:
+		var portal := PortalPair.new()
+		portal.a = pp["a"]
+		portal.b = pp["b"]
+		root.add_child(portal)
+	for lp in def.launch_pads:
+		var pad := LaunchPad.new()
+		pad.pos = lp["pos"]
+		pad.launch_vec = lp["vec"]
+		root.add_child(pad)
+
 	# —— 出口门 ——
 	for e in def.exits:
 		var door := ExitDoor.new()
@@ -267,6 +306,12 @@ static func build(def: LevelDef) -> Node2D:
 		p.position = def.spawns[idx]
 		p.world_mask = _mask_for(combos, idx)
 		root.add_child(p)
+
+	# 推箱层(bit31)并入全员 mask:箱体占位时挡人(Sprint 机制群)
+	if not def.push_boxes.is_empty():
+		for child in root.get_children():
+			if child is Player:
+				(child as Player).world_mask |= 1 << 31
 
 	# —— 高亮三档驱动:机关物的专属亮 / 共享常 / 无关暗(§7.10) ——
 	var focus := FocusDriver.new()

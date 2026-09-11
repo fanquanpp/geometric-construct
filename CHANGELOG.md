@@ -3,6 +3,54 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.27.0(2026-09-11)
+
+> **机制群 + 测试关重制 + 图标重绘**(用户九条指令批落地):四个新
+> 玩法机制实装(推箱 / 滑雪带 / 传送对 / 弹射板),测试关重制为
+> aseprite 管道测试道,图鉴补全至 13 条,图标换「四叶茉莉」,
+> 音效全线柔化,旧资产与仓库残留清理。
+
+### 新增
+- **四机制群**(structures.md §7,全入 MechanismRegistry + 图鉴):
+  - **推箱 PushBox**:格逻辑整格滑动(100px / 0.18s 补间),遇墙 /
+	另一箱即停;箱体占位挡人(bit31 并入玩家 mask);确定性优先。
+  - **滑雪带 SkiPatch**:低摩擦冰蓝覆盖带——踩入摩擦 ×0.12、加速
+	×0.4,出带 0.2s 余量恢复;走 RunState.friction 修饰链。
+  - **传送对 PortalPair**(规划转实装):进 A 出 B 速度矢量保留,
+	出口外推 46px + 0.5s 冷却防乒乓;双向可穿。
+  - **弹射板 LaunchPad**(§5 Launcher 实装):踩上即获数据给定的
+	发射矢量,0.6s 冷却;板上箭头即弹道。
+- **测试关美术层(MapSkin)**:LevelDef.art 字段——非空时 aseprite
+  地图接管地形外观(LaneRenderer 让位,碰撞照走平台组件);
+  art-style 外观双轨(§0.5)之测试关例外条款。
+- **试炼场 v5 · 管道测试道**(6400×1080):地板与天花板并行直通道,
+  Z0 出生 → Z1 滑雪带 → Z2 推箱室 → Z3 弹射+传送 → Z4 机关长廊
+  (琴键 / 躲避动板 / 限时桥坑 / 气闸门)→ Z5 归门(圆丘坡 + 伍壁龛);
+  地图 aseprite 绘制(assets/art/levels/trial_v5.aseprite → PNG)。
+- **图鉴补全**:推箱 / 滑雪带 / 弹射板三 entries + aseprite 图鉴 PNG;
+  传送对「规划中」转「v0.27 实装」。
+- **游戏图标 v2「四叶茉莉」**:北极星红芯 + 四实心菱形纸瓣(墨边)+
+  四镂空菱形蓝小瓣(斜隙);boot 开屏图标同步替换。
+- LevelDef 新字段:art / push_boxes / ski_patches / portals /
+  launch_pads(--leveljson JSON 同构全支持);tours[0] 重排 v5 十三拍。
+
+### 变更
+- **音效全线柔化**(「不要太刺耳」):SFX 总线挂 5.2kHz 低通;jump /
+  climb / swap / buff 四组最尖方波层换三角波(正弦),音量微降。
+- **斜坡红刻度沿坡向斜画**:draw_line 沿段向替代水平块(与曲面平行)。
+- 清理:hearts_4.aseprite / godot-icon.png / icon.svg 退役;
+  level_data v4 残留注释清除;speed-dev 去仓库化(本地 .git 等移除,
+  远程 geometric-construct-editor 仓库已删除)。
+
+### 文档
+- levels.md §0 契约版本与管道测试道;structures.md §7 机制群;
+  ASSETS.md 资产账目;README 版本行 + 预览图(docs/preview/)。
+
+### 验收
+- 五门禁全绿:gridcheck(11 WARN)/ layer_check / modifier_check /
+  mover_check / recalltest 三链路;autotest=0、panelshot(图鉴 13 条)、
+  tourshot v5 十三拍全零脚本错误。
+
 ## v0.26.0(2026-09-11)
 
 > **Sprint 5 · P2 捆绑**(统合重构终案收官):one-way 方向向量简化 +

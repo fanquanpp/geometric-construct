@@ -154,25 +154,19 @@ func run_tour_shot() -> void:
 	m.start_level(m._shot_level, false)
 	await m.get_tree().create_timer(0.4).timeout
 	var tours := {
-		0: [["spawn", Vector2(430, 1745)],
-			["float_top", Vector2(1150, 1415)],
-			["L3_pass", Vector2(1800, 1745)],
-			["L8_silhouette", Vector2(2380, 1745)],
-			["dash_wall", Vector2(2820, 1745)],
-			["L6_roll_top", Vector2(3930, 1374)],
-			["swap_corridor", Vector2(5200, 1745)],
-			["faces_top", Vector2(6250, 1600)],
-			["piano_row", Vector2(6800, 1745)],
-			["ferry", Vector2(8200, 1670)],
-			["pit_ramp", Vector2(8300, 1850)],
-			["lift_top", Vector2(9080, 1000)],
-			["deck_gate", Vector2(9550, 1020)],
-			["ceiling_top", Vector2(10800, 1150)],
-			["climb_tower", Vector2(11600, 360)],
-			["bridge", Vector2(11250, 1700)],
-			["twins_hall", Vector2(11800, 1745)],
-			["niche_door4", Vector2(13235, 1650)],
-			["doors", Vector2(12700, 1745)]],
+		0: [["spawn", Vector2(300, 855)],
+			["ski", Vector2(950, 820)],
+			["pushbox", Vector2(1750, 820)],
+			["speedgate", Vector2(2200, 820)],
+			["launchpad", Vector2(2450, 820)],
+			["portal", Vector2(3300, 760)],
+			["piano", Vector2(3800, 830)],
+			["dodge", Vector2(4280, 700)],
+			["airgate", Vector2(5000, 820)],
+			["ramp_top", Vector2(5300, 620)],
+			["exits", Vector2(5950, 826)],
+			["wuwu_niche", Vector2(6220, 560)],
+			["ceiling_road", Vector2(6150, 225)]],
 	}
 	var waypoints: Array = tours.get(m._shot_level, [["spawn", Vector2(300, 850)]])
 	for wp in waypoints:

@@ -50,10 +50,13 @@ func _draw() -> void:
 	draw_colored_polygon(band, Color("313845"))
 	# 顶缘亮线
 	draw_polyline(pts, Color(Ui.PAPER, 0.35), 2.0)
-	# 红色刻度块(每段中点)
+	# 红色刻度块(每段中点,沿坡向斜画 —— 与曲面平行,v0.27 用户定稿)
 	for i in pts.size() - 1:
-		var mid := (pts[i] + pts[i + 1]) * 0.5
-		draw_rect(Rect2(mid - Vector2(7, 8), Vector2(14, 3)), Color(Ui.RED, 0.55))
+		var a: Vector2 = pts[i]
+		var b: Vector2 = pts[i + 1]
+		var d := (b - a).normalized()
+		var mid := (a + b) * 0.5
+		draw_line(mid - d * 7.0, mid + d * 7.0, Color(Ui.RED, 0.55), 3.0)
 	# 专属高亮描边(呼吸脉冲,§7.10)
 	LevelBuilder.draw_focus(self, LevelBuilder._ramp_bounds(pts, base_y), hl_color)
 

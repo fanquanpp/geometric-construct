@@ -63,6 +63,7 @@ var world_mask := 1
 var shrink := 1.0
 
 var facing := 1.0
+var skiing := false           # 滑雪带覆盖中(SkiPatch 写入):低摩擦低加速
 var input_x := 0.0            # 本帧水平输入(载体侧刚性随动的自走判定)
 ## 输入槽注入(net.md §2 N0):null = 本地槽位 0(既有动作,行为零变化);
 ## 联机时主机侧客机绑定体 = RemoteInputSource,同屏双人 = 分区 LocalInputSource。
@@ -260,9 +261,11 @@ func _physics_process(delta: float) -> void:
 	var target_vx := move_input.x * target_mult * Geometries.RUN_SPEED
 	var eff_weight := RunState.modified(def, "weight") \
 		* (RAMP_WEIGHT_RATIO if ramp_buffed else 1.0)
-	var accel_factor := clampf(1.15 - 0.3 * eff_weight, 0.55, 1.15)
+	var accel_factor := clampf(1.15 - 0.3 * eff_weight, 0.55, 1.15) \
+		* (0.4 if skiing else 1.0)
 	var friction_factor := clampf(1.1 - 0.35 * eff_weight, 0.4, 1.1)
-	var mu := MU_FRICTION * friction_factor * RunState.modified(def, "friction")
+	var mu := MU_FRICTION * friction_factor * RunState.modified(def, "friction") \
+		* (0.12 if skiing else 1.0)
 	if def.shape == GeometryDef.Shape.BALL:
 		accel_factor = maxf(accel_factor, 1.0)
 		mu = BALL_MU_ROLL * friction_factor           # 滚动阻力系数远小于滑动

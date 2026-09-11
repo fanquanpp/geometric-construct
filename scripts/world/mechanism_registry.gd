@@ -13,7 +13,8 @@ class_name MechanismRegistry
 
 const KINDS: Array[StringName] = [&"ramp", &"mover", &"mover_slab",
 	&"mover_track", &"timed_bridge", &"lever_gate", &"piano_tile",
-	&"mag_boundary"]
+	&"mag_boundary", &"push_box", &"ski_patch", &"portal_pair",
+	&"launch_pad"]
 
 
 static func script_for(kind: StringName) -> GDScript:
@@ -34,6 +35,14 @@ static func script_for(kind: StringName) -> GDScript:
 			return PianoTile
 		&"mag_boundary":
 			return MagBoundary
+		&"push_box":
+			return PushBox
+		&"ski_patch":
+			return SkiPatch
+		&"portal_pair":
+			return PortalPair
+		&"launch_pad":
+			return LaunchPad
 		_:
 			push_warning("MechanismRegistry: 未登记的机制 kind '%s'" % kind)
 			return null

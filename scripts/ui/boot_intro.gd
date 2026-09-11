@@ -127,7 +127,7 @@ func _ready() -> void:
 	godot_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	godot_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	var gd_icon := TextureRect.new()
-	gd_icon.texture = load("res://assets/svg/engine/godot-icon.png")
+	gd_icon.texture = load("res://icon.png")
 	gd_icon.custom_minimum_size = Vector2(34, 34)
 	gd_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	gd_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
