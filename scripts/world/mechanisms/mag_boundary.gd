@@ -10,14 +10,19 @@ var b: Player
 var _seg := SegmentShape2D.new()
 
 func _ready() -> void:
-	collision_layer = LevelBuilder.BOUNDARY_BIT
+	collision_layer = TerrainKit.BOUNDARY_BIT
 	collision_mask = 0
 	var cs := CollisionShape2D.new()
 	cs.shape = _seg
 	add_child(cs)
 	z_index = 4
 
-func _physics_process(_dt: float) -> void:
+var _recover := 0.0   # 端点大位移后的收线余量(秒):线只阻挡不推移(v0.21.1 隐患修复)
+var _last_a := Vector2.ZERO
+var _last_b := Vector2.ZERO
+var _has_last := false
+
+func _physics_process(dt: float) -> void:
 	if a == null or b == null or not is_instance_valid(a) or not is_instance_valid(b):
 		return
 	# 任一半死亡 / 进门:磁界收线(两端并拢 = 不再阻隔任何人),
@@ -27,8 +32,26 @@ func _physics_process(_dt: float) -> void:
 		_seg.b = Vector2.ZERO
 		queue_redraw()
 		return
-	_seg.a = to_local(a.boundary_anchor())
-	_seg.b = to_local(b.boundary_anchor())
+	var na := to_local(a.boundary_anchor())
+	var nb := to_local(b.boundary_anchor())
+	# 候选修法落地(characters.md §5 已知隐患):召回 / 置换等造成端点
+	# 单帧大位移时,磁界收线 0.2s——运动静态体的去穿透扫掠会"推挤"
+	# 另一半,违背"线只阻挡不推移"纪律。与上次活跃端点比较(而非已
+	# 归零的 _seg),稳定 0.2s 后即恢复;首帧直设,不吞正常移动。
+	if _has_last and _recover <= 0.0 and (
+			na.distance_to(_last_a) > 120.0 or nb.distance_to(_last_b) > 120.0):
+		_recover = 0.2
+	if _recover > 0.0:
+		_recover = maxf(_recover - dt, 0.0)
+		_seg.a = Vector2.ZERO
+		_seg.b = Vector2.ZERO
+		queue_redraw()
+		return
+	_seg.a = na
+	_seg.b = nb
+	_last_a = na
+	_last_b = nb
+	_has_last = true
 	queue_redraw()
 
 func _draw() -> void:
@@ -51,4 +74,4 @@ func _draw() -> void:
 	# 端点方块 + 折点中块(磁力感)
 	draw_rect(Rect2(pa - Vector2(4, 4), Vector2(8, 8)), Color(col, 0.95))
 	draw_rect(Rect2(pb - Vector2(4, 4), Vector2(8, 8)), Color(col, 0.95))
-	draw_rect(Rect2(mid + bow - Vector2(3, 3), Vector2(6, 6)), Color(Ui.PAPER, 0.9))
+	draw_rect(Rect2(mid + bow - Vector2(3, 3), Vector2(6, 6)), Color(Palette.PAPER, 0.9))

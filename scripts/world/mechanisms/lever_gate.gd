@@ -32,7 +32,7 @@ func _ready() -> void:
 	cs.shape = shape
 	_door_body.add_child(cs)
 	add_child(_door_body)
-	_door_occ = LevelBuilder._rect_occluder(Rect2(-r.size / 2.0, r.size))
+	_door_occ = TerrainKit.rect_occluder(Rect2(-r.size / 2.0, r.size))
 	_door_body.add_child(_door_occ)
 	# 踩踏开关:检测几何体站上(检测位 = 玩家层,位 2),逐只开关记录乘员
 	for i in lever_rects.size():
@@ -106,12 +106,12 @@ func _draw() -> void:
 	var r: Rect2 = door_item["rect"]
 	if _open:
 		# 门板虚化态:8% 亮度线框 + 虚线段(可预读)
-		draw_rect(r, Color(Ui.PAPER, 0.06))
-		draw_rect(r, Color(Ui.PAPER, 0.14), false, 1.5)
+		draw_rect(r, Color(Palette.PAPER, 0.06))
+		draw_rect(r, Color(Palette.PAPER, 0.14), false, 1.5)
 	else:
 		draw_rect(r, Color("262B34"))
 		draw_rect(Rect2(r.position, Vector2(r.size.x, 4)), Color("313845"))
-		draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.30))
+		draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.PAPER, 0.30))
 	# 踩踏开关:凸 / 凹两态 + 红色刻度(凸 = 待踩,凹 = 踩住);
 	# 开关与门之间画一条 8% 亮度的地面连线,标出"这只开关管这扇门"
 	for i in lever_rects.size():
@@ -124,15 +124,15 @@ func _draw() -> void:
 		var lx0 := minf(lr.get_center().x, r.get_center().x)
 		var lx1 := maxf(lr.get_center().x, r.get_center().x)
 		draw_rect(Rect2(Vector2(lx0, link_y), Vector2(lx1 - lx0, 2)),
-			Color(Ui.RED if pressed else Ui.PAPER, 0.22 if pressed else 0.10))
+			Color(Palette.RED if pressed else Palette.PAPER, 0.22 if pressed else 0.10))
 		draw_rect(Rect2(Vector2(lr.position.x - 3, lr.end.y - 3),
 			Vector2(lr.size.x + 6, 3)), Color(0, 0, 0, 0.38))
 		draw_rect(Rect2(lr.position + Vector2(0, sink), lr.size),
 			Color("313845") if not pressed else Color("3A4254"))
 		draw_rect(Rect2(lr.position + Vector2(0, sink),
-			Vector2(lr.size.x, 2)), Color(Ui.RED, 0.9 if not pressed else 0.5))
+			Vector2(lr.size.x, 2)), Color(Palette.RED, 0.9 if not pressed else 0.5))
 		if pressed:
 			draw_rect(Rect2(lever_rect.position + Vector2(lever_rect.size.x * 0.5 - 14,
-				lr.position.y - 16), Vector2(28, 3)), Color(Ui.RED, 0.8))
+				lr.position.y - 16), Vector2(28, 3)), Color(Palette.RED, 0.8))
 	# 门板专属高亮描边(呼吸脉冲,§7.10)
-	LevelBuilder.draw_focus(self, r, hl_color)
+	TerrainKit.draw_focus(self, r, hl_color)

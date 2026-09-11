@@ -8,13 +8,13 @@
 
 1. **任何设计与功能更新都要考虑双端表现。并且实时更新文档。**
    - **双端** = PC(键盘 + 鼠标 / 手柄)与 Android 真机(触屏:轮盘 /
-     点按跳跃 / 虚拟按键)。任何新交互必须有触屏路径(虚拟按键 / chips
-     点按 / 手势),任何新 UI 必须在 1280×720 设计稿与真机安全区下验收;
-     文案双端自适应(键位词 ↔ 触屏词,参照 HintMarker / HUD 提示条)。
+	 点按跳跃 / 虚拟按键)。任何新交互必须有触屏路径(虚拟按键 / chips
+	 点按 / 手势),任何新 UI 必须在 1280×720 设计稿与真机安全区下验收;
+	 文案双端自适应(键位词 ↔ 触屏词,参照 HintMarker / HUD 提示条)。
    - **实时更新文档** = 文档与代码同一次交付同步:CHANGELOG 记一节、
-     README 版本行、涉及的设计文档(characters / levels / structures /
-     art-style / ui-flow / audio / motion 等)、ARCHITECTURE(架构变化)、
-     ASSETS.md(新资产)。不允许"代码先合、文档下次补"。
+	 README 版本行、涉及的设计文档(characters / levels / structures /
+	 art-style / ui-flow / audio / motion 等)、ARCHITECTURE(架构变化)、
+	 ASSETS.md(新资产)。不允许"代码先合、文档下次补"。
 2. **机制优先**:关卡与剧情设计锁定在机制全部完美之后(用户决策
    2026-09-10);改机制时必须同步数据契约(levels.md)与校验器
    (tests/grid_check.gd)。

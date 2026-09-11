@@ -44,7 +44,7 @@ func _draw() -> void:
 		for gx in range(0, w + 1, 10):
 			for gy in range(0, h + 1, 10):
 				draw_rect(Rect2(gx * unit - dot * 0.5, gy * unit - dot * 0.5,
-					dot, dot), Color(Ui.PAPER, 0.16))
+					dot, dot), Color(Palette.PAPER, 0.16))
 		_draw_edge_numbers(w, h, 10)
 		return
 	# 近景 / 中景:主线 5 格;近景再叠 1 格细线
@@ -54,29 +54,29 @@ func _draw() -> void:
 		if a <= 0.0:
 			continue
 		draw_line(Vector2(gx * unit, 0), Vector2(gx * unit, level_size.y),
-			Color(Ui.PAPER, a), 1.0)
+			Color(Palette.PAPER, a), 1.0)
 	for gy in h + 1:
 		var a := 0.085 if gy % 5 == 0 else minor_a
 		if a <= 0.0:
 			continue
 		draw_line(Vector2(0, gy * unit), Vector2(level_size.x, gy * unit),
-			Color(Ui.PAPER, a), 1.0)
+			Color(Palette.PAPER, a), 1.0)
 	# 左缘红色格点刻度(每 1 格,构成主义强调点)
 	for gy in h + 1:
-		draw_rect(Rect2(-6, gy * unit - 1.5, 12, 3), Color(Ui.RED, 0.5))
+		draw_rect(Rect2(-6, gy * unit - 1.5, 12, 3), Color(Palette.RED, 0.5))
 	# 原点十字
-	draw_line(Vector2(0, 0), Vector2(26, 0), Color(Ui.RED, 0.55), 2.0)
-	draw_line(Vector2(0, 0), Vector2(0, 26), Color(Ui.RED, 0.55), 2.0)
+	draw_line(Vector2(0, 0), Vector2(26, 0), Color(Palette.RED, 0.55), 2.0)
+	draw_line(Vector2(0, 0), Vector2(0, 26), Color(Palette.RED, 0.55), 2.0)
 	# —— 分区坐标系(§8.2):边界竖线 + 分区名(近景 LOD 显示)——
 	if _tier == 0:
 		for z in zones:
 			var zr: Rect2 = z["rect"]
 			draw_line(Vector2(zr.position.x, 0),
-				Vector2(zr.position.x, level_size.y), Color(Ui.PAPER, 0.13), 1.0)
+				Vector2(zr.position.x, level_size.y), Color(Palette.PAPER, 0.13), 1.0)
 			if Ui.HEAD != null:
 				draw_string(Ui.HEAD, zr.position + Vector2(10, 30),
 					str(z["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15,
-					Color(Ui.PAPER, 0.30))
+					Color(Palette.PAPER, 0.30))
 
 ## 上 / 左双缘坐标数字(levels.md §8.2;游戏内仅远景边缘显示)。
 func _draw_edge_numbers(w: int, h: int, step: int) -> void:
@@ -86,7 +86,7 @@ func _draw_edge_numbers(w: int, h: int, step: int) -> void:
 	for gx in range(0, w + 1, step):
 		var s := str(gx)
 		draw_string(Ui.HEAD, Vector2(gx * unit + 4, 14), s,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(Ui.RED, 0.7))
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(Palette.RED, 0.7))
 	for gy in range(step, h + 1, step):
 		draw_string(Ui.HEAD, Vector2(4, gy * unit - 4), str(gy),
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(Ui.RED, 0.7))
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(Palette.RED, 0.7))

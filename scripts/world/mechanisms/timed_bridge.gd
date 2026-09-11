@@ -28,7 +28,7 @@ func _ready() -> void:
 	cs.shape = shape
 	add_child(cs)
 	position = Vector2.ZERO
-	_occ = LevelBuilder._rect_occluder(slab_rect)
+	_occ = TerrainKit.rect_occluder(slab_rect)
 	add_child(_occ)
 	if sync_beat and Sfx.beat_period() > 0.0:
 		_beat_phase = Sfx.beat_time()
@@ -58,24 +58,24 @@ func _draw() -> void:
 	var r := Rect2(slab_rect.position, slab_rect.size)
 	# 轨道线:桥的行程始终可见(可预读的一部分)
 	draw_rect(Rect2(Vector2(r.position.x - 10, r.get_center().y - 1),
-		Vector2(4, 2)), Color(Ui.RED, 0.55))
+		Vector2(4, 2)), Color(Palette.RED, 0.55))
 	draw_rect(Rect2(Vector2(r.end.x + 6, r.get_center().y - 1),
-		Vector2(4, 2)), Color(Ui.RED, 0.55))
+		Vector2(4, 2)), Color(Palette.RED, 0.55))
 	if _solid:
 		draw_rect(r, Color("2B3140"))
 		draw_rect(Rect2(r.position, Vector2(r.size.x, 4)), Color("3A4254"))
-		draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.42))
+		draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.PAPER, 0.42))
 		# 实心态刻度:左缘红块(与移动板同语言)
-		draw_rect(Rect2(r.position + Vector2(0, 4), Vector2(8, 3)), Color(Ui.RED, 0.8))
+		draw_rect(Rect2(r.position + Vector2(0, 4), Vector2(8, 3)), Color(Palette.RED, 0.8))
 	else:
 		# 虚化态:8% 亮度线框 + 虚线段(可预读纪律)
-		draw_rect(r, Color(Ui.PAPER, 0.08))
+		draw_rect(r, Color(Palette.PAPER, 0.08))
 		var seg := 14.0
 		var x := r.position.x
 		while x < r.end.x:
 			draw_rect(Rect2(Vector2(x, r.position.y), Vector2(minf(seg, r.end.x - x), 2)),
-				Color(Ui.PAPER, 0.30))
+				Color(Palette.PAPER, 0.30))
 			x += seg * 2.0
-		draw_rect(r, Color(Ui.PAPER, 0.16), false, 1.0)
+		draw_rect(r, Color(Palette.PAPER, 0.16), false, 1.0)
 	# 专属高亮描边(呼吸脉冲,§7.10)
-	LevelBuilder.draw_focus(self, r, hl_color)
+	TerrainKit.draw_focus(self, r, hl_color)

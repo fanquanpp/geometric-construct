@@ -1,20 +1,21 @@
 class_name Ui
-## 视觉主题唯一入口:字体 / 调色板 / StyleBox / 构成主义文字组件。
+## 视觉主题唯一入口:字体 / StyleBox / 构成主义文字组件。
+## 调色板 SSOT 已迁 data/palette.gd(Phase 2 边界重构,此处为别名)。
 ## 美术锚点:极简主义 + 构成主义 + 几何图形 + 棱角分明锐利。
 ##   - 无圆角、无渐变、无柔影:一切以平面色块、细线、大字构成。
 ##   - 红色为全局强调色;角色色仅作为功能性点缀。
 
-# ———— 调色板 ————
-const INK := Color("101216")      # 墨色背景
-const INK_2 := Color("16191F")    # 面板墨色
-const INK_3 := Color("1E222B")    # 提亮层
-const PAPER := Color("EDEAE0")    # 纸白(主文本)
-const DIM := Color("8E8D85")      # 次要文本
-const LINE := Color(1, 1, 1, 0.10)
-const RED := Color("E0492F")      # 构成主义红(全局强调)
-const YELLOW := Color("E8B33A")
-const BLUE := Color("4E86D8")
-const ORANGE := Color("E07E2E")
+# ———— 调色板(SSOT = data/palette.gd,此处为兼容别名) ————
+const INK := Palette.INK
+const INK_2 := Palette.INK_2
+const INK_3 := Palette.INK_3
+const PAPER := Palette.PAPER
+const DIM := Palette.DIM
+const LINE := Palette.LINE
+const RED := Palette.RED
+const YELLOW := Palette.YELLOW
+const BLUE := Palette.BLUE
+const ORANGE := Palette.ORANGE
 
 # ———— 字体 ————
 static var BODY: Font    # 400 正文

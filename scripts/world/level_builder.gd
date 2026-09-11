@@ -1,7 +1,5 @@
 class_name LevelBuilder
 
-## 磁力边界碰撞位(伍·界/边专用;组件签名位只占 3..29,bit30 起为特权位)。
-const BOUNDARY_BIT := 1 << 30
 ## 碰撞签名位分配上限(bit29,共 27 槽):与磁界等特权位彻底隔离,
 ## 超限构建期报错并丢弃多余签名(§7.10 位上限守卫)。
 const MAX_COMBO_BIT := 29
@@ -100,7 +98,7 @@ static func build(def: LevelDef) -> Node2D:
 		items.append(it)
 		if it["faces"] != Comp.FACES_NONE \
 				and int(it["layer"]) >= Comp.LAYER_BACK:
-			root.add_child(_rect_occluder(it["rect"]))
+			root.add_child(TerrainKit.rect_occluder(it["rect"]))
 		if not Comp.is_solid_layer(it["layer"]) \
 				or it["faces"] == Comp.FACES_NONE:
 			continue    # 景观层 / 纯装饰:无碰撞(所见即所碰)
@@ -135,7 +133,7 @@ static func build(def: LevelDef) -> Node2D:
 		root.add_child(ramp)
 		focus_entries.append({"node": ramp,
 			"item": {"layer": Comp.layer_of(r), "who": Comp.who_of(r)},
-			"rect": _ramp_bounds(ramp.pts, ramp.base_y)})
+			"rect": TerrainKit.ramp_bounds(ramp.pts, ramp.base_y)})
 
 	# —— 加速门 ——
 	for g in def.gates:
@@ -412,18 +410,6 @@ static func _assign_id(it: Dictionary, used: Dictionary, seq: Dictionary) -> voi
 	used[cand] = true
 
 
-## 曲面跳跃板的包围框(FocusDriver 波次排序用)。
-static func _ramp_bounds(pts: PackedVector2Array, base_y: float) -> Rect2:
-	if pts.is_empty():
-		return Rect2()
-	var lo := pts[0]
-	var hi := pts[0]
-	for p in pts:
-		lo = lo.min(p)
-		hi = hi.max(p)
-	return Rect2(lo, hi - lo + Vector2(0, base_y - lo.y))
-
-
 ## 组件碰撞层值;无签名(纯视觉层)= 0(不与任何几何体碰撞)。
 static func _bit_value(combos: Dictionary, key: String) -> int:
 	var c: Dictionary = combos.get(key)
@@ -457,26 +443,3 @@ static func _rect_shape(r: Rect2, faces: String) -> CollisionShape2D:
 			# 等价于把局部阻挡方向 (0,1) 旋到 (0,-1),行为逐位一致
 			cs.one_way_collision_direction = Vector2(0, -1)
 	return cs
-
-
-## 矩形遮挡体(引擎光影 v0.19,art-style.md §8):世界坐标矩形 →
-## 顺时针绕行的闭合遮挡多边形;cull_mode 挡掉自身受影(平台顶面
-## 不被自己的遮挡体压出暗带)。
-static func _rect_occluder(r: Rect2) -> LightOccluder2D:
-	var occ := LightOccluder2D.new()
-	var poly := OccluderPolygon2D.new()
-	poly.polygon = PackedVector2Array([
-		r.position, Vector2(r.end.x, r.position.y),
-		r.end, Vector2(r.position.x, r.end.y)])
-	poly.cull_mode = OccluderPolygon2D.CULL_CLOCKWISE
-	occ.occluder = poly
-	return occ
-
-
-## 专属高亮描边(高亮三档,levels.md §7.10):几何体专属色 2px 外框 +
-## 呼吸脉冲;col.a = 0 时不画(LaneRenderer 与机关物 _draw 共用)。
-static func draw_focus(c: CanvasItem, r: Rect2, col: Color) -> void:
-	if col.a <= 0.0:
-		return
-	var pl := 0.55 + 0.35 * sin(Time.get_ticks_msec() / 1000.0 * 6.0)
-	c.draw_rect(r.grow(3.0), Color(col.r, col.g, col.b, col.a * pl), false, 2.0)

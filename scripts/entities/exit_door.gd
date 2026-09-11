@@ -134,7 +134,7 @@ func _draw() -> void:
 
 	# 门腔(墨色) + 几何体色内框;三档就绪态(FbW 双门等待语义):
 	# 空 = 暗框 / 半就绪(有人到站未满员,如双子单半)= 中亮 / 满员 = 亮框
-	draw_rect(r, Color(Ui.INK, 0.94))
+	draw_rect(r, Color(Palette.INK, 0.94))
 	var inner := r.grow(-5.0)
 	var inner_alpha := 0.55 if _filled else (0.42 if not _arrived_set.is_empty() else 0.30)
 	draw_rect(inner, Color(_color, inner_alpha), false, 2.0)
@@ -153,4 +153,4 @@ func _draw() -> void:
 	# 到站态:外围取景框;封印(终点激活)态:红色取景框
 	if _filled:
 		draw_rect(r.grow(7.0),
-			Color(Ui.RED, 0.95) if sealed else Color(Ui.PAPER, 0.9), false, 1.5)
+			Color(Palette.RED, 0.95) if sealed else Color(Palette.PAPER, 0.9), false, 1.5)

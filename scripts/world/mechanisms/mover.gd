@@ -24,7 +24,7 @@ func _ready() -> void:
 	cs.shape = shape
 	add_child(cs)
 	# 遮挡体(引擎光影 v0.19):居中于石板,随平台一起动,投影由引擎实算
-	add_child(LevelBuilder._rect_occluder(Rect2(-rect.size / 2.0, rect.size)))
+	add_child(TerrainKit.rect_occluder(Rect2(-rect.size / 2.0, rect.size)))
 	var renderer := MoverSlab.new()
 	renderer.size = rect.size
 	add_child(renderer)

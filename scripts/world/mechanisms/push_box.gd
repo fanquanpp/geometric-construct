@@ -80,12 +80,12 @@ func _blocked(target: Vector2) -> bool:
 func _draw() -> void:
 	var r := Rect2(Vector2(-CELL / 2.0, -CELL / 2.0), Vector2(CELL, CELL))
 	draw_rect(r, Color("3A4254"))
-	draw_rect(r, Color(Ui.PAPER, 0.42), false, 1.5)
+	draw_rect(r, Color(Palette.PAPER, 0.42), false, 1.5)
 	# 两侧顶推雪佛龙(指向可推方向)
 	for side: float in [-1.0, 1.0]:
 		var cx := side * (CELL / 2.0 - 14.0)
 		draw_polyline(PackedVector2Array([
 			Vector2(cx - side * 6.0, -14.0), Vector2(cx + side * 6.0, 0.0),
-			Vector2(cx - side * 6.0, 14.0)]), Color(Ui.PAPER, 0.55), 2.0)
+			Vector2(cx - side * 6.0, 14.0)]), Color(Palette.PAPER, 0.55), 2.0)
 	# 专属高亮描边(呼吸脉冲,§7.10)
-	LevelBuilder.draw_focus(self, r, hl_color)
+	TerrainKit.draw_focus(self, r, hl_color)
