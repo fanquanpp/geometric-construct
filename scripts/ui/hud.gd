@@ -511,7 +511,9 @@ func refresh_roster(roster: Array, active: int, exited_mask: int,
 ## 双体芯片文字:当前受控者是该 index 的某一半时显示该半代号。
 func _pair_chip_text(idx: int) -> String:
 	var m = Main.I
-	if m != null and m.view_slot() >= 0 and m.view_slot() < m.players.size():
+	# 同屏双人:两半皆活,无名册单点高亮 —— 双体芯片恒并示"界 / 边"
+	if m != null and not m.dual_mode \
+			and m.view_slot() >= 0 and m.view_slot() < m.players.size():
 		var ap: Player = m.players[m.view_slot()]
 		if ap != null and ap.index == idx:
 			return ap.display_name()

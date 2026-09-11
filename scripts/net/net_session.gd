@@ -231,6 +231,10 @@ func _remote_source_for(slot: int) -> InputSource:
 	return _remote_srcs[slot]
 
 
+## 主机侧:客机当前操控体(players 下标,随 rpc_input 更新)。
+## 槽位契约与同屏双人 RosterController.dual_binds() 同形 ——
+## [{slot: 0/1, geo: 几何体下标}]:N2 房间 UI / 相机插槽按同一形状
+## 取"客机在看谁"(net.md §2 绑定集合同一数据源,N1 已联通)。
 func client_active_slot() -> int:
 	return _client_active
 

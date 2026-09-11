@@ -56,6 +56,8 @@ var _shot_level := 0
 var _shot_dir := ""
 var _door_shot := false
 var _recall_shot := false       # --recalltest:召回链路自测(动作注册/按下/传送)
+var _dual_test := false         # --dualtest:同屏双人自测(绑定/分区/禁切/死亡/到站)
+var _dual_shot := false         # --dualshot:同屏双人视觉分镜(chips 双高亮/双取景)
 var _panel_shot := false
 var _set_shot := false
 var _act_shot := false
@@ -147,6 +149,7 @@ func _exit_tree() -> void:
 
 func _show_menu() -> void:
 	_state = State.MENU
+	dual_mode = false   # 退出即散伙:回菜单后普通开局不受残留双活态影响
 	_clear_level()
 	_hud.visible = false
 	touch_controls.set_in_game(false)
@@ -169,6 +172,7 @@ func start_level(index: int, intro := true) -> void:
 	if debug_solo:
 		print("TRACE start_level(", index, ") state_was=", State.keys()[_state])
 	_complete_seq += 1    # 作废任何待执行的通关自动流转(重开/换关不被拽走)
+	dual_mode = false   # 普通开局恒单人(双人走 start_level_dual 开局后再翻)
 	get_tree().paused = false
 	if _pause != null:
 		_pause.close()
@@ -225,6 +229,7 @@ func start_level(index: int, intro := true) -> void:
 ## 肉鸽局内装载片段(RogueDirector 调用):不走标准解锁与通关流转。
 func start_rogue_fragment(def: LevelDef, elite_title := "") -> void:
 	_complete_seq += 1
+	dual_mode = false   # 肉鸽片段恒单人
 	get_tree().paused = false
 	if _pause != null:
 		_pause.close()
@@ -279,15 +284,16 @@ func camera_targets() -> Array:
 	return roster.camera_targets()
 
 
-## 槽位输入模式网关(net.md §2 N1 预埋):true 时输入槽 0 改读 p1_*
-## 分区动作(键盘分区让位 P2)。同屏双人未接线前恒 false = 单机输入
-## 路径逐位不变。
+## 槽位输入模式网关(net.md §2):true 时输入槽 0 改读 p1_* 分区动作
+## (键盘分区让位 P2;触屏设备槽 0 例外恒读全局动作,见 InputSource)。
+## 同屏双人开局后为 true;联机(N2)接入时在此追加 NetSession 在局条件。
 func slot_actions() -> bool:
 	return dual_mode
 
 
 ## N1 同屏双人:注册 p1_*/p2_* 分区动作(InputMap,仅首次)。
-## P1 = WASD + 左Shift;P2 = 方向键 + 右Ctrl。
+## 键盘分区:P1 = WASD + 左Shift,P2 = 方向键 + Ctrl;
+## 手柄独占:P1 = 0 号柄(左摇杆 / A / 左扳机),P2 = 1 号柄(net.md §3)。
 func _setup_dual_input() -> void:
 	for action in ["p1_move_left", "p1_move_right", "p1_jump", "p1_sprint",
 			"p2_move_left", "p2_move_right", "p2_jump", "p2_sprint"]:
@@ -301,6 +307,7 @@ func _setup_dual_input() -> void:
 	_pkey("p2_move_right", KEY_RIGHT)
 	_pkey("p2_jump", KEY_UP)
 	_pkey("p2_sprint", KEY_CTRL)
+	_pjoy()
 
 
 func _pkey(action: String, key: Key) -> void:
@@ -310,18 +317,53 @@ func _pkey(action: String, key: Key) -> void:
 		InputMap.action_add_event(action, ev)
 
 
+## 手柄分区绑定:device 0 = P1,device 1 = P2;左摇杆横轴 / A 键 / 左扳机。
+func _pjoy() -> void:
+	for slot in 2:
+		var move_l := InputEventJoypadMotion.new()
+		move_l.device = slot
+		move_l.axis = JOY_AXIS_LEFT_X
+		move_l.axis_value = -1.0
+		var move_r := InputEventJoypadMotion.new()
+		move_r.device = slot
+		move_r.axis = JOY_AXIS_LEFT_X
+		move_r.axis_value = 1.0
+		var jump := InputEventJoypadButton.new()
+		jump.device = slot
+		jump.button_index = JOY_BUTTON_A
+		var sprint := InputEventJoypadMotion.new()
+		sprint.device = slot
+		sprint.axis = JOY_AXIS_TRIGGER_LEFT
+		sprint.axis_value = 1.0
+		var prefix := "p1_" if slot == 0 else "p2_"
+		_joybind("%smove_left" % prefix, move_l)
+		_joybind("%smove_right" % prefix, move_r)
+		_joybind("%sjump" % prefix, jump)
+		_joybind("%ssprint" % prefix, sprint)
+
+
+func _joybind(action: String, ev: InputEvent) -> void:
+	for e in InputMap.action_get_events(action):
+		if e is InputEventJoypadMotion or e is InputEventJoypadButton:
+			return   # 手柄事件已登记(重启输入区不重复叠加)
+	InputMap.action_add_event(action, ev)
+
+
 ## 启动同屏双人(net.md §3):管道测试道 Z0 双分位,
-## P1 = roster 偶数下标链,P2 = roster 奇数下标链。
+## P1 = roster 偶数下标链,P2 = 奇数下标链。
 func start_level_dual() -> void:
-	dual_mode = true
-	start_level(0)
-	# 双活:两个 InputSource 分槽注入,双 is_active = true
-	var playable := roster.players.duplicate()
-	if playable.size() >= 2:
-		for i in playable.size():
-			var p := playable[i] as Player
-			p.input_source = InputSource.local(i % 2)
-			p.is_active = true
+	if NetSession.I != null and NetSession.I.is_net():
+		return   # 同屏双人与联机会话互斥(槽位归属 NetSession,不混管)
+	start_level(0)   # 先正常启动(内部 _switch_to(0) 设 is_active;此刻 dual_mode=false,守卫未生效)
+	dual_mode = true  # 后翻开关:此后切换守卫生效,绑定须手动
+	# 双活绑定:前两 Player 各绑独立输入槽;is_active 双开(dual_mode 下
+	# switch_to 已除役,P2 的高亮只能在这里点亮)。
+	if roster.players.size() >= 2:
+		roster.players[0].input_source = InputSource.local(0)
+		roster.players[0].is_active = true
+		roster.players[1].input_source = InputSource.local(1)
+		roster.players[1].is_active = true
+	_refresh_roster()   # 补一次名册刷新:chips 走 binds 双人高亮(单机高亮已被 start_level 刷过)
 
 
 ## N1 退出双人不切换——切靠除役(双活模型,无"另一个受控")。
@@ -702,6 +744,10 @@ func _parse_auto_shot() -> void:
 			_door_shot = true
 		elif raw == "--recalltest":
 			_recall_shot = true
+		elif raw == "--dualtest":
+			_dual_test = true
+		elif raw == "--dualshot":
+			_dual_shot = true
 		elif raw == "--panelshot":
 			_panel_shot = true
 		elif raw == "--setshot":
@@ -755,6 +801,10 @@ func _parse_auto_shot() -> void:
 			h.run_door_shot()
 		if _recall_shot:
 			h.run_recall_test()
+		if _dual_test:
+			h.run_dual_test()
+		if _dual_shot:
+			h.run_dual_shot()
 		if _trial_shot:
 			h.run_trial_shot()
 		if _panel_shot:

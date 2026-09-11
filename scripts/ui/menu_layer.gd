@@ -188,6 +188,26 @@ func _ready() -> void:
 	rogue_btn.pressed.connect(func() -> void: m.start_rogue_run())
 	content.add_child(rogue_btn)
 
+	# N1 同屏双人入口(net.md §3):橙 = P2 侧语言(与 chips 双人高亮同源);
+	# 触屏设备首版仅 P1 触屏、P2 手柄(双触屏分区后置,net.md §11)。
+	var dual_btn := Button.new()
+	dual_btn.text = "双人试炼"
+	dual_btn.custom_minimum_size = Vector2(240, 44)
+	dual_btn.position = Vector2(930, 554)
+	dual_btn.add_theme_font_size_override("font_size", 18)
+	dual_btn.add_theme_font_override("font", Ui.HEAD)
+	dual_btn.add_theme_color_override("font_color", Ui.ORANGE)
+	dual_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	dual_btn.add_theme_color_override("font_pressed_color", Color.WHITE)
+	dual_btn.add_theme_stylebox_override("normal",
+		Ui.sb(Color(Ui.ORANGE, 0.10), 0, Ui.ORANGE, 1, 20, 8))
+	dual_btn.add_theme_stylebox_override("hover", Ui.sb(Ui.ORANGE, 0, Ui.ORANGE, 1, 20, 8))
+	dual_btn.add_theme_stylebox_override("pressed",
+		Ui.sb(Color(Ui.ORANGE, 0.68), 0, Ui.ORANGE, 1, 20, 8))
+	Ui.wire_button(dual_btn)
+	dual_btn.pressed.connect(func() -> void: m.start_level_dual())
+	content.add_child(dual_btn)
+
 	var panel_btn := Button.new()
 	panel_btn.text = "档案几何"
 	panel_btn.custom_minimum_size = Vector2(240, 44)
@@ -232,7 +252,7 @@ func _ready() -> void:
 	root.resized.connect(func() -> void: Adaptive.fit_design(content))
 
 	_play_entrance(kicker, intro, keys, ver_left,
-		[sec, _chapter_hint, start, panel_btn, settings_btn])
+		[sec, _chapter_hint, start, dual_btn, panel_btn, settings_btn])
 
 
 ## 入场演出:标题逐字落位(TitleMark)→ 定位语 / 简介浮现 → 右栏与按钮逐项浮现(M7)。

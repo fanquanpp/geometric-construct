@@ -378,6 +378,86 @@ func _recall_keypress() -> void:
 	await m.get_tree().physics_frame
 
 
+## N1 同屏双人冒烟自测(--dualtest,headless):双活绑定 / 分区输入 /
+## 双活禁切 / 死亡保操控 / 双体到站登记,五链路一次走完。
+func run_dual_test() -> void:
+	m.start_level_dual()
+	await m.get_tree().create_timer(0.5).timeout
+	var fails := 0
+	var p1: Player = m.players[0]   # 疾 → P1 槽
+	var p2: Player = m.players[1]   # 跃 → P2 槽
+	# ① 双活绑定:双开 is_active + 各自输入槽
+	var ok_bind: bool = m.dual_mode and p1.is_active and p2.is_active \
+		and p1.input_source.slot == 0 and p2.input_source.slot == 1
+	print("DUALTEST bind ", "PASS" if ok_bind else "FAIL",
+		" dual=", m.dual_mode, " p1=", p1.is_active, " p2=", p2.is_active)
+	if not ok_bind:
+		fails += 1
+	# ② 分区输入:P1 右行 / P2 左行,两具互不牵连
+	var x1 := p1.position.x
+	var x2 := p2.position.x
+	Input.action_press("p1_move_right")
+	Input.action_press("p2_move_left")
+	await m.get_tree().create_timer(0.6).timeout
+	Input.action_release("p1_move_right")
+	Input.action_release("p2_move_left")
+	var ok_input: bool = p1.position.x > x1 + 8.0 and p2.position.x < x2 - 8.0
+	print("DUALTEST input ", "PASS" if ok_input else "FAIL",
+		" p1_dx=%.1f p2_dx=%.1f" % [p1.position.x - x1, p2.position.x - x2])
+	if not ok_input:
+		fails += 1
+	# ③ 双活禁切:chips 直达在双活下应无效(双开不受扰动)
+	m.switch_to_geo(2)
+	await m.get_tree().physics_frame
+	var ok_noswitch: bool = not m.players[2].is_active \
+		and p1.is_active and p2.is_active
+	print("DUALTEST noswitch ", "PASS" if ok_noswitch else "FAIL")
+	if not ok_noswitch:
+		fails += 1
+	# ④ 死亡保操控:P2 的跃坠杀 → 重生回出生点,is_active 不丢
+	p2.position = Vector2(p2.position.x, 1500.0)   # kill_y = 1400
+	await m.get_tree().create_timer(1.2).timeout
+	var ok_death: bool = not p2.dying and p2.is_active \
+		and p2.position.distance_to(p2.spawn_pos) < 32.0   # 32px:含落地安放的物理沉降
+	print("DUALTEST death ", "PASS" if ok_death else "FAIL",
+		" pos=", p2.position, " spawn=", p2.spawn_pos)
+	if not ok_death:
+		fails += 1
+	# ⑤ 双体到站登记:各自进各自门;全员未齐不误通关
+	var d0: ExitDoor = m._doors.get(p1.index)
+	var d1: ExitDoor = m._doors.get(p2.index)
+	p1.position = d0.center
+	p2.position = d1.center
+	await m.get_tree().create_timer(0.4).timeout
+	var ok_arrive: bool = p1.arrived and p2.arrived \
+		and m._state == Main.State.PLAYING
+	print("DUALTEST arrive ", "PASS" if ok_arrive else "FAIL",
+		" p1=", p1.arrived, " p2=", p2.arrived)
+	if not ok_arrive:
+		fails += 1
+	print("DUALTEST ALL ", "PASS" if fails == 0 else "FAIL(%d)" % fails)
+	m.get_tree().quit(0 if fails == 0 else 1)
+
+
+## 同屏双人视觉分镜(--dualshot):双活开局后连拍——chips 双人描边
+## 高亮(P1 纸白 / P2 橙)、双人双取景构图、双体芯片「界 / 边」并示。
+func run_dual_shot() -> void:
+	if m._shot_dir.is_empty():
+		m._shot_dir = "res://.shots"
+	m.start_level_dual()
+	await m.get_tree().create_timer(1.2).timeout
+	await _shot("dual_spawn")
+	# P1 右行 / P2 左行各走一段:双取景拉开 + 分区输入的可见证据
+	Input.action_press("p1_move_right")
+	Input.action_press("p2_move_left")
+	await m.get_tree().create_timer(0.8).timeout
+	Input.action_release("p1_move_right")
+	Input.action_release("p2_move_left")
+	await m.get_tree().create_timer(0.4).timeout
+	await _shot("dual_spread")
+	m.get_tree().quit()
+
+
 func run_door_shot() -> void:
 	if m._shot_dir.is_empty():
 		m._shot_dir = "res://.shots"

@@ -3,6 +3,46 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.28.0(2026-09-12)
+
+> **N1 同屏双人实装**:菜单「双人试炼」入口,双活模型(各控各的,
+> 无切换)。基建(p1_*/p2_* 分区 / camera_targets 双取景 / binds 接口)
+> 于 e8f5e6c 预埋,本版完成启序修复、绑定收口、触屏 / 手柄双端路径
+> 与自动化验证(--dualtest)。
+
+### 新增
+- **「双人试炼」菜单入口**(menu_layer):橙 = P2 侧语言,与 chips
+  双人高亮同源;开局 = 机制试炼场双分位,P1 控 roster[0](疾)、
+  P2 控 roster[1](跃)。
+- **手柄分区绑定**(Main._setup_dual_input):P1 = 0 号柄(左摇杆横轴 /
+  A / 左扳机),P2 = 1 号柄,与键盘分区(WASD+Shift / 方向键+Ctrl)
+  并行;重复启动不叠加登记。
+- **--dualtest 自测钩子**(shot_harness):headless 五链路——双活绑定 /
+  分区输入互不牵连 / 双活禁切 / 死亡保操控 / 双体到站登记,断言式
+  PASS/FAIL 退出码。
+- **触屏路径**(net.md §3 首版条款):触屏设备 P1 恒读全局动作
+  (TouchControls 注入通道不变),P2 走手柄;双触屏分区仍为 §11 待议。
+
+### 修复
+- **start_level_dual 启序 bug**:dual_mode = true 移到 start_level(0)
+  之后(旧序吞掉 _switch_to(0) 的 is_active 初始化 → 开局无人可控);
+  并补齐 P2 的 is_active 双开(dual_mode 下 switch_to 已除役,须手动
+  点亮)——两处叠加才是"开局即双活"。
+- **双活态残留**:start_level / start_rogue_fragment / _show_menu 统一
+  复位 dual_mode = false,退出双人后普通开局 / 肉鸽不再误读分区动作
+  (否则触屏外设空格将不再跳跃)。
+
+### 变更
+- **roster chips 双人高亮收口**:RosterController.dual_binds() 为
+  [{slot, geo}] 契约唯一数据源,refresh_roster 双活时传 binds + 撤单点
+  active 高亮(P1 纸白 / P2 橙描边);NetSession.client_active_slot()
+  契约注释对齐同形(N2 房间 UI / 相机插槽复用)。
+- **双体芯片文字**:双活下恒并示"界 / 边"(两半皆活,无单点高亮)。
+- **同屏双人与联机会话互斥**:start_level_dual 入口拒绝 NetSession
+  在局状态(槽位归属不混管,N2 前置约束)。
+- net.md 状态行与 §3 键位表更新为实装值;单人模式逐位零回归
+  (slot_actions=false 走全局动作)。
+
 ## v0.27.0(2026-09-11)
 
 > **机制群 + 测试关重制 + 图标重绘**(用户九条指令批落地):四个新

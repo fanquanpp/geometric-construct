@@ -116,6 +116,16 @@ func cycle_slot(dir: int) -> void:
 	switch_to(((active_slot + dir) % players.size() + players.size()) % players.size())
 
 
+## 双活绑定槽(net.md §2「roster chips 双人高亮」数据源)。HUD binds 契约:
+## [{slot: 0/1, geo: 几何体下标}];N2 联机的绑定集合(NetSession.split_roster
+## → 槽位)按同一形状对齐,房间 UI / 相机插槽复用此形状取"谁被谁控"。
+func dual_binds() -> Array:
+	if players.size() < 2:
+		return []
+	return [{"slot": 0, "geo": players[0].index},
+		{"slot": 1, "geo": players[1].index}]
+
+
 func refresh_roster() -> void:
 	var mask := 0
 	for p in players:
@@ -130,7 +140,10 @@ func refresh_roster() -> void:
 				mask |= 1 << p.index
 	var active: int = players[active_slot].index \
 		if (active_slot >= 0 and active_slot < players.size()) else -1
-	main._hud.refresh_roster(main._level_def.roster, active, mask)
+	# 同屏双人:无单一"受控"槽,active 高亮让位给 binds 双人描边
+	# (P1 纸白 / P2 橙,hud.refresh_roster)
+	var binds: Array = dual_binds() if main.dual_mode else []
+	main._hud.refresh_roster(main._level_def.roster, active, mask, binds)
 
 
 func check_deaths(def: LevelDef) -> void:

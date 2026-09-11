@@ -35,17 +35,25 @@ static func remote() -> InputSource:
 
 
 ## 槽位模式下 P1 读 p1_* 分区动作(排除方向键,让位给 P2);
-## 槽位 1 恒读 p2_*。触屏注入由 TouchControls 双写(p1_* 与既有动作)。
+## 槽位 1 恒读 p2_*。触屏例外:触屏设备 P1 恒读全局动作(TouchControls
+## 只注入既有动作,net.md §3 首版"仅 P1 触屏"—— 键盘分区只属物理键盘)。
 func move_axis() -> float:
 	match kind:
 		Kind.REMOTE:
 			return r_axis
 		_:
-			if slot == 0 and Main.I != null and Main.I.slot_actions():
+			if slot == 0 and _slot0_partitioned():
 				return Input.get_axis("p1_move_left", "p1_move_right")
 			if slot == 1:
 				return Input.get_axis("p2_move_left", "p2_move_right")
 			return Input.get_axis("move_left", "move_right")
+
+
+## 槽 0 是否走分区动作:同屏双人(或未来联机本侧)为真,触屏设备除外。
+static func _slot0_partitioned() -> bool:
+	if Main.I == null or not Main.I.slot_actions():
+		return false
+	return not Adaptive.is_touch_mode()
 
 
 func jump_pressed() -> bool:
@@ -55,7 +63,7 @@ func jump_pressed() -> bool:
 			r_jump_edge = false   # 按下沿:读一次即耗(主机物理帧消费)
 			return e
 		_:
-			if slot == 0 and Main.I != null and Main.I.slot_actions():
+			if slot == 0 and _slot0_partitioned():
 				return Input.is_action_just_pressed("p1_jump")
 			if slot == 1:
 				return Input.is_action_just_pressed("p2_jump")
@@ -67,7 +75,7 @@ func jump_held() -> bool:
 		Kind.REMOTE:
 			return r_jump_held
 		_:
-			if slot == 0 and Main.I != null and Main.I.slot_actions():
+			if slot == 0 and _slot0_partitioned():
 				return Input.is_action_pressed("p1_jump")
 			if slot == 1:
 				return Input.is_action_pressed("p2_jump")
@@ -79,7 +87,7 @@ func sprint() -> bool:
 		Kind.REMOTE:
 			return r_sprint
 		_:
-			if slot == 0 and Main.I != null and Main.I.slot_actions():
+			if slot == 0 and _slot0_partitioned():
 				return Input.is_action_pressed("p1_sprint")
 			if slot == 1:
 				return Input.is_action_pressed("p2_sprint")
