@@ -62,6 +62,7 @@ var _door_shot := false
 var _recall_shot := false       # --recalltest:召回链路自测(动作注册/按下/传送)
 var _dual_test := false         # --dualtest:同屏双人自测(绑定/分区/禁切/死亡/到站)
 var _dual_shot := false         # --dualshot:同屏双人视觉分镜(chips 双高亮/双取景)
+var _net_test := false          # --nettest:LAN 发现 / ENet 传输回环自测(net.md §4.3-2)
 var _panel_shot := false
 var _set_shot := false
 var _act_shot := false
@@ -891,6 +892,8 @@ func _parse_auto_shot() -> void:
 			_dual_test = true
 		elif raw == "--dualshot":
 			_dual_shot = true
+		elif raw == "--nettest":
+			_net_test = true
 		elif raw == "--panelshot":
 			_panel_shot = true
 		elif raw == "--setshot":
@@ -948,6 +951,8 @@ func _parse_auto_shot() -> void:
 			h.run_dual_test()
 		if _dual_shot:
 			h.run_dual_shot()
+		if _net_test:
+			net_session.run_self_test()
 		if _trial_shot:
 			h.run_trial_shot()
 		if _panel_shot:

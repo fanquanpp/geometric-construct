@@ -564,8 +564,7 @@ func run_self_test() -> void:
 				both_up = true
 				break
 			await get_tree().create_timer(0.03).timeout
-	c_peer.send_raw_packet_channel = 1
-	c_peer.put_packet("SRNET1-PROBE".to_utf8_buffer())
+	c_peer.put_packet("SRNET1-PROBE".to_utf8_buffer())   # 默认通道探包
 	var got := false
 	var deadline2 := Time.get_ticks_msec() + 2000
 	while Time.get_ticks_msec() < deadline2 and not got:

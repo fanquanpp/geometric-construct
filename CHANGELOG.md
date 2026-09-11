@@ -3,6 +3,48 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.29.0(2026-09-12)
+
+> **地图皮 MapSkin v2 重绘 + 素材链补全**:以 Journey / GRIS / Thomas Was
+> Alone 三作做风格转译(构成主义纪律不减),重绘试炼场 v5 地图皮;
+> 顺手揪出并修掉 **v0.27 起 MapSkin 被双倍放大渲染**的管线 bug——
+> 代码契约是"PNG = 半分辨率(世界尺寸 ÷2),引擎 ×2 还原",
+> 但 PNG 一直导成全分辨率,导致地图从未按正确比例显示过。
+
+### 新增
+- **MapSkin v2「长卷 · 归门圣环」**(源 `assets/art/levels/trial_v5.aseprite`,
+  3200×540 半分辨率,8 层栈):bg_deep 值阶横带(GRIS:值阶即情绪,
+  禁渐变以硬边值阶替代)+ Z5 归门光柱 / bg_towers 退台巨塔剪影群
+  (Journey 层次剪影 × 构成退台)/ bg_mid 管线·Z4 桁架·Z1 雪原折线·
+  Z2 推箱导轨·Z3 传送菱标·归门圣环(完整几何圆 ×2,从壁龛后升起)
+  / terrain 石板体 + 受光带 + 板缝 + 悬浮裙角 / edge 可站缘纸白 30%·
+  天花底缘逆蓝 30% / accent 红刻度节奏(480 引擎 px)+ 坑肩警示 /
+  fx 星阵 / guide 隐藏碰撞框。全部碰撞矩形逐像素对齐,调色板与
+  ui.gd 同源;机关物仍由引擎 `_draw()`(皮肤不重复画)。
+- **tiles_v2 补 aseprite 母版三件**:`mech_push_box` / `mech_ski_patch` /
+  `mech_launch_pad`(200×200,层规同批;此前档案插图无源文件),
+  导出同步覆盖 `assets/archive/` 三张 PNG(视觉语言与原插图一致)。
+- **tiles_v2/png/ 参考导出补齐**:`mech_portal` 三帧(此前仅存 aseprite);
+  `overview.png` 重拼(19 件土建单帧,含三件新母版)。
+- **art-style.md §6.2「关卡地图皮 · MAPSKIN」契约成文** + §9「参考系
+  转译」(Journey / GRIS / TWA → 本项目纪律的允许与禁止清单)。
+
+### 修复
+- **MapSkin 双倍放大(v0.27 遗留)**:`LevelBuilder` 契约为 PNG 半分辨率
+  × `scale ×2`,但 PNG 自 v0.27 起导出为全分辨率 6400×1080,入引擎后
+  再 ×2 等于两倍放大且错位——本次以纯绿探针帧实证(探针色带按 ×2
+  位置成像),改回 **3200×540 半分辨率导出**,对齐代码契约。
+- **`skin.texture_filter = TEXTURE_FILTER_NEAREST`** 显式声明(LevelBuilder):
+  ×2 整数放大禁柔化,防御画布默认线性过滤,像素纪律成文。
+
+### 变更
+- `assets/levels/trial_v5.png` 按 v2 重绘覆盖(3200×540);
+- `assets/archive/` 推箱 / 滑雪带 / 弹射板三张插图由新母版重导覆盖;
+- 门禁:grid_check PASS(11 warn 均为既有门 y 对齐建议,无新增)、
+  recalltest 3 PASS、laneshot 正常、autoshot / doorshot 双视点
+  引擎内截图验收(Z0 出生 / Z5 归门圣环)。真机 K60 走查建议随下次
+  打包顺带(纯视觉资产,桌面 mobile renderer 已验)。
+
 ## v0.28.1(2026-09-12)
 
 > **游戏图标重绘 v3「构成徽章」**:新设计 + 多端多尺寸适配——补齐
@@ -31,6 +73,42 @@
 ### 移除
 - 旧图标源 `assets/art/icon_jasmine.aseprite`(四叶茉莉 v2,
   被 v3 构成徽章取代)。
+
+## v0.29.0(2026-09-12)
+
+> **N2 同网直连实装 + 双人入口分流**:「双人试炼」按设备分流——桌面
+> 可选同设备 / 跨设备,移动端同设备置灰;跨设备走同网直连(LAN 搜索
+> + 手动 IP),主机权威同步开局。后端(NetSession / LanBeacon /
+> PeerFactory)为 v0.22 预埋,本版完成 UI 与主控接线。
+
+### 新增
+- **双人联接方式选择面板**(menu_layer):点「双人试炼」先判断设备——
+  桌面给「同设备双人(同屏分键)/ 跨设备双人(同网直连)」两项;
+  触屏设备「同设备」置灰并注明"移动端不可用 · 同屏分区需键鼠 / 双手柄"
+  (net.md §3 首版条款的用户交互化)。
+- **房间流程页**(net_room_layer,流程带 30,Flow 型四步):选择 →
+  创建房间(主机:本机 IP 常驻展示 + 等待对手 + 开演钮满员解锁)→
+  加入房间(附近房间列表周期搜索 + 版本 / 满员门禁标灰 + 手动 IP 兜底)
+  → 已连接等待开演;Esc 逐级返回,状态行接 net_message。
+- **主控联机回调**(main):net_post_setup(绑定集点亮 / 客机取景镜像)、
+  net_recall(客机召回主机执行)、net_show_complete / net_back_to_room
+  (通关回房间,不自动进下一关)、net_peer_lost(客机掉线 → 整队弹回
+  房间,§11 待议项临时拍板)、net_host_lost(主机掉线 → 弹回菜单 +
+  明确提示);Main.State 增 ROOM,会话中枢与房间页由 Main 创建(path
+  两端一致,RPC 才能寻址)。
+- **绑定集内切换**(net.md §8 首版对半分):主机在自家几何体间切本地
+  操控(roster.switch_to 绑定集过滤);客机切输入上传槽(_net_active),
+  名牌 / 芯片 / 相机取景镜像跟随;召回经 request_recall 主机权威执行。
+- **联机事件漏斗**(net.md §6):死亡 / 到站 / 离站 / 进门在 Main 回调
+  收口,主机权威经可靠 RPC 客机复现;客机侧死亡判定与到站编排抑制
+  (check_deaths / check_all_arrived 主机权威守卫),终点门客机抑制已预埋。
+- **暂停菜单联机态**(预埋接线):联机局内隐藏「重新开始」,「返回标题」
+  语义变「离开房间」。
+
+### 变更
+- start_level 两端装配完成后调用 NetSession.on_level_built(算定绑定 /
+  标注 remote_driven / 注入输入源,net.md §6 生成免 Spawner 收尾)。
+- quit_to_menu 联机局内先散房(关 peer / 停信标)。
 
 ## v0.28.2(2026-09-12)
 

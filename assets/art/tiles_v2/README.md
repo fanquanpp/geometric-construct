@@ -1,9 +1,11 @@
-# assets/art/tiles_v2(现行 · 2026-09-10 重绘全套 · v0.19 增补几何肖像)
+# assets/art/tiles_v2(现行 · 2026-09-10 重绘全套 · v0.19 增补几何肖像 · v0.29 补母版三件)
 
 v0.13.2 废止的旧 aseprite 瓦片(`assets/art/tiles/`、`assets/tiles/`)由本套**替代重绘**。
 **引擎接入(v0.19)**:本套 PNG 由「档案几何」(ArchivePanel)作图鉴插图引用,
 导出目录 `assets/archive/` 是唯一入引擎的 aseprite 衍生素材(art-style.md §6.1);
-地图 / 实体渲染仍全 `_draw()`,源目录本身仍不进导出包(`assets/art/.gdignore`)。
+**v0.27 起另有关卡地图皮管线**(`assets/art/levels/` → `assets/levels/`,
+契约见 art-style.md §6.2,与本目录平行)。地图 / 实体渲染默认仍全 `_draw()`,
+源目录本身不进导出包(`assets/art/.gdignore`)。
 
 ## 统一约定
 
@@ -25,7 +27,7 @@ v0.13.2 废止的旧 aseprite 瓦片(`assets/art/tiles/`、`assets/tiles/`)由�
 - **形状纪律**(art-style.md §2 全局适用):无圆角、无渐变、无模糊投影,
   全直角/直线/45° 折线;终点门在游戏内按几何体色再着色,本套为纸白中性版。
 
-## 清单(20 件)
+## 清单(24 件 = 土建 19 + 几何肖像 5)
 
 ### 土建构件(bld_*/mech_*,2026-09-10 重绘)
 
@@ -47,6 +49,9 @@ v0.13.2 废止的旧 aseprite 瓦片(`assets/art/tiles/`、`assets/tiles/`)由�
 | mech_ramp | 曲面跳跃板(两段折线) | 1 |
 | mech_checkpoint | 记录点信标(召回落点,实体未来接入) | 2:未激活/激活 |
 | mech_portal | 传送对(规划中:成对直角门 + 传送虚线,v0.19 增) | 3:闭合/开启/脉冲 |
+| mech_push_box | 推箱(v0.29 补母版,对齐既有档案插图) | 1 |
+| mech_ski_patch | 滑雪带(v0.29 补母版;蓝白冷色 = 逆蓝系) | 1 |
+| mech_launch_pad | 弹射板(v0.29 补母版;纸白上升箭头) | 1 |
 
 ### 几何肖像(geo_*,v0.19 档案几何新增)
 
@@ -64,7 +69,16 @@ v0.13.2 废止的旧 aseprite 瓦片(`assets/art/tiles/`、`assets/tiles/`)由�
 | geo_roll | 圆 · 橙色圆球形 | r=52 | 基盘半月 + 单根粗白指针 + 轮毂 |
 | geo_pair | 界/边 · 紫色正三角双子 | 80×80 ×2 | 对望双三角 + 磁力折线 + 端点方块 |
 
-`overview.png` 为土建构件总览(墨底拼图);`png/` 下为逐件参考导出(1x)。
+`overview.png` 为土建构件总览(墨底拼图,v0.29 重拼:19 件单帧);
+`png/` 下为逐件参考导出(1x;v0.29 补齐 mech_portal 三帧)。
 **引擎加载源 = `assets/archive/`**(PNG 与 `_f2` 帧;geo_* 由 aseprite 直接导出,
 bld_*/mech_* 取自 `png/` 拷贝),UI 侧路径见 `ArchiveData.img_path()`。
 `mag_boundary` / `grid` / `hint_marker` 为程序化线条类,不设瓦片。
+
+## 导出注意(2026-09-12 实测)
+
+- **guide 隐藏层必须确认 `isVisible=false`**:导出会合成所有**可见**层,
+  早期脚本用 `newLayer(name, false)` 传参被静默忽略导致 guide 漏出
+  (push_box / ski_patch / launch_pad 首版即踩,重导修复)。
+- 引擎用整图 ×2 时(如地图皮)导出 **1x**,勿在导出时再放大
+  (双倍放大教训见 art-style.md §6.2)。

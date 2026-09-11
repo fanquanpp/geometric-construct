@@ -22,7 +22,7 @@
 | 关卡(在演) | 1(机制试炼场 v4,分区 Z0–Z5)| `level_data.gd` LEVELS |
 | 关卡(历史文件未接线) | 1(伍试水 · 界与边)| `levels/pair_trial.json` |
 | 图鉴插图(入引擎) | 34 张 png | `assets/archive/` |
-| aseprite 源 | 23 个(tiles_v2 21 + icon_construct + levels/trial_v5)| `assets/art/`、`assets/art/levels/` |
+| aseprite 源 | 26 个(tiles_v2 24 + icon_construct + levels/trial_v5)| `assets/art/`、`assets/art/levels/` |
 | svg 图标 | 69 个(7 类)| `assets/svg/` |
 | 字体 | 1(NotoSansSC-VF)| `assets/fonts/` |
 
@@ -197,8 +197,8 @@
 |---|---|---|---|
 | 几何体肖像 svg | 5 | `assets/svg/characters/` | dash / spring / fall / roll / pair |
 | 图鉴插图 png | **34** | `assets/archive/` | 建筑 6 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200 |
-| 图鉴 aseprite 源 | 21 | `assets/art/tiles_v2/` | `bld_*` 6 + `geo_*` 5 + `mech_*` 10 |
-| 关卡美术层 | 1 | `assets/levels/trial_v5.png`(源 `assets/art/levels/trial_v5.aseprite`)| 试炼场 v5 管道测试道地形外观(v0.27,aseprite 地图首例)|
+| 图鉴 aseprite 源 | 24 | `assets/art/tiles_v2/` | `bld_*` 6 + `geo_*` 5 + `mech_*` 13(v0.29 补 push_box / ski_patch / launch_pad 母版)|
+| 关卡美术层 | 1 | `assets/levels/trial_v5.png`(源 `assets/art/levels/trial_v5.aseprite`,**半分辨率 3200×540**)| 试炼场 v5 地图皮「长卷 · 归门圣环」(v0.29 重绘,契约 art-style.md §6.2;修复 v0.27 双倍放大)|
 | 游戏图标 | 7 | `icon.png`(256)+ `icon_192` + `icon_fg/bg/mono_432`(源 `assets/art/icon_construct.aseprite`)| 构成徽章 v3:墨底幽灵菱线 + 构成红斜面菱芯 + 四纸白卫星(菱/三角/圆/方);432 母版 ×4 整数导出,安全区内构图(v0.28.1,Android 启动器四字段已接线)|
 | svg 图标 | **69** | `assets/svg/` | arrows 7 / audio 4 / buttons 18 / characters 5 / icons 14 / keys 10 / objects 5 / ui 6 |
 | svg 场景物件 | 5 | `assets/svg/objects/` | exit-door / platform / portal / spike / spring |
