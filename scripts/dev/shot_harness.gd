@@ -306,6 +306,10 @@ func run_panel_shot() -> void:
 	m.archive_panel.open(0, "bld")
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("panel_bld0")
+	m.archive_panel._sel["bld"] = 6   # 梁(v0.36 Kit 构件补绘首批)
+	m.archive_panel._refresh_codex("bld")
+	await m.get_tree().create_timer(0.4).timeout
+	await _shot("panel_bld_beam")
 	m.archive_panel.open(0, "mech")
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("panel_mech0")
@@ -374,6 +378,22 @@ func run_recall_test() -> void:
 		" pos=", bian.position, " spawn=", bian.spawn_pos,
 		" g=", bian.gravity_dir)
 	if not ok_bian:
+		fails += 1
+	# ④ 记录点信标(v0.36 实装):触碰登记(体身份键入账)→ 召回回信标落点
+	m.switch_to_geo(0)
+	await m.get_tree().physics_frame
+	var cpr: Player = m.players[m.view_slot()]
+	var bpos: Vector2 = LevelData.LEVELS[0].checkpoints[0]["pos"]
+	cpr.position = bpos
+	await m.get_tree().physics_frame
+	await m.get_tree().physics_frame
+	await m.get_tree().physics_frame
+	var ok_cp: bool = m.roster.checkpoints.has(cpr.body_key())
+	await _recall_keypress()
+	ok_cp = ok_cp and cpr.position.distance_to(bpos) < 2.0 and not cpr.dying
+	print("RECALLTEST 信标 ", "PASS" if ok_cp else "FAIL",
+		" pos=", cpr.position, " beacon=", bpos)
+	if not ok_cp:
 		fails += 1
 	m.get_tree().quit(0 if fails == 0 else 1)
 
@@ -593,6 +613,12 @@ func run_trial_shot() -> void:
 	await _shot("trial_spawn")
 	await m.get_tree().create_timer(0.8).timeout
 	await _shot("trial_rest")
+	# 信标分镜(v0.36):传送至记录点信标,验证实体渲染与触碰亮灯
+	var bpos: Vector2 = LevelData.LEVELS[0].checkpoints[0]["pos"]
+	var p: Player = m.players[m.view_slot()]
+	p.position = bpos
+	await m.get_tree().create_timer(0.6).timeout
+	await _shot("trial_checkpoint")
 	m.get_tree().quit()
 
 

@@ -3,6 +3,49 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.36.0(2026-09-13)
+
+> **实体图鉴补全 + 记录点信标实装 + 孤儿清退(总纲卷二/卷六销账)**。
+> 建筑 Kit 九件缺档瓦片(A05/A07/A08/A09/A10/A12/A13/A14/A15)按
+> tiles_v2 图层栈配方程序化补绘并入图鉴(6→15);「画了没加」的记录点
+> 信标全链路实装(机制脚本/装配/JSON 契约/ase2level 语义色/联机事件/
+> gridcheck 校验/recalltest 第④用例);孤儿资产气闸精灵清退;文档侧
+> ASSETS.md 机关表三行欠账与过时状态一并收口。门禁:改动脚本
+> check-only 全绿,gridcheck PASS(warns 11→13:信标落点与出生点同高
+> 855,半格站立约定的同类建议级,非违规),recalltest 4 PASS(新增信标
+> 用例),dualtest ALL PASS,trait_check ALL PASS,panelshot/trialshot
+> 零脚本错误。联网核对:构成主义图形语言(强对角动势=项目 45° 折线
+> 纪律、红黑限色)、信标两态瞬时辨识与颜色归属惯例、Godot 触发区
+> 「布尔记账防重放」惯例(不动物理状态)。
+
+### 新增
+- **建筑 Kit 构件九件图鉴补绘**(总纲卷二 A01–A16 缺档收口):
+  梁 bld_beam / 台阶 bld_stair / 桥面 bld_bridge / 框架 bld_frame /
+  环 bld_ring / 厅 bld_hall / 回廊 bld_corridor / 穹顶 bld_dome /
+  门厅门 bld_gate——200×200 七层栈(shadow/body/panel/edge/accent/
+  guide)与灰阶 ≥3 级 + 顶缘亮线 + 单处主角红纪律全同源;穹顶按形状
+  纪律用 45° 折线拱表达曲面(禁圆角)。overview 总览重拼 19→28 件。
+- **记录点信标 CheckpointBeacon 实装**(structures.md §8,画了没加
+  销账):Area2D 触发区触碰按体身份键登记召回落点(最近触碰语义,
+  双体两半各占一键);死亡重生 / R 召回回最近信标;联机主机权威 +
+  `EV_CHECKPOINT` 客机复现亮灯,召回走既有 `net_recall` 通路。
+  数据契约 LevelDef.checkpoints(JSON 同构)+ ase2level 语义色
+  `#50C878`;试炼场 Z1/Z2、Z3/Z4 边界两座信标(编译平价:JSON diff
+  仅 +14 行 checkpoints)。gridcheck 补信标吸附/越界校验;recalltest
+  新增第④用例(触碰登记→召回回信标)。
+
+### 变更
+- 文档收口:ASSETS.md 机关物图鉴表补 push_box / ski_patch / launch_pad
+  三行欠账(10→13),传送对「立项待实装」改「实装 v0.27」,记录点信标
+  状态改「实装 v0.36」;建筑物图鉴表 6→15;资产统计(插图 34→43、
+  aseprite 源 39→47)同步。levels.md §0.1 图例补信标行;
+  entities 总纲卷六 Trigger 族 / 卷十三迁移表登记信标实装。
+
+### 移除
+- **气闸孤儿资产清退**:`assets/art/mech/air_gate.aseprite` + 条带
+  (全库零引用、零图鉴登记;「气闸」语义 = 踩踏开关多开关布局,由
+  LeverGate levers 数据形态承载,ASSETS.md 注明去向)。
+
 ## v0.35.1(2026-09-13)
 
 > **登记两笔销账 + 首次推送**。①肉鸽状态空窗守卫:选体 / 单章剧

@@ -136,7 +136,7 @@ visibility / accessible_by / interaction`。
 
 | 族 | 定义 | 现有成员(迁移) |
 |---|---|---|
-| **Trigger** | 玩家做了什么 → 世界响应 | 踩踏开关;推箱顶入(兼) |
+| **Trigger** | 玩家做了什么 → 世界响应 | 踩踏开关、记录点信标;推箱顶入(兼) |
 | **State** | 世界当前状态(开/关/实/虚/A/B) | 开关门板、传送对 |
 | **Time** | 世界什么时候改变 | 限时桥、移动平台(周期/相位/节拍) |
 | **Motion** | 空间怎么运动 | 移动平台/电梯(摆渡) |
@@ -262,7 +262,7 @@ atmosphere 剪影层与 audio 动机库各有一个识别条目。
 | 钢琴砖 | structures §5 | M/Trigger(M0)+SP 演出 | 保留 | 地图即乐谱(art-audio §5.4) |
 | 磁界 MagBoundary | structures §5 | M/Space+Character(M3–M4) | 保留 | 收线守卫已修(v0.27.x) |
 | 推箱/滑雪带/传送对/弹射板 | gameplay 卷二 | M/Physics+State(M1–M2) | **保留(观察期)** | 组合矩阵已登记 |
-| 记录点信标 | structures §5 | M/Trigger+State | **暂缓** | 随 P2 正式关 |
+| 记录点信标 | structures §8 | M/Trigger+State | **保留(v0.36 实装)** | 信标实体 + 像素契约落地;正式关排布随 P2 |
 | 充电桩 | structures §5 | M/Character(M3) | **暂缓** | 随第二幕 |
 | 单向闸 | gameplay 卷二 | S(A03 变体) | **合并** | faces=top 预设笔刷 |
 | 计时环/脆弱块 | gameplay 卷二 | M | **暂缓** | 随 P3 |

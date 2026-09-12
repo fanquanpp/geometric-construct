@@ -243,6 +243,14 @@ static func build(def: LevelDef) -> Node2D:
 		pad.launch_vec = lp["vec"]
 		root.add_child(pad)
 
+	# —— 记录点信标(structures.md §8:触碰登记召回落点) ——
+	for ci in def.checkpoints.size():
+		var cp: Dictionary = def.checkpoints[ci]
+		var beacon := CheckpointBeacon.new()
+		beacon.beacon_id = ci
+		beacon.pos = cp["pos"]
+		root.add_child(beacon)
+
 	# —— 出口门 ——
 	for e in def.exits:
 		var door := ExitDoor.new()

@@ -1,4 +1,4 @@
-# assets/art/tiles_v2(现行 · 2026-09-10 重绘全套 · v0.19 增补几何肖像 · v0.29 补母版三件)
+# assets/art/tiles_v2(现行 · 2026-09-10 重绘全套 · v0.19 增补几何肖像 · v0.29 补母版三件 · v0.36 补 Kit 构件九件)
 
 v0.13.2 废止的旧 aseprite 瓦片(`assets/art/tiles/`、`assets/tiles/`)由本套**替代重绘**。
 **引擎接入(v0.19)**:本套 PNG 由「档案几何」(ArchivePanel)作图鉴插图引用,
@@ -27,7 +27,7 @@ v0.13.2 废止的旧 aseprite 瓦片(`assets/art/tiles/`、`assets/tiles/`)由�
 - **形状纪律**(art-style.md §2 全局适用):无圆角、无渐变、无模糊投影,
   全直角/直线/45° 折线;终点门在游戏内按几何体色再着色,本套为纸白中性版。
 
-## 清单(24 件 = 土建 19 + 几何肖像 5)
+## 清单(33 件 = 土建 28 + 几何肖像 5)
 
 ### 土建构件(bld_*/mech_*,2026-09-10 重绘)
 
@@ -39,6 +39,15 @@ v0.13.2 废止的旧 aseprite 瓦片(`assets/art/tiles/`、`assets/tiles/`)由�
 | bld_ghost_frame | 纯装饰线框(faces=none,8% 填充) | 1 |
 | bld_back_tower | 背景建筑塔(L3 景观,退台+窗槽+信标) | 1 |
 | bld_pillar | 巨构立柱(第一幕门厅柱梁) | 1 |
+| bld_beam | 梁(A05 横向构件,端头榫块) | 1 |
+| bld_stair | 台阶(A07 阶梯组,四级 ≤0.9 格) | 1 |
+| bld_bridge | 桥面(A08 跨缺薄板,双支墩) | 1 |
+| bld_frame | 框架(A09 柱 + 梁 + 洞口) | 1 |
+| bld_ring | 环(A10 环形构件,直角环身) | 1 |
+| bld_hall | 厅(A12 大跨度空间,内柱巨腔) | 1 |
+| bld_corridor | 回廊(A13 狭长通道,双壁窄槽) | 1 |
+| bld_dome | 穹顶(A14 覆盖曲面,45° 折线拱) | 1 |
+| bld_gate | 门厅门(A15 大门框,阶梯冠红刻度) | 1 |
 | mech_speed_gate | 加速门(雪佛龙) | 2:常态/强化 |
 | mech_exit_door | 终点门(几何体色待定;吸入帧 v0.19 增) | 3:待命/到站/吸入 |
 | mech_mover | 移动平台(+track 轨道层) | 1 |
@@ -69,8 +78,8 @@ v0.13.2 废止的旧 aseprite 瓦片(`assets/art/tiles/`、`assets/tiles/`)由�
 | geo_roll | 圆 · 橙色圆球形 | r=52 | 基盘半月 + 单根粗白指针 + 轮毂 |
 | geo_pair | 界/边 · 紫色正三角双子 | 80×80 ×2 | 对望双三角 + 磁力折线 + 端点方块 |
 
-`overview.png` 为土建构件总览(墨底拼图,v0.29 重拼:19 件单帧);
-`png/` 下为逐件参考导出(1x;v0.29 补齐 mech_portal 三帧)。
+`overview.png` 为土建构件总览(墨底拼图,v0.36 重拼:28 件单帧);
+`png/` 下为逐件参考导出(1x;v0.29 补齐 mech_portal 三帧,v0.36 补九件 Kit 构件)。
 **引擎加载源 = `assets/archive/`**(PNG 与 `_f2` 帧;geo_* 由 aseprite 直接导出,
 bld_*/mech_* 取自 `png/` 拷贝),UI 侧路径见 `ArchiveData.img_path()`。
 `mag_boundary` / `grid` / `hint_marker` 为程序化线条类,不设瓦片。

@@ -22,6 +22,8 @@ extends Node
 signal members_changed()
 signal net_message(msg: String)          # 房间 UI 的状态/toast 行
 signal room_closed()                     # 对端掉线 / 房解散(UI 弹回)
+signal map_picked(index: int)            # 选图定档(两端;房间页转选角页)
+signal claims_changed()                  # 认领集变化(选角页重建 / HUD 描边)
 
 enum Mode { NONE, LOBBY, CONNECTING, IN_GAME }
 
@@ -34,6 +36,7 @@ const EV_SEAL := 6
 const EV_COMPLETE := 7
 const EV_BACK := 8
 const EV_LEVER := 9     # arg = 关内门序号(LeverGate.gate_id),arg2 = 门态(1 开)
+const EV_CHECKPOINT := 10   # arg = 关内信标序号(CheckpointBeacon.beacon_id)
 
 static var I: NetSession
 
@@ -50,6 +53,16 @@ var _net_active := -1            # 本侧当前操控体(players 下标;联机�
 var _remote_srcs := {}           # 主机侧:slot -> RemoteInputSource
 var _client_active := 0          # 主机侧:客机上报的当前操控体
 var _connect_deadline := 0
+
+## —— 选图选角(v0.36.0,net.md §8):主机选图 → 双方各认领 1–3 位 →
+## 名册位全覆盖才可开演;未走选图流程(自动化钩子 / 旧调用点)退回对半分。
+const MAX_PICKS := 3               # 每人最多认领的名册位(覆盖率不足时自动放宽到 ⌈n/2⌉)
+
+var pick_level := -1               # 已选定的关卡下标(-1 未选)
+var _host_geo: Array = []          # 主机认领的几何体下标(权威在主机)
+var _client_geo: Array = []        # 客机认领的几何体下标
+var _own_geo: Array = []           # 开局后:本侧绑定的几何体下标
+var _other_geo: Array = []         # 开局后:对侧绑定的几何体下标
 
 @onready var _m = null           # Main.I 快照(_ready 时取)
 
@@ -130,6 +143,11 @@ func leave_silent() -> void:
 	_client_slots_clear()
 	_net_active = -1
 	_clock = 0.0
+	pick_level = -1
+	_host_geo.clear()
+	_client_geo.clear()
+	_own_geo.clear()
+	_other_geo.clear()
 	DisplayServer.screen_set_keep_on(false)
 
 
@@ -445,6 +463,10 @@ func rpc_event(kind: int, arg: int, arg2 := 0) -> void:
 			for g in m.get_tree().get_nodes_in_group("levergate"):
 				if g.get_meta("gate_id", -1) == arg:
 					g.net_apply_open(arg2 == 1)
+		EV_CHECKPOINT:
+			for b in m.get_tree().get_nodes_in_group("checkpoint"):
+				if b.get_meta("checkpoint_id", -1) == arg:
+					b.net_apply_activate()
 
 
 ## 客机召回请求:主机执行 teleport,快照回传落位。

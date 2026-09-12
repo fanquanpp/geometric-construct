@@ -141,6 +141,12 @@ func _check_level(li: int, def: LevelDef) -> void:
 	for e in def.exits:
 		_snap_check(li, "门#%d" % e[0], e[1].x)
 		_snap_check(li, "门#%d" % e[0], e[1].y)
+	for i in def.checkpoints.size():
+		var cp: Vector2 = def.checkpoints[i]["pos"]
+		_snap_check(li, "信标#%d" % i, cp.x)
+		_snap_check(li, "信标#%d" % i, cp.y)
+		if not bounds.has_point(cp):
+			_fail("L%d 信标#%d 越界:%s" % [li, i, cp])
 	for z in def.zones:
 		snap_rect.call("分区 %s" % z.get("name", "?"), z["rect"])
 

@@ -1,6 +1,6 @@
 # 特殊建筑物设计 · STRUCTURES
 
-> 状态:现行(v0.23,注册表代码 v0.31.1 撤除)· 数据源:`scripts/entities/*`、`scripts/world/mechanisms/*`
+> 状态:现行(v0.36,记录点信标实装;注册表代码 v0.31.1 撤除)· 数据源:`scripts/entities/*`、`scripts/world/mechanisms/*`
 > (kind 路由实际落点 = LevelBuilder 装配与机制脚本自身;本文保留生命周期契约与登记纪律)
 > 关卡里除地面平台外的一切可交互构件,统一在本文登记;新构件先立项再实现。
 > v0.13 增补:§0 组件语义统一 + §5 新增动态构件(开关门 / 限时桥)。
@@ -126,3 +126,16 @@ StringName 直书于 Comp.tags 与 levels 数据。)
 | 滑雪带 SkiPatch | 踩入低摩擦态(摩擦 ×0.12 / 加速 ×0.4),出带 0.2s 恢复 | 覆盖带 Rect2;RunState.friction 链 |
 | 传送对 PortalPair | 进 A 出 B,速度矢量保留;双向可穿 | 出口外推 46px + 0.5s 冷却防乒乓 |
 | 弹射板 LaunchPad | 踩上获数据给定发射矢量(愤怒的小鸟式抛物的固定向量版) | 0.6s 冷却;板上箭头即弹道 |
+
+## 8. 记录点信标 CheckpointBeacon(v0.36 实装,`scripts/world/mechanisms/checkpoint_beacon.gd`)
+
+| 项 | 内容 |
+|---|---|
+| 外观 | 杆 + 顶方块 + 底座两态:未激活 = 淡纸白线框,激活 = 亮杆 + 红方块 + 顶缘呼吸亮条(引擎 `_draw()`,零贴图) |
+| 物理 | Area2D 触发区(72×96,玩家层),零碰撞;触碰按**体身份键**(`body_key`)登记召回落点(`roster.checkpoints`,最近触碰语义;双体两半各占一键,characters.md §5) |
+| 演出 | 触碰即 `arrive` 音 + 亮灯;死亡重生与 R 召回回最近信标(无记录点回出生点);联机主机权威,客机经 `EV_CHECKPOINT` 复现亮灯,召回走既有 `net_recall` 通路 |
+
+- 数据契约:LevelDef.checkpoints = `[{pos: Vector2 召回落点}]`,JSON 同构;
+  试炼场语义色 `#50C878` 实心小块经 ase2level 编译(levels.md §0.1)。
+- 触发区惯例(2026-09-13 联网核对):保持 monitoring 常开 + 布尔记账防重放,
+  不在 body_entered 回调里改物理状态。

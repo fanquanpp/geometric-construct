@@ -58,4 +58,7 @@ var portals: Array = []
 ## 弹射板(structures.md §5 Launcher):Array[{pos: Vector2, vec: Vector2}]
 ## 踩上即获发射速度。
 var launch_pads: Array = []
+## 记录点信标(structures.md §8):Array[{pos: Vector2 召回落点}]
+## 触碰即按体身份键登记召回落点,死亡重生与 R 召回回到最近触碰的信标。
+var checkpoints: Array = []
 var spawns: Array = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]

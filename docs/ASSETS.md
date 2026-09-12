@@ -12,17 +12,17 @@
 |---|---|---|
 | 几何体(实装) | 5(疾 / 跃 / 逆 / 圆 / 界·边)| `scripts/data/geometries.gd` |
 | 几何体(待定) | 2(陆 / 柒)| `glossary.md` §1 |
-| 建筑物图鉴 | 6 | `scripts/data/archive_data.gd` BUILDINGS |
-| 机关物图鉴 | 10(9 实装 + 传送对规划)| `archive_data.gd` MECHS |
+| 建筑物图鉴 | 15(6 既有 + 9 件 Kit 构件 v0.36 补绘)| `scripts/data/archive_data.gd` BUILDINGS |
+| 机关物图鉴 | 13(全部实装;传送对 v0.27 / 记录点信标 v0.36)| `archive_data.gd` MECHS |
 | 机关物(立项 / 规划未入图鉴) | 2(充电桩 / 反重力门)| `glossary.md` §2 |
 | 肉鸽词条(重跑) | 13(通用 5 + 专属 8)| `scripts/data/run_modifiers.gd` |
 | 剧情篇目 | 8(= `story/*.ks`)| `archive_data.gd` STORIES |
 | 幕(现行) | 2(机制试炼场 / 关卡设计占位)| `scripts/data/level_data.gd` ACTS |
 | 幕(七幕主纲) | 7(2 已演 + 5 规划)| `story.md` §1.5 |
-| 关卡(在演) | 1(机制试炼场 v4,分区 Z0–Z5)| `level_data.gd` LEVELS |
+| 关卡(在演) | 1(机制试炼场 v5,分区 Z0–Z5)| `level_data.gd` LEVELS |
 | 关卡(历史文件未接线) | 1(伍试水 · 界与边)| `levels/pair_trial.json` |
-| 图鉴插图(入引擎) | 34 张 png | `assets/archive/` |
-| aseprite 源 | 39 个(tiles_v2 24 + icon_construct + levels/trial_v5 + mech 精灵 13)| `assets/art/`、`assets/art/levels/`、`assets/art/mech/` |
+| 图鉴插图(入引擎) | 43 张 png | `assets/archive/` |
+| aseprite 源 | 47 个(tiles_v2 33 + icon_construct + levels/trial_v5 + mech 精灵 12)| `assets/art/`、`assets/art/levels/`、`assets/art/mech/` |
 | svg 图标 | 69 个(7 类)| `assets/svg/` |
 | 字体 | 1(NotoSansSC-VF)| `assets/fonts/` |
 
@@ -44,7 +44,7 @@
 - 伍占**两个编号、一座几何体**:界 / 边必定同时存在,切换循环中各占一位。
 - 平面肖像源:`assets/svg/characters/{dash,spring,fall,roll,pair}-flat.svg`(5 张)。
 
-## 2. 建筑物图鉴(地形与景观 · 6)
+## 2. 建筑物图鉴(地形、景观与 Kit 构件 · 15)
 
 来源 `archive_data.gd` BUILDINGS;`bld_*` 对应 tiles_v2 重绘。
 
@@ -56,8 +56,17 @@
 | `bld_ghost_frame` | 幽灵线框 | GHOST FRAME | 装饰 | 无碰撞纯视觉线框(8% 亮度),虚化态 / 预告轮廓 |
 | `bld_back_tower` | 背景建筑塔 | BACK TOWER | 景观 · L3 | 背景层退台巨塔,城市剪影,纯景观不参与碰撞 |
 | `bld_pillar` | 巨构立柱 | COLOSSUS PILLAR | 巨构 | 第一幕门厅 3× 尺度承重柱梁,巨构降临母题 |
+| `bld_beam` | 梁 | BEAM | 构件 · A05 | 横向承重骨架,端头榫块咬柱,梁下净空即通行预算 |
+| `bld_stair` | 台阶 | STAIR | 构件 · A07 | 每级 ≤ 0.9 格的阶梯组,垂直高差的节拍化解法 |
+| `bld_bridge` | 桥面 | BRIDGE | 构件 · A08 | 两端支墩架起的跨缺薄板,动态版 = 限时桥 / Mover |
+| `bld_frame` | 框架 | FRAME | 构件 · A09 | 柱 + 梁 + 洞口的构图骨架,关卡里的取景器 |
+| `bld_ring` | 环 | RING | 构件 · A10 | 中空闭合回环,空间回路;构成主义的直角环 |
+| `bld_hall` | 厅 | HALL | 构件 · A12 | 屋顶 + 侧墙 + 内柱围出的巨腔,尺度演出主舞台 |
+| `bld_corridor` | 回廊 | CORRIDOR | 构件 · A13 | 两壁夹出的狭长通道,压迫 / 对答空间 |
+| `bld_dome` | 穹顶 | DOME | 构件 · A14 | 45° 折线拱出的覆盖曲面,收束 / 仪式顶 |
+| `bld_gate` | 门厅门 | GATE | 构件 · A15 | 章节门户的巨构大门框,双柱阶梯冠红刻度 |
 
-## 3. 机关物图鉴(可交互构件 · 10)
+## 3. 机关物图鉴(可交互构件 · 13)
 
 来源 `archive_data.gd` MECHS;`mech_*` 对应 tiles_v2 重绘,双帧 = 两态静帧。
 规划名 ⇄ 现行名对照总表见 `glossary.md` §2;构件规格见 `structures.md`。
@@ -72,8 +81,11 @@
 | `mech_gate_door` | 开关门板 | GATE DOOR | 机关 · 受控 | 两态(关·实心 / 开·虚化)| 实装 v0.13 |
 | `mech_timed_bridge` | 限时桥 | TIMED BRIDGE | 机关 · 节拍 | 2 帧动态(实心 / 虚化)| 实装 v0.15 |
 | `mech_piano_tile` | 钢琴砖 | PIANO TILE | 机关 · 演奏 | 两态(常态 / 触发)| 实装 v0.15 |
-| `mech_checkpoint` | 记录点信标 | CHECKPOINT | 机关 · 存续 | 两态(未激活 / 激活)| 实装 v0.17 |
-| `mech_portal` | 传送对 | PORTAL | 机关 · 规划中 | 3 帧动态(闭合 / 开启 / 脉冲)| 立项待实装 |
+| `mech_checkpoint` | 记录点信标 | CHECKPOINT | 机关 · 存续 | 两态(未激活 / 激活)| 实装 v0.36(召回管线 v0.17)|
+| `mech_portal` | 传送对 | PORTAL | 机关 · 穿越 | 3 帧动态(闭合 / 开启 / 脉冲)| 实装 v0.27 |
+| `mech_push_box` | 推箱 | PUSH BOX | 机关 · 解谜 | 单帧 | 实装 v0.27 |
+| `mech_ski_patch` | 滑雪带 | SKI PATCH | 机关 · 地形 | 两态(常态 / 滑雪)| 实装 v0.27 |
+| `mech_launch_pad` | 弹射板 | LAUNCH PAD | 机关 · 弹射 | 单帧 | 实装 v0.27 |
 
 **立项 / 规划未入图鉴**(登记于 `glossary.md` §2):
 
@@ -196,10 +208,10 @@
 | 资产 | 数量 | 路径 | 说明 |
 |---|---|---|---|
 | 几何体肖像 svg | 5 | `assets/svg/characters/` | dash / spring / fall / roll / pair |
-| 图鉴插图 png | **34** | `assets/archive/` | 建筑 6 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200 |
-| 图鉴 aseprite 源 | 24 | `assets/art/tiles_v2/` | `bld_*` 6 + `geo_*` 5 + `mech_*` 13(v0.29 补 push_box / ski_patch / launch_pad 母版)|
+| 图鉴插图 png | **43** | `assets/archive/` | 建筑 15 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200 |
+| 图鉴 aseprite 源 | 33 | `assets/art/tiles_v2/` | `bld_*` 15(v0.36 补 Kit 构件九件)+ `geo_*` 5 + `mech_*` 13 |
 | 关卡美术层 | 1 | `assets/levels/trial_v5.png`(源 `assets/art/levels/trial_v5.aseprite`,**全分辨率 6400×1080**)| 试炼场 v5 地图皮「长卷 · 归门圣环」(v0.29.1 细化升格,契约 art-style.md §6.2;沿革:v0.29 修 v0.27 双倍放大)|| 关卡语义层 | 2 | `assets/levels/trial_v5_map.png` + `_ent.png`(源同上 `map`/`map_ent` 层)| 颜色图例几何+锚点 SSOT,`tools/ase2level.py` 编译 `levels/trial_v5.json`(v0.30.0,契约见 levels.md §0.1)|
-| 机关精灵图库 | 13 源 + 13 条带 | `assets/art/mech/` | 气闸/限时桥/传送/弹射/琴键/加速门/推箱/动板/拉杆/曲面 buff + 爆点/尘/碎片动画,200×200 共 43 帧(v0.30.0,供机关 _draw→AnimatedSprite2D 迁移与图鉴动帧取用)|
+| 机关精灵图库 | 12 源 + 12 条带 | `assets/art/mech/` | 限时桥/传送/弹射/琴键/加速门/推箱/动板/拉杆/曲面 buff + 爆点/尘/碎片动画,200×200 共 39 帧(v0.30.0,供机关 _draw→AnimatedSprite2D 迁移与图鉴动帧取用;气闸 4 帧随 v0.36 孤儿清退移除——「气闸」语义 = 踩踏开关多开关布局,由 LeverGate levers 承载)|
 
 | 游戏图标 | 7 | `icon.png`(256)+ `icon_192` + `icon_fg/bg/mono_432`(源 `assets/art/icon_construct.aseprite`)| 构成徽章 v3:墨底幽灵菱线 + 构成红斜面菱芯 + 四纸白卫星(菱/三角/圆/方);432 母版 ×4 整数导出,安全区内构图(v0.28.1,Android 启动器四字段已接线)|
 | svg 图标 | **69** | `assets/svg/` | arrows 7 / audio 4 / buttons 18 / characters 5 / icons 14 / keys 10 / objects 5 / ui 6 |

@@ -134,6 +134,9 @@ static func from_json_text(text: String) -> LevelDef:
 		def.launch_pads.append({"pos": _json_vec2(lp.get("pos",
 				{"x": 0, "y": 0})),
 			"vec": _json_vec2(lp.get("vec", {"x": 0, "y": -1400}))})
+	for cp in d.get("checkpoints", []):
+		def.checkpoints.append({"pos": _json_vec2(cp.get("pos",
+				{"x": 0, "y": 0}))})
 	for g in d.get("gates", []):
 		def.gates.append([_json_vec2(g[0]), _json_vec2(g[1])])
 	for e in d.get("exits", []):

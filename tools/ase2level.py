@@ -6,6 +6,7 @@
   00E5FF  琴键砖(实心块,音符按 x 序取 meta.piano_notes)
   7FD4FF  滑雪带(实心矩形)
   FF3EF5  加速门(实心矩形 → gates [pos, size])
+  50C878  记录点信标(实心小块 → checkpoints [{pos}])
   五几何色(疾 E0492F / 跃 E8B33A / 逆 4E86D8 / 圆 E07E2E / 伍 8455A6):
     空心 24×24 = 终点门(中心锚点);实心 16×16 = 出生点(同色两块 = 双子 {a, b})
 其余一切参数化实体(斜坡/动板/气闸门/限时桥/推箱/传送对/弹射板/提示/分区/
@@ -31,6 +32,7 @@ GEO_COLORS = {
 CYAN = (0, 229, 255)
 SKI = (127, 212, 255)
 GATE = (255, 62, 245)
+CHECKPOINT = (80, 200, 120)
 
 
 def components(mask, w, h):
@@ -99,6 +101,7 @@ def main():
     piano_masks = {}  # (0, idx, 255) → mask:琴键逐块索引色,整宽不离格
     ski_m = bytearray(w * h)
     gate_m = bytearray(w * h)
+    cp_m = bytearray(w * h)
     geo_masks = {c: bytearray(w * h) for c in GEO_COLORS}
     for y in range(h):
         row = y * w
@@ -115,6 +118,8 @@ def main():
                 ski_m[row + x] = 1
             elif c == GATE:
                 gate_m[row + x] = 1
+            elif c == CHECKPOINT:
+                cp_m[row + x] = 1
             elif c in GEO_COLORS:
                 geo_masks[c][row + x] = 1
 
@@ -174,6 +179,14 @@ def main():
     tiles.sort(key=lambda t: t["rect"]["x"])
     level["piano_tiles"] = [dict(t, note=notes[i]) for i, t in enumerate(tiles)]
     level["ski_patches"] = rects_of(ski_m)
+    # 记录点信标:实心小块组件中心 = 召回落点,按 x 序编号
+    cps = []
+    for comp in components(cp_m, w, h):
+        x0, y0, x1, y1 = comp["bbox"]
+        cx, cy = (x0 + x1 + 1) // 2, (y0 + y1 + 1) // 2   # 偶数尺寸中心修正
+        cps.append({"pos": {"x": cx, "y": cy}})
+    cps.sort(key=lambda c: (c["pos"]["x"], c["pos"]["y"]))
+    level["checkpoints"] = cps
     level["gates"] = []
     for g in rects_of(gate_m):
         r = g["rect"]
