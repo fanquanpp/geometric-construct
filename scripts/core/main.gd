@@ -546,6 +546,11 @@ func _physics_process(_delta: float) -> void:
 	if archive_panel.is_open or settings_panel.is_open:
 		return
 	if _state == State.PLAYING:
+		# 状态空窗守卫(v0.35.1):肉鸽选体 / 单章剧窗口期 _state 已是
+		# PLAYING 而 _level_def 尚未装配(start_rogue_fragment 才落值),
+		# 本帧无可玩数据——整帧跳过,防 Nil 逐帧报错(rogueshot 曾 157 帧)
+		if _level_def == null:
+			return
 		_check_deaths()
 		if debug_solo:
 			return

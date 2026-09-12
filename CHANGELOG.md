@@ -3,6 +3,32 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.35.1(2026-09-13)
+
+> **登记两笔销账 + 首次推送**。①肉鸽状态空窗守卫:选体 / 单章剧
+> 窗口期 PLAYING 态下 `_level_def` 尚未装配,每帧 Nil 报错
+> (rogueshot 157 帧)——PLAYING 分支入口单点前置守卫,空窗帧整帧
+> 跳过;②基线/对比截图目录 gitignore 模式固化。修后 rogueshot
+> 0 错误,四分镜像素差 0.017~0.039%(噪声带),五门禁全绿。
+
+### 修复
+- **肉鸽状态空窗 Nil**(`main.gd` `_physics_process` PLAYING 分支):
+  `_on_rogue_picked` 先置 `_state = PLAYING`(预亮 HUD),`_level_def`
+  要到首个 `start_rogue_fragment` 才落值——窗口期内数字键直达循环
+  逐帧读 `null.roster` 报错。于 PLAYING 分支入口加 `_level_def == null`
+  单点守卫(空窗帧整帧跳过;该分支全部逻辑都依赖关卡数据,守卫一处
+  即全覆盖)。联网核对该"数据后于状态就位"场景,前置守卫为通行解
+  (对比:逐状态散补样板多,延迟初始化需精细生命周期控制)。
+
+### 变更
+- gitignore 卫生收口:像素回归基线 / 对比目录固化为 `/.base_*/` 与
+  `/.m[0-9]*/`(替换 v0.35.0 临时追加的三行)。
+
+### 门禁
+- rogueshot 0 脚本错误(修前 157),四分镜 vs 基线 0.017~0.039%
+  噪声带;trait_check ALL PASS;gridcheck warns=11 同基线;
+  recalltest 3 PASS;dualtest ALL PASS。
+
 ## v0.35.0(2026-09-13)
 
 > **M-3 收官**:net_room / rogue / archive 三层持久壳入场景,R1 全量
