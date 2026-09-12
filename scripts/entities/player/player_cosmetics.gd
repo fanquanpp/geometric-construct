@@ -84,7 +84,7 @@ static func death_burst(p: Player) -> void:
 
 ## 高速残影采样:超过基准速度 1.2× 记录轨迹点(上限 6 个),减速逐帧回收。
 static func update_trail(p: Player, vel: Vector2) -> void:
-	if absf(vel.x) > Geometries.RUN_SPEED * 1.2:
+	if absf(vel.x) > MovementTuning.I.run_speed * 1.2:
 		p._trail.append({"pos": p.position, "size": p.def.size})
 		if p._trail.size() > 6:
 			p._trail.pop_front()
@@ -97,7 +97,7 @@ static func roll_loop_update(p: Player, vel: Vector2, on_floor: bool, dt: float)
 	if p._roll_loop == null:
 		return
 	var spd := absf(vel.x)
-	var k := clampf(spd / (Geometries.RUN_SPEED * 2.5), 0.0, 1.0)
+	var k := clampf(spd / (MovementTuning.I.run_speed * 2.5), 0.0, 1.0)
 	var target_db := lerpf(-46.0, -13.0, k) if on_floor else -60.0
 	p._roll_loop.volume_db = lerpf(p._roll_loop.volume_db, target_db,
 		1.0 - exp(-9.0 * dt))

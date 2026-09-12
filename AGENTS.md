@@ -28,7 +28,59 @@
 5. **已知坑速查**(详见各记忆与 docs):GDScript 方法内不支持嵌套
    `func`(用 lambda);spawns 按下标索引;FontVariation 无渲染属性;
    Rect2 无 is_empty();ThorVG 弧线 `A` 命令方向反直觉(用折线);
-   MIUI adb tap 偶发双注入;`--quit-after` 单位是帧。
+   MIUI adb tap 偶发双注入;`--quit-after` 单位是帧;Resource 共享
+   引用(默认同一份数据,运行时写入串改全部使用者,`duplicate()`
+   是浅拷贝)。
+
+6. **场景与资源强制约束**(2026-09-13 用户拍板,细则见下节):
+   常驻节点结构一律 `.tscn` 场景组合,禁单场景巨石与脚本拼树;
+   可调数值一律 `@export` 存 `.tres`(resource 只作静态数据);
+   数据层 Manager 建实体入池只发信号,表现层场景预连接信号做
+   挂载与演出。
+
+## 场景与资源强制约束(tscn 优先 · 数值 .tres · 数据驱动画面)
+
+> 2026-09-13 用户拍板,永久生效。本节约束「新代码怎么写」;存量
+> 单场景(Main.tscn 独苗)与代码 `const` 数值是待清偿债,按
+> REFACTOR.md §八台账分批迁移,不阻塞机制优先。
+
+**R1 · tscn 优先,多场景组合(禁单场景巨石)**
+- 一切**常驻节点结构**(子系统容器 / UI 面板 / 实体 / 特效层 /
+  灯光 rig)必须落 `.tscn` 场景文件,编辑器中组装、`instantiate()`
+  复用;游戏本体不得只有 `Main.tscn` 一个场景,新系统禁止再往
+  单场景里拼树。
+- 脚本内 `Xxx.new()` + `add_child` 串常驻树 = 违规。仅两类豁免:
+  ①运行时才能确定数量 / 形态的动态内容(粒子迸散 / 关卡内容物按
+  JSON 编译装配 / 联机对端实体);②dev 钩子与测试分镜。豁免处
+  必须注释注明「动态生成豁免」。
+- 新系统交付三件套:`xxx.tscn` + `xxx.gd` + 调参 `.tres`;场景必须
+  能单独在编辑器打开预览(场景即组件)。
+
+**R2 · 数值资源化(resource = 静态数据专用)**
+- 可调数值(手感 / 节奏 / 时长 / 预算 / 颜色 / 概率)一律自定义
+  Resource 子类 + `@export` 存 `.tres`,编辑器 Inspector 直接调;
+  脚本 `const` 只留结构性常量(枚举 / 键名 / 拓扑)。
+- **resource 只作静态数据存储,禁止运行时写 resource 属性传状态**:
+  Godot 资源默认共享引用,一处写、所有使用者一起变;确需每实例
+  运行态 → 节点成员变量;确需变体 → `duplicate()`(浅拷贝,嵌套
+  子资源仍共享)并注明。
+
+**R3 · 数据驱动画面(逻辑 / 表现分离,信号为界)**
+- 数据 / 逻辑层(Manager)只做:读 `.tres` → 创建实体入池 → 发信号
+  (如 `character_created(entity)`);不往表现树 `add_child`、不播演出。
+- 表现层宿主场景**预先 `connect`** 该信号(`_ready` 注册),回调里
+  完成挂载 / 入场演出 / 特效;禁止运行中 `get_node` 反向抓取。
+- 标准形 = 用户范例:CharacterData(`.tres`)→ CharacterManager →
+  `character_created` → World 场景挂载(与 REFACTOR Phase 4
+  「角色只交参数表」拍板同向;首个样板 = REFACTOR.md §八 M-4)。
+
+**R4 · 边界(与既有契约不冲突)**
+- 关卡几何仍走 `levels/*.json` + LevelDef(ase2level 编译产物,
+  契约 levels.md)——JSON 是内容包与编译产物,不是编辑器调参
+  数值,不在 .tres 化范围;词条表(run_modifiers)按 REFACTOR
+  Phase 3 拍板保持 `.gd`(系统能力,非调参数值)。
+- 双端路径与文档同步要求(本文件第 1 条)不变;新增场景 / 资源
+  改动照跑第 4 条验收基线。
 
 ## 双体系统速记(伍 · 界 / 边,characters.md §5)
 

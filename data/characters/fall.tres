@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="GeometryDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/geometry_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+index = 2
+name = "逆"
+full_name = "蓝色镜像正方形"
+slug = "fall"
+note = "E4"
+shape = 0
+color = Color(0.305882, 0.52549, 0.847059, 1)
+role = "置换型"
+quote = "逆。对你们是天与地,对他只是两个可以落脚的面。"
+traits = ["置换:按跳跃键在天与地之间翻转,水平惯性守恒", "弹性固定 0.5(反弹率 25%):落地即稳;置换即是他唯一的翅膀", "基础速度仅 0.5,穿过加速门后上限提升至 2.0×", "磁界穿透:唯一能穿过磁力边界的几何体(伍实装后生效)"]
+size = Vector2(30, 30)
+gravity_dir = 1
+can_jump = false
+can_swap = true
+can_climb = false
+jump_units = 0.0
+base_speed = 0.5
+sprint_speed = 1.2
+buff_sprint_speed = 2.0
+can_sprint = true
+bounce = 0.5
+weight = 0.2
+carry = 0.5
+can_pass_boundary = true

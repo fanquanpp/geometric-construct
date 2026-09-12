@@ -33,22 +33,34 @@ const LIGHT_SUN_ROTATION := -0.70   # rad ≈ -40°
 ##   三档呈现,切换受控几何体时按距离波次交叉淡化。
 
 
-static func build(def: LevelDef) -> Node2D:
-	var root := Node2D.new()
-	root.name = "Level"
+## 关卡表现层宿主与镜头场景(场景资源强制约束 R1:常驻结构走 .tscn;
+## 关卡内容物本身按 JSON 编译动态装配,属动态生成豁免)。
+const LEVEL_ROOT_SCENE := preload("res://scenes/world/level_root.tscn")
+const CAMERA_RIG_SCENE := preload("res://scenes/world/camera_rig.tscn")
 
-	# —— 测试关美术层(MapSkin v0.27):aseprite 地图接管地形外观 ——
-	# 碰撞照走平台组件;LaneRenderer 让位(机构物 / 玩家照常引擎绘制);
-	# z=-1 沉到网格之下(网格线仍覆在美术上,与 HUD 读数对齐)
+
+static func build(def: LevelDef) -> Node2D:
+	# 表现层宿主场景:_init 已预连接 CharacterManager.character_created,
+	# 下方建体流程发出的实体经信号回调挂进本节点(R3 数据驱动画面)。
+	var root: LevelRoot = LEVEL_ROOT_SCENE.instantiate()
+
+	# —— 测试关美术层(MapSkin,契约 art-style.md §6.2):aseprite 地图接管
+	#    地形外观 —— 碰撞照走平台组件;LaneRenderer 让位(机关物 / 玩家照常
+	#    引擎绘制);z=-1 沉到网格之下(网格线仍覆在美术上,与 HUD 读数对齐)
 	if not def.art.is_empty():
 		var tex: Texture2D = load(def.art)
 		if tex != null:
 			var skin := Sprite2D.new()
 			skin.texture = tex
 			skin.centered = false
-			skin.scale = Vector2(2, 2)   # aseprite 半分辨率绘制 ×2(1 像素 = 2 引擎像素)
+			skin.scale = Vector2(1, 1)   # 契约:PNG = 全分辨率(1 像素 = 1 引擎像素,v0.29.1 细化)
+			skin.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # 像素纪律:禁柔化
 			skin.z_index = -1
 			root.add_child(skin)
+			# —— 地图皮动效层(信标呼吸/圣环脉冲/光柱气流)+ 环境粒子
+			#    (尘埃/雪屑/滴水,presentation/00 卷八登记)——
+			root.add_child(MapSkinFX.new())
+			root.add_child(AmbientParticles.for_level(def))
 
 	# —— 引擎光影 rig(v0.19 art-style §8):环境冷档 + 定向平行光,
 	#    遮挡体处实算硬边投影(方向恒定,沿用旧硬投影的右下约定) ——
@@ -281,14 +293,10 @@ static func build(def: LevelDef) -> Node2D:
 				pa = def.spawns[idx]
 				pb = pa + Vector2(90, 0)
 			for half in 2:
-				var hp := Player.new()
-				hp.def = cd
-				hp.index = idx
-				hp.pair_half = half
-				hp.spawn_pos = pa if half == 0 else pb
-				hp.position = hp.spawn_pos
-				hp.world_mask = _mask_for(combos, idx)
-				root.add_child(hp)
+				# 数据驱动画面(R3):Manager 建体入池发信号,挂载由
+				# level_root 的 character_created 回调完成。
+				var hp: Player = CharacterManager.I.create_character(
+					cd, idx, pa if half == 0 else pb, half, _mask_for(combos, idx))
 				halves.append(hp)
 			(halves[0] as Player).partner = halves[1]
 			(halves[1] as Player).partner = halves[0]
@@ -297,13 +305,8 @@ static func build(def: LevelDef) -> Node2D:
 			mb.b = halves[1]
 			root.add_child(mb)
 			continue
-		var p := Player.new()
-		p.def = cd
-		p.index = idx
-		p.spawn_pos = def.spawns[idx]
-		p.position = def.spawns[idx]
-		p.world_mask = _mask_for(combos, idx)
-		root.add_child(p)
+		CharacterManager.I.create_character(cd, idx, def.spawns[idx],
+			-1, _mask_for(combos, idx))
 
 	# 推箱层(bit31)并入全员 mask:箱体占位时挡人(Sprint 机制群)
 	if not def.push_boxes.is_empty():
@@ -324,8 +327,8 @@ static func build(def: LevelDef) -> Node2D:
 	dbg.z_index = 20
 	root.add_child(dbg)
 
-	# —— 相机 ——
-	var cam := CameraRig.new()
+	# —— 相机(场景实例,R1) ——
+	var cam: CameraRig = CAMERA_RIG_SCENE.instantiate()
 	cam.limit_left = 0
 	cam.limit_top = 0
 	cam.limit_right = int(def.size.x)

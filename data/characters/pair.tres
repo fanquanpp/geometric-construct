@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="GeometryDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/geometry_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+index = 4
+name = "界"
+full_name = "紫色正三角形 · 界/边"
+slug = "pair"
+note = "G4"
+shape = 3
+color = Color(0.517647, 0.333333, 0.65098, 1)
+role = "边界型"
+quote = "界。我在上,量天的高度。"
+traits = ["双子:界(上三角)与边(下三角)同时存在,各自独立操控", "磁力边界:两顶之间张成磁力线,阻隔一切——除了逆", "跳高 1.0 格:矮坎可越,高墙交给同伴", "极速 2.0×:全场最大速度(测试向数值,长廊穿越便捷)"]
+size = Vector2(30, 30)
+gravity_dir = 1
+can_jump = true
+can_swap = false
+can_climb = false
+jump_units = 1.0
+base_speed = 2.0
+sprint_speed = 2.0
+buff_sprint_speed = 2.0
+can_sprint = false
+bounce = 0.5
+weight = 0.5
+carry = 0.0
+paired = true
+name_half = "边"
+quote_half = "边。我在下,量地的厚度。"

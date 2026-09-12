@@ -34,7 +34,9 @@
   **只能在尾部追加**,不得在中间插入(会破坏玩家解锁进度——解锁存的是下标)。
   当前「关卡设计」幕锁定、唯一在演 = 机制试炼场,演出关卡随机制达标后重启
   (见 ROADMAP §7)。
-- **几何体包**:在 `scripts/data/geometries.gd` 追加 `_make(...)`,并提供
+- **几何体包**:在 `data/characters/` 追加一份 GeometryDef `.tres`
+  (参照 `dash.tres`,全字段 Inspector 可调),并在
+  `scripts/data/geometries.gd` 的 `PATHS` 尾部登记下标,再提供
   `assets/svg/characters/<slug>-flat.svg`。几何体下标同样只能追加
   (`spawns`/存档按位掩码记录)。
 - **档案几何条目**:建筑物 / 机关图鉴条目是纯字典表(`ArchiveData`),

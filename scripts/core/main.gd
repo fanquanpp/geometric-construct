@@ -6,6 +6,26 @@ static var I  # Main 单例
 
 enum State { MENU, ROOM, PLAYING, PAUSED, TRANSITION, WIN }
 
+# —— 子系统场景(场景资源强制约束 R1:常驻节点结构一律 .tscn 组合,
+# 这里只按既定装配顺序实例化;顺序本身是行为(设置先于 UI、触屏先于
+# HUD),故组合根以脚本按序装配,层内结构在各场景文件内编辑器组装) ——
+const CHARACTER_MANAGER_SCENE := preload("res://scenes/core/character_manager.tscn")
+const ROSTER_SCENE := preload("res://scenes/core/roster_controller.tscn")
+const BACKDROP_SCENE := preload("res://scenes/world/backdrop.tscn")
+const AMBIENCE_SCENE := preload("res://scenes/fx/ambience.tscn")
+const TOUCH_SCENE := preload("res://scenes/ui/touch_controls.tscn")
+const HUD_SCENE := preload("res://scenes/ui/hud.tscn")
+const MENU_SCENE := preload("res://scenes/ui/menu_layer.tscn")
+const ARCHIVE_SCENE := preload("res://scenes/ui/archive_panel.tscn")
+const SETTINGS_SCENE := preload("res://scenes/ui/settings_panel.tscn")
+const PAUSE_SCENE := preload("res://scenes/ui/pause_menu.tscn")
+const ROGUE_LAYER_SCENE := preload("res://scenes/ui/rogue_layer.tscn")
+const ROGUE_DIR_SCENE := preload("res://scenes/modes/rogue/rogue_director.tscn")
+const NET_SESSION_SCENE := preload("res://scenes/net/net_session.tscn")
+const NET_ROOM_SCENE := preload("res://scenes/ui/net_room_layer.tscn")
+const BOOT_SCENE := preload("res://scenes/ui/boot_intro.tscn")
+const STORY_SCENE := preload("res://scenes/ui/story_layer.tscn")
+
 var _state: State = State.MENU
 
 var _level_root: Node2D
@@ -90,17 +110,20 @@ var _auto_test := false
 func _ready() -> void:
 	I = self
 	Ui.init_font()
-	# 名册域控制器最先装配(Sprint 3):切换 / 召回 / 到站 / 记录点真身
-	roster = RosterController.new()
+	# 角色管理器最先装配(R3 数据驱动画面):关卡建体经它入池发信号
+	var cm: CharacterManager = CHARACTER_MANAGER_SCENE.instantiate()
+	add_child(cm)
+	# 名册域控制器(Sprint 3):切换 / 召回 / 到站 / 记录点真身
+	roster = ROSTER_SCENE.instantiate() as RosterController
 	roster.main = self
 	add_child(roster)
 	_setup_dual_input()   # N1 分区动作注册(WASD / 方向键)
 	# 移动端传感器横屏(重力感应双横屏;桌面显示服务器不支持,守卫后不再告警)
 	if OS.has_feature("mobile"):
 		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
-	add_child(Backdrop.new())
+	add_child(BACKDROP_SCENE.instantiate())
 	Sfx.init(self)
-	var amb := Ambience.new()
+	var amb: Ambience = AMBIENCE_SCENE.instantiate()
 	amb.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(amb)
 	_ambience = amb
@@ -111,35 +134,35 @@ func _ready() -> void:
 	SettingsManager.apply_all_at_boot()
 
 	# TouchControls 先于 HUD 创建:HUD 就能感知触屏模式(提示条 / 坐标位置)
-	touch_controls = TouchControls.new()
+	touch_controls = TOUCH_SCENE.instantiate() as TouchControls
 	touch_controls.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(touch_controls)
-	_hud = Hud.new()
+	_hud = HUD_SCENE.instantiate() as Hud
 	add_child(_hud)
 	_hud.chip_tapped.connect(switch_to_geo)
-	_menu = MenuLayer.new()
+	_menu = MENU_SCENE.instantiate() as MenuLayer
 	_menu.m = self
 	add_child(_menu)
-	archive_panel = ArchivePanel.new()
+	archive_panel = ARCHIVE_SCENE.instantiate() as ArchivePanel
 	add_child(archive_panel)
-	settings_panel = SettingsPanel.new()
+	settings_panel = SETTINGS_SCENE.instantiate() as SettingsPanel
 	add_child(settings_panel)
-	_pause = PauseMenu.new()
+	_pause = PAUSE_SCENE.instantiate() as PauseMenu
 	_pause.m = self
 	add_child(_pause)
 
 	# 肉鸽模式:UI 层 + 流程控制器(modes/rogue)
-	rogue_layer = RogueLayer.new()
+	rogue_layer = ROGUE_LAYER_SCENE.instantiate() as RogueLayer
 	add_child(rogue_layer)
-	rogue_dir = RogueDirector.new()
+	rogue_dir = ROGUE_DIR_SCENE.instantiate() as RogueDirector
 	rogue_dir.main = self
 	rogue_dir.layer = rogue_layer
 	add_child(rogue_dir)
 
 	# 联机:会话中枢 + 房间流程页(net.md;path 一致,RPC 才能寻址)
-	net_session = NetSession.new()
+	net_session = NET_SESSION_SCENE.instantiate() as NetSession
 	add_child(net_session)
-	net_room_layer = NetRoomLayer.new()
+	net_room_layer = NET_ROOM_SCENE.instantiate() as NetRoomLayer
 	net_room_layer.m = self
 	add_child(net_room_layer)
 
@@ -152,7 +175,7 @@ func _ready() -> void:
 	_hud.visible = false
 
 	# 开屏动画:游戏名揭示(点按可跳过),盖在标题菜单入场之上
-	add_child(BootIntro.new())
+	add_child(BOOT_SCENE.instantiate())
 
 	_parse_auto_shot()
 
@@ -668,7 +691,7 @@ func quit_to_menu() -> void:
 ## kind:"act1" 开演剧(首进第一幕)/ "epilogue" 尾声(通关画面)/
 ## "rogue_*" 肉鸽序说与单章。回看走档案几何剧情页的全文本阅读器,不经此处。
 func show_story(kind: String) -> void:
-	var story := StoryLayer.new()
+	var story: StoryLayer = STORY_SCENE.instantiate()
 	story.m = self
 	add_child(story)
 	story.play("res://story/%s.ks" % kind)

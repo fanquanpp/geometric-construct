@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="GeometryDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/geometry_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+index = 1
+name = "跃"
+full_name = "黄色长方形"
+slug = "spring"
+note = "D4"
+shape = 1
+color = Color(0.909804, 0.701961, 0.227451, 1)
+role = "弹性型"
+quote = "跃。把坠落折叠成上升,她从不害怕高度。"
+traits = ["弹性 2.0 固定:反弹率 100%(v′ = e·v),按住跳跃主动发力弹得更高", "二段跳:每次跳高 2.0 格,两连跳可达 4.0 格", "顶弹翻倍:同伴站在她头顶起跳,跳高 ×2(4.0 格)", "高 0.8 格:同伴可踩上头顶,是一级活的台阶"]
+size = Vector2(40, 80)
+gravity_dir = 1
+can_jump = true
+can_swap = false
+can_climb = false
+jump_units = 2.0
+base_speed = 1.0
+sprint_speed = 1.0
+buff_sprint_speed = 1.0
+can_sprint = false
+bounce = 2.0
+weight = 1.5
+carry = 1.5

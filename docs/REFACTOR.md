@@ -116,9 +116,9 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
 
 | 内容 | 唯一权威 | 其他文档 |
 |---|---|---|
-| 角色实际属性 | `data/geometries.gd`(标尺 v2) | characters.md = 阐述 |
+| 角色实际属性 | `data/characters/*.tres`(GeometryDef 资源,标尺 v2) | characters.md = 阐述 |
 | 角色能力动词 | GeometryDef + characters.md §0 | — |
-| 物理参数(重力/土狼/缓冲) | `player.gd` 手感公约数 | characters.md §2 |
+| 物理参数(重力/土狼/缓冲) | `data/tuning/movement_default.tres`(MovementTuning,v0.31.0 起) | characters.md §2 |
 | 关卡参数 | `levels/*.json` + LevelDef(Phase 3 起) | levels.md = 规范 |
 | 机关行为 | `mechanisms/*.gd` + structures.md §7 | — |
 | 世界规则/真相分层 | bible.md 卷二 | story.md 引用 |
@@ -212,3 +212,26 @@ Foreshadow / Symbol(模板入 levels.md §0;测试道免登记)。
 2. JSON 迁移丢字段——对策:from_json_text 双向导出校验(diff 导入再导出)。
 3. 双仓库(speed-dev)与主仓契约漂移——对策:.gdignore 已隔离,
    契约变更走 data-contract.md 双签(v0.26 先例)。
+
+## 八、场景资源化迁移台账(2026-09-13 新增强制约束)
+
+> 用户拍板三条铁律:tscn 优先(禁单场景巨石)/ 数值 .tres(resource
+> 只作静态数据)/ 数据驱动画面(Manager 建体入池发信号,表现层
+> 预连接挂载)。约束全文见 AGENTS.md「场景与资源强制约束」,架构
+> 落点见 ARCHITECTURE.md「场景与资源约定」。以下为存量清偿顺序,
+> 逐项独立可回滚,与 Phase 4「逐文件小步」同轨,不阻塞机制优先。
+
+- **M-1 · 手感数值 .tres 化 ✅(v0.31.0)**:`movement_core` 公式参数 +
+  材质 μ + player 形体手感常量 → `MovementTuning`(31 项 @export,
+  data/tuning/movement_default.tres);SSOT 表「物理参数」行已改指。
+  门禁:dualtest ALL PASS / recalltest 3 PASS / autoshot 轨迹逐位一致。
+- **M-2 · 视觉常量**:`data/palette.gd` 保持代码形态直到首次触改,
+  若迁按 M-1 形制(颜色属调参数值);不专门开工。
+- **M-3 · 场景拆分 ✅ 第一批(v0.31.0)**:16 子系统常驻层 + level_root +
+  player 实体落 .tscn(共 22 场景),main.gd / level_builder 全部改
+  场景实例化;`main.gd` / `ui.gd` 层内拼树仍随 Phase 4 逐文件小步
+  (拆哪个文件顺手把该层内部结构搬进对应 .tscn),不一次性大改。
+- **M-4 · 角色参数表管理器化 ✅(v0.31.0)**:GeometryDef → Resource
+  (data/characters/*.tres 五份)+ CharacterManager(读表建体入池,
+  发 `character_created`)+ LevelRoot 表现层预连接挂载——兑现 Phase 4
+  「角色只交参数表」,R3 标准形首个实装样板完成。

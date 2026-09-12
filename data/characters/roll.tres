@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="GeometryDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/geometry_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+index = 3
+name = "圆"
+full_name = "橙色圆球形"
+slug = "roll"
+note = "F4"
+shape = 2
+color = Color(0.878431, 0.494118, 0.180392, 1)
+role = "滚动型"
+quote = "圆。他不会跳,所以他从不回头。"
+traits = ["固定极速 1.5×:起步即全速,滚动阻力极低,纯惯性行驶", "穿过加速门立即加速到 2.5×,超越默认上限", "可推动:同伴水平推挤即受力滚动——他是队伍的车", "弹性固定 0.5:反弹克制,动能都留给向前的惯性"]
+size = Vector2(52, 52)
+gravity_dir = 1
+can_jump = false
+can_swap = false
+can_climb = false
+jump_units = 0.0
+base_speed = 1.5
+sprint_speed = 1.5
+buff_sprint_speed = 2.5
+can_sprint = false
+bounce = 0.5
+weight = 0.5
+carry = 0.0

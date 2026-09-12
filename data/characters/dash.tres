@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="GeometryDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/geometry_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+index = 0
+name = "疾"
+full_name = "红色正方形"
+slug = "dash"
+note = "C4"
+shape = 0
+color = Color(0.878431, 0.286275, 0.184314, 1)
+role = "速度型"
+quote = "疾。他相信只要跑得够快,孤独就追不上他。"
+traits = ["冲刺:按住 Shift,目标速度抬至 1.5×(≈4.5 格/秒)", "二段跳:每次跳高 2.0 格(h = v₀²/2g),两连跳可达 4.0 格", "抛物线射程与水平速度成正比:助跑越快,跳得越远", "爬墙:贴住侧壁缓降滑壁,再按住跳跃键向上爬——单次至多 2.0 格"]
+size = Vector2(50, 50)
+gravity_dir = 1
+can_jump = true
+can_swap = false
+can_climb = true
+jump_units = 2.0
+base_speed = 1.0
+sprint_speed = 1.5
+buff_sprint_speed = 1.5
+can_sprint = true
+bounce = 0.5
+weight = 1.0
+carry = 1.0

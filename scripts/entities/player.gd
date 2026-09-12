@@ -12,22 +12,9 @@ extends CharacterBody2D
 ##     (二段跳角色统一 2.0 格/跳,与弹性解耦);松开跳跃的落地会自然收敛。
 ##   - 置换(逆):跳跃键改为在上下平台间翻转,空中惯性保留。
 
-const BOUNCE_MIN := 240.0     # 低于该落地速度不反弹,直接站稳
-const BOUNCE_SETTLE := 0.8    # 未按住跳跃的落地反弹衰减(自然收敛)
-const SWAP_SETTLE := 0.55     # 置换落地缓冲(避免上下平台间乒乓)
-# 运动核心常量已下沉 MovementCore(REFACTOR Phase 4);此处保留别名,
-# 存量调用点(终端速度钳制 / 圆球切线等)零改动。
-const MAX_FALL := MovementCore.MAX_FALL
-const BASE_ACCEL := MovementCore.BASE_ACCEL
-const AIR_ACCEL_RATIO := MovementCore.AIR_ACCEL_RATIO
-const MU_FRICTION := MovementCore.MU_FRICTION
-const BALL_MU_ROLL := MovementCore.BALL_MU_ROLL
-const SWAP_LAUNCH := 300.0    # 置换瞬间射向新落点平台的初速度
-const CLIMB_UP := 150.0       # 爬墙:按住跳跃键的上升速度
-const CLIMB_SLIDE := 55.0     # 爬墙:只按方向贴墙时的缓降速度
-const RAMP_BUFF_TIME := 1.5   # 曲面 buff:离开曲面后残留时长(秒)
-const RAMP_BOOST := 1.5       # 曲面 buff:速度上限倍率
-const RAMP_WEIGHT_RATIO := 0.5  # 曲面 buff:等效重量倍率(减半)
+# 手感数值已下沉 MovementTuning(data/tuning/movement_default.tres,
+# 场景资源强制约束 R2 / REFACTOR §八 M-1);原 MovementCore 常量别名
+# 随 M-1 迁移删除,调用点直读资源实例。
 # 三段重力倍率(FALL 1.24 / APEX 0.86)走 RunState 修饰链
 # (DEFAULTS.gravity_fall_mult / gravity_apex_mult,Sprint 2 入链)
 ## 词条「玻璃疾走」:重落地即碎的冲击阈值。
@@ -38,10 +25,8 @@ const MOD_SPEED_CAP := 3.75
 ## 可推动(肆·圆):推挤传速加速度(px/s²,characters.md §4)。
 const PUSH_TRANSFER := 1800.0
 ## 轻点/长按跳判定(v0.16 常量化,characters.md §2):
-## 按下即起跳(缓冲 0.12s)→ 上升中松键且速度仍超起跳速的 JUMP_CUT_RATIO
-## → 剩余速度 ×JUMP_CUT_MULT(轻点 ≈ 满跳 55% 高,长按全程不截断)。
-const JUMP_CUT_MULT := 0.55
-const JUMP_CUT_RATIO := 0.45
+## 按下即起跳(缓冲 0.12s)→ 上升中松键且速度仍超起跳速的 MovementTuning.I.jump_cut_ratio
+## → 剩余速度 ×MovementTuning.I.jump_cut_mult(轻点 ≈ 满跳 55% 高,长按全程不截断)。
 
 var def: GeometryDef
 var index: int
@@ -126,7 +111,7 @@ func _ready() -> void:
 		collision_mask |= TerrainKit.BOUNDARY_BIT
 	up_direction = Vector2(0, -gravity_dir)
 	z_index = 5
-	_climb_budget = GeometryDef.CLIMB_UNITS * Geometries.UNIT_PX
+	_climb_budget = MovementTuning.I.climb_units * Geometries.UNIT_PX
 	# 曲面跳跃板:圆球需要贴住更陡的坡面并在末端切线飞出
 	if def.shape == GeometryDef.Shape.BALL:
 		floor_max_angle = deg_to_rad(60.0)
@@ -263,13 +248,13 @@ func _physics_process(delta: float) -> void:
 		if dir != 0.0 and t.x * dir < 0.0:
 			t = -t                            # 切线指向行进方向
 		var along := vel.dot(t)
-		var target_along := target_mult * Geometries.RUN_SPEED / maxf(absf(t.x), 0.35)
+		var target_along := target_mult * MovementTuning.I.run_speed / maxf(absf(t.x), 0.35)
 		if dir == 0.0:
 			along = move_toward(along, 0.0,
-				MovementCore.friction_mu(self, ramp_buffed) * Geometries.GRAVITY * dt)
+				MovementCore.friction_mu(self, ramp_buffed) * MovementTuning.I.gravity * dt)
 		else:
 			along = move_toward(along, dir * target_along,
-				MovementCore.BASE_ACCEL * MovementCore.accel_factor(self, ramp_buffed) * dt)
+				MovementTuning.I.base_accel * MovementCore.accel_factor(self, ramp_buffed) * dt)
 		vel = t * along
 
 	# ———— 跳跃(二段跳)/ 置换(土狼时间 + 输入缓冲) ————
@@ -285,7 +270,7 @@ func _physics_process(delta: float) -> void:
 	if on_ground:
 		_coyote = RunState.modified(def, "coyote")
 		_jump_cut = false
-		_climb_budget = GeometryDef.CLIMB_UNITS * Geometries.UNIT_PX
+		_climb_budget = MovementTuning.I.climb_units * Geometries.UNIT_PX
 
 	# ———— 疾 · 爬墙:离地贴住世界墙面(非同伴)且朝墙压方向 → 吸附;
 	# 只按方向 = 缓降滑壁,按住跳跃键 = 沿墙向上爬(受单次 2.0 格预算限制)。
@@ -298,14 +283,14 @@ func _physics_process(delta: float) -> void:
 		_climbing = true
 		_climb_side = -1 if wall_normal.x > 0.0 else 1
 		if jump_held and _climb_budget > 0.0:
-			vel.y = -CLIMB_UP * gravity_dir
-			_climb_budget = maxf(_climb_budget - CLIMB_UP * dt, 0.0)
+			vel.y = -MovementTuning.I.climb_up * gravity_dir
+			_climb_budget = maxf(_climb_budget - MovementTuning.I.climb_up * dt, 0.0)
 			_climb_tick -= dt
 			if _climb_tick <= 0.0:
 				_climb_tick = 0.16
 				Sfx.play("climb")
 		else:
-			vel.y = CLIMB_SLIDE * gravity_dir
+			vel.y = MovementTuning.I.climb_slide * gravity_dir
 	else:
 		_climbing = false
 
@@ -333,11 +318,11 @@ func _physics_process(delta: float) -> void:
 		vel = _perform_swap(vel)
 	# 松开跳跃键截断上升(只截断一次)
 	if not _jump_cut and def.can_jump and not jump_held \
-			and vel.y * gravity_dir < -def.jump_v * JUMP_CUT_RATIO:
-		vel.y *= JUMP_CUT_MULT
+			and vel.y * gravity_dir < -def.jump_v * MovementTuning.I.jump_cut_ratio:
+		vel.y *= MovementTuning.I.jump_cut_mult
 		_jump_cut = true
 
-	vel.y = clampf(vel.y, -MAX_FALL, MAX_FALL)
+	vel.y = clampf(vel.y, -MovementTuning.I.max_fall, MovementTuning.I.max_fall)
 
 	# ———— 刚性携带·骑乘侧(v0.16,characters.md §2):无输入时水平运动
 	# 交给载体随动(见载体侧,用载体本帧实际位移搬运,零滑移);
@@ -386,7 +371,7 @@ func _physics_process(delta: float) -> void:
 		if RunState.has_flag(def, "glass") and impact > GLASS_IMPACT:
 			_swap_air = false
 			die()
-		elif carrying or impact <= BOUNCE_MIN or eff_bounce <= 0.0:
+		elif carrying or impact <= MovementTuning.I.bounce_min or eff_bounce <= 0.0:
 			# 驮着同伴时收力站稳 / 低速落地站稳;有一定冲击则补轻着地音
 			if absf(vel.y) < 5.0:
 				_squash(1.24, 0.78)
@@ -398,9 +383,9 @@ func _physics_process(delta: float) -> void:
 				# 落地瞬间按住跳跃:主动发力,反弹更高
 				restitution = minf(restitution + 0.18, 1.12)
 			else:
-				restitution *= BOUNCE_SETTLE
+				restitution *= MovementTuning.I.bounce_settle
 				if _swap_air:
-					restitution *= SWAP_SETTLE
+					restitution *= MovementTuning.I.swap_settle
 			vel.y = -impact * restitution * gravity_dir
 			velocity = vel
 			_squash(0.72, 1.3)
@@ -445,7 +430,7 @@ func _physics_process(delta: float) -> void:
 		if _ramp_timer <= 0.0 and Main.I != null:
 			Sfx.play("buff")
 			Main.I.notify_ramp(def)
-		_ramp_timer = RAMP_BUFF_TIME
+		_ramp_timer = MovementTuning.I.ramp_buff_time
 	elif _ramp_timer > 0.0:
 		_ramp_timer = maxf(_ramp_timer - dt, 0.0)
 
@@ -473,7 +458,7 @@ func _physics_process(delta: float) -> void:
 func _perform_swap(vel: Vector2) -> Vector2:
 	gravity_dir *= -1
 	up_direction = Vector2(0, -gravity_dir)
-	vel.y = SWAP_LAUNCH * gravity_dir
+	vel.y = MovementTuning.I.swap_launch * gravity_dir
 	_swap_buffer = 0.0
 	_swap_cd = RunState.modified(def, "swap_cooldown")
 	_coyote = 0.0
@@ -499,7 +484,7 @@ func _target_multiplier(sprinting: bool) -> float:
 	if speed_buffed:
 		cap = minf(cap * RunState.modified(def, "gate_mult"), MOD_SPEED_CAP)
 	if _ramp_timer > 0.0:
-		cap = minf(cap * RAMP_BOOST, MOD_SPEED_CAP)
+		cap = minf(cap * MovementTuning.I.ramp_boost, MOD_SPEED_CAP)
 	return cap
 
 
@@ -518,7 +503,7 @@ func _overload_jump_ratio() -> float:
 		if p != self and is_instance_valid(p) and p.rider_of == self:
 			rider_load += RunState.modified(p.def, "weight")
 	if rider_load > RunState.modified(def, "carry") + 0.01:
-		return GeometryDef.OVERLOAD_JUMP_RATIO
+		return MovementTuning.I.I.overload_jump_ratio
 	return 1.0
 
 
@@ -571,7 +556,7 @@ func _has_riders() -> bool:
 func apply_speed_gate() -> void:
 	var was := speed_buffed
 	speed_buffed = true
-	var cap := _target_multiplier(true) * Geometries.RUN_SPEED
+	var cap := _target_multiplier(true) * MovementTuning.I.run_speed
 	if absf(velocity.x) > 20.0:
 		velocity.x = signf(velocity.x) * maxf(absf(velocity.x), cap)
 	elif facing != 0.0:
@@ -651,7 +636,7 @@ func _reset_for_respawn() -> void:
 	_swap_air = false
 	_air_jumps_left = 0
 	_climbing = false
-	_climb_budget = GeometryDef.CLIMB_UNITS * Geometries.UNIT_PX
+	_climb_budget = MovementTuning.I.climb_units * Geometries.UNIT_PX
 	_ramp_timer = 0.0
 	_roll_angle = 0.0
 	_roll_speed = 0.0
@@ -683,7 +668,7 @@ func recall_to(pos: Vector2) -> void:
 	_air_jumps_left = 0
 	_coyote = 0.0
 	_ramp_timer = 0.0
-	_climb_budget = GeometryDef.CLIMB_UNITS * Geometries.UNIT_PX
+	_climb_budget = MovementTuning.I.climb_units * Geometries.UNIT_PX
 	_trail.clear()
 	_squash(1.15, 0.88)
 

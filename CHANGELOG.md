@@ -3,6 +3,111 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.31.0(2026-09-13)
+
+> **场景资源化深度重构(AGENTS R1–R3 全量落地)**:单场景巨石退役,
+> 游戏本体 1 → 20 个 .tscn;手感 / 角色数值整体迁入 .tres 资源
+> (`@export`,Inspector 直调);CharacterManager 建体入池发
+> `character_created`,表现层场景预连接挂载——数据驱动画面标准形
+> 就位。行为逐位不变:gridcheck warns=11 同基线,recalltest 3 PASS,
+> dualtest ALL PASS,laneshot / autoshot 零脚本错误 + 截图目检一致。
+
+### 新增
+- **手感调参资源 `MovementTuning`**(scripts/data/movement_tuning.gd +
+  data/tuning/movement_default.tres):三段重力 / 水平加速 / 摩擦公式
+  参数、材质 μ(标准 1.2667 / 圆滚 0.43)、爬墙 / 超载 / 曲面 buff /
+  跳跃截断 / 落地反弹 / 置换缓冲等 31 项数值全部 `@export` 落 .tres
+  ——REFACTOR §八 M-1 兑现;movement_core 只剩公式零数值,player.gd
+  11 个形体手感常量同步迁入(门禁:dualtest/recalltest/autoshot 轨迹
+  逐位对比)。
+- **角色参数资源化**(§八 M-4 第一半):`GeometryDef` RefCounted →
+  Resource 全字段 `@export`,五位几何体各一份 .tres(data/characters/
+  dash·spring·fall·roll·pair.tres);geometries.gd 由 23 参 `_make`
+  工厂改为 .tres 注册表;jump_v 改派生 getter 不落盘。
+- **角色管理器 `CharacterManager`**(scenes/core + §八 M-4 第二半):
+  读角色资源 → `create_character()` 建体入池(`pool`)→ 只发
+  `character_created(character, ctx)` 信号,不碰表现树;**表现层宿主
+  `LevelRoot`**(scenes/world/level_root.tscn)`_init` 预连接该信号,
+  回调里 `add_child` 挂载——level_builder 的 `Player.new()+add_child`
+  全部退役,双子 partner / 磁界端点接线保留在 builder(机制层)。
+- **场景化拆分**(§八 M-3 第一批):16 个子系统常驻层落 .tscn
+  (roster / character_manager / backdrop / ambience / camera_rig /
+  touch_controls / hud / menu / archive / settings / pause / rogue×2 /
+  net×2 / boot / story)+ level_root + player 实体场景,main.gd 全部
+  改 `preload().instantiate()`(装配顺序即行为,组合根按序实例化,
+  层内结构在各场景文件编辑器组装)。
+
+### 变更
+- 版本账修复:补 v0.30.1 / v0.30.2 占位节,v0.29.2 节归位到 v0.30.0
+  之下(此前的倒序是重做期间的遗留)。
+- 几何体数据访问不变:`Geometries.get_def / by_weight / roster_body_total`
+  API 原样,内部改从 .tres 装载;`Geometries.GRAVITY / RUN_SPEED` 迁入
+  MovementTuning(全库 22 处引用点同步改读资源)。
+- 存量数据疑点登记(不在本次处置):`can_top_boost`(跃)/ `can_be_pushed`
+  (圆)全库无赋值点,运行时恒为 false——与档案文案不符,待用户裁定
+  是补赋值还是删旗标。
+
+## v0.30.3(2026-09-13)
+
+> **开发范式强制约束落档**:tscn 优先(禁单场景巨石)/ 数值 .tres
+> (resource 只作静态数据)/ 数据驱动画面(Manager 建体入池发信号,
+> 表现层场景预连接挂载)。纯文档与规范变更,零代码行为改动;存量
+> 迁移台账入 REFACTOR.md §八(M-1~M-4)。
+
+### 新增
+- AGENTS.md:「场景与资源强制约束」一节(R1 tscn 优先多场景组合 /
+  R2 数值资源化 / R3 数据驱动画面 / R4 与关卡 JSON 管线及词条表
+  的边界),固定要求清单增第 6 条;坑速查补 Resource 共享引用
+  (`duplicate()` 浅拷贝)。
+- ARCHITECTURE.md:新增「场景与资源约定」;目录结构标注 Main.tscn
+  单场景为待清偿债,新场景一律落 scenes/。
+- REFACTOR.md:新增 §八 场景资源化迁移台账(M-1 手感 .tres 化 /
+  M-2 视觉常量随触改 / M-3 场景拆分随 Phase 4 / M-4 角色参数表
+  管理器化);SSOT「物理参数」行标注迁移目标。
+
+### 变更
+- 约束内容经联网核对,与官方最佳实践 / 社区共识一致(Scene
+  organization:代码建节点仅限运行时动态内容;Resource 默认共享
+  引用、`duplicate()` 浅拷贝、local_to_scene 在导出数组内有已知
+  边角案例)。
+
+## v0.30.2(2026-09-13)
+
+> 占位节:用户重做期间的内部版本号占用,无独立变更记录(动态感
+> 三件套内容物归 v0.29.2 节)。
+
+## v0.30.1(2026-09-12)
+
+> 占位节:用户重做期间的内部版本号占用,无独立变更记录。
+
+## v0.30.0(2026-09-13)
+
+> **地图系统 Aseprite 化(硬编码退役)+ 机关精灵图库量产**。
+
+### 新增
+- **地图 SSOT 编译管线**(levels.md §0.1):`trial_v5.aseprite` 增 `map` /
+  `map_ent` 双语义层(颜色图例:索引色平台 / 五几何色空心门+实心出生 /
+  琴键索引色 / 滑雪 / 加速门,1px = 1px 世界);`tools/ase2level.py` 编译
+  两层 PNG + meta JSON(参数与文案)→ `levels/trial_v5.json`;
+  `LevelData._static_init` 生产装载 `levels/*.json`。**平价断言**:编译产物
+  与原硬编码坐标逐字段一致(platforms/exits/spawns 含双子 a,b/gates/ski/
+  piano);gridcheck warns=11 与硬码基线相同,五门禁全绿。
+- **机关/效果精灵图库**(assets/art/mech/,13 张 aseprite 源 + 横向条带
+  PNG,共 43 帧,200×200 构成主义平面风):气闸门(开合 4 帧)/ 限时桥
+  (完好→裂纹→碎散→重组)/ 传送门(6 帧旋涡)/ 弹射板(蓄力 3 帧)/
+  琴键(按下 2 帧)/ 加速门(能量环 4 帧)/ 推箱(基准)/ 动板(推进器
+  2 帧)/ 拉杆(开合 2 帧)/ 曲面 buff 环(3 帧)/ 置换爆点(6 帧)/
+  落地尘(4 帧)/ 死亡碎片(重力抛散 6 帧)。供机关 `_draw` →
+  AnimatedSprite2D 迁移与图鉴动帧取用。
+
+### 变更
+- `level_data.gd` 285→207 行:trial_v5 硬编码数组整块退役,改为
+  `levels/*.json` 装载(缺失即断言,不静默回退);`_make` 保留为
+  LevelDef 构造工具。
+- aseprite 语义层编辑坑沉淀:Lua `cel.image = img` 赋值即拷贝(必须
+  画完再赋值);相接矩形会被连通合并(逐矩形唯一索引色解);偶数尺寸
+  bbox 中心 = (x0+x1+1)//2。
+
 ## v0.29.2(2026-09-12)
 
 > **动态感三件套**:地图组件动效层 + 世界域环境粒子 + 移动端点按
@@ -34,34 +139,6 @@
 - 门禁:grid_check PASS(11 warn 均既有)、recalltest 3 PASS、
   --tapshot / --tourshot 截图目检(信标呼吸相位、雪屑、滴水蓝点、
   菱形回包 + 方块迸散全程)。
-
-## v0.30.0(2026-09-13)
-
-> **地图系统 Aseprite 化(硬编码退役)+ 机关精灵图库量产**。
-
-### 新增
-- **地图 SSOT 编译管线**(levels.md §0.1):`trial_v5.aseprite` 增 `map` /
-  `map_ent` 双语义层(颜色图例:索引色平台 / 五几何色空心门+实心出生 /
-  琴键索引色 / 滑雪 / 加速门,1px = 1px 世界);`tools/ase2level.py` 编译
-  两层 PNG + meta JSON(参数与文案)→ `levels/trial_v5.json`;
-  `LevelData._static_init` 生产装载 `levels/*.json`。**平价断言**:编译产物
-  与原硬编码坐标逐字段一致(platforms/exits/spawns 含双子 a,b/gates/ski/
-  piano);gridcheck warns=11 与硬码基线相同,五门禁全绿。
-- **机关/效果精灵图库**(assets/art/mech/,13 张 aseprite 源 + 横向条带
-  PNG,共 43 帧,200×200 构成主义平面风):气闸门(开合 4 帧)/ 限时桥
-  (完好→裂纹→碎散→重组)/ 传送门(6 帧旋涡)/ 弹射板(蓄力 3 帧)/
-  琴键(按下 2 帧)/ 加速门(能量环 4 帧)/ 推箱(基准)/ 动板(推进器
-  2 帧)/ 拉杆(开合 2 帧)/ 曲面 buff 环(3 帧)/ 置换爆点(6 帧)/
-  落地尘(4 帧)/ 死亡碎片(重力抛散 6 帧)。供机关 `_draw` →
-  AnimatedSprite2D 迁移与图鉴动帧取用。
-
-### 变更
-- `level_data.gd` 285→207 行:trial_v5 硬编码数组整块退役,改为
-  `levels/*.json` 装载(缺失即断言,不静默回退);`_make` 保留为
-  LevelDef 构造工具。
-- aseprite 语义层编辑坑沉淀:Lua `cel.image = img` 赋值即拷贝(必须
-  画完再赋值);相接矩形会被连通合并(逐矩形唯一索引色解);偶数尺寸
-  bbox 中心 = (x0+x1+1)//2。
 
 ## v0.29.1(2026-09-12)
 

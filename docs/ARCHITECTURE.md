@@ -11,8 +11,24 @@
 geometric-construct/
 ├── project.godot            # 引擎配置(主场景 scenes/Main.tscn)
 ├── icon.svg                 # 项目图标(构成主义红方标记)
-├── scenes/
-│   └── Main.tscn            # 唯一场景:根 Node2D + core/main.gd
+├── scenes/                  # 全部场景文件(v0.31.0 起多场景组合,禁单场景巨石)
+│   ├── Main.tscn            # 组合根:根 Node2D + core/main.gd(main.gd 按
+│   │                        #   既定装配顺序实例化下列子系统场景,顺序即行为)
+│   ├── core/                #   character_manager(角色建体入池发信号,R3)
+│   │                        #   / roster_controller(名册域)
+│   ├── world/               #   level_root(表现层宿主,预连接 character_created)
+│   │                        #   / backdrop / camera_rig
+│   ├── entities/            #   player(几何体实体;碰撞形按角色动态建,豁免)
+│   ├── ui/                  #   hud / menu_layer / archive_panel / settings_panel
+│   │                        #   / pause_menu / touch_controls / net_room_layer
+│   │                        #   / rogue_layer / boot_intro / story_layer 十层
+│   ├── fx/                  #   ambience
+│   ├── modes/rogue/         #   rogue_director
+│   └── net/                 #   net_session
+├── data/                    # 静态数据资源 .tres(R2:数值权威,Inspector 直调;
+│   │                        #   resource 只作静态数据,禁运行时写入)
+│   ├── tuning/              #   movement_default.tres(手感 31 项,MovementTuning)
+│   └── characters/          #   dash / spring / fall / roll / pair.tres(GeometryDef)
 ├── scripts/
 │   ├── core/                # 总控与系统层
 │   │   ├── main.gd          #   状态机:MENU/PLAYING/PAUSED/TRANSITION/WIN,
@@ -21,13 +37,17 @@ geometric-construct/
 │   │   │                    #   导出剥离;名册域委托 roster)
 │   │   ├── roster_controller.gd # 名册域:切换/召回/到站/记录点(v0.24.0;
 │   │   │                    #   Main 保留同名委托与数据 getter,调用点零改动)
+│   │   ├── character_manager.gd # 角色管理器(R3/M-4):读 GeometryDef 资源 →
+│   │   │                    #   create_character 建体入池 → 发 character_created;
+│   │   │                    #   挂载由 level_root 预连接回调完成
 │   │   ├── version.gd       #   语义化版本号唯一来源(MAJOR.MINOR.PATCH + CHANNEL)
 │   │   └── save_manager.gd  #   存档读写 + 版本化迁移(SAVE_VERSION)
 │   ├── dev/                 # 开发钩子执行器(shot_harness:--*shot/autotest
 │   │                        #   实现;export_presets 剥离,不入导出包)
 │   ├── data/                # 纯数据层(无节点逻辑,可安全做内容包)
-│   │   ├── geometry_def.gd  #   几何体定义类(含属性规范与方案行生成)
-│   │   ├── geometries.gd    #   几何体数据表(四人,弹性 0.5 / 跃 2.0 固定)
+│   │   ├── geometry_def.gd  #   几何体定义 Resource(全字段 @export,值在 data/characters)
+│   │   ├── geometries.gd    #   几何体注册表(装载 data/characters/*.tres;UNIT_PX 标尺)
+│   │   ├── movement_tuning.gd # 手感调参 Resource(值在 data/tuning;static I 访问)
 │   │   ├── archive_data.gd  #   档案几何条目表(建筑 / 机关 / 剧情目录,纯字典)
 │   │   ├── level_def.gd     #   关卡定义类(含 movers 移动构件字段)
 │   │   ├── level_data.gd    #   关卡数据表(序章 4 场 + 第一幕 6 场巨构)
@@ -118,6 +138,29 @@ geometric-construct/
 > 预留目录(net)的交互约束见其 README;
 > **音频资源约定**:音效/垫乐全部程序化合成(sfx.gd / ambience.gd),
 > 不引入二进制音频文件;未来如需引入,先按 ROADMAP 落音频总线方案。
+
+## 场景与资源约定(tscn 优先 · 数值 .tres · 数据驱动画面)
+
+> 强制约束全文见 AGENTS.md「场景与资源强制约束」(2026-09-13 立),
+> 存量迁移台账见 REFACTOR.md §八(M-1 手感 .tres / M-3 场景拆分 /
+> M-4 角色管理器化已落地 v0.31.0;M-2 palette 随触改)。本节是其
+> 架构侧落点。
+
+- **tscn 优先**:常驻节点结构一律场景文件组装(`instantiate()` 复用),
+  新系统交付 `.tscn + .gd + 调参 .tres` 三件套,场景须能单独在编辑器
+  打开预览;脚本拼常驻树仅限动态生成豁免(粒子 / 关卡内容装配 /
+  联机对端实体 / dev 钩子),豁免处注释注明。
+- **数值 .tres**:调参数值(手感 / 时长 / 预算 / 颜色 / 概率)自定义
+  Resource 子类 + `@export` 落 `.tres`,编辑器 Inspector 直调;
+  resource 只作静态数据,禁运行时写入(资源默认共享引用,一处写
+  处处变;`duplicate()` 为浅拷贝,嵌套子资源仍共享)。脚本 `const`
+  只留枚举 / 键名 / 拓扑。
+- **数据驱动画面**:Manager 读 `.tres` → 建实体入池 → 只发信号
+  (如 `character_created`);表现层场景 `_ready` 预连接信号,回调里
+  `add_child` + 入场演出。逻辑层不碰表现树。
+- **不变项**:关卡几何数据仍走 `levels/*.json` + LevelDef(编译产物
+  内容包,契约 levels.md);`_draw` 程序化渲染管线与 palette 代码
+  形态(Phase 2)不因本约束专门推翻,随首次触改渐进迁移(§八 M-2)。
 
 ## 输入动作(InputMap)
 

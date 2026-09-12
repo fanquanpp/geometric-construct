@@ -59,7 +59,7 @@ func _physics_process(delta: float) -> void:
 
 	# 变焦:速度越快视野略拉远;切换瞬间轻微收缩再回弹
 	# (debug_zoom > 0:调试锁定变焦 —— 网格 LOD / 远景档截图验证用)
-	var speed_mult := absf(v_avg.x) / Geometries.RUN_SPEED
+	var speed_mult := absf(v_avg.x) / MovementTuning.I.run_speed
 	var target_zoom := clampf(1.02 - 0.085 * maxf(speed_mult, v_main.def.base_speed),
 		0.80, 1.0)
 	if _pulse > 0.0:

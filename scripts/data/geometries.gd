@@ -1,71 +1,30 @@
 class_name Geometries
-## 全部几何体数据表。新增几何体:追加一条 _make 并提供 assets/svg/characters/<slug>-flat.svg;
-## 规范见 docs/UPDATE.md(内容包章节)。
+## 几何体数据注册表(场景资源强制约束 R2 / REFACTOR §八 M-4):
+## 装载 data/characters/*.tres(GeometryDef 资源)。
+## 新增几何体:在 data/characters/ 追加一份 .tres(参照 dash.tres),
+## 在 _PATHS 尾部登记下标,并提供 assets/svg/characters/<slug>-flat.svg;
+## 规范见 docs/UPDATE.md(内容包章节)。下标只能尾部追加(存档按位掩码)。
 
-const GRAVITY := 1500.0
-## 标准 1.0 速度对应的像素速度。
-const RUN_SPEED := 300.0
-## 标尺换算:1.0 属性单位 = 100 px(1 格)。跳高(格) = 弹性值。
+## 标尺换算:1.0 属性单位 = 100 px(1 格)。结构性单位常量(非调参数值)。
 const UNIT_PX := 100.0
+
+## 角色资源清单(下标 = 名册位,只能尾部追加)。
+const PATHS: Array[String] = [
+	"res://data/characters/dash.tres",
+	"res://data/characters/spring.tres",
+	"res://data/characters/fall.tres",
+	"res://data/characters/roll.tres",
+	"res://data/characters/pair.tres",
+]
 
 static var ALL: Array[GeometryDef] = []
 
 
 static func _static_init() -> void:
-	# 0 · 疾 — 红色正方形 · 速度型(壹 · 50×50,glossary.md §1)
-	ALL.append(_make(0, "疾", "红色正方形", "dash", "C4", GeometryDef.Shape.SQUARE,
-		"E0492F", Vector2(50, 50), 1, 1.0, 1.5, 1.5,
-		0.5, 2.0, 1.0, 1.0, true, true, false, true, "速度型",
-		"疾。他相信只要跑得够快,孤独就追不上他。",
-		["冲刺:按住 Shift,目标速度抬至 1.5×(≈4.5 格/秒)",
-			"二段跳:每次跳高 2.0 格(h = v₀²/2g),两连跳可达 4.0 格",
-			"抛物线射程与水平速度成正比:助跑越快,跳得越远",
-			"爬墙:贴住侧壁缓降滑壁,再按住跳跃键向上爬——单次至多 2.0 格"]))
-
-	# 1 · 跃 — 黄色长方形 · 弹性型(贰 · 80高×40宽;v0.16 顶弹翻倍)
-	ALL.append(_make(1, "跃", "黄色长方形", "spring", "D4", GeometryDef.Shape.RECT,
-		"E8B33A", Vector2(40, 80), 1, 1.0, 1.0, 1.0,
-		2.0, 2.0, 1.5, 1.5, false, true, false, false, "弹性型",
-		"跃。把坠落折叠成上升,她从不害怕高度。",
-		["弹性 2.0 固定:反弹率 100%(v′ = e·v),按住跳跃主动发力弹得更高",
-			"二段跳:每次跳高 2.0 格,两连跳可达 4.0 格",
-			"顶弹翻倍:同伴站在她头顶起跳,跳高 ×2(4.0 格)",
-			"高 0.8 格:同伴可踩上头顶,是一级活的台阶"]))
-
-	# 2 · 逆 — 蓝色镜像正方形 · 置换型(叁 · 30×30;v0.16 磁界穿透)
-	ALL.append(_make(2, "逆", "蓝色镜像正方形", "fall", "E4", GeometryDef.Shape.SQUARE,
-		"4E86D8", Vector2(30, 30), 1, 0.5, 1.2, 2.0,
-		0.5, 0.0, 0.2, 0.5, true, false, true, false, "置换型",
-		"逆。对你们是天与地,对他只是两个可以落脚的面。",
-		["置换:按跳跃键在天与地之间翻转,水平惯性守恒",
-			"弹性固定 0.5(反弹率 25%):落地即稳;置换即是他唯一的翅膀",
-			"基础速度仅 0.5,穿过加速门后上限提升至 2.0×",
-			"磁界穿透:唯一能穿过磁力边界的几何体(伍实装后生效)"]))
-
-	# 3 · 圆 — 橙色圆球形 · 滚动型(肆 · 52×52;v0.16 可推动)
-	ALL.append(_make(3, "圆", "橙色圆球形", "roll", "F4", GeometryDef.Shape.BALL,
-		"E07E2E", Vector2(52, 52), 1, 1.5, 1.5, 2.5,
-		0.5, 0.0, 0.5, 0.0, false, false, false, false, "滚动型",
-		"圆。他不会跳,所以他从不回头。",
-		["固定极速 1.5×:起步即全速,滚动阻力极低,纯惯性行驶",
-			"穿过加速门立即加速到 2.5×,超越默认上限",
-			"可推动:同伴水平推挤即受力滚动——他是队伍的车",
-			"弹性固定 0.5:反弹克制,动能都留给向前的惯性"]))
-	# 4 · 伍 — 紫色正三角形 · 边界型(界/边 双子;glossary.md §1 · characters.md §5)
-	ALL.append(_make(4, "界", "紫色正三角形 · 界/边", "pair", "G4", GeometryDef.Shape.TRIANGLE,
-		"8455A6", Vector2(30, 30), 1, 2.0, 2.0, 2.0,
-		0.5, 1.0, 0.5, 0.0, false, true, false, false, "边界型",
-		"界。我在上,量天的高度。",
-		["双子:界(上三角)与边(下三角)同时存在,各自独立操控",
-			"磁力边界:两顶之间张成磁力线,阻隔一切——除了逆",
-			"跳高 1.0 格:矮坎可越,高墙交给同伴",
-			"极速 2.0×:全场最大速度(测试向数值,长廊穿越便捷)"]))
-	ALL[-1].paired = true
-	ALL[-1].name_half = "边"
-	ALL[-1].quote_half = "边。我在下,量地的厚度。"
-	# 磁界穿透(叁·逆,v0.16 设计 · characters.md §5):唯一可穿过磁力边界者。
-	# v0.18 修复:该旗标此前从未被置位,"逆穿磁界"一直未生效。
-	ALL[2].can_pass_boundary = true
+	for i in PATHS.size():
+		var def: GeometryDef = load(PATHS[i])
+		def.index = i   # 下标权威在注册表顺序,不信任 .tres 内的存值
+		ALL.append(def)
 
 
 static func get_def(index: int) -> GeometryDef:
@@ -88,37 +47,3 @@ static func roster_body_total(roster: Array) -> int:
 	for i in roster:
 		n += get_def(int(i)).bodies()
 	return n
-
-
-static func _make(index: int, geo_name: String, full_name: String, slug: String,
-		note: String, shape: GeometryDef.Shape, color_hex: String, size: Vector2, gravity_dir: int,
-		base_speed: float, sprint_speed: float, buff_sprint_speed: float,
-		bounce: float, jump_units: float, weight: float, carry: float,
-		can_sprint: bool, can_jump: bool, can_swap: bool, can_climb: bool,
-		role: String, quote: String, traits: Array) -> GeometryDef:
-	var gd := GeometryDef.new()
-	gd.index = index
-	gd.name = geo_name
-	gd.full_name = full_name
-	gd.slug = slug
-	gd.note = note
-	gd.shape = shape
-	gd.color = Color(color_hex)
-	gd.size = size
-	gd.gravity_dir = gravity_dir
-	gd.base_speed = base_speed
-	gd.sprint_speed = sprint_speed
-	gd.buff_sprint_speed = buff_sprint_speed
-	gd.bounce = bounce
-	gd.jump_units = jump_units
-	gd.weight = weight
-	gd.carry = carry
-	gd.can_sprint = can_sprint
-	gd.can_jump = can_jump
-	gd.can_swap = can_swap
-	gd.can_climb = can_climb
-	gd.jump_v = GeometryDef.jump_v_for(jump_units) if can_jump else 0.0
-	gd.role = role
-	gd.quote = quote
-	gd.traits = traits
-	return gd
