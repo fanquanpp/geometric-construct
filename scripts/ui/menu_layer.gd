@@ -51,7 +51,7 @@ func _ready() -> void:
 
 	# —— 海报外框 + 角部刻度 ——
 	var frame := ColorRect.new()
-	frame.color = Color(Ui.PAPER, 0.16)
+	frame.color = Color(Palette.I.paper, 0.16)
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	frame.offset_left = 16
@@ -61,7 +61,7 @@ func _ready() -> void:
 	content.add_child(_outline_rect(frame.position, frame.size, root))
 	for corner in [Vector2(16, 16), Vector2(1264, 16), Vector2(16, 704), Vector2(1264, 704)]:
 		var c := ColorRect.new()
-		c.color = Ui.RED
+		c.color = Palette.I.red
 		c.size = Vector2(10, 10)
 		c.position = corner - Vector2(5, 5)
 		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -73,22 +73,22 @@ func _ready() -> void:
 	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(left)
 
-	var kicker := Ui.l("GEOMETRIC CONSTRUCT · 构成主义几何肉鸽游戏", 15, Ui.LIGHT, Ui.DIM)
+	var kicker := Ui.l("GEOMETRIC CONSTRUCT · 构成主义几何肉鸽游戏", 15, Ui.LIGHT, Palette.I.dim)
 	kicker.position = Vector2(0, 112)
 	kicker.modulate.a = 0.0
 	left.add_child(kicker)
 
 	# 动态标题:逐字入场 / 呼吸浮动 / 印刷错位故障 / 红块节拍
 	_title_mark = TitleMark.new()
-	_title_mark.setup(Version.GAME_TITLE, 104, Ui.PAPER, Ui.RED)
+	_title_mark.setup(Version.GAME_TITLE, 104, Palette.I.paper, Palette.I.red)
 	_title_mark.position = Vector2(0, 150)
 	left.add_child(_title_mark)
 
-	left.add_child(_place(Ui.rule(430, 3, Ui.RED), Vector2(4, 306)))
+	left.add_child(_place(Ui.rule(430, 3, Palette.I.red), Vector2(4, 306)))
 	left.add_child(_place(Ui.rule(430, 1), Vector2(4, 313)))
 
 	var intro := Ui.l("四个几何体,被丢进一个不存在的地方。\n形状即性格,属性即命运——\n速度、弹性、置换与惯性,\n唯有互相依靠,才能找到各自的出口。",
-		17, Ui.BODY, Color(Ui.PAPER, 0.78), HORIZONTAL_ALIGNMENT_LEFT, false, 8)
+		17, Ui.BODY, Color(Palette.I.paper, 0.78), HORIZONTAL_ALIGNMENT_LEFT, false, 8)
 	intro.position = Vector2(4, 342)
 	intro.modulate.a = 0.0
 	left.add_child(intro)
@@ -97,13 +97,13 @@ func _ready() -> void:
 	var keys_text := "1–4 选择剧目    C 档案几何    Esc 退出" \
 		if not DisplayServer.is_touchscreen_available() \
 		else "点按剧目进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
-	var keys := Ui.l(keys_text, 13, Ui.LIGHT, Color(Ui.DIM, 0.9))
+	var keys := Ui.l(keys_text, 13, Ui.LIGHT, Color(Palette.I.dim, 0.9))
 	keys.position = Vector2(4, 618)
 	keys.modulate.a = 0.0
 	left.add_child(keys)
 
 	var ver_left := Ui.l("%s · 反犬旁僻(fanquanpp)" % Version.full_string(),
-		12, Ui.LIGHT, Color(Ui.DIM, 0.8))
+		12, Ui.LIGHT, Color(Palette.I.dim, 0.8))
 	ver_left.position = Vector2(4, 648)
 	ver_left.modulate.a = 0.0
 	left.add_child(ver_left)
@@ -114,7 +114,7 @@ func _ready() -> void:
 	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(right)
 
-	var sec := Ui.l("剧目 REPERTOIRE", 14, Ui.HEAD, Ui.DIM)
+	var sec := Ui.l("剧目 REPERTOIRE", 14, Ui.HEAD, Palette.I.dim)
 	sec.position = Vector2(30, 128)
 	right.add_child(sec)
 	right.add_child(_place(Ui.rule(490, 1), Vector2(30, 156)))
@@ -143,12 +143,12 @@ func _ready() -> void:
 		list.add_child(b)
 		_act_btns.append(b)
 
-	_chapter_hint = Ui.l("", 14, Ui.LIGHT, Ui.DIM)
+	_chapter_hint = Ui.l("", 14, Ui.LIGHT, Palette.I.dim)
 	_chapter_hint.position = Vector2(30, 480)
 	right.add_child(_chapter_hint)
 
 	# 轻提示行:未上演幕的点击反馈(红色,短暂停留后自行淡出)
-	_toast = Ui.l("", 15, Ui.HEAD, Ui.RED)
+	_toast = Ui.l("", 15, Ui.HEAD, Palette.I.red)
 	_toast.position = Vector2(30, 512)
 	_toast.modulate.a = 0.0
 	right.add_child(_toast)
@@ -160,9 +160,9 @@ func _ready() -> void:
 	start.position = Vector2(670, 554)
 	start.add_theme_font_size_override("font_size", 18)
 	start.add_theme_font_override("font", Ui.HEAD)
-	start.add_theme_stylebox_override("normal", Ui.sb(Ui.RED, 0, null, 0, 20, 8))
-	start.add_theme_stylebox_override("hover", Ui.sb(Color(Ui.RED, 0.82), 0, null, 0, 20, 8))
-	start.add_theme_stylebox_override("pressed", Ui.sb(Color(Ui.RED, 0.65), 0, null, 0, 20, 8))
+	start.add_theme_stylebox_override("normal", Ui.sb(Palette.I.red, 0, null, 0, 20, 8))
+	start.add_theme_stylebox_override("hover", Ui.sb(Color(Palette.I.red, 0.82), 0, null, 0, 20, 8))
+	start.add_theme_stylebox_override("pressed", Ui.sb(Color(Palette.I.red, 0.65), 0, null, 0, 20, 8))
 	start.add_theme_color_override("font_color", Color.WHITE)
 	Ui.wire_button(start)
 	start.pressed.connect(func() -> void: m.start_game())
@@ -176,14 +176,14 @@ func _ready() -> void:
 	rogue_btn.position = Vector2(930, 554)
 	rogue_btn.add_theme_font_size_override("font_size", 18)
 	rogue_btn.add_theme_font_override("font", Ui.HEAD)
-	rogue_btn.add_theme_color_override("font_color", Ui.RED)
+	rogue_btn.add_theme_color_override("font_color", Palette.I.red)
 	rogue_btn.add_theme_color_override("font_hover_color", Color.WHITE)
 	rogue_btn.add_theme_color_override("font_pressed_color", Color.WHITE)
 	rogue_btn.add_theme_stylebox_override("normal",
-		Ui.sb(Color(Ui.RED, 0.10), 0, Ui.RED, 1, 20, 8))
-	rogue_btn.add_theme_stylebox_override("hover", Ui.sb(Ui.RED, 0, Ui.RED, 1, 20, 8))
+		Ui.sb(Color(Palette.I.red, 0.10), 0, Palette.I.red, 1, 20, 8))
+	rogue_btn.add_theme_stylebox_override("hover", Ui.sb(Palette.I.red, 0, Palette.I.red, 1, 20, 8))
 	rogue_btn.add_theme_stylebox_override("pressed",
-		Ui.sb(Color(Ui.RED, 0.68), 0, Ui.RED, 1, 20, 8))
+		Ui.sb(Color(Palette.I.red, 0.68), 0, Palette.I.red, 1, 20, 8))
 	Ui.wire_button(rogue_btn)
 	rogue_btn.pressed.connect(func() -> void: m.start_rogue_run())
 	content.add_child(rogue_btn)
@@ -196,14 +196,14 @@ func _ready() -> void:
 	dual_btn.position = Vector2(930, 554)
 	dual_btn.add_theme_font_size_override("font_size", 18)
 	dual_btn.add_theme_font_override("font", Ui.HEAD)
-	dual_btn.add_theme_color_override("font_color", Ui.ORANGE)
+	dual_btn.add_theme_color_override("font_color", Palette.I.orange)
 	dual_btn.add_theme_color_override("font_hover_color", Color.WHITE)
 	dual_btn.add_theme_color_override("font_pressed_color", Color.WHITE)
 	dual_btn.add_theme_stylebox_override("normal",
-		Ui.sb(Color(Ui.ORANGE, 0.10), 0, Ui.ORANGE, 1, 20, 8))
-	dual_btn.add_theme_stylebox_override("hover", Ui.sb(Ui.ORANGE, 0, Ui.ORANGE, 1, 20, 8))
+		Ui.sb(Color(Palette.I.orange, 0.10), 0, Palette.I.orange, 1, 20, 8))
+	dual_btn.add_theme_stylebox_override("hover", Ui.sb(Palette.I.orange, 0, Palette.I.orange, 1, 20, 8))
 	dual_btn.add_theme_stylebox_override("pressed",
-		Ui.sb(Color(Ui.ORANGE, 0.68), 0, Ui.ORANGE, 1, 20, 8))
+		Ui.sb(Color(Palette.I.orange, 0.68), 0, Palette.I.orange, 1, 20, 8))
 	Ui.wire_button(dual_btn)
 	dual_btn.pressed.connect(func() -> void: _open_dual_pick())
 	content.add_child(dual_btn)
@@ -318,7 +318,7 @@ func _build_act_panel(root: Control) -> void:
 	root.add_child(_act_root)
 
 	_act_shade = ColorRect.new()
-	_act_shade.color = Color(Ui.INK, 0.92)
+	_act_shade.color = Color(Palette.I.ink, 0.92)
 	_act_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_act_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_act_root.add_child(_act_shade)
@@ -331,17 +331,17 @@ func _build_act_panel(root: Control) -> void:
 	_act_card = PanelContainer.new()
 	_act_card.custom_minimum_size = Vector2(780, 0)
 	_act_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
 	_act_card.mouse_filter = Control.MOUSE_FILTER_STOP
 	_act_card.draw.connect(func() -> void:
 		var r := Rect2(Vector2.ZERO, _act_card.size)
-		_act_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.30))
+		_act_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
 		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
 				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
 			var sx := -1.0 if corner.x == 0.0 else 1.0
 			var sy := -1.0 if corner.y == 0.0 else 1.0
-			_act_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Ui.RED, 3.0)
-			_act_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Ui.RED, 3.0))
+			_act_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
+			_act_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
 	_act_card.resized.connect(func() -> void:
 		_act_card.pivot_offset = _act_card.size / 2.0)
 	center.add_child(_act_card)
@@ -352,7 +352,7 @@ func _build_act_panel(root: Control) -> void:
 	_act_card.add_child(vb)
 
 	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 12))
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
 	var title_vb := VBoxContainer.new()
 	_act_title = Ui.l("", 32, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	title_vb.add_child(_act_title)
@@ -366,7 +366,7 @@ func _build_act_panel(root: Control) -> void:
 	body.add_theme_constant_override("separation", 8)
 	var body_wrap := PanelContainer.new()
 	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 22, 16))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 22, 16))
 	body_wrap.add_child(body)
 	vb.add_child(body_wrap)
 
@@ -374,7 +374,7 @@ func _build_act_panel(root: Control) -> void:
 	_act_rows.add_theme_constant_override("separation", 8)
 	body.add_child(_act_rows)
 
-	_act_level_hint = Ui.l("", 13, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_LEFT, false, 4)
+	_act_level_hint = Ui.l("", 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT, false, 4)
 	_act_level_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_act_level_hint.custom_minimum_size = Vector2(700, 44)
 	body.add_child(_act_level_hint)
@@ -389,7 +389,7 @@ func _build_act_panel(root: Control) -> void:
 	back.pressed.connect(func() -> void: close_act_panel())
 	back_row.add_child(back)
 	var keys_hint := "1-%d 直达 · Esc 返回" % LevelData.ACTS[0]["levels"].size()
-	_act_keys_hint = Ui.l(keys_hint, 12, Ui.LIGHT, Color(Ui.DIM, 0.9))
+	_act_keys_hint = Ui.l(keys_hint, 12, Ui.LIGHT, Color(Palette.I.dim, 0.9))
 	back_row.add_child(_act_keys_hint)
 	vb.add_child(back_row)
 
@@ -420,7 +420,7 @@ func _build_dual_pick_panel(root: Control) -> void:
 	root.add_child(_dual_root)
 
 	_dual_shade = ColorRect.new()
-	_dual_shade.color = Color(Ui.INK, 0.92)
+	_dual_shade.color = Color(Palette.I.ink, 0.92)
 	_dual_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dual_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_dual_root.add_child(_dual_shade)
@@ -433,7 +433,7 @@ func _build_dual_pick_panel(root: Control) -> void:
 	_dual_card = PanelContainer.new()
 	_dual_card.custom_minimum_size = Vector2(780, 0)
 	_dual_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
 	_dual_card.mouse_filter = Control.MOUSE_FILTER_STOP
 	center.add_child(_dual_card)
 
@@ -442,7 +442,7 @@ func _build_dual_pick_panel(root: Control) -> void:
 	_dual_card.add_child(vb)
 
 	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.ORANGE, 0, null, 0, 24, 12))
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.orange, 0, null, 0, 24, 12))
 	var title_vb := VBoxContainer.new()
 	title_vb.add_child(Ui.l("双人试炼", 32, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
 	title_vb.add_child(Ui.l("TWO PLAYERS · 选择联接方式", 13, Ui.LIGHT,
@@ -486,7 +486,7 @@ func _build_dual_pick_panel(root: Control) -> void:
 		m.open_net_room())
 	body.add_child(cross)
 
-	var hint := Ui.l("Esc 返回", 13, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	var hint := Ui.l("Esc 返回", 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
 	vb.add_child(hint)
 
 
@@ -606,10 +606,10 @@ func _populate_act_rows(idx: int) -> void:
 		# 用色纪律:红色只给"下一场"这一个行动焦点,已通关/未解锁走灰阶
 		var status := Ui.tag(
 			"已通关" if cleared else ("下一场" if is_next else "未解锁"),
-			Color(Ui.PAPER, 0.10) if cleared
-				else (Ui.RED if is_next else Color(Ui.PAPER, 0.05)),
-			Color(Ui.PAPER, 0.62) if cleared
-				else (Color.WHITE if is_next else Color(Ui.DIM, 0.8)), 12, 8, 3)
+			Color(Palette.I.paper, 0.10) if cleared
+				else (Palette.I.red if is_next else Color(Palette.I.paper, 0.05)),
+			Color(Palette.I.paper, 0.62) if cleared
+				else (Color.WHITE if is_next else Color(Palette.I.dim, 0.8)), 12, 8, 3)
 		b.add_child(status)
 		status.anchor_left = 1.0
 		status.anchor_right = 1.0
@@ -674,7 +674,7 @@ func _outline_rect(pos: Vector2, size_: Vector2, _parent: Control) -> Control:
 	box.size = size_
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.draw.connect(func() -> void:
-		box.draw_rect(Rect2(Vector2.ZERO, size_), Color(Ui.PAPER, 0.16), false, 1.0))
+		box.draw_rect(Rect2(Vector2.ZERO, size_), Color(Palette.I.paper, 0.16), false, 1.0))
 	return box
 
 

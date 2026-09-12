@@ -20,11 +20,11 @@ func _draw() -> void:
 	var slab := minf(size.y * 0.4, 22.0)
 	if slab > 2.0:
 		draw_style_box(_slab, Rect2(r.position, Vector2(size.x, slab)))
-	draw_rect(Rect2(r.position, Vector2(size.x, 2)), Color(Palette.PAPER, 0.42))
+	draw_rect(Rect2(r.position, Vector2(size.x, 2)), Color(Palette.I.paper, 0.42))
 	# 左右缘红色移动刻度(与静态平台的左侧刻度区分)
-	draw_rect(Rect2(r.position + Vector2(0, 3), Vector2(8, 3)), Color(Palette.RED, 0.8))
+	draw_rect(Rect2(r.position + Vector2(0, 3), Vector2(8, 3)), Color(Palette.I.red, 0.8))
 	draw_rect(Rect2(Vector2(r.end.x - 8, r.position.y + 3), Vector2(8, 3)),
-		Color(Palette.RED, 0.8))
+		Color(Palette.I.red, 0.8))
 	# 专属高亮描边(读宿主 Mover 的 hl_color,呼吸脉冲,§7.10)
 	var mv := get_parent() as Mover
 	if mv != null:

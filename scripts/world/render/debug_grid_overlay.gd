@@ -34,10 +34,10 @@ func _draw() -> void:
 				Geometries.ALL.size() - 1)].color
 			draw_circle(r.position + Vector2(-5, -5), 3.5, Color(gc, 0.9))
 		draw_string(Ui.HEAD, r.position + Vector2(5, 13), mark,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Palette.PAPER, 0.6))
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Palette.I.paper, 0.6))
 	for e in entries:
 		var er: Rect2 = e["rect"]
 		var it2: Dictionary = e["item"]
 		draw_string(Ui.HEAD, er.position + Vector2(5, 13),
 			str(int(it2.get("id", 0))) + "·L" + str(Comp.layer_of(it2)),
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Palette.PAPER, 0.6))
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Palette.I.paper, 0.6))

@@ -49,11 +49,11 @@ func _draw_beacons(t: float) -> void:
 	for i in BEACONS.size():
 		var a := 0.5 + 0.5 * sin(TAU * t / 2.0 + float(i) * 1.7)
 		draw_rect(Rect2(BEACONS[i], Vector2(4, 4)),
-			Color(Palette.PAPER, 0.25 + 0.55 * a))
+			Color(Palette.I.paper, 0.25 + 0.55 * a))
 	# 信标底下重绘桅杆顶暗块,保证呼吸方点不悬浮在纯背景上
 	for i in BEACONS.size():
 		draw_rect(Rect2(BEACONS[i] - Vector2(1, 4), Vector2(6, 4)),
-			Color(Palette.INK_2, 0.9))
+			Color(Palette.I.ink_2, 0.9))
 
 
 ## 归门圣环:双环 + 12 径向刻度整体缓幅明暗(周期 2.4s,与信标错拍)

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="Palette" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/palette.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ink = Color(0.0627451, 0.0705882, 0.0862745, 1)
+ink_2 = Color(0.0862745, 0.0980392, 0.121569, 1)
+ink_3 = Color(0.117647, 0.133333, 0.168627, 1)
+paper = Color(0.929412, 0.917647, 0.878431, 1)
+dim = Color(0.556863, 0.552941, 0.521569, 1)
+line = Color(1, 1, 1, 0.1)
+red = Color(0.878431, 0.286275, 0.184314, 1)
+yellow = Color(0.909804, 0.701961, 0.227451, 1)
+blue = Color(0.305882, 0.52549, 0.847059, 1)
+orange = Color(0.878431, 0.494118, 0.180392, 1)

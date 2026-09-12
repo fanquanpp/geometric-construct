@@ -56,7 +56,7 @@ func _draw() -> void:
 		var r := Rect2(local - gate_size / 2.0, gate_size)
 		draw_rect(r, Color("4E86D8", 0.18))
 		draw_rect(r, Color("4E86D8", 0.9), false, 2.0)
-		draw_rect(r.grow(-6.0), Color(Palette.PAPER, 0.5), false, 1.0)
+		draw_rect(r.grow(-6.0), Color(Palette.I.paper, 0.5), false, 1.0)
 		var dir: float = signf(b.x - a.x)
 		var cx := local.x
 		for k in 2:
@@ -65,7 +65,7 @@ func _draw() -> void:
 				Vector2(cx + dir * off - dir * 8.0, local.y - 18.0),
 				Vector2(cx + dir * off + dir * 8.0, local.y),
 				Vector2(cx + dir * off - dir * 8.0, local.y + 18.0)]),
-				Color(Palette.PAPER, 0.7), 2.0)
+				Color(Palette.I.paper, 0.7), 2.0)
 		# 端点刻度
 		draw_rect(Rect2(Vector2(local.x - 4.0, local.y - gate_size.y / 2.0 - 8.0),
-			Vector2(8, 4)), Color(Palette.RED, 0.8))
+			Vector2(8, 4)), Color(Palette.I.red, 0.8))

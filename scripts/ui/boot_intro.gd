@@ -43,7 +43,7 @@ func _ready() -> void:
 
 	# 墨色底:盖住引擎启动到首帧之间的任何闪烁
 	var bg := ColorRect.new()
-	bg.color = Ui.INK
+	bg.color = Palette.I.ink
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(bg)
@@ -64,7 +64,7 @@ func _ready() -> void:
 
 	# —— 红色标记块(先于大字硬立) ——
 	_mark = ColorRect.new()
-	_mark.color = Ui.RED
+	_mark.color = Palette.I.red
 	_mark.size = Vector2(26, 26)
 	_mark.position = Vector2(388, 318)
 	_mark.pivot_offset = _mark.size / 2.0
@@ -90,7 +90,7 @@ func _ready() -> void:
 		var ch := title[i]
 		var lb := Label.new()
 		lb.text = ch
-		lb.label_settings = Ui.ls(fs, font, Ui.PAPER)
+		lb.label_settings = Ui.ls(fs, font, Palette.I.paper)
 		lb.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		lb.position = Vector2(x, 236)
 		lb.pivot_offset = Vector2(widths[i] / 2.0, fs * 0.62)
@@ -99,14 +99,14 @@ func _ready() -> void:
 		x += widths[i] + gap
 
 	# —— 英文名 + 定位语 ——
-	_en = Ui.l(Version.GAME_TITLE_EN, 22, Ui.LIGHT, Color(Ui.PAPER, 0.85),
+	_en = Ui.l(Version.GAME_TITLE_EN, 22, Ui.LIGHT, Color(Palette.I.paper, 0.85),
 		HORIZONTAL_ALIGNMENT_CENTER)
 	_en.position = Vector2(0, 402)
 	_en.size = Vector2(Adaptive.DESIGN.x, 30)
 	_en.modulate.a = 0.0
 	stage.add_child(_en)
 
-	_tag = Ui.l("构成主义几何肉鸽 · 四个几何体,一场归位之旅", 15, Ui.LIGHT, Ui.DIM,
+	_tag = Ui.l("构成主义几何肉鸽 · 四个几何体,一场归位之旅", 15, Ui.LIGHT, Palette.I.dim,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	_tag.position = Vector2(0, 438)
 	_tag.size = Vector2(Adaptive.DESIGN.x, 22)
@@ -115,7 +115,7 @@ func _ready() -> void:
 
 	# —— 基线扫掠刻线 ——
 	_sweep = ColorRect.new()
-	_sweep.color = Color(Ui.RED, 0.9)
+	_sweep.color = Color(Palette.I.red, 0.9)
 	_sweep.size = Vector2(0, 3)
 	_sweep.position = Vector2((Adaptive.DESIGN.x - total) / 2.0, 384)
 	_sweep.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -135,7 +135,7 @@ func _ready() -> void:
 	gd_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	gd_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	godot_row.add_child(gd_icon)
-	var gd_label := Ui.l("POWERED BY GODOT ENGINE", 14, Ui.LIGHT, Color(Ui.PAPER, 0.55),
+	var gd_label := Ui.l("POWERED BY GODOT ENGINE", 14, Ui.LIGHT, Color(Palette.I.paper, 0.55),
 		HORIZONTAL_ALIGNMENT_CENTER, false, 3)
 	gd_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	godot_row.add_child(gd_label)

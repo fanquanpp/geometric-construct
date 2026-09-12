@@ -1,21 +1,9 @@
 class_name Ui
 ## 视觉主题唯一入口:字体 / StyleBox / 构成主义文字组件。
-## 调色板 SSOT 已迁 data/palette.gd(Phase 2 边界重构,此处为别名)。
+## 调色板 SSOT = Palette(data/palette.tres,R2 数值资源化,颜色在此调)。
 ## 美术锚点:极简主义 + 构成主义 + 几何图形 + 棱角分明锐利。
 ##   - 无圆角、无渐变、无柔影:一切以平面色块、细线、大字构成。
 ##   - 红色为全局强调色;角色色仅作为功能性点缀。
-
-# ———— 调色板(SSOT = data/palette.gd,此处为兼容别名) ————
-const INK := Palette.INK
-const INK_2 := Palette.INK_2
-const INK_3 := Palette.INK_3
-const PAPER := Palette.PAPER
-const DIM := Palette.DIM
-const LINE := Palette.LINE
-const RED := Palette.RED
-const YELLOW := Palette.YELLOW
-const BLUE := Palette.BLUE
-const ORANGE := Palette.ORANGE
 
 # ———— 字体 ————
 static var BODY: Font    # 400 正文
@@ -109,23 +97,35 @@ static func l(text: String, size: int, font: Font = null, color = null,
 	if font == null:
 		font = BODY
 	if color == null:
-		color = PAPER
+		color = Palette.I.paper
 	var label := Label.new()
 	label.text = text
+	style(label, size, font, color, align, shadow, line_spacing)
+	return label
+
+
+## 对既有 Label 施加同款文字预设(场景内节点的样式入口,
+## 与 l() 共享 ls() 缓存——v0.32.0 hud 场景化新增)。
+static func style(label: Label, size: int, font: Font = null, color = null,
+		align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT, shadow := false,
+		line_spacing := 0) -> void:
+	if font == null:
+		font = BODY
+	if color == null:
+		color = Palette.I.paper
 	label.horizontal_alignment = align
 	if shadow:
 		label.label_settings = ls(size, font, color, null, 0,
 			Color(0, 0, 0, 0.5), Vector2(0, 2), 4, line_spacing)
 	else:
 		label.label_settings = ls(size, font, color, null, 0, null, null, 0, line_spacing)
-	return label
 
 
 # ———— 构成主义文字组件 ————
 
 ## 海报字:特粗平面大字 + 左侧红色方块标记(可选)。
-static func poster_label(text: String, size: int, color := PAPER,
-		mark := true, mark_color := RED) -> Control:
+static func poster_label(text: String, size: int, color := Palette.I.paper,
+		mark := true, mark_color := Palette.I.red) -> Control:
 	var box := Control.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var label := l(text, size, weight(900, 2), color, HORIZONTAL_ALIGNMENT_LEFT, false)
@@ -147,14 +147,14 @@ static func poster_label(text: String, size: int, color := PAPER,
 ## 构成主义细线分隔条。
 static func rule(width: float, thickness := 2, color = null) -> Control:
 	var bar := ColorRect.new()
-	bar.color = color if color != null else Color(PAPER, 0.28)
+	bar.color = color if color != null else Color(Palette.I.paper, 0.28)
 	bar.custom_minimum_size = Vector2(width, thickness)
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return bar
 
 
 ## 小标签块:实色底 + 反白字(角色定位 / 章节编号)。
-static func tag(text: String, bg: Color, fg := PAPER, size := 14, pad_h := 10,
+static func tag(text: String, bg: Color, fg := Palette.I.paper, size := 14, pad_h := 10,
 		pad_v := 4) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -191,13 +191,13 @@ static func make_theme(size := 18) -> Theme:
 	th.default_font = BODY
 	th.default_font_size = size
 
-	var normal := sb(Color(PAPER, 0.04), 0, Color(PAPER, 0.22), 1, 20, 9)
-	var hover := sb(RED, 0, RED, 1, 20, 9)
-	var pressed := sb(Color(RED, 0.72), 0, RED, 1, 20, 9)
-	var disabled := sb(Color(PAPER, 0.02), 0, Color(PAPER, 0.08), 1, 20, 9)
+	var normal := sb(Color(Palette.I.paper, 0.04), 0, Color(Palette.I.paper, 0.22), 1, 20, 9)
+	var hover := sb(Palette.I.red, 0, Palette.I.red, 1, 20, 9)
+	var pressed := sb(Color(Palette.I.red, 0.72), 0, Palette.I.red, 1, 20, 9)
+	var disabled := sb(Color(Palette.I.paper, 0.02), 0, Color(Palette.I.paper, 0.08), 1, 20, 9)
 	var focus := sb(Color.TRANSPARENT, 0)
 	focus.draw_center = false
-	focus.border_color = PAPER
+	focus.border_color = Palette.I.paper
 	focus.set_border_width_all(2)
 
 	th.set_stylebox("normal", "Button", normal)
@@ -205,15 +205,15 @@ static func make_theme(size := 18) -> Theme:
 	th.set_stylebox("pressed", "Button", pressed)
 	th.set_stylebox("disabled", "Button", disabled)
 	th.set_stylebox("focus", "Button", focus)
-	th.set_color("font_color", "Button", Color(PAPER, 0.92))
+	th.set_color("font_color", "Button", Color(Palette.I.paper, 0.92))
 	th.set_color("font_hover_color", "Button", Color.WHITE)
 	th.set_color("font_focus_color", "Button", Color.WHITE)
 	th.set_color("font_pressed_color", "Button", Color.WHITE)
-	th.set_color("font_disabled_color", "Button", Color(DIM, 0.45))
+	th.set_color("font_disabled_color", "Button", Color(Palette.I.dim, 0.45))
 
 	th.set_stylebox("panel", "PanelContainer",
-		sb(Color(INK_2, 0.97), 0, Color(PAPER, 0.14), 1, 14, 12))
-	th.set_color("font_color", "Label", PAPER)
+		sb(Color(Palette.I.ink_2, 0.97), 0, Color(Palette.I.paper, 0.14), 1, 14, 12))
+	th.set_color("font_color", "Label", Palette.I.paper)
 	_theme = th
 	return th
 

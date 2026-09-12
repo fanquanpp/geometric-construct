@@ -249,7 +249,7 @@ func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 	# 触感反馈:按下瞬间轻震(受设置开关控制;桌面为无害空操作)
 	btn.pressed.connect(func() -> void: buzz(24))
 	_root.add_child(btn)
-	var label := Ui.l(label_text, 12, Ui.LIGHT, Color(Ui.PAPER, 0.8),
+	var label := Ui.l(label_text, 12, Ui.LIGHT, Color(Palette.I.paper, 0.8),
 		HORIZONTAL_ALIGNMENT_CENTER)
 	label.size = Vector2(80, 16)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -284,7 +284,7 @@ func tap_burst_at(pos: Vector2) -> void:
 	burst.scale_amount_min = 2.0
 	burst.scale_amount_max = 3.5
 	var ramp := Gradient.new()
-	ramp.colors = PackedColorArray([Palette.PAPER, Palette.PAPER, Palette.RED])
+	ramp.colors = PackedColorArray([Palette.I.paper, Palette.I.paper, Palette.I.red])
 	burst.color_initial_ramp = ramp
 	burst.position = pos
 	burst.finished.connect(burst.queue_free)
@@ -317,7 +317,7 @@ class TapRing extends Node2D:
 		var pts := PackedVector2Array([
 			Vector2(r, 0), Vector2(0, r), Vector2(-r, 0), Vector2(0, -r), Vector2(r, 0),
 		])
-		draw_polyline(pts, Color(Ui.PAPER, a), 2.0, true)
+		draw_polyline(pts, Color(Palette.I.paper, a), 2.0, true)
 
 
 func _process(_delta: float) -> void:
@@ -500,7 +500,7 @@ class WheelPad extends Control:
 		# 浮动模式待位时更淡(提示"可以在这里按住"),激活 / 固定时常态
 		var idle_a := 0.18 if (wheel_mode == MODE_FLOAT and _finger == -1) else 1.0
 		# 扁六边形轮廓(拉满加速时描红)
-		var edge := Color(Ui.RED, 0.9) if sprinting else Color(Ui.PAPER, 0.34 * idle_a)
+		var edge := Color(Palette.I.red, 0.9) if sprinting else Color(Palette.I.paper, 0.34 * idle_a)
 		var hex := PackedVector2Array([
 			c + Vector2(-half_w, 0), c + Vector2(-half_w * 0.46, -half_h),
 			c + Vector2(half_w * 0.46, -half_h), c + Vector2(half_w, 0),
@@ -512,8 +512,8 @@ class WheelPad extends Control:
 		# 绘制精度(v0.13.6):全部图元开抗锯齿、圆弧细分为 72 段,
 		# 高 DPI 下边缘无锯齿、圆更圆;颜色 / 粗细 / 形状(样式)一律不动
 		draw_line(c + Vector2(-half_w * 0.7, 0), c + Vector2(half_w * 0.7, 0),
-			Color(Ui.PAPER, 0.10 * idle_a), 1.5, true)
-		draw_circle(c, 2.5, Color(Ui.PAPER, 0.35 * idle_a), true, -1.0, true)
+			Color(Palette.I.paper, 0.10 * idle_a), 1.5, true)
+		draw_circle(c, 2.5, Color(Palette.I.paper, 0.35 * idle_a), true, -1.0, true)
 		# 左右方向箭头(沿中线,随方向点亮)
 		for dir: int in [-1, 1]:
 			var tip := c + Vector2(dir * (half_w - 13.0), 0)
@@ -524,20 +524,20 @@ class WheelPad extends Control:
 				tip + Vector2(-dir * wing * 0.5, wing),
 			])
 			var lit := signf(strength) == dir
-			var col := Ui.PAPER if lit else Color(Ui.PAPER, 0.4 * idle_a)
+			var col := Palette.I.paper if lit else Color(Palette.I.paper, 0.4 * idle_a)
 			if lit and sprinting:
-				col = Ui.RED
+				col = Palette.I.red
 			# 多边形本身无抗锯齿:沿闭合边缘补一圈同色 AA 描边,边缘平滑
 			draw_colored_polygon(tri, col)
 			draw_polyline(PackedVector2Array(
 				[tri[0], tri[1], tri[2], tri[0]]), col, 1.4, true)
 		# 滑钮(仅沿横轴;拉满加速时描红)
 		var knob := c + Vector2(_knob_x, 0)
-		var ring := Color(Ui.PAPER, 0.85 * idle_a)
+		var ring := Color(Palette.I.paper, 0.85 * idle_a)
 		if sprinting:
-			ring = Ui.RED
+			ring = Palette.I.red
 		elif strength != 0.0:
-			ring = Color(Ui.PAPER, 0.95)
-		draw_circle(knob, _knob_r, Color(Ui.INK_2, 0.80 * idle_a), true, -1.0, true)
+			ring = Color(Palette.I.paper, 0.95)
+		draw_circle(knob, _knob_r, Color(Palette.I.ink_2, 0.80 * idle_a), true, -1.0, true)
 		draw_arc(knob, _knob_r, 0.0, TAU, 72, ring, 2.0, true)
-		draw_circle(knob, 3.5, Color(Ui.PAPER, 0.9 * idle_a), true, -1.0, true)
+		draw_circle(knob, 3.5, Color(Palette.I.paper, 0.9 * idle_a), true, -1.0, true)

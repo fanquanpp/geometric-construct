@@ -44,7 +44,7 @@ func _ready() -> void:
 	add_child(_root)
 
 	_shade = ColorRect.new()
-	_shade.color = Color(Ui.INK, 0.96)
+	_shade.color = Color(Palette.I.ink, 0.96)
 	_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(_shade)
 
@@ -55,7 +55,7 @@ func _ready() -> void:
 	_card = PanelContainer.new()
 	_card.custom_minimum_size = Vector2(760, 0)
 	_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
 	center.add_child(_card)
 
 	var vb := VBoxContainer.new()
@@ -63,7 +63,7 @@ func _ready() -> void:
 	_card.add_child(vb)
 
 	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 12))
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
 	var tv := VBoxContainer.new()
 	_title = Ui.l("跨设备双人", 30, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	tv.add_child(_title)
@@ -152,14 +152,14 @@ func toast_line(text: String) -> void:
 	if not visible or _status == null:
 		return
 	_status.text = text
-	_status.modulate = Ui.RED
+	_status.modulate = Palette.I.red
 	if _toast_tw != null:
 		_toast_tw.kill()
 	_toast_tw = create_tween()
 	_toast_tw.tween_interval(2.6)
 	_toast_tw.tween_callback(func() -> void:
 		if _status != null:
-			_status.modulate = Ui.DIM
+			_status.modulate = Palette.I.dim
 			_refresh_status_line())
 
 
@@ -179,14 +179,14 @@ func _title_of(t: String, s: String) -> void:
 func _ensure_status() -> void:
 	if _status != null and is_instance_valid(_status) and _status.get_parent() == _body:
 		return
-	_status = Ui.l("", 14, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	_status = Ui.l("", 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
 	_body.add_child(_status)
 
 
 func _refresh_status_line() -> void:
 	if _status == null or not is_instance_valid(_status):
 		return
-	if _status.modulate != Ui.RED:
+	if _status.modulate != Palette.I.red:
 		match _phase:
 			Phase.HOST:
 				var n := NetSession.I.member_count()
@@ -240,11 +240,11 @@ func _show_host() -> void:
 	_clear_body()
 	_ensure_status()
 	_body.add_child(Ui.l("把两台设备连入同一网络后,对手即可在「加入房间」里搜到这里。",
-		14, Ui.LIGHT, Ui.DIM))
+		14, Ui.LIGHT, Palette.I.dim))
 	var ips := NetConfig.local_ips()
 	_body.add_child(Ui.l("本机 IP:%s" % (" / ".join(ips) if ips.size() > 0 else "获取中"),
-		15, Ui.HEAD, Ui.PAPER))
-	_body.add_child(Ui.l("找不到房间?让对手手动输入上面的 IP。", 13, Ui.LIGHT, Ui.DIM))
+		15, Ui.HEAD, Palette.I.paper))
+	_body.add_child(Ui.l("找不到房间?让对手手动输入上面的 IP。", 13, Ui.LIGHT, Palette.I.dim))
 	_host_start = _big_btn("开 演", "首版固定剧目:机制试炼场 · 双人合演",
 		func() -> void:
 			visible = false
@@ -268,7 +268,7 @@ func _show_join() -> void:
 	_rooms_box.add_theme_constant_override("separation", 8)
 	_body.add_child(_rooms_box)
 	_body.add_child(Ui.l("没有搜到?手动输入主机 IP(主机房间页有列出):",
-		13, Ui.LIGHT, Ui.DIM))
+		13, Ui.LIGHT, Palette.I.dim))
 	_ip_edit = LineEdit.new()
 	_ip_edit.placeholder_text = "例如 192.168.43.1"
 	_ip_edit.custom_minimum_size = Vector2(0, 44)
@@ -290,7 +290,7 @@ func _refresh_rooms() -> void:
 		c.queue_free()
 	var rooms: Dictionary = NetSession.I.beacon.rooms
 	if rooms.is_empty():
-		_rooms_box.add_child(Ui.l("正在搜索附近房间…", 14, Ui.LIGHT, Ui.DIM))
+		_rooms_box.add_child(Ui.l("正在搜索附近房间…", 14, Ui.LIGHT, Palette.I.dim))
 		return
 	for ip: String in rooms:
 		var r: Dictionary = rooms[ip]
@@ -333,7 +333,7 @@ func _show_lobby() -> void:
 			names.append(m.players[slot].display_name())
 	_lobby_line = Ui.l("你将操控:%s(绑定集合内可切换)" % " / ".join(names)
 		if not names.is_empty() else "你将操控:绑定集合(由主机分派)",
-		15, Ui.HEAD, Ui.PAPER)
+		15, Ui.HEAD, Palette.I.paper)
 	_body.add_child(_lobby_line)
 	_body.add_child(_big_btn("离开房间", "断开连接,返回标题菜单",
 		func() -> void: back_out()))

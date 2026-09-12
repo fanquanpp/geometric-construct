@@ -70,7 +70,7 @@ func _note_burst(_player: Player) -> void:
 	burst.initial_velocity_max = 160.0
 	burst.scale_amount_min = 2.0
 	burst.scale_amount_max = 3.5
-	burst.color = Color(Palette.PAPER, 0.85)
+	burst.color = Color(Palette.I.paper, 0.85)
 	burst.position = Vector2(0, -slab_rect.size.y * 0.5 - 2.0)
 	burst.finished.connect(burst.queue_free)
 	add_child(burst)
@@ -98,9 +98,9 @@ func _draw() -> void:
 	draw_rect(Rect2(r.position, Vector2(r.size.x, 3)), Color("313845"))
 	# 顶缘亮线:基态克制,触发时脉冲提亮(motion.md 玩法演出,M5 量级)
 	var glow := 0.30 + 0.55 * (_pulse / 0.4)
-	draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.PAPER, glow))
+	draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, glow))
 	# 音级刻度:左缘红块(触发时展开为双倍宽)
 	var mw := 10.0 if _pulse > 0.0 else 5.0
-	draw_rect(Rect2(r.position + Vector2(0, 4), Vector2(mw, 3)), Color(Palette.RED, 0.8))
+	draw_rect(Rect2(r.position + Vector2(0, 4), Vector2(mw, 3)), Color(Palette.I.red, 0.8))
 	# 专属高亮描边(呼吸脉冲,§7.10)
 	TerrainKit.draw_focus(self, r, hl_color)

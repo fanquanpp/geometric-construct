@@ -14,7 +14,7 @@ func _draw() -> void:
 		return
 	var a := center - travel * 0.5
 	var b := center + travel * 0.5
-	draw_line(a, b, Color(Palette.PAPER, 0.10), 1.0)
+	draw_line(a, b, Color(Palette.I.paper, 0.10), 1.0)
 	for p: Vector2 in [a, b]:
-		draw_rect(Rect2(p + Vector2(-2.5, -14.0), Vector2(5, 5)), Color(Palette.RED, 0.55))
-		draw_rect(Rect2(p + Vector2(-2.5, 9.0), Vector2(5, 5)), Color(Palette.RED, 0.55))
+		draw_rect(Rect2(p + Vector2(-2.5, -14.0), Vector2(5, 5)), Color(Palette.I.red, 0.55))
+		draw_rect(Rect2(p + Vector2(-2.5, 9.0), Vector2(5, 5)), Color(Palette.I.red, 0.55))

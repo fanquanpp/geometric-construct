@@ -56,7 +56,7 @@ static func skid_burst(p: Player) -> void:
 	dust.initial_velocity_max = 90.0
 	dust.scale_amount_min = 1.2
 	dust.scale_amount_max = 2.2
-	dust.color = Color(Palette.PAPER, 0.55)
+	dust.color = Color(Palette.I.paper, 0.55)
 	p.add_child(dust)
 
 
@@ -186,7 +186,7 @@ static func draw_tri(p: Player, size: Vector2) -> void:
 		Color(1, 1, 1, 0.5), 3.0)
 	# 磁力锚点方块 = 顶点(界尖朝下 / 边尖朝上),与 MagBoundary 端点同语言
 	var apex_y := h * 0.86 if flat_top else -h * 0.86
-	p.draw_rect(Rect2(Vector2(-3.5, apex_y - 3.5), Vector2(7, 7)), Color(Palette.PAPER, 0.9))
+	p.draw_rect(Rect2(Vector2(-3.5, apex_y - 3.5), Vector2(7, 7)), Color(Palette.I.paper, 0.9))
 
 
 ## 圆球形象:基盘 + 暗色半月(滚动方向可读性主元素)+ 轮毂。
@@ -208,8 +208,8 @@ static func draw_ball(p: Player, size: Vector2) -> void:
 	half.append(Vector2(1.0, 0.0))
 	p.draw_colored_polygon(half, p.def.color.darkened(0.26))
 	# 轮毂
-	p.draw_circle(Vector2.ZERO, 0.2, Palette.PAPER)
-	p.draw_circle(Vector2.ZERO, 0.085, Color(Palette.INK, 0.85))
+	p.draw_circle(Vector2.ZERO, 0.2, Palette.I.paper)
+	p.draw_circle(Vector2.ZERO, 0.085, Color(Palette.I.ink, 0.85))
 	# 活跃取景环:单位空间画等宽圆环(随椭圆变换,挤压时不变形走样)
 	if p.is_active:
 		var ring_out := PackedVector2Array()

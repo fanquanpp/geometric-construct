@@ -20,17 +20,17 @@ func _ready() -> void:
 	_plate = PanelContainer.new()
 	_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_plate.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK, 0.72), 0, Color(Ui.PAPER, 0.14), 1, 12, 5))
+		Ui.sb(Color(Palette.I.ink, 0.72), 0, Color(Palette.I.paper, 0.14), 1, 12, 5))
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", 9)
 	var mark := ColorRect.new()
-	mark.color = Ui.RED
+	mark.color = Palette.I.red
 	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mark.custom_minimum_size = Vector2(4, 16 if touch else 14)
 	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(mark)
-	_label = Ui.l(text, 17 if touch else 15, Ui.HEAD, Color(Ui.PAPER, 0.94),
+	_label = Ui.l(text, 17 if touch else 15, Ui.HEAD, Color(Palette.I.paper, 0.94),
 		HORIZONTAL_ALIGNMENT_CENTER, true, 0)
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(_label)
@@ -55,6 +55,6 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	# 锚点刻度:红色小方块 + 基线细线 + 到底板的竖向牵引线(标注的"落点")
-	draw_rect(Rect2(-5, 0, 10, 10), Color(Ui.RED, 0.9))
-	draw_line(Vector2(-52, 18), Vector2(52, 18), Color(Ui.PAPER, 0.22), 1.5)
-	draw_line(Vector2(0, -24), Vector2(0, -2), Color(Ui.PAPER, 0.30), 1.5)
+	draw_rect(Rect2(-5, 0, 10, 10), Color(Palette.I.red, 0.9))
+	draw_line(Vector2(-52, 18), Vector2(52, 18), Color(Palette.I.paper, 0.22), 1.5)
+	draw_line(Vector2(0, -24), Vector2(0, -2), Color(Palette.I.paper, 0.30), 1.5)

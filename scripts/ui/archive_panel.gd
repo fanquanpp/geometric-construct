@@ -58,7 +58,7 @@ func _ready() -> void:
 	add_child(_anim_timer)
 
 	var shade := ColorRect.new()
-	shade.color = Ui.INK
+	shade.color = Palette.I.ink
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(shade)
@@ -80,13 +80,13 @@ func _ready() -> void:
 	frame.offset_bottom = -16
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.draw.connect(func() -> void:
-		frame.draw_rect(Rect2(Vector2.ZERO, frame.size), Color(Ui.PAPER, 0.16), false, 1.0)
+		frame.draw_rect(Rect2(Vector2.ZERO, frame.size), Color(Palette.I.paper, 0.16), false, 1.0)
 		for corner: Vector2 in [Vector2(0, 0), Vector2(frame.size.x, 0),
 				Vector2(0, frame.size.y), Vector2(frame.size.x, frame.size.y)]:
 			var sx := -1.0 if corner.x == 0.0 else 1.0
 			var sy := -1.0 if corner.y == 0.0 else 1.0
-			frame.draw_line(corner, corner + Vector2(-sx * 18.0, 0), Ui.RED, 3.0)
-			frame.draw_line(corner, corner + Vector2(0, -sy * 18.0), Ui.RED, 3.0))
+			frame.draw_line(corner, corner + Vector2(-sx * 18.0, 0), Palette.I.red, 3.0)
+			frame.draw_line(corner, corner + Vector2(0, -sy * 18.0), Palette.I.red, 3.0))
 	_content.add_child(frame)
 
 	_build_header()
@@ -101,14 +101,14 @@ func _ready() -> void:
 
 
 func _build_header() -> void:
-	var header := Ui.poster_label("档案几何", 34, Ui.PAPER, true, Ui.RED)
+	var header := Ui.poster_label("档案几何", 34, Palette.I.paper, true, Palette.I.red)
 	header.position = Vector2(64, 40)
 	_content.add_child(header)
-	var header_sub := Ui.l("ARCHIVE GEOMETRY · 几何 × 建筑 × 机关 × 键位 × 剧情", 13, Ui.LIGHT, Ui.DIM)
+	var header_sub := Ui.l("ARCHIVE GEOMETRY · 几何 × 建筑 × 机关 × 键位 × 剧情", 13, Ui.LIGHT, Palette.I.dim)
 	header_sub.position = Vector2(66, 88)
 	_content.add_child(header_sub)
 	# 条目计数:压在页签行上方右对齐(五页签后页签行变宽,原位会被顶开)
-	_index_label = Ui.l("", 16, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
+	_index_label = Ui.l("", 16, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_RIGHT)
 	_index_label.anchor_left = 1.0
 	_index_label.anchor_right = 1.0
 	_index_label.offset_left = -640
@@ -145,7 +145,7 @@ func _build_geo_page() -> void:
 	zone.size = Vector2(400, 400)
 	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.draw.connect(func() -> void:
-		zone.draw_rect(Rect2(0, 0, 400, 400), Color(Ui.INK_3, 0.85))
+		zone.draw_rect(Rect2(0, 0, 400, 400), Color(Palette.I.ink_3, 0.85))
 	)
 	page.add_child(zone)
 	_portrait_zone = zone
@@ -167,8 +167,8 @@ func _build_geo_page() -> void:
 		for cnr: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
 			var ox := 200.0 + cnr.x * 200.0
 			var oy := 200.0 + cnr.y * 200.0
-			corners.draw_line(Vector2(ox, oy), Vector2(ox - cnr.x * 22.0, oy), Ui.PAPER, 3.0)
-			corners.draw_line(Vector2(ox, oy), Vector2(ox, oy - cnr.y * 22.0), Ui.PAPER, 3.0))
+			corners.draw_line(Vector2(ox, oy), Vector2(ox - cnr.x * 22.0, oy), Palette.I.paper, 3.0)
+			corners.draw_line(Vector2(ox, oy), Vector2(ox, oy - cnr.y * 22.0), Palette.I.paper, 3.0))
 	zone.add_child(corners)
 
 	# 右侧:信息栏(VBox 排版,杜绝绝对坐标互相遮挡);挂在 geo 页容器内,
@@ -183,31 +183,31 @@ func _build_geo_page() -> void:
 
 	var name_row := HBoxContainer.new()
 	name_row.add_theme_constant_override("separation", 18)
-	_name_label = Ui.l("", 76, Ui.TITLE, Ui.PAPER)
+	_name_label = Ui.l("", 76, Ui.TITLE, Palette.I.paper)
 	name_row.add_child(_name_label)
-	_role_tag = Ui.tag("", Ui.RED, Color.WHITE, 15, 14, 5)
+	_role_tag = Ui.tag("", Palette.I.red, Color.WHITE, 15, 14, 5)
 	_role_tag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	name_row.add_child(_role_tag)
 	right.add_child(name_row)
 
-	_full_label = Ui.l("", 19, Ui.HEAD, Ui.DIM)
+	_full_label = Ui.l("", 19, Ui.HEAD, Palette.I.dim)
 	right.add_child(_full_label)
 	right.add_child(Ui.rule(640, 2))
 
-	_quote_label = Ui.l("", 18, Ui.LIGHT, Color(Ui.PAPER, 0.85),
+	_quote_label = Ui.l("", 18, Ui.LIGHT, Color(Palette.I.paper, 0.85),
 		HORIZONTAL_ALIGNMENT_LEFT, false, 6)
 	_quote_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_quote_label.custom_minimum_size = Vector2(640, 0)
 	right.add_child(_quote_label)
 
 	var stats_title := Ui.l("属性 ATTRIBUTES(-1.0 – 3.0 标尺,红刻度 = 标准基准 2.0)",
-		13, Ui.LIGHT, Ui.DIM)
+		13, Ui.LIGHT, Palette.I.dim)
 	right.add_child(stats_title)
 	_stats_box = VBoxContainer.new()
 	_stats_box.add_theme_constant_override("separation", 4)
 	right.add_child(_stats_box)
 
-	var traits_title := Ui.l("特性 TRAITS", 13, Ui.LIGHT, Ui.DIM)
+	var traits_title := Ui.l("特性 TRAITS", 13, Ui.LIGHT, Palette.I.dim)
 	right.add_child(traits_title)
 	_traits_box = VBoxContainer.new()
 	_traits_box.add_theme_constant_override("separation", 4)
@@ -242,7 +242,7 @@ func _refresh_geo() -> void:
 		mark.custom_minimum_size = Vector2(10, 10)
 		mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		hb.add_child(mark)
-		hb.add_child(Ui.l(str(t), 14, Ui.BODY, Color(Ui.PAPER, 0.88),
+		hb.add_child(Ui.l(str(t), 14, Ui.BODY, Color(Palette.I.paper, 0.88),
 			HORIZONTAL_ALIGNMENT_LEFT))
 		_traits_box.add_child(hb)
 
@@ -252,13 +252,13 @@ func _make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 14)
 
-	var label := Ui.l(row["label"], 15, Ui.HEAD, Ui.PAPER)
+	var label := Ui.l(row["label"], 15, Ui.HEAD, Palette.I.paper)
 	label.custom_minimum_size = Vector2(64, 0)
 	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(label)
 
 	if row.has("text"):
-		var text := Ui.l(row["text"], 14, Ui.BODY, Color(Ui.PAPER, 0.85))
+		var text := Ui.l(row["text"], 14, Ui.BODY, Color(Palette.I.paper, 0.85))
 		text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		hb.add_child(text)
 		return hb
@@ -270,18 +270,18 @@ func _make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 	var v: float = row["value"]
 	var col: Color = gd.color
 	bar.draw.connect(func() -> void:
-		bar.draw_rect(Rect2(0, 4, BAR_W, 4), Color(Ui.PAPER, 0.14))
+		bar.draw_rect(Rect2(0, 4, BAR_W, 4), Color(Palette.I.paper, 0.14))
 		bar.draw_rect(Rect2(0, 4, BAR_W * clampf(v + 1.0, 0.0, 4.0) / 4.0, 4), col)
-		bar.draw_rect(Rect2(BAR_W * 0.75 - 1.0, -2, 2, 16), Color(Ui.RED, 0.9))
+		bar.draw_rect(Rect2(BAR_W * 0.75 - 1.0, -2, 2, 16), Color(Palette.I.red, 0.9))
 	)
 	hb.add_child(bar)
 
-	var value := Ui.l("%.1f" % row["value"], 16, Ui.TITLE, Ui.PAPER)
+	var value := Ui.l("%.1f" % row["value"], 16, Ui.TITLE, Palette.I.paper)
 	value.custom_minimum_size = Vector2(44, 0)
 	value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(value)
 
-	var hint := Ui.l(row["hint"], 13, Ui.LIGHT, Ui.DIM)
+	var hint := Ui.l(row["hint"], 13, Ui.LIGHT, Palette.I.dim)
 	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.custom_minimum_size = Vector2(264, 0)
@@ -305,7 +305,7 @@ func _build_codex_page(kind: String) -> void:
 	list_panel.position = Vector2(48, 116)
 	list_panel.size = Vector2(300, 520)
 	list_panel.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.92), 0, Color(Ui.PAPER, 0.14), 1, 6, 6))
+		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.14), 1, 6, 6))
 	page.add_child(list_panel)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -325,7 +325,7 @@ func _build_codex_page(kind: String) -> void:
 		b.add_theme_constant_override("icon_max_width", icon_px)
 		b.add_theme_constant_override("h_separation", 10)
 		b.add_theme_stylebox_override("pressed",
-			Ui.sb(Color(Ui.INK_3, 1.0), 0, Color(Ui.PAPER, 0.55), 1, 10, 6))
+			Ui.sb(Color(Palette.I.ink_3, 1.0), 0, Color(Palette.I.paper, 0.55), 1, 10, 6))
 		b.icon = _codex_icon(str(e["id"]))
 		b.pivot_offset = Vector2(12, 26)
 		Ui.wire_button(b, "ui_page")
@@ -337,8 +337,8 @@ func _build_codex_page(kind: String) -> void:
 		var col := VBoxContainer.new()
 		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_theme_constant_override("separation", 1)
-		col.add_child(Ui.l(str(e["name"]), 16, Ui.HEAD, Ui.PAPER))
-		col.add_child(Ui.l(str(e["en"]), 9, Ui.LIGHT, Ui.DIM))
+		col.add_child(Ui.l(str(e["name"]), 16, Ui.HEAD, Palette.I.paper))
+		col.add_child(Ui.l(str(e["en"]), 9, Ui.LIGHT, Palette.I.dim))
 		col.position = Vector2(20.0 + icon_px + 10.0, (row_h - 30.0) * 0.5)
 		b.add_child(col)
 
@@ -356,7 +356,7 @@ func _build_codex_page(kind: String) -> void:
 	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.draw.connect(func() -> void:
 		zone.draw_rect(Rect2(8, 8, 400, 400), Color(0, 0, 0, 0.4))
-		zone.draw_rect(Rect2(0, 0, 400, 400), Color(Ui.INK_3, 0.85))
+		zone.draw_rect(Rect2(0, 0, 400, 400), Color(Palette.I.ink_3, 0.85))
 	)
 	detail.add_child(zone)
 	var tex := TextureRect.new()
@@ -373,8 +373,8 @@ func _build_codex_page(kind: String) -> void:
 		for cnr: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
 			var ox := 200.0 + cnr.x * 200.0
 			var oy := 200.0 + cnr.y * 200.0
-			corners.draw_line(Vector2(ox, oy), Vector2(ox - cnr.x * 22.0, oy), Ui.PAPER, 3.0)
-			corners.draw_line(Vector2(ox, oy), Vector2(ox, oy - cnr.y * 22.0), Ui.PAPER, 3.0))
+			corners.draw_line(Vector2(ox, oy), Vector2(ox - cnr.x * 22.0, oy), Palette.I.paper, 3.0)
+			corners.draw_line(Vector2(ox, oy), Vector2(ox, oy - cnr.y * 22.0), Palette.I.paper, 3.0))
 	zone.add_child(corners)
 
 	# 图下:规格注记 + 机关两态切换
@@ -383,7 +383,7 @@ func _build_codex_page(kind: String) -> void:
 	under.size = Vector2(400, 44)
 	under.add_theme_constant_override("separation", 12)
 	detail.add_child(under)
-	var caption := Ui.l("示例图 200×200 · 1 格 = 100px", 11, Ui.LIGHT, Ui.DIM)
+	var caption := Ui.l("示例图 200×200 · 1 格 = 100px", 11, Ui.LIGHT, Palette.I.dim)
 	caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	under.add_child(caption)
 	var state_toggle: Button = null
@@ -408,30 +408,30 @@ func _build_codex_page(kind: String) -> void:
 
 	var name_row := HBoxContainer.new()
 	name_row.add_theme_constant_override("separation", 12)
-	var name_l := Ui.l("", 34, Ui.TITLE, Ui.PAPER)
+	var name_l := Ui.l("", 34, Ui.TITLE, Palette.I.paper)
 	name_row.add_child(name_l)
-	var tag_panel := Ui.tag("", Color(Ui.INK_3, 1.0), Ui.PAPER, 12, 10, 4)
+	var tag_panel := Ui.tag("", Color(Palette.I.ink_3, 1.0), Palette.I.paper, 12, 10, 4)
 	tag_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	name_row.add_child(tag_panel)
 	text.add_child(name_row)
 
-	var en_l := Ui.l("", 12, Ui.LIGHT, Ui.DIM)
+	var en_l := Ui.l("", 12, Ui.LIGHT, Palette.I.dim)
 	text.add_child(en_l)
 	text.add_child(Ui.rule(404, 2))
 
-	var desc_l := Ui.l("", 15, Ui.BODY, Color(Ui.PAPER, 0.9),
+	var desc_l := Ui.l("", 15, Ui.BODY, Color(Palette.I.paper, 0.9),
 		HORIZONTAL_ALIGNMENT_LEFT, false, 4)
 	desc_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc_l.custom_minimum_size = Vector2(404, 0)
 	desc_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text.add_child(desc_l)
 
-	text.add_child(Ui.l("规格 SPEC", 12, Ui.LIGHT, Ui.DIM))
+	text.add_child(Ui.l("规格 SPEC", 12, Ui.LIGHT, Palette.I.dim))
 	var facts_box := VBoxContainer.new()
 	facts_box.add_theme_constant_override("separation", 4)
 	text.add_child(facts_box)
 
-	text.add_child(Ui.l("要点 NOTES", 12, Ui.LIGHT, Ui.DIM))
+	text.add_child(Ui.l("要点 NOTES", 12, Ui.LIGHT, Palette.I.dim))
 	var tips_box := VBoxContainer.new()
 	tips_box.add_theme_constant_override("separation", 4)
 	text.add_child(tips_box)
@@ -519,10 +519,10 @@ func _refresh_codex(kind: String) -> void:
 	for f in e["facts"]:
 		var hb := HBoxContainer.new()
 		hb.add_theme_constant_override("separation", 12)
-		var lab := Ui.l(str(f[0]), 13, Ui.LIGHT, Ui.DIM)
+		var lab := Ui.l(str(f[0]), 13, Ui.LIGHT, Palette.I.dim)
 		lab.custom_minimum_size = Vector2(64, 0)
 		hb.add_child(lab)
-		hb.add_child(Ui.l(str(f[1]), 13, Ui.BODY, Color(Ui.PAPER, 0.88)))
+		hb.add_child(Ui.l(str(f[1]), 13, Ui.BODY, Color(Palette.I.paper, 0.88)))
 		(refs["facts"] as VBoxContainer).add_child(hb)
 
 	for c in (refs["tips"] as VBoxContainer).get_children():
@@ -531,11 +531,11 @@ func _refresh_codex(kind: String) -> void:
 		var hb := HBoxContainer.new()
 		hb.add_theme_constant_override("separation", 10)
 		var mark := ColorRect.new()
-		mark.color = Ui.RED
+		mark.color = Palette.I.red
 		mark.custom_minimum_size = Vector2(8, 8)
 		mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		hb.add_child(mark)
-		var tip := Ui.l(str(t), 13, Ui.BODY, Color(Ui.PAPER, 0.85))
+		var tip := Ui.l(str(t), 13, Ui.BODY, Color(Palette.I.paper, 0.85))
 		tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		tip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		hb.add_child(tip)
@@ -576,7 +576,7 @@ func _build_keys_page() -> void:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(1184, 0)
 	card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
 	center.add_child(card)
 
 	var vb := VBoxContainer.new()
@@ -584,7 +584,7 @@ func _build_keys_page() -> void:
 	card.add_child(vb)
 
 	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 8))
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 8))
 	var tcol := VBoxContainer.new()
 	tcol.add_theme_constant_override("separation", 2)
 	tcol.add_child(Ui.l("键位指南", 22, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
@@ -595,7 +595,7 @@ func _build_keys_page() -> void:
 
 	var body_wrap := PanelContainer.new()
 	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 18, 14))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 14))
 	vb.add_child(body_wrap)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(1148, 396)
@@ -609,13 +609,13 @@ func _build_keys_page() -> void:
 	var left := VBoxContainer.new()
 	left.add_theme_constant_override("separation", 20)
 	left.add_child(_keys_section(ArchiveData.CONTROLS[0]))
-	left.add_child(Ui.rule(520, 1, Color(Ui.PAPER, 0.14)))
+	left.add_child(Ui.rule(520, 1, Color(Palette.I.paper, 0.14)))
 	left.add_child(_keys_section(ArchiveData.CONTROLS[1]))
 	cols.add_child(left)
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", 20)
 	right.add_child(_keys_section(ArchiveData.CONTROLS[2]))
-	right.add_child(Ui.rule(520, 1, Color(Ui.PAPER, 0.14)))
+	right.add_child(Ui.rule(520, 1, Color(Palette.I.paper, 0.14)))
 	right.add_child(_keys_section(ArchiveData.CONTROLS[3]))
 	cols.add_child(right)
 
@@ -623,11 +623,11 @@ func _build_keys_page() -> void:
 	# 触屏用户必须有就地关闭路径(双端纪律),文案随触屏模式自适应。
 	var foot := PanelContainer.new()
 	foot.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 18, 10))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 10))
 	var foot_row := HBoxContainer.new()
 	foot_row.add_theme_constant_override("separation", 12)
 	var tip := Ui.l("滚轮翻阅 · Esc / B 返回" if not Adaptive.is_touch_mode()
-		else "上下拖动翻阅", 12, Ui.LIGHT, Ui.DIM)
+		else "上下拖动翻阅", 12, Ui.LIGHT, Palette.I.dim)
 	tip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	foot_row.add_child(tip)
@@ -648,11 +648,11 @@ func _keys_section(sec: Dictionary) -> Control:
 	box.add_theme_constant_override("separation", 7)
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 8)
-	var mark := Ui.rule(22, 3, Ui.RED)
+	var mark := Ui.rule(22, 3, Palette.I.red)
 	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(mark)
-	head.add_child(Ui.l(str(sec["title"]), 16, Ui.HEAD, Ui.PAPER))
-	var en := Ui.l(str(sec["en"]), 10, Ui.LIGHT, Ui.DIM)
+	head.add_child(Ui.l(str(sec["title"]), 16, Ui.HEAD, Palette.I.paper))
+	var en := Ui.l(str(sec["en"]), 10, Ui.LIGHT, Palette.I.dim)
 	en.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(en)
 	box.add_child(head)
@@ -666,7 +666,7 @@ func _keys_section(sec: Dictionary) -> Control:
 func _keys_row(row: Dictionary) -> Control:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 10)
-	var act := Ui.l(str(row["act"]), 14, Ui.HEAD, Color(Ui.PAPER, 0.92))
+	var act := Ui.l(str(row["act"]), 14, Ui.HEAD, Color(Palette.I.paper, 0.92))
 	act.custom_minimum_size = Vector2(96, 0)
 	act.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(act)
@@ -676,7 +676,7 @@ func _keys_row(row: Dictionary) -> Control:
 		hb.add_child(_keycap(str(k)))
 	if not note_text.is_empty():
 		var note := Ui.l(note_text, 13 if keys.is_empty() else 12,
-			Ui.BODY, Color(Ui.PAPER, 0.85) if keys.is_empty() else Ui.DIM)
+			Ui.BODY, Color(Palette.I.paper, 0.85) if keys.is_empty() else Palette.I.dim)
 		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -688,8 +688,8 @@ func _keys_row(row: Dictionary) -> Control:
 func _keycap(text: String) -> Control:
 	var cap := PanelContainer.new()
 	cap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_3, 1.0), 3, Color(Ui.PAPER, 0.32), 1, 8, 3))
-	var lab := Ui.l(text, 12, Ui.HEAD, Ui.PAPER)
+		Ui.sb(Color(Palette.I.ink_3, 1.0), 3, Color(Palette.I.paper, 0.32), 1, 8, 3))
+	var lab := Ui.l(text, 12, Ui.HEAD, Palette.I.paper)
 	lab.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	cap.add_child(lab)
 	return cap
@@ -720,7 +720,7 @@ func _build_gallery_page() -> void:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(880, 0)
 	card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
 	center.add_child(card)
 
 	var vb := VBoxContainer.new()
@@ -728,7 +728,7 @@ func _build_gallery_page() -> void:
 	card.add_child(vb)
 
 	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 10))
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 10))
 	var tcol := VBoxContainer.new()
 	tcol.add_child(Ui.l("剧情回顾", 24, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
 	tcol.add_child(Ui.l("ARCHIVE OF SCRIPTS · 选一段重看", 12, Ui.LIGHT,
@@ -738,7 +738,7 @@ func _build_gallery_page() -> void:
 
 	var body_wrap := PanelContainer.new()
 	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 18, 14))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 14))
 	vb.add_child(body_wrap)
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -762,7 +762,7 @@ func _build_gallery_page() -> void:
 		Ui.wire_button(b)
 		b.pressed.connect(func() -> void: _open_story(s))
 		grid.add_child(b)
-		var sub := Ui.l(s["sub"], 10, Ui.LIGHT, Ui.DIM)
+		var sub := Ui.l(s["sub"], 10, Ui.LIGHT, Palette.I.dim)
 		sub.position = Vector2(46, 38)
 		b.add_child(sub)
 
@@ -796,7 +796,7 @@ func _build_story_page() -> void:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(1040, 0)
 	card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
 	center.add_child(card)
 
 	var vb := VBoxContainer.new()
@@ -804,7 +804,7 @@ func _build_story_page() -> void:
 	card.add_child(vb)
 
 	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 8))
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 8))
 	var tcol := VBoxContainer.new()
 	tcol.add_theme_constant_override("separation", 2)
 	_story_title = Ui.l("", 22, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
@@ -833,12 +833,12 @@ func _build_story_page() -> void:
 
 	var foot := PanelContainer.new()
 	foot.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 18, 10))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 10))
 	var foot_row := HBoxContainer.new()
 	foot_row.add_theme_constant_override("separation", 12)
-	var tip := Ui.l("滚轮 / 拖动翻阅      Esc · 返回剧情目录", 12, Ui.LIGHT, Ui.DIM) \
+	var tip := Ui.l("滚轮 / 拖动翻阅      Esc · 返回剧情目录", 12, Ui.LIGHT, Palette.I.dim) \
 		if not Adaptive.is_touch_mode() \
-		else Ui.l("上下拖动翻阅全文", 12, Ui.LIGHT, Ui.DIM)
+		else Ui.l("上下拖动翻阅全文", 12, Ui.LIGHT, Palette.I.dim)
 	tip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	foot_row.add_child(tip)
@@ -870,7 +870,7 @@ func _open_story(story: Dictionary) -> void:
 		c.queue_free()
 	var shot: KND_Shot = load("res://story/%s.ks" % story["kind"])
 	if shot == null:
-		_story_list.add_child(Ui.l("剧本缺失 · %s" % story["kind"], 16, Ui.BODY, Ui.RED))
+		_story_list.add_child(Ui.l("剧本缺失 · %s" % story["kind"], 16, Ui.BODY, Palette.I.red))
 	else:
 		var beats: Array = story.get("beats", [])
 		var last_line := -1
@@ -885,7 +885,7 @@ func _open_story(story: Dictionary) -> void:
 			last_line = line if line >= 0 else last_line
 			_story_list.add_child(_story_line(str(d.character_id), str(d.dialog_content)))
 		if beat == 0:
-			_story_list.add_child(Ui.l("(本段没有台词)", 15, Ui.BODY, Ui.DIM))
+			_story_list.add_child(Ui.l("(本段没有台词)", 15, Ui.BODY, Palette.I.dim))
 	_story_scroll.scroll_vertical = 0
 	_tab = "story"
 	Sfx.play("ui_page")
@@ -901,14 +901,14 @@ func _beat_header(n: int, beats: Array) -> Control:
 		spacer.custom_minimum_size = Vector2(0, 6)
 		_story_list.add_child(spacer)
 	var rule := ColorRect.new()
-	rule.color = Ui.RED
+	rule.color = Palette.I.red
 	rule.custom_minimum_size = Vector2(28, 3)
 	rule.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(rule)
 	var title := "第 %d 拍" % n
 	if n - 1 < beats.size():
 		title += " · " + str(beats[n - 1])
-	hb.add_child(Ui.l(title, 13, Ui.HEAD, Color(Ui.PAPER, 0.70)))
+	hb.add_child(Ui.l(title, 13, Ui.HEAD, Color(Palette.I.paper, 0.70)))
 	return hb
 
 
@@ -916,7 +916,7 @@ func _beat_header(n: int, beats: Array) -> Control:
 func _story_line(who: String, text: String) -> Control:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 12)
-	var col := Color(Ui.PAPER, 0.55)
+	var col := Color(Palette.I.paper, 0.55)
 	for gd in Geometries.ALL:
 		if gd.name == who:
 			col = gd.color
@@ -933,7 +933,7 @@ func _story_line(who: String, text: String) -> Control:
 	name_label.custom_minimum_size = Vector2(52, 0)
 	name_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	hb.add_child(name_label)
-	var body := Ui.l(text, 16, Ui.BODY, Color(Ui.PAPER, 0.90 if who != "旁白" else 0.72),
+	var body := Ui.l(text, 16, Ui.BODY, Color(Palette.I.paper, 0.90 if who != "旁白" else 0.72),
 		HORIZONTAL_ALIGNMENT_LEFT, false, 4)
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -982,7 +982,7 @@ func _build_footer() -> void:
 	var touch := Adaptive.is_touch_mode()
 	var hints_text := "A / D 切条目 · 十字键翻页 · 1–5 直达几何体 · 滚轮 · Q / E 或 LB / RB 切页 · Esc / B 返回" \
 		if not touch else "◀ ▶ 翻页查看档案条目"
-	_hints = Ui.l(hints_text, 13, Ui.BODY, Ui.DIM)
+	_hints = Ui.l(hints_text, 13, Ui.BODY, Palette.I.dim)
 	_hints.anchor_top = 1.0
 	_hints.anchor_bottom = 1.0
 	_hints.offset_left = 64

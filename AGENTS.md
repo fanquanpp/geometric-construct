@@ -34,7 +34,9 @@
    引用(默认同一份数据,运行时写入串改全部使用者,`duplicate()`
    是浅拷贝);headless 下 process 不锁帧(≈150Hz,`--quit-after`
    与帧计时全部失真——计时依赖物理量的仿真须 `Engine.max_fps=60`
-   且以物理量而非帧号判停,trait_check.gd 为范本)。
+   且以物理量而非帧号判停,trait_check.gd 为范本);手写 `.tscn`
+   时 `%` 唯一名引用的节点必须标 `unique_name_in_owner = true`,
+   漏标不报缺节点、运行时才是 null。
 
 6. **场景与资源强制约束**(2026-09-13 用户拍板,细则见下节):
    常驻节点结构一律 `.tscn` 场景组合,禁单场景巨石与脚本拼树;

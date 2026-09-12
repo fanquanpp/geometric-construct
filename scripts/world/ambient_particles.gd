@@ -45,7 +45,7 @@ func _build_dust() -> void:
 	dust.initial_velocity_max = 16.0
 	dust.scale_amount_min = 1.0
 	dust.scale_amount_max = 2.2
-	dust.color = Color(Palette.PAPER, 0.10)
+	dust.color = Color(Palette.I.paper, 0.10)
 	add_child(dust)
 	set_meta("dust", dust)
 
@@ -76,7 +76,7 @@ func _build_snow(r: Rect2) -> void:
 	snow.initial_velocity_max = 22.0
 	snow.scale_amount_min = 1.0
 	snow.scale_amount_max = 2.0
-	snow.color = Color(Palette.PAPER, 0.30)
+	snow.color = Color(Palette.I.paper, 0.30)
 	add_child(snow)
 
 
@@ -96,5 +96,5 @@ func _build_drip(p: Vector2) -> void:
 	drip.initial_velocity_max = 30.0
 	drip.scale_amount_min = 1.5
 	drip.scale_amount_max = 2.2
-	drip.color = Color(Palette.BLUE, 0.45)
+	drip.color = Color(Palette.I.blue, 0.45)
 	add_child(drip)

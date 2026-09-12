@@ -37,7 +37,7 @@ func _build_status() -> void:
 	var panel := PanelContainer.new()
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.88), 0, Color(Ui.PAPER, 0.16), 1, 12, 6))
+		Ui.sb(Color(Palette.I.ink_2, 0.88), 0, Color(Palette.I.paper, 0.16), 1, 12, 6))
 	panel.position = Vector2(24, 64)
 	_status.add_child(panel)
 	var hb := HBoxContainer.new()
@@ -48,7 +48,7 @@ func _build_status() -> void:
 	_status_labels["ticks"].add_theme_constant_override("separation", 3)
 	_wrap_labeled(hb, "刻度", _status_labels["ticks"])
 	# 章节 / 段落进度
-	_status_labels["prog"] = Ui.l("", 15, Ui.HEAD, Ui.PAPER)
+	_status_labels["prog"] = Ui.l("", 15, Ui.HEAD, Palette.I.paper)
 	_wrap_labeled(hb, "进度", _status_labels["prog"])
 	# 词条 chips
 	_status_mods = HBoxContainer.new()
@@ -58,7 +58,7 @@ func _build_status() -> void:
 
 
 func _wrap_labeled(hb: HBoxContainer, label: String, content: Control) -> void:
-	hb.add_child(Ui.l(label, 12, Ui.LIGHT, Ui.DIM))
+	hb.add_child(Ui.l(label, 12, Ui.LIGHT, Palette.I.dim))
 	content.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(content)
 
@@ -74,7 +74,7 @@ func refresh_status(run) -> void:
 		var block := ColorRect.new()
 		block.custom_minimum_size = Vector2(10, 14)
 		block.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		block.color = Ui.RED if i < run.ticks else Color(Ui.RED, 0.16)
+		block.color = Palette.I.red if i < run.ticks else Color(Palette.I.red, 0.16)
 		_status_labels["ticks"].add_child(block)
 	var elite := " ✓" if run.elites_done >= run.chapter else ""
 	_status_labels["prog"].text = "第%s章 · 段 %d/2 · 考%s" % \
@@ -82,7 +82,7 @@ func refresh_status(run) -> void:
 	for c in _status_mods.get_children():
 		c.queue_free()
 	if run.mods.is_empty():
-		_status_mods.add_child(Ui.l("—", 13, Ui.LIGHT, Ui.DIM))
+		_status_mods.add_child(Ui.l("—", 13, Ui.LIGHT, Palette.I.dim))
 	for m in run.mods:
 		_status_mods.add_child(Ui.tag(m["name"],
 			Color(RunModifiers.RARITY_COLOR[m["rarity"]], 0.22),
@@ -97,7 +97,7 @@ func _build_overlay() -> void:
 	_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var shade := ColorRect.new()
-	shade.color = Color(Ui.INK, 0.92)
+	shade.color = Color(Palette.I.ink, 0.92)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_overlay.add_child(shade)
@@ -115,17 +115,17 @@ func _open_overlay() -> VBoxContainer:
 	_overlay.visible = true
 	var card := PanelContainer.new()
 	card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.draw.connect(func() -> void:
 		var r := Rect2(Vector2.ZERO, card.size)
-		card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.30))
+		card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
 		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
 				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
 			var sx := -1.0 if corner.x == 0.0 else 1.0
 			var sy := -1.0 if corner.y == 0.0 else 1.0
-			card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Ui.RED, 3.0)
-			card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Ui.RED, 3.0))
+			card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
+			card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
 	card.resized.connect(func() -> void: card.pivot_offset = card.size / 2.0)
 	(_overlay.get_node("Center") as CenterContainer).add_child(card)
 	Adaptive.register_card(card)
@@ -150,7 +150,7 @@ func _close_overlay() -> void:
 
 func _header(vb: VBoxContainer, title: String, sub: String) -> void:
 	var bar := PanelContainer.new()
-	bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 12))
+	bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
 	var col := VBoxContainer.new()
 	col.add_child(Ui.l(title, 30, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
 	col.add_child(Ui.l(sub, 13, Ui.LIGHT, Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER))
@@ -163,10 +163,10 @@ func _card_shell(min_size: Vector2) -> Button:
 	b.custom_minimum_size = min_size
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_stylebox_override("normal",
-		Ui.sb(Color(Ui.INK_3, 0.99), 0, Color(Ui.PAPER, 0.20), 1, 0, 0))
-	b.add_theme_stylebox_override("hover", Ui.sb(Color(Ui.INK_3, 0.99), 0, Ui.RED, 2, 0, 0))
+		Ui.sb(Color(Palette.I.ink_3, 0.99), 0, Color(Palette.I.paper, 0.20), 1, 0, 0))
+	b.add_theme_stylebox_override("hover", Ui.sb(Color(Palette.I.ink_3, 0.99), 0, Palette.I.red, 2, 0, 0))
 	b.add_theme_stylebox_override("pressed",
-		Ui.sb(Color(Ui.INK_3, 0.99), 0, Color(Ui.RED, 0.6), 2, 0, 0))
+		Ui.sb(Color(Palette.I.ink_3, 0.99), 0, Color(Palette.I.red, 0.6), 2, 0, 0))
 	Ui.wire_button(b, "")   # 卡片自管语义音:选体/选路 = click,词条 = buff
 	return b
 
@@ -179,7 +179,7 @@ func show_geo_pick(on_pick: Callable, shards: int, runs: int) -> void:
 	_header(vb, "重跑 RE-RUN", "单人重跑 · 选中谁,这一局就是谁的重跑")
 	var body := PanelContainer.new()
 	body.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 22, 16))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 22, 16))
 	vb.add_child(body)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 10)
@@ -204,8 +204,8 @@ func show_geo_pick(on_pick: Callable, shards: int, runs: int) -> void:
 		ico.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		c.add_child(ico)
 		c.add_child(Ui.l(g.name, 40, Ui.TITLE, g.color, HORIZONTAL_ALIGNMENT_CENTER))
-		c.add_child(Ui.l(g.role, 14, Ui.HEAD, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER))
-		var quote := Ui.l(g.quote, 12, Ui.LIGHT, Color(Ui.PAPER, 0.72),
+		c.add_child(Ui.l(g.role, 14, Ui.HEAD, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER))
+		var quote := Ui.l(g.quote, 12, Ui.LIGHT, Color(Palette.I.paper, 0.72),
 			HORIZONTAL_ALIGNMENT_CENTER)
 		quote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		quote.custom_minimum_size = Vector2(160, 0)
@@ -215,7 +215,7 @@ func show_geo_pick(on_pick: Callable, shards: int, runs: int) -> void:
 			_close_overlay()
 			on_pick.call(idx))
 		row.add_child(b)
-	var foot := Ui.l("残段 %d · 已重跑 %d 局" % [shards, runs], 14, Ui.HEAD, Ui.YELLOW,
+	var foot := Ui.l("残段 %d · 已重跑 %d 局" % [shards, runs], 14, Ui.HEAD, Palette.I.yellow,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	col.add_child(foot)
 
@@ -227,7 +227,7 @@ func show_route(chapter: int, options: Array, on_pick: Callable) -> void:
 	_header(vb, "选 路", "第%s章 · 两条路线,只走一条" % [["一", "二", "三"][chapter - 1]])
 	var body := PanelContainer.new()
 	body.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 22, 16))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 22, 16))
 	vb.add_child(body)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -236,21 +236,21 @@ func show_route(chapter: int, options: Array, on_pick: Callable) -> void:
 	for i in options.size():
 		var opt: Dictionary = options[i]
 		var b := _card_shell(Vector2(380, 300))
-		var num := Ui.poster_label("%02d" % (i + 1), 56, Ui.PAPER, true, Ui.RED)
+		var num := Ui.poster_label("%02d" % (i + 1), 56, Palette.I.paper, true, Palette.I.red)
 		num.position = Vector2(24, 20)
 		b.add_child(num)
 		var c := VBoxContainer.new()
 		c.add_theme_constant_override("separation", 8)
 		c.position = Vector2(24, 108)
-		var title := Ui.l(opt["title"], 30, Ui.TITLE, Ui.PAPER)
+		var title := Ui.l(opt["title"], 30, Ui.TITLE, Palette.I.paper)
 		c.add_child(title)
-		c.add_child(Ui.rule(300, 2, Color(Ui.PAPER, 0.28)))
-		var note := Ui.l("» " + opt["note"], 16, Ui.BODY, Color(Ui.PAPER, 0.82))
+		c.add_child(Ui.rule(300, 2, Color(Palette.I.paper, 0.28)))
+		var note := Ui.l("» " + opt["note"], 16, Ui.BODY, Color(Palette.I.paper, 0.82))
 		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		note.custom_minimum_size = Vector2(320, 0)
 		c.add_child(note)
 		var tag := Ui.tag("路线 · %s" % ("快" if i == 0 else "稳"),
-			Color(Ui.PAPER, 0.08), Color(Ui.PAPER, 0.7), 12, 8, 3)
+			Color(Palette.I.paper, 0.08), Color(Palette.I.paper, 0.7), 12, 8, 3)
 		tag.position = Vector2(24, 258)
 		b.add_child(tag)
 		b.add_child(c)
@@ -267,7 +267,7 @@ func show_reward(choices: Array, on_pick: Callable) -> void:
 	_header(vb, "刻度残留", "空白处随机留下的强化 · 三选一")
 	var body := PanelContainer.new()
 	body.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 22, 16))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 22, 16))
 	vb.add_child(body)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -284,16 +284,16 @@ func show_reward(choices: Array, on_pick: Callable) -> void:
 		bar.position = Vector2(0, 0)
 		bar.size = Vector2(268, 4)
 		b.add_child(bar)
-		var num := Ui.poster_label("%02d" % (i + 1), 46, Ui.PAPER, true,
+		var num := Ui.poster_label("%02d" % (i + 1), 46, Palette.I.paper, true,
 			RunModifiers.RARITY_COLOR[rarity])
 		num.position = Vector2(20, 18)
 		b.add_child(num)
 		var c := VBoxContainer.new()
 		c.add_theme_constant_override("separation", 7)
 		c.position = Vector2(20, 96)
-		c.add_child(Ui.l(m["name"], 28, Ui.TITLE, Ui.PAPER))
-		c.add_child(Ui.rule(220, 2, Color(Ui.PAPER, 0.24)))
-		var quote := Ui.l(m["quote"], 15, Ui.BODY, Color(Ui.PAPER, 0.84))
+		c.add_child(Ui.l(m["name"], 28, Ui.TITLE, Palette.I.paper))
+		c.add_child(Ui.rule(220, 2, Color(Palette.I.paper, 0.24)))
+		var quote := Ui.l(m["quote"], 15, Ui.BODY, Color(Palette.I.paper, 0.84))
 		quote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		quote.custom_minimum_size = Vector2(224, 0)
 		c.add_child(quote)
@@ -319,7 +319,7 @@ func show_settle(summary: Dictionary, on_done: Callable) -> void:
 		"刻度用尽,这一局化作残段" if not cleared else "全程走完,幕落")
 	var body := PanelContainer.new()
 	body.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.99), 0, null, 0, 22, 16))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 22, 16))
 	vb.add_child(body)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 10)
@@ -340,8 +340,8 @@ func show_settle(summary: Dictionary, on_done: Callable) -> void:
 		var v := VBoxContainer.new()
 		v.alignment = BoxContainer.ALIGNMENT_CENTER
 		v.add_theme_constant_override("separation", 2)
-		v.add_child(Ui.l(r[1], 30, Ui.TITLE, Ui.PAPER, HORIZONTAL_ALIGNMENT_CENTER))
-		v.add_child(Ui.l(r[0], 13, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER))
+		v.add_child(Ui.l(r[1], 30, Ui.TITLE, Palette.I.paper, HORIZONTAL_ALIGNMENT_CENTER))
+		v.add_child(Ui.l(r[0], 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER))
 		stats.add_child(v)
 
 	# —— 残段入账 ——
@@ -349,8 +349,8 @@ func show_settle(summary: Dictionary, on_done: Callable) -> void:
 	shard_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	shard_row.add_theme_constant_override("separation", 14)
 	col.add_child(shard_row)
-	shard_row.add_child(Ui.l("+%d 刻度残段" % summary["shards"], 34, Ui.TITLE, Ui.RED))
-	shard_row.add_child(Ui.l("(余额 %d)" % summary["balance"], 16, Ui.HEAD, Ui.DIM))
+	shard_row.add_child(Ui.l("+%d 刻度残段" % summary["shards"], 34, Ui.TITLE, Palette.I.red))
+	shard_row.add_child(Ui.l("(余额 %d)" % summary["balance"], 16, Ui.HEAD, Palette.I.dim))
 
 	# —— 本局词条回顾 ——
 	var mods_row := HBoxContainer.new()
@@ -358,7 +358,7 @@ func show_settle(summary: Dictionary, on_done: Callable) -> void:
 	mods_row.add_theme_constant_override("separation", 8)
 	col.add_child(mods_row)
 	if (summary["mods"] as Array).is_empty():
-		mods_row.add_child(Ui.l("本局没有带走任何残留", 14, Ui.LIGHT, Ui.DIM))
+		mods_row.add_child(Ui.l("本局没有带走任何残留", 14, Ui.LIGHT, Palette.I.dim))
 	for m in summary["mods"]:
 		mods_row.add_child(Ui.tag(m["name"],
 			Color(RunModifiers.RARITY_COLOR[m["rarity"]], 0.22),
@@ -395,11 +395,11 @@ func _build_shop(summary: Dictionary) -> Control:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(660, 0)
 	card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK, 0.6), 0, Color(Ui.PAPER, 0.12), 1, 16, 10))
+		Ui.sb(Color(Palette.I.ink, 0.6), 0, Color(Palette.I.paper, 0.12), 1, 16, 10))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)
 	card.add_child(col)
-	col.add_child(Ui.l("残留兑换 · 刻度残段 %d" % save.rogue_shards, 14, Ui.HEAD, Ui.YELLOW))
+	col.add_child(Ui.l("残留兑换 · 刻度残段 %d" % save.rogue_shards, 14, Ui.HEAD, Palette.I.yellow))
 	for m in locked:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
@@ -407,7 +407,7 @@ func _build_shop(summary: Dictionary) -> Control:
 			Color(RunModifiers.RARITY_COLOR[m["rarity"]], 0.22),
 			RunModifiers.RARITY_COLOR[m["rarity"]], 13, 8, 2)
 		row.add_child(name_tag)
-		var desc := Ui.l(m["quote"], 13, Ui.BODY, Color(Ui.PAPER, 0.78))
+		var desc := Ui.l(m["quote"], 13, Ui.BODY, Color(Palette.I.paper, 0.78))
 		desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		desc.clip_text = true
 		row.add_child(desc)
@@ -429,9 +429,9 @@ func _build_shop(summary: Dictionary) -> Control:
 	if style_locked:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
-		row.add_child(Ui.tag("落款红章", Color(Ui.RED, 0.22), Ui.RED, 13, 8, 2))
+		row.add_child(Ui.tag("落款红章", Color(Palette.I.red, 0.22), Palette.I.red, 13, 8, 2))
 		var desc := Ui.l("结算页装饰版式 · 大红落款章盖在标题旁", 13, Ui.BODY,
-			Color(Ui.PAPER, 0.78))
+			Color(Palette.I.paper, 0.78))
 		desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		desc.clip_text = true
 		row.add_child(desc)

@@ -138,8 +138,8 @@ func _draw() -> void:
 		var faces: String = it["faces"]
 		if faces == Comp.FACES_NONE:
 			# 纯装饰:8% 亮度的线框(与动态构件虚化态同语言)
-			draw_rect(r, Color(Palette.PAPER, 0.06 * a))
-			draw_rect(r, Color(Palette.PAPER, 0.14 * a), false, 1.5)
+			draw_rect(r, Color(Palette.I.paper, 0.06 * a))
+			draw_rect(r, Color(Palette.I.paper, 0.14 * a), false, 1.5)
 			continue
 		var is_top := faces == Comp.FACES_TOP
 		var is_bottom := faces == Comp.FACES_BOTTOM
@@ -154,7 +154,7 @@ func _draw() -> void:
 			draw_style_box(_slab, Rect2(r.position, Vector2(r.size.x, slab)))
 		# 顶缘亮线(top 单向板更亮,提示"只有这面是实的")
 		draw_rect(Rect2(r.position, Vector2(r.size.x, 2)),
-			Color(Palette.PAPER, (0.55 if is_top else 0.30) * a))
+			Color(Palette.I.paper, (0.55 if is_top else 0.30) * a))
 		# bottom 面:底缘蓝色细线 —— 逆的重力天花板(art-style.md §6)
 		if is_bottom:
 			draw_rect(Rect2(Vector2(r.position.x, r.end.y - 3),
@@ -163,7 +163,7 @@ func _draw() -> void:
 		var mark_x := 40.0
 		while mark_x < r.size.x - 20.0:
 			draw_rect(Rect2(r.position + Vector2(mark_x, 0), Vector2(14, 3)),
-				Color(Palette.RED, 0.55 * a))
+				Color(Palette.I.red, 0.55 * a))
 			mark_x += 480.0
 	# —— 第二遍:专属高亮描边(呼吸脉冲,受控几何体专属色,§7.10) ——
 	for i in items.size():

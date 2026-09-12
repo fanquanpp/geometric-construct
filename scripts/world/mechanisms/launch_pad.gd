@@ -36,14 +36,14 @@ func _physics_process(delta: float) -> void:
 func _draw() -> void:
 	# 底板 + 发射方向箭头(构成主义雪佛龙,箭头长度按 |vec| 缩放)
 	draw_rect(Rect2(-70.0, -14.0, 140.0, 28.0), Color("3A4254"))
-	draw_rect(Rect2(-70.0, -14.0, 140.0, 4.0), Color(Palette.RED, 0.8))
+	draw_rect(Rect2(-70.0, -14.0, 140.0, 4.0), Color(Palette.I.red, 0.8))
 	var dir := launch_vec.normalized()
 	var arrow := clampf(launch_vec.length() / 280.0, 26.0, 64.0)
 	var tip := dir * arrow
 	var n := Vector2(-dir.y, dir.x)
-	draw_line(Vector2(0, -18), tip, Color(Palette.PAPER, 0.85), 3.0)
+	draw_line(Vector2(0, -18), tip, Color(Palette.I.paper, 0.85), 3.0)
 	draw_colored_polygon(PackedVector2Array([
 		tip, tip - dir * 14.0 + n * 9.0, tip - dir * 14.0 - n * 9.0]),
-		Color(Palette.PAPER, 0.85))
+		Color(Palette.I.paper, 0.85))
 	if _cooldown > 0.0:
-		draw_rect(Rect2(-70.0, -14.0, 140.0, 28.0), Color(Palette.PAPER, 0.2))
+		draw_rect(Rect2(-70.0, -14.0, 140.0, 28.0), Color(Palette.I.paper, 0.2))

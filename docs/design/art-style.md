@@ -1,7 +1,8 @@
 # 美术风格规范 · ART STYLE
 
 > 状态:现行(v0.8 起) · 构成主义 Constructivism + 极简主义 Minimalism + 动态感
-> 本文是视觉决策的唯一权威;`scripts/ui/ui.gd` 是调色板与组件的唯一代码来源。
+> 本文是视觉决策的唯一权威;色板数值唯一落点 = `data/palette.tres`
+> (Palette 资源,R2,Inspector 直调);组件样式唯一代码来源 = `scripts/ui/ui.gd`。
 
 ## 1. 调色板
 

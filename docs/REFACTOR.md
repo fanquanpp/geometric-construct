@@ -126,7 +126,7 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
 | 对白 | `story/*.ks`(正典) | bible 卷八 = 文体基准 |
 | 术语 | glossary.md | — |
 | 系统架构 | ARCHITECTURE.md + 本文 | — |
-| 视觉常量 | `data/palette.gd`(Phase 2 建)| art-style.md = 规范 |
+| 视觉常量 | `data/palette.tres`(Palette 资源,v0.32.0 起)| art-style.md = 规范 |
 | 音频规范 | audio.md | — |
 | 版本 | version.gd + CHANGELOG | README 版本行 |
 
@@ -170,8 +170,10 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
    Player 保留编排与承载 / 跳跃 / 爬墙 / 置换状态机,常量以别名引用,
    存量调用点零改动;行为逐位不变(验收:dualtest / recalltest /
    gridcheck / laneshot 全绿,1077→754 行)。
-2. `hud.gd`(~700)按域拆 chips / EdgeIndicator / narration / 提示条。
-3. `ui.gd` 主题工厂拆 palette(Phase 2 已动)/ typography / widgets。
+2. ✅(v0.32.0 部分)`hud.gd` 结构骨架入 scenes/ui/hud.tscn,
+   EdgeIndicator 抽独立场景(728→~480 行);chips / 提示条域拆分随下次触改。
+3. ✅(v0.32.0 裁定收口)palette 已 .tres 化(M-2);typography / widgets
+   不拆——259 行内聚工厂,拆分无净收益。
 4. `main.gd`(781)→ game_flow(幕流转/通关)/ 输入路由残留归 08。
 5. `archive_panel` 按五页签拆子构建器。
 
@@ -225,8 +227,9 @@ Foreshadow / Symbol(模板入 levels.md §0;测试道免登记)。
   材质 μ + player 形体手感常量 → `MovementTuning`(31 项 @export,
   data/tuning/movement_default.tres);SSOT 表「物理参数」行已改指。
   门禁:dualtest ALL PASS / recalltest 3 PASS / autoshot 轨迹逐位一致。
-- **M-2 · 视觉常量**:`data/palette.gd` 保持代码形态直到首次触改,
-  若迁按 M-1 形制(颜色属调参数值);不专门开工。
+- **M-2 · 视觉常量 ✅(v0.32.0)**:`Palette` 改 Resource +
+  `data/palette.tres`(10 色 @export),全库 386 处颜色引用改读资源,
+  ui.gd 兼容别名退役。
 - **M-3 · 场景拆分 ✅ 第一批(v0.31.0)**:16 子系统常驻层 + level_root +
   player 实体落 .tscn(共 22 场景),main.gd / level_builder 全部改
   场景实例化;`main.gd` / `ui.gd` 层内拼树仍随 Phase 4 逐文件小步

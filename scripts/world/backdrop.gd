@@ -19,7 +19,7 @@ func _ready() -> void:
 
 	# —— 墨色底 ——
 	var sky := ColorRect.new()
-	sky.color = Ui.INK
+	sky.color = Palette.I.ink
 	sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	sky.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(sky)
@@ -105,7 +105,7 @@ func _motes(amount: int, scale_max: float, alpha: float, lifetime: float) -> CPU
 	motes.initial_velocity_max = 22.0
 	motes.scale_amount_min = 1.0
 	motes.scale_amount_max = scale_max
-	motes.color = Color(Ui.PAPER, alpha)
+	motes.color = Color(Palette.I.paper, alpha)
 	motes.emitting = true
 	return motes
 
@@ -120,7 +120,7 @@ class GeoPlanes extends Node2D:
 			var top := rng.randf_range(240.0, 620.0)
 			var w1 := rng.randf_range(260.0, 520.0)
 			var w2 := w1 * rng.randf_range(0.3, 0.7)
-			var col := Color(Ui.PAPER, rng.randf_range(0.018, 0.032))
+			var col := Color(Palette.I.paper, rng.randf_range(0.018, 0.032))
 			if i % 2 == 0:
 				# 斜切三角
 				var tri := PackedVector2Array([
@@ -141,9 +141,9 @@ class GeoPlanes extends Node2D:
 class GeoSun extends Node2D:
 	func _draw() -> void:
 		var center := Vector2(1560.0, 240.0)
-		draw_arc(center, 120.0, 0.0, TAU, 64, Color(Ui.PAPER, 0.14), 2.0)
-		draw_arc(center, 78.0, 0.0, TAU, 48, Color(Ui.PAPER, 0.07), 1.0)
-		draw_line(center + Vector2(-170, 0), center + Vector2(170, 0), Color(Ui.RED, 0.30), 3.0)
+		draw_arc(center, 120.0, 0.0, TAU, 64, Color(Palette.I.paper, 0.14), 2.0)
+		draw_arc(center, 78.0, 0.0, TAU, 48, Color(Palette.I.paper, 0.07), 1.0)
+		draw_line(center + Vector2(-170, 0), center + Vector2(170, 0), Color(Palette.I.red, 0.30), 3.0)
 
 
 ## 方块与十字刻点。
@@ -155,7 +155,7 @@ class GeoMarks extends Node2D:
 			var p := Vector2(rng.randf_range(0.0, 2400.0), rng.randf_range(-600.0, 1800.0))
 			var s := rng.randf_range(1.6, 3.4)
 			var a := rng.randf_range(0.10, 0.42)
-			var c := Color(Ui.RED, a * 0.9) if rng.randf() < 0.10 else Color(Ui.PAPER, a)
+			var c := Color(Palette.I.red, a * 0.9) if rng.randf() < 0.10 else Color(Palette.I.paper, a)
 			if rng.randf() < 0.16:
 				# 十字刻度
 				draw_line(p + Vector2(-s * 2, 0), p + Vector2(s * 2, 0), c, 1.0)
@@ -204,5 +204,5 @@ class Ridge extends Parallax2D:
 		var line := Line2D.new()
 		line.points = pts
 		line.width = 1.5
-		line.default_color = Color(Ui.PAPER, 0.05)
+		line.default_color = Color(Palette.I.paper, 0.05)
 		add_child(line)

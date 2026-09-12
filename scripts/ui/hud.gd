@@ -2,268 +2,82 @@ class_name Hud
 extends CanvasLayer
 ## 游戏内 HUD:几何体队伍 chips、章节徽章、按键提示条、旁白、开场与结算。
 ## 构成主义规范:直角色块、细线、大号数字编号,无渐变无柔光。
+## 结构骨架在 scenes/ui/hud.tscn(R1 场景化,v0.32.0,含 EdgeIndicator
+## 子场景);本脚本负责行为(刷新 / 演出 / 动态内容)与运行时样式施加
+## (颜色经 Palette 资源、字体经 Ui 工厂,场景文件里零色值,SSOT 不破)。
 
-var _roster: HBoxContainer
-var _level_num: Label
-var _level_total: Label
-var _level_name: Label
-var _hint_row: HBoxContainer
-var _coords: Label
-var _narration: Label
-var _intro: Control
-var _intro_card: PanelContainer
-var _intro_num: Label
-var _intro_title: HBoxContainer
-var _intro_text: Label
-var _intro_skip: Button
+signal chip_tapped(index: int)
+
 var _intro_tween: Tween
-var _complete: Control
 var _complete_tween: Tween
-var _win: Control
-var _fade: ColorRect
 var _narr_tween: Tween
+var _chips := {}          # geo_index -> {panel, label, check}
+var _chip_roster: Array = []
+
+@onready var _root: Control = $Root
+@onready var _roster: HBoxContainer = %Roster
+@onready var _level_num: Label = %NumLabel
+@onready var _level_total: Label = %TotalLabel
+@onready var _level_name: Label = %NameLabel
+@onready var _hint_row: HBoxContainer = %HintRow
+@onready var _coords: Label = %Coords
+@onready var _net_badge: Label = %NetBadge
+@onready var _edge: Control = %Edge
+@onready var _narration: Label = %Narration
+@onready var _intro: Control = %Intro
+@onready var _intro_card: PanelContainer = %Card
+@onready var _intro_num: Label = %IntroNum
+@onready var _intro_title: HBoxContainer = %IntroTitle
+@onready var _intro_title_label: Label = %IntroTitleLabel
+@onready var _intro_text: Label = %IntroText
+@onready var _intro_skip: Button = %IntroSkip
+@onready var _complete: VBoxContainer = %Complete
+@onready var _complete_label: Label = %CompleteLabel
+@onready var _win: Control = %Win
+@onready var _win_hint: Label = %WinHint
+@onready var _shapes_row: HBoxContainer = %ShapesRow
+@onready var _fade: ColorRect = %Fade
 
 
 func _ready() -> void:
-	layer = 10
-	var root := Control.new()
-	root.theme = Ui.make_theme()
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(root)
-	# 安全区内缩(刘海 / 挖孔避让),旋转或改窗口时跟随
-	Adaptive.apply_safe_area(root)
-	root.resized.connect(func() -> void: Adaptive.apply_safe_area(root))
 	var touch := _touch_mode()
-
-	# —— 左上:队伍 chips ——
-	_roster = HBoxContainer.new()
-	_roster.position = Vector2(24, 18)
-	_roster.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_roster.add_theme_constant_override("separation", 8)
-	root.add_child(_roster)
-
-	# —— 右上:章节编号块 + 章节名 ——
-	var title_row := HBoxContainer.new()
-	title_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	title_row.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	title_row.add_theme_constant_override("separation", 12)
-	title_row.anchor_left = 1.0
-	title_row.anchor_right = 1.0
-	title_row.offset_left = -24
-	title_row.offset_right = -24
-	title_row.offset_top = 16
-
-	var num_panel := PanelContainer.new()
-	num_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	num_panel.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 12, 4))
-	_level_num = Ui.l("01", 24, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-	num_panel.add_child(_level_num)
-	title_row.add_child(num_panel)
-
-	var total := Ui.l("/ %02d" % LevelData.LEVELS.size(), 16, Ui.HEAD, Ui.DIM)
-	total.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	title_row.add_child(total)
-	_level_total = total
-
-	_level_name = Ui.l("", 22, Ui.HEAD, Ui.PAPER)
-	_level_name.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	title_row.add_child(_level_name)
-	root.add_child(title_row)
-
-	# —— 右上第二行:按键提示条 ——
-	_hint_row = HBoxContainer.new()
-	_hint_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hint_row.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_hint_row.add_theme_constant_override("separation", 10)
-	_hint_row.anchor_left = 1.0
-	_hint_row.anchor_right = 1.0
-	_hint_row.offset_left = -24
-	_hint_row.offset_right = -24
-	_hint_row.offset_top = 64
-	root.add_child(_hint_row)
-
-	# —— 左下:坐标常驻显示(v0.17.3:统一左下角,字号增大)——
-	_coords = Ui.l("", 18, Ui.LIGHT, Color(Ui.DIM, 0.95))
-	_coords.anchor_top = 1.0
-	_coords.anchor_bottom = 1.0
-	_coords.offset_left = 24
-	_coords.offset_top = -44
-	_coords.offset_right = 760
-	_coords.offset_bottom = -10
-	root.add_child(_coords)
-
-	# —— 右上第三行:联机徽标(主机/客机 + 房名,net.md §7)——
-	_net_badge = Ui.l("", 13, Ui.HEAD, Ui.ORANGE)
-	_net_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_net_badge.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_net_badge.anchor_left = 1.0
-	_net_badge.anchor_right = 1.0
-	_net_badge.offset_left = -24
-	_net_badge.offset_right = -24
-	_net_badge.offset_top = 92
-	_net_badge.visible = false
-	root.add_child(_net_badge)
-
-	# —— 双人超距方向指示(net.md §3):目标分头跑出画面时指路 ——
-	_edge = EdgeIndicator.new()
-	_edge.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(_edge)
-
-	# —— 底部:旁白(触屏时上移,避开轮盘 / 按键) ——
-	_narration = Ui.l("", 22, Ui.HEAD, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, true, 6)
-	_narration.anchor_left = 0.08
-	_narration.anchor_right = 0.92
+	_apply_styles()
 	if touch:
 		_narration.anchor_top = 0.68
 		_narration.anchor_bottom = 0.80
-	else:
-		_narration.anchor_top = 0.80
-		_narration.anchor_bottom = 0.92
-	_narration.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_narration.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_narration.modulate = Color(1, 1, 1, 0)
-	root.add_child(_narration)
 
-	# —— 章节开场(悬浮卡片:关卡提示文字浮在背景之上) ——
-	_intro = Control.new()
-	_intro.visible = false
-	_intro.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_intro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var intro_shade := ColorRect.new()
-	intro_shade.color = Color(Ui.INK, 0.55)
-	intro_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	intro_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_intro.add_child(intro_shade)
-
-	# 卡片容器:PanelContainer 随内容撑开;装饰(硬投影/顶缘亮线/红色角刻度)
-	# 画在 draw 回调里,先于 stylebox 渲染,正好垫在底板之下
-	var card_center := CenterContainer.new()
-	card_center.name = "CardCenter"
-	card_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	card_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var card := PanelContainer.new()
-	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_theme_stylebox_override("panel",
-		Ui.sb(Ui.INK_2, 0, Color(Ui.PAPER, 0.18), 1, 36, 20))
-	card.draw.connect(func() -> void:
-		var r := Rect2(Vector2.ZERO, card.size)
+	# —— 开场卡装饰(硬投影 / 顶缘亮线 / 四角红刻度):画在 draw 回调,
+	# 先于 stylebox 渲染,正好垫在底板之下 ——
+	_intro_card.draw.connect(func() -> void:
+		var r := Rect2(Vector2.ZERO, _intro_card.size)
 		# 硬投影(整体位移的实心暗块,无模糊)
-		card.draw_rect(Rect2(r.position + Vector2(8, 10), r.size), Color(0, 0, 0, 0.42))
+		_intro_card.draw_rect(Rect2(r.position + Vector2(8, 10), r.size), Color(0, 0, 0, 0.42))
 		# 顶缘亮线与四角红色刻度(与档案页外框同语言)
-		card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.30))
+		_intro_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
 		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
 				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
 			var sx := -1.0 if corner.x == 0.0 else 1.0
 			var sy := -1.0 if corner.y == 0.0 else 1.0
-			card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Ui.RED, 3.0)
-			card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Ui.RED, 3.0))
-	card_center.add_child(card)
-	_intro_card = card
+			_intro_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
+			_intro_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
+	_intro_card.resized.connect(_layout_intro_skip)
 
-	# 紧凑竖排:编号 → 标题(红块+特粗字,整组居中) → 细线 → 提示正文
-	var ivb := VBoxContainer.new()
-	ivb.alignment = BoxContainer.ALIGNMENT_CENTER
-	ivb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ivb.add_theme_constant_override("separation", 7)
-	_intro_num = Ui.l("", 14, Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER)
-	# 标题用 HBox 整组居中(替代 poster_label:后者在空文本时最小尺寸被
-	# 算死,后设文字会导致标题偏出卡片中线)
-	_intro_title = HBoxContainer.new()
-	_intro_title.alignment = BoxContainer.ALIGNMENT_CENTER
-	_intro_title.add_theme_constant_override("separation", 12)
-	_intro_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var title_block := ColorRect.new()
-	title_block.color = Ui.RED
-	title_block.custom_minimum_size = Vector2(13, 13)
-	title_block.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	title_block.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_intro_title.add_child(title_block)
-	_intro_title.add_child(Ui.l("", 42, Ui.TITLE, Ui.PAPER))
-	_intro_text = Ui.l("", 18, Ui.BODY, Color(Ui.PAPER, 0.9), HORIZONTAL_ALIGNMENT_CENTER, false, 6)
-	_intro_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var txt_center := CenterContainer.new()
-	txt_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	txt_center.add_child(_intro_text)
-	ivb.add_child(_intro_num)
-	ivb.add_child(_intro_title)
-	ivb.add_child(Ui.rule(110, 3, Ui.RED))
-	ivb.add_child(txt_center)
-	card.add_child(ivb)
-	_intro.add_child(card_center)
-
-	# —— 卡片右上角:跳过整段提示 ——
-	_intro_skip = Button.new()
-	_intro_skip.text = "跳过 »"
-	_intro_skip.focus_mode = Control.FOCUS_NONE
+	# —— 卡片右上角跳过按钮:样式 + 统一微交互 ——
 	_intro_skip.add_theme_font_override("font", Ui.HEAD)
 	_intro_skip.add_theme_font_size_override("font_size", 14)
 	_intro_skip.add_theme_stylebox_override("normal",
-		Ui.sb(Color(Ui.INK_2, 0.92), 0, Color(Ui.PAPER, 0.30), 1, 12, 5))
-	_intro_skip.add_theme_stylebox_override("hover", Ui.sb(Ui.RED, 0, Ui.RED, 1, 12, 5))
+		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.30), 1, 12, 5))
+	_intro_skip.add_theme_stylebox_override("hover",
+		Ui.sb(Palette.I.red, 0, Palette.I.red, 1, 12, 5))
 	_intro_skip.add_theme_stylebox_override("pressed",
-		Ui.sb(Color(Ui.RED, 0.68), 0, Ui.RED, 1, 12, 5))
-	_intro_skip.add_theme_color_override("font_color", Color(Ui.PAPER, 0.85))
+		Ui.sb(Color(Palette.I.red, 0.68), 0, Palette.I.red, 1, 12, 5))
+	_intro_skip.add_theme_color_override("font_color", Color(Palette.I.paper, 0.85))
 	_intro_skip.add_theme_color_override("font_hover_color", Color.WHITE)
 	_intro_skip.add_theme_color_override("font_pressed_color", Color.WHITE)
 	Ui.wire_button(_intro_skip)
 	_intro_skip.pressed.connect(_dismiss_intro)
-	_intro_skip.visible = false
-	_intro.add_child(_intro_skip)
-	_intro_card.resized.connect(_layout_intro_skip)
-	root.add_child(_intro)
 
-	# —— 过关文字 ——
-	var complete_vb := VBoxContainer.new()
-	complete_vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	complete_vb.anchor_left = 0.5
-	complete_vb.anchor_right = 0.5
-	complete_vb.anchor_top = 0.30
-	complete_vb.anchor_bottom = 0.30
-	complete_vb.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	var complete_label := Ui.l("", 64, Ui.TITLE, Ui.PAPER, HORIZONTAL_ALIGNMENT_CENTER)
-	complete_label.name = "Text"
-	complete_vb.add_child(complete_label)
-	var complete_rule := Ui.rule(120, 5, Ui.RED)
-	complete_rule.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	complete_vb.add_child(complete_rule)
-	_complete = complete_vb
-	_complete.modulate = Color(1, 1, 1, 0)
-	root.add_child(complete_vb)
-
-	# —— 通关画面 ——
-	_win = Control.new()
-	_win.visible = false
-	_win.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_win.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var win_shade := ColorRect.new()
-	win_shade.color = Color(Ui.INK, 0.92)
-	win_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	win_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_win.add_child(win_shade)
-
-	var wvb := VBoxContainer.new()
-	wvb.anchor_left = 0.12
-	wvb.anchor_right = 0.88
-	wvb.anchor_top = 0.18
-	wvb.anchor_bottom = 0.68
-	wvb.alignment = BoxContainer.ALIGNMENT_CENTER
-	wvb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	wvb.add_theme_constant_override("separation", 14)
-	var win_kicker := Ui.l("GEOMETRIC CONSTRUCT · 第一幕 完演", 15, Ui.LIGHT, Ui.DIM,
-		HORIZONTAL_ALIGNMENT_CENTER)
-	var win_title := Ui.l("全 员 归 位", 72, Ui.TITLE, Ui.PAPER, HORIZONTAL_ALIGNMENT_CENTER)
-	wvb.add_child(win_kicker)
-	wvb.add_child(win_title)
-	var win_rule := Ui.rule(160, 4, Ui.RED)
-	win_rule.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	wvb.add_child(win_rule)
-	wvb.add_child(Ui.l("四个几何体,各归其位。", 20, Ui.BODY, Color(Ui.PAPER, 0.9),
-		HORIZONTAL_ALIGNMENT_CENTER))
-	var shapes_row := HBoxContainer.new()
-	shapes_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	shapes_row.add_theme_constant_override("separation", 26)
+	# —— 通关画面:四几何体徽标行(数据驱动)+ 文案双端自适应 ——
 	for c in Geometries.ALL:
 		var ico := TextureRect.new()
 		ico.texture = Ui.icon("characters/%s-flat.svg" % c.slug)
@@ -271,23 +85,47 @@ func _ready() -> void:
 		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		shapes_row.add_child(ico)
-	wvb.add_child(shapes_row)
-	if _touch_mode():
-		wvb.add_child(Ui.l("右上 重来 · 再走一遍        右上 暂停 · 回到标题", 16,
-			Ui.LIGHT, Ui.DIM, HORIZONTAL_ALIGNMENT_CENTER))
-	else:
-		wvb.add_child(Ui.l("空格 · 再走一遍        Esc · 回到标题", 16, Ui.LIGHT, Ui.DIM,
-			HORIZONTAL_ALIGNMENT_CENTER))
-	_win.add_child(wvb)
-	root.add_child(_win)
+		_shapes_row.add_child(ico)
+	_win_hint.text = "右上 重来 · 再走一遍        右上 暂停 · 回到标题" if touch \
+		else "空格 · 再走一遍        Esc · 回到标题"
 
-	# —— 全屏淡入淡出 ——
-	_fade = ColorRect.new()
-	_fade.color = Color(0, 0, 0, 1)
-	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.add_child(_fade)
+
+## 场景骨架的样式施加:颜色全部经 Palette 资源、文字预设经 Ui 工厂
+## (style 与 l 共享 ls 缓存);安全区内缩在此一并接管。
+func _apply_styles() -> void:
+	_root.theme = Ui.make_theme()
+	Adaptive.apply_safe_area(_root)
+	_root.resized.connect(func() -> void: Adaptive.apply_safe_area(_root))
+
+	(%NumPanel as PanelContainer).add_theme_stylebox_override("panel",
+		Ui.sb(Palette.I.red, 0, null, 0, 12, 4))
+	Ui.style(_level_num, 24, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.style(_level_total, 16, Ui.HEAD, Palette.I.dim)
+	Ui.style(_level_name, 22, Ui.HEAD, Palette.I.paper)
+	Ui.style(_coords, 18, Ui.LIGHT, Color(Palette.I.dim, 0.95))
+	Ui.style(_net_badge, 13, Ui.HEAD, Palette.I.orange)
+	_narration.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	Ui.style(_narration, 22, Ui.HEAD, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, true, 6)
+
+	%Shade.color = Color(Palette.I.ink, 0.55)
+	_intro_card.add_theme_stylebox_override("panel",
+		Ui.sb(Palette.I.ink_2, 0, Color(Palette.I.paper, 0.18), 1, 36, 20))
+	%TitleBlock.color = Palette.I.red
+	%IntroRule.color = Palette.I.red
+	Ui.style(_intro_num, 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.style(_intro_title_label, 42, Ui.TITLE, Palette.I.paper)
+	Ui.style(_intro_text, 18, Ui.BODY, Color(Palette.I.paper, 0.9),
+		HORIZONTAL_ALIGNMENT_CENTER, false, 6)
+
+	Ui.style(_complete_label, 64, Ui.TITLE, Palette.I.paper, HORIZONTAL_ALIGNMENT_CENTER)
+	%CompleteRule.color = Palette.I.red
+
+	%WinShade.color = Color(Palette.I.ink, 0.92)
+	Ui.style(%WinKicker, 15, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.style(%WinTitle, 72, Ui.TITLE, Palette.I.paper, HORIZONTAL_ALIGNMENT_CENTER)
+	%WinRule.color = Palette.I.red
+	Ui.style(%WinSub, 20, Ui.BODY, Color(Palette.I.paper, 0.9), HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.style(_win_hint, 16, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 ## 触屏模式:真触摸屏,或桌面用 --touch 强制开启(截图 / 调试一致)。
@@ -367,7 +205,7 @@ func _rebuild_hints(def: LevelDef) -> void:
 		ico.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_hint_row.add_child(ico)
 	var add_text := func(s: String):
-		_hint_row.add_child(Ui.l(s, 13, Ui.BODY, Ui.DIM, HORIZONTAL_ALIGNMENT_LEFT))
+		_hint_row.add_child(Ui.l(s, 13, Ui.BODY, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT))
 	var add_sep := func():
 		var c := Control.new()
 		c.custom_minimum_size = Vector2(6, 0)
@@ -413,7 +251,7 @@ func _rebuild_touch_hints(def: LevelDef) -> void:
 		can_swap = can_swap or cd.can_swap
 		can_sprint = can_sprint or (cd.can_sprint and cd.sprint_speed > cd.base_speed)
 	var add_text := func(s: String):
-		_hint_row.add_child(Ui.l(s, 13, Ui.BODY, Ui.DIM, HORIZONTAL_ALIGNMENT_LEFT))
+		_hint_row.add_child(Ui.l(s, 13, Ui.BODY, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT))
 	var add_sep := func():
 		var c := Control.new()
 		c.custom_minimum_size = Vector2(10, 0)
@@ -457,13 +295,6 @@ func set_level_info(def: LevelDef, num_label := "") -> void:
 ## 切换时不再销毁重建控件树(重建会让连点落在被释放的控件上,产生延迟/丢点)。
 ## 触控:gui_input 优先吃 InputEventScreenTouch(按下即发,零模拟延迟)并
 ## accept_event() 吞掉,避免 emulate_mouse 双发;120ms 防抖合并同手势双事件。
-signal chip_tapped(index: int)
-
-var _chips := {}          # geo_index -> {panel, label, check}
-var _chip_roster: Array = []
-var _net_badge: Label
-var _edge: Control        # 双人超距方向指示(net.md §3)
-
 
 ## 双人绑定点亮(binds = [{slot: 0/1, geo: 下标}]):各绑定色描边
 ## (P1 纸白 / P2 橙),net.md §3「roster chips 双人高亮」。
@@ -482,20 +313,20 @@ func refresh_roster(roster: Array, active: int, exited_mask: int,
 		var exited: bool = (exited_mask & (1 << idx)) != 0
 		var panel: PanelContainer = c["panel"]
 		panel.modulate = Color(1, 1, 1, 0.5) if exited else Color.WHITE
-		var border_col: Color = Color(Ui.PAPER, 0.16)
+		var border_col: Color = Color(Palette.I.paper, 0.16)
 		var border_w := 1
 		var filled := is_active
 		var bind = bind_of.get(idx)
 		if bind != null:
-			border_col = Color(Ui.PAPER, 0.95) if int(bind["slot"]) == 0 \
-				else Ui.ORANGE
+			border_col = Color(Palette.I.paper, 0.95) if int(bind["slot"]) == 0 \
+				else Palette.I.orange
 			border_w = 2
 			filled = true
 		if is_active:
-			border_col = Color(Ui.PAPER, 0.98)
+			border_col = Color(Palette.I.paper, 0.98)
 			border_w = 3 if bind != null else 2
 		panel.add_theme_stylebox_override("panel", Ui.sb(
-			Color(Ui.INK_2, 0.92 if filled else 0.7),
+			Color(Palette.I.ink_2, 0.92 if filled else 0.7),
 			0, border_col, border_w, 14, 8))
 		var lab: Label = c["label"]
 		# 双体芯片文字随当前半体切换(v0.21.0):操控界显示"界"、操控边
@@ -504,7 +335,7 @@ func refresh_roster(roster: Array, active: int, exited_mask: int,
 			lab.text = _pair_chip_text(idx)
 		lab.add_theme_font_override("font", Ui.HEAD if is_active else Ui.BODY)
 		lab.add_theme_color_override("font_color",
-			Color.WHITE if is_active else Color(Ui.PAPER, 0.75))
+			Color.WHITE if is_active else Color(Palette.I.paper, 0.75))
 		(c["check"] as TextureRect).visible = exited
 
 
@@ -535,7 +366,8 @@ func _rebuild_chips(roster: Array) -> void:
 			var fire := false
 			if ev is InputEventScreenTouch:
 				fire = (ev as InputEventScreenTouch).pressed
-			elif ev is InputEventMouseButton 					and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+			elif ev is InputEventMouseButton \
+					and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
 				fire = (ev as InputEventMouseButton).pressed
 			if not fire:
 				return
@@ -555,7 +387,7 @@ func _rebuild_chips(roster: Array) -> void:
 		hb.add_child(block)
 		var lab := Ui.l(
 			c.name + " / " + c.name_half if c.paired else c.name, 20,
-			Ui.BODY, Color(Ui.PAPER, 0.75), HORIZONTAL_ALIGNMENT_LEFT)
+			Ui.BODY, Color(Palette.I.paper, 0.75), HORIZONTAL_ALIGNMENT_LEFT)
 		hb.add_child(lab)
 		var check := TextureRect.new()
 		check.texture = Ui.icon("icons/check-flat.svg")
@@ -587,9 +419,7 @@ func narration(text: String, color: Color, dur := 3.2) -> void:
 
 func show_intro(kicker: String, def: LevelDef) -> void:
 	_intro_num.text = kicker
-	for n in _intro_title.get_children():
-		if n is Label:
-			(n as Label).text = def.name
+	_intro_title_label.text = def.name
 	_intro_text.text = _adapt_copy(def.intro)
 	# 正文宽度上限:可见区 72% 且不超过 860px,超长自动折行 —— 杜绝溢出边框
 	var vis := Adaptive.visible_size(get_viewport())
@@ -631,9 +461,7 @@ func _dismiss_intro() -> void:
 
 
 func show_complete(text := "归位。") -> void:
-	for c in _complete.get_children():
-		if c is Label:
-			(c as Label).text = text
+	_complete_label.text = text
 	_complete.reset_size()
 	_complete.scale = Vector2.ONE * 1.12
 	if _complete_tween != null:
@@ -666,63 +494,3 @@ func fade_to_black(dur: float, on_done: Callable) -> void:
 func set_net_badge(text: String) -> void:
 	_net_badge.text = text
 	_net_badge.visible = not text.is_empty()
-
-
-## 双人超距方向指示(net.md §3「超距时给方向指示」):
-## 两取景点相距超出屏幕对角 1.4 倍且镜头已拉到下限时,在画面边缘
-## 指向另一方。纯 HUD 演出,不参与机制。
-class EdgeIndicator extends Control:
-	const TRIG_MULT := 1.4
-	var _show := false
-
-	func _process(_delta: float) -> void:
-		var show_edge := false
-		var m = Main.I
-		if m != null and visible:
-			var targets: Array = m.camera_targets()
-			if targets.size() == 2:
-				var cam := get_viewport().get_camera_2d()
-				if cam != null and cam.zoom.x <= 0.64:
-					var d: float = targets[0].position.distance_to(targets[1].position)
-					var diag: float = get_viewport_rect().size.length()
-					if d > diag * TRIG_MULT:
-						show_edge = true
-						set_meta("to", targets[1].position)
-						set_meta("from", targets[0].position)
-		if show_edge != _show:
-			_show = show_edge
-			queue_redraw()
-		elif show_edge:
-			queue_redraw()   # 呼吸脉冲需逐帧
-
-	func _draw() -> void:
-		if not _show or not has_meta("to"):
-			return
-		var cam := get_viewport().get_camera_2d()
-		if cam == null:
-			return
-		var vp := get_viewport_rect().size
-		var to_p: Vector2 = cam.unproject_position(get_meta("to"))
-		var from_p: Vector2 = cam.unproject_position(get_meta("from"))
-		var dir := (to_p - from_p).normalized()
-		if dir == Vector2.ZERO:
-			return
-		# 求射线与画面内缩矩形的交点(边缘留白 46px)
-		var k := INF
-		if dir.x > 0.01:
-			k = minf(k, (vp.x - 46.0 - from_p.x) / dir.x)
-		elif dir.x < -0.01:
-			k = minf(k, (46.0 - from_p.x) / dir.x)
-		if dir.y > 0.01:
-			k = minf(k, (vp.y - 46.0 - from_p.y) / dir.y)
-		elif dir.y < -0.01:
-			k = minf(k, (46.0 - from_p.y) / dir.y)
-		if k == INF or k < 0.0:
-			return
-		var tip := from_p + dir * k
-		var pulse := 0.55 + 0.35 * sin(Time.get_ticks_msec() / 260.0)
-		draw_line(tip - dir * 30.0, tip - dir * 10.0, Color(Ui.RED, 0.9 * pulse), 3.0)
-		draw_line(tip - dir * 10.0, tip + Vector2(-dir.y, dir.x) * 7.0,
-			Color(Ui.RED, 0.9 * pulse), 3.0)
-		draw_line(tip - dir * 10.0, tip + Vector2(dir.y, -dir.x) * 7.0,
-			Color(Ui.RED, 0.9 * pulse), 3.0)

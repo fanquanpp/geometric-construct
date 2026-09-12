@@ -103,4 +103,4 @@ func _draw() -> void:
 	# 端点方块 + 折点中块(磁力感)
 	draw_rect(Rect2(pa - Vector2(4, 4), Vector2(8, 8)), Color(col, 0.95))
 	draw_rect(Rect2(pb - Vector2(4, 4), Vector2(8, 8)), Color(col, 0.95))
-	draw_rect(Rect2(mid + bow - Vector2(3, 3), Vector2(6, 6)), Color(Palette.PAPER, 0.9))
+	draw_rect(Rect2(mid + bow - Vector2(3, 3), Vector2(6, 6)), Color(Palette.I.paper, 0.9))

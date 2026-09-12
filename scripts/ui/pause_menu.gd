@@ -24,7 +24,7 @@ func _ready() -> void:
 	add_child(_root)
 
 	var dim := ColorRect.new()
-	dim.color = Color(Ui.INK, 0.78)
+	dim.color = Color(Palette.I.ink, 0.78)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(dim)
 	_dim = dim
@@ -36,7 +36,7 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(400, 0)
 	panel.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.98), 0, Color(Ui.PAPER, 0.2), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, Color(Palette.I.paper, 0.2), 1, 0, 0))
 	panel.pivot_offset = Vector2(200, 0)
 	center.add_child(panel)
 	Adaptive.register_card(panel)
@@ -48,7 +48,7 @@ func _ready() -> void:
 
 	# 标题条:红块 + 大字
 	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 12))
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
 	var title_vb := VBoxContainer.new()
 	title_vb.add_child(Ui.l("暂 停", 34, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
 	title_vb.add_child(Ui.l("PAUSED", 13, Ui.LIGHT, Color(1, 1, 1, 0.7),
@@ -60,11 +60,11 @@ func _ready() -> void:
 	body.add_theme_constant_override("separation", 10)
 	var body_wrap := PanelContainer.new()
 	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.98), 0, null, 0, 24, 20))
+		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, null, 0, 24, 20))
 	body_wrap.add_child(body)
 	vb.add_child(body_wrap)
 
-	body.add_child(Ui.l("稍作歇息,几何体们不会跑掉。", 14, Ui.LIGHT, Ui.DIM,
+	body.add_child(Ui.l("稍作歇息,几何体们不会跑掉。", 14, Ui.LIGHT, Palette.I.dim,
 		HORIZONTAL_ALIGNMENT_CENTER))
 
 	_resume = _make_button("继 续", func() -> void: m.resume_game())
@@ -82,7 +82,7 @@ func _ready() -> void:
 	body.add_child(_spacer(0, 4))
 	var esc_hint := "点按按钮继续游戏" if DisplayServer.is_touchscreen_available() \
 		else "Esc · 继续游戏"
-	body.add_child(Ui.l(esc_hint, 12, Ui.LIGHT, Color(Ui.DIM, 0.85),
+	body.add_child(Ui.l(esc_hint, 12, Ui.LIGHT, Color(Palette.I.dim, 0.85),
 		HORIZONTAL_ALIGNMENT_CENTER))
 
 

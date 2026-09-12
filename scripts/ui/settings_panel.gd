@@ -40,7 +40,7 @@ func _ready() -> void:
 	add_child(_root)
 
 	_shade = ColorRect.new()
-	_shade.color = Ui.INK
+	_shade.color = Palette.I.ink
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(_shade)
@@ -53,17 +53,17 @@ func _ready() -> void:
 	_card = PanelContainer.new()
 	_card.custom_minimum_size = Vector2(560, 0)
 	_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.98), 0, Color(Ui.PAPER, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
 	_card.draw.connect(func() -> void:
 		var r := Rect2(Vector2.ZERO, _card.size)
 		# 顶缘亮线 + 四角红色刻度(与几何档案外框同语言)
-		_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Ui.PAPER, 0.30))
+		_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
 		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
 				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
 			var sx := -1.0 if corner.x == 0.0 else 1.0
 			var sy := -1.0 if corner.y == 0.0 else 1.0
-			_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Ui.RED, 3.0)
-			_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Ui.RED, 3.0))
+			_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
+			_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
 	center.add_child(_card)
 	Adaptive.register_card(_card)
 
@@ -73,7 +73,7 @@ func _ready() -> void:
 
 	# —— 标题条:红块 + 大字(自带红色底条,与暂停菜单标题同语言) ——
 	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Ui.RED, 0, null, 0, 24, 12))
+	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
 	var title_vb := VBoxContainer.new()
 	title_vb.add_child(Ui.l("设 置", 34, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
 	title_vb.add_child(Ui.l("SETTINGS", 13, Ui.LIGHT, Color(1, 1, 1, 0.7),
@@ -85,7 +85,7 @@ func _ready() -> void:
 	body.add_theme_constant_override("separation", 10)
 	var body_wrap := PanelContainer.new()
 	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Ui.INK_2, 0.98), 0, null, 0, 24, 20))
+		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, null, 0, 24, 20))
 	body_wrap.add_child(body)
 	vb.add_child(body_wrap)
 
@@ -136,7 +136,7 @@ func _ready() -> void:
 	_sfx_slider.value_changed.connect(func(v: float) -> void:
 		SettingsManager.set_sfx_volume(v)
 		_sfx_value.text = "%d%%" % roundi(v * 100.0))
-	_sfx_value = Ui.l("100%", 15, Ui.HEAD, Ui.PAPER)
+	_sfx_value = Ui.l("100%", 15, Ui.HEAD, Palette.I.paper)
 	_sfx_value.custom_minimum_size = Vector2(56, 0)
 	_sfx_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	body.add_child(_row("音效音量", _sfx_slider, _sfx_value))
@@ -145,7 +145,7 @@ func _ready() -> void:
 	_amb_slider.value_changed.connect(func(v: float) -> void:
 		SettingsManager.set_ambience_volume(v)
 		_amb_value.text = "%d%%" % roundi(v * 100.0))
-	_amb_value = Ui.l("100%", 15, Ui.HEAD, Ui.PAPER)
+	_amb_value = Ui.l("100%", 15, Ui.HEAD, Palette.I.paper)
 	_amb_value.custom_minimum_size = Vector2(56, 0)
 	_amb_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	body.add_child(_row("垫乐 / BGM", _amb_slider, _amb_value))
@@ -168,7 +168,7 @@ func _ready() -> void:
 	var foot := HBoxContainer.new()
 	foot.add_theme_constant_override("separation", 12)
 	var ver := Ui.l("%s · %s" % [Version.GAME_TITLE_EN, Version.full_string()],
-		12, Ui.LIGHT, Ui.DIM)
+		12, Ui.LIGHT, Palette.I.dim)
 	ver.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	foot.add_child(ver)
 	var spacer := Control.new()
@@ -192,28 +192,28 @@ func _section_label(text: String) -> Control:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 8)
 	var mark := ColorRect.new()
-	mark.color = Ui.RED
+	mark.color = Palette.I.red
 	mark.custom_minimum_size = Vector2(10, 10)
 	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(mark)
-	hb.add_child(Ui.l(text, 16, Ui.HEAD, Ui.PAPER))
+	hb.add_child(Ui.l(text, 16, Ui.HEAD, Palette.I.paper))
 	col.add_child(hb)
 	return col
 
 
 func _caption(text: String) -> Label:
-	return Ui.l(text, 12, Ui.LIGHT, Ui.DIM)
+	return Ui.l(text, 12, Ui.LIGHT, Palette.I.dim)
 
 
 func _rule() -> Control:
-	return Ui.rule(0, 1, Color(Ui.PAPER, 0.10))
+	return Ui.rule(0, 1, Color(Palette.I.paper, 0.10))
 
 
 ## 标签在左、控件在右的一行。
 func _row(label_text: String, ctl: Control, extra: Control = null) -> HBoxContainer:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 12)
-	var lab := Ui.l(label_text, 15, Ui.BODY, Color(Ui.PAPER, 0.88))
+	var lab := Ui.l(label_text, 15, Ui.BODY, Color(Palette.I.paper, 0.88))
 	lab.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(lab)
 	var spacer := Control.new()
@@ -252,11 +252,11 @@ func _volume_slider() -> HSlider:
 	s.custom_minimum_size = Vector2(200, 28)
 	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	# 构成主义滑轨:细平轨 + 红色已选段(默认抓手图标保留,可拖)
-	var track := Ui.sb(Color(Ui.PAPER, 0.16), 0, null, 0, 0, 0)
+	var track := Ui.sb(Color(Palette.I.paper, 0.16), 0, null, 0, 0, 0)
 	track.content_margin_top = 3
 	track.content_margin_bottom = 3
 	s.add_theme_stylebox_override("slider", track)
-	var fill := Ui.sb(Ui.RED, 0, null, 0, 0, 0)
+	var fill := Ui.sb(Palette.I.red, 0, null, 0, 0, 0)
 	fill.content_margin_top = 3
 	fill.content_margin_bottom = 3
 	s.add_theme_stylebox_override("grabber_area", fill)

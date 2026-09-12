@@ -19,14 +19,16 @@ geometric-construct/
 │   ├── world/               #   level_root(表现层宿主,预连接 character_created)
 │   │                        #   / backdrop / camera_rig
 │   ├── entities/            #   player(几何体实体;碰撞形按角色动态建,豁免)
-│   ├── ui/                  #   hud / menu_layer / archive_panel / settings_panel
-│   │                        #   / pause_menu / touch_controls / net_room_layer
-│   │                        #   / rogue_layer / boot_intro / story_layer 十层
+│   ├── ui/                  #   hud(结构骨架 + EdgeIndicator 子场景)/ menu_layer
+│   │                        #   / archive_panel / settings_panel / pause_menu
+│   │                        #   / touch_controls / net_room_layer / rogue_layer
+│   │                        #   / boot_intro / story_layer
 │   ├── fx/                  #   ambience
 │   ├── modes/rogue/         #   rogue_director
 │   └── net/                 #   net_session
 ├── data/                    # 静态数据资源 .tres(R2:数值权威,Inspector 直调;
 │   │                        #   resource 只作静态数据,禁运行时写入)
+│   ├── palette.tres         #   全局色板(Palette;art-style.md = 规范)
 │   ├── tuning/              #   movement_default.tres(手感 31 项,MovementTuning)
 │   └── characters/          #   dash / spring / fall / roll / pair.tres(GeometryDef)
 ├── scripts/
@@ -79,7 +81,9 @@ geometric-construct/
 │   ├── ui/                  # 全部 UI(CanvasLayer)
 │   │   ├── ui.gd            #   主题工厂:调色板/字体/StyleBox/Theme/文字组件
 │   │   ├── adaptive.gd      #   移动端自适应:设计稿缩放居中 / 安全区避让
-│   │   ├── hud.gd           #   游戏 HUD(队伍 chips/章节徽章/按键提示/开场/结算)
+│   │   ├── hud.gd           #   游戏 HUD(队伍 chips/章节徽章/按键提示/开场/结算;
+│   │   │                    #   结构骨架在 scenes/ui/hud.tscn,v0.32.0)
+│   │   ├── edge_indicator.gd#   双人超距方向指示(scenes/ui/edge_indicator.tscn)
 │   │   ├── net_room_layer.gd#   N2 房间流程页(带 30:选择/创建/加入/等待;Flow 型)
 │   │   ├── menu_layer.gd    #   标题菜单(动态标题 TitleMark + 分层入场演出)
 │   │   ├── title_mark.gd    #   动态标题:逐字落位 / 呼吸浮动 / 印刷错位 / 红块节拍

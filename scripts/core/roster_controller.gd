@@ -191,7 +191,7 @@ func on_player_died(p: Player) -> void:
 				and LevelData.act_index_of(main._current) <= 0:
 			death_hinted = true
 			main._hud.narration("摔碎不是终结 · 空白处会把你在起点重新拼好",
-				Ui.RED, 3.4)
+				Palette.I.red, 3.4)
 	refresh_roster()
 	# 肉鸽:重拼消耗一段红色刻度,耗尽则本局落幕
 	if main._rogue:

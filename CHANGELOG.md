@@ -3,6 +3,46 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.32.0(2026-09-13)
+
+> **UI 侧资源化与场景化(M-2 全量落地 + M-3 hud 批)**:调色板整体
+> 迁入 .tres(386 处引用改读资源,颜色 Inspector 直调);HUD 结构
+> 骨架落 scenes/ui/hud.tscn(EdgeIndicator 抽独立场景),hud.gd
+> 728→~480 行改节点引用 + 样式施加。像素回归:panel 分镜 8 张
+> 0.0000% 全等,其余为动画相位噪声;五门禁全绿。
+
+### 新增
+- **Palette 资源化(R2 / M-2)**:`scripts/data/palette.gd` 改
+  Resource(10 色 @export)+ `data/palette.tres`,`Palette.I` 静态
+  访问;全库 386 处 `Palette.X / Ui.X` 颜色引用改读资源,ui.gd 兼容
+  别名 const 退役;新增 `Ui.style()`——对场景内既有 Label 施加文字
+  预设(与 `l()` 共享 ls 缓存),作为场景节点的样式入口。
+- **HUD 结构骨架 `scenes/ui/hud.tscn`**:全部常驻结构域(队伍 chips
+  条 / 章节标题行 / 提示条 / 坐标 / 联机徽标 / 旁白 / 开场卡 / 结算 /
+  通关 / 淡入淡出)以节点骨架入场景(`%` 唯一名引用);hud.gd 改为
+  行为 + 运行时样式施加(`Hud._apply_styles()` 集中,场景文件零色值,
+  Palette SSOT 不破)。chips / 提示条内容仍为运行时动态生成(随名册
+  / 能力,动态生成豁免)。
+- **`EdgeIndicator` 独立场景**(scenes/ui/edge_indicator.tscn,自
+  hud.gd 内部类抽出,REFACTOR P4-2 首项)。
+
+### 变更
+- **ui.gd 主题工厂拆分(P4-3)裁定收口不拆**:palette 已 .tres 化
+  (M-2),typography / widgets 拆分对 259 行内聚工厂无净收益,
+  REFACTOR 台账注记。
+- art-style.md 头部改口:色板数值唯一落点 = data/palette.tres。
+- AGENTS 坑速查增补:手写 .tscn 的 `%` 引用节点必须标
+  `unique_name_in_owner = true`,漏标不报缺节点、运行时才是 null
+  (本轮 hud 骨架实踩)。
+
+### 门禁
+- check-only 72 脚本全绿;trait_check ALL PASS;gridcheck warns=11
+  同基线;recalltest 3 PASS;dualtest ALL PASS;menushot / autoshot /
+  panelshot 零脚本错误。
+- 像素回归(panelshot 11 张 + menu / L0):geo0-4 / bld0 / keys /
+  mech0 = **0.0000% 全等**;menu 0.58% / L0 0.25~0.35% / mech 动态
+  精灵页 6.16% = 动画相位噪声带(静态内容零漂移,按像素噪底法裁定)。
+
 ## v0.31.1(2026-09-13)
 
 > **特性补实 + 废弃遗留清扫(全项目洞察普查后的增删改查)**。

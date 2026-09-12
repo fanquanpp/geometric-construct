@@ -52,7 +52,7 @@ func play(ks_path: String) -> void:
 		"KonadoUI/CanvasLayer2/DialogueInterface/KonadoDialogueBox")
 	if box != null:
 		box.name_size = 18
-		box.name_color = Ui.RED
+		box.name_color = Palette.I.red
 		box.dialogue_font_size = 20
 		box.dialogue_margins = 56
 		box.dialogue_height = clampi(int(box_h) - 104, 44, 96)
@@ -96,7 +96,7 @@ func play(ks_path: String) -> void:
 		box_bg.custom_minimum_size = Vector2(0, box_h)
 		var box_sb := StyleBoxFlat.new()
 		box_sb.bg_color = Color(0.063, 0.071, 0.086, 0.95)
-		box_sb.border_color = Color(Ui.PAPER, 0.30)
+		box_sb.border_color = Color(Palette.I.paper, 0.30)
 		box_sb.border_width_top = 2
 		box_bg.add_theme_stylebox_override("panel", box_sb)
 	# 文本容器撑满矮盒:内容垂直居中,避免文字贴顶、盒底大片留白
@@ -143,11 +143,11 @@ func _add_skip_button(box: Control, box_h: float) -> void:
 	skip.add_theme_font_override("font", Ui.HEAD)
 	skip.add_theme_font_size_override("font_size", 16)
 	skip.add_theme_stylebox_override("normal",
-		Ui.sb(Color(Ui.INK_2, 0.92), 0, Color(Ui.PAPER, 0.38), 1, 16, 7))
-	skip.add_theme_stylebox_override("hover", Ui.sb(Ui.RED, 0, Ui.RED, 1, 16, 7))
+		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.38), 1, 16, 7))
+	skip.add_theme_stylebox_override("hover", Ui.sb(Palette.I.red, 0, Palette.I.red, 1, 16, 7))
 	skip.add_theme_stylebox_override("pressed",
-		Ui.sb(Color(Ui.RED, 0.68), 0, Ui.RED, 1, 16, 7))
-	skip.add_theme_color_override("font_color", Color(Ui.PAPER, 0.92))
+		Ui.sb(Color(Palette.I.red, 0.68), 0, Palette.I.red, 1, 16, 7))
+	skip.add_theme_color_override("font_color", Color(Palette.I.paper, 0.92))
 	skip.add_theme_color_override("font_hover_color", Color.WHITE)
 	skip.add_theme_color_override("font_pressed_color", Color.WHITE)
 	Ui.wire_button(skip)
