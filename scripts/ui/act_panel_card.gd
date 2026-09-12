@@ -19,6 +19,7 @@ var _tween: Tween
 @onready var _card: PanelContainer = %Card
 @onready var _title_label: Label = %TitleLabel
 @onready var _rows: VBoxContainer = %Rows
+var _row_by_li := {}   # li -> 行按钮(错误反馈按行定位)
 @onready var _level_hint: Label = %LevelHint
 @onready var _keys_hint: Label = %KeysHint
 @onready var _back_btn: Button = %BackBtn
@@ -95,6 +96,7 @@ func is_open() -> bool:
 ## 幕条目可带 "total"(预设场次总数):超出已制作场次的编号渲染为
 ## 「未上演」占位行 —— 只表意剧目规模,不可开演。
 func _populate_rows(idx: int) -> void:
+	_row_by_li.clear()
 	for c in _rows.get_children():
 		c.queue_free()
 	var act: Dictionary = LevelData.ACTS[idx]
@@ -130,6 +132,7 @@ func _populate_rows(idx: int) -> void:
 			_level_hint.text = def.intro.replace("\n", "  "))
 		b.pressed.connect(func() -> void:
 			level_pressed.emit(li))
+		_row_by_li[li] = b
 		_rows.add_child(b)
 
 		# 右侧状态角标(钉在按钮右缘,不参与点击)。
@@ -150,6 +153,11 @@ func _populate_rows(idx: int) -> void:
 
 
 ## 未上演占位行:表意本幕的预设场次规模,不可开演,点击只发信号由宿主反馈。
+## 锁定行错误反馈(fx-light 卷二 Error 态):宿主播 ui_error 后调用本方法。
+func error_feedback_row(li: int) -> void:
+	Ui.error_feedback(_row_by_li.get(li))
+
+
 func _add_wip_row(k: int) -> void:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(700, 54)

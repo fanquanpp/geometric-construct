@@ -12,6 +12,7 @@ const WHEEL_FLOAT := "float"
 
 static var wheel_mode := WHEEL_FIXED
 static var vibration := true          # 触感反馈(按下虚拟按键轻震)
+static var reduced_motion := false    # 减动效(fx-light §4.4:关 stagger/脉冲/抖动,保留硬切)
 static var sfx_volume := 1.0          # 音效音量 0.0 - 1.0(线性)
 static var ambience_volume := 1.0     # 环境垫乐音量 0.0 - 1.0(线性)
 
@@ -31,6 +32,7 @@ static func load_settings() -> void:
 	if wheel_mode != WHEEL_FIXED and wheel_mode != WHEEL_FLOAT:
 		wheel_mode = WHEEL_FIXED
 	vibration = bool(cfg.get_value("control", "vibration", true))
+	reduced_motion = bool(cfg.get_value("accessibility", "reduced_motion", false))
 	sfx_volume = clampf(float(cfg.get_value("audio", "sfx", 1.0)), 0.0, 1.0)
 	ambience_volume = clampf(float(cfg.get_value("audio", "ambience", 1.0)), 0.0, 1.0)
 	var res_str := str(cfg.get_value("video", "resolution", "1280x720"))
@@ -44,6 +46,7 @@ static func write_settings() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("control", "wheel_mode", wheel_mode)
 	cfg.set_value("control", "vibration", vibration)
+	cfg.set_value("accessibility", "reduced_motion", reduced_motion)
 	cfg.set_value("audio", "sfx", sfx_volume)
 	cfg.set_value("audio", "ambience", ambience_volume)
 	cfg.set_value("video", "resolution", "%dx%d" % [resolution.x, resolution.y])
@@ -74,6 +77,11 @@ static func haptic(ms: int) -> void:
 static func set_sfx_volume(v: float) -> void:
 	sfx_volume = clampf(v, 0.0, 1.0)
 	Sfx.set_volume_scale(sfx_volume)
+	write_settings()
+
+
+static func set_reduced_motion(on: bool) -> void:
+	reduced_motion = on
 	write_settings()
 
 

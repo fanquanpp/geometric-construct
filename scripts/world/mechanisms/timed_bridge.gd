@@ -15,6 +15,7 @@ var layer_bit := 1
 var hl_color := Color(0, 0, 0, 0)   # 专属高亮色(FocusDriver 写入,§7.10)
 var _t := 0.0
 var _solid := true
+var _warning := false   # 翻转前 0.75s 预警窗(presentation 卷五五态模板)
 var _beat_phase := 0.0   # 启动时对齐到的节拍相位
 var _occ: LightOccluder2D   # 遮挡体随实/虚切换(虚化 = 不投影)
 
@@ -43,6 +44,14 @@ func _physics_process(delta: float) -> void:
 	var cycle := maxf(on_time + off_time, 2.0)
 	var t := fposmod(_t + phase, cycle)
 	var solid := t < on_time
+	# WARNING 态(五态模板 SOLID→WARNING→PHASE_OUT→VOID→RECONSTRUCT):
+	# 翻转前 0.75s 边缘红刻度高频闪——「出手时机」从可预读升级为可预警
+	var t_to_flip := (on_time - t) if solid else (cycle - t)
+	var warning := t_to_flip < 0.75
+	if warning != _warning:
+		_warning = warning
+	if warning:
+		queue_redraw()   # 预警窗内逐帧重绘(8Hz 闪烁由 _draw 按 Time 采样)
 	if solid != _solid:
 		_solid = solid
 		# 运行时碰撞位切换(levels.md §7.6):虚化 = 全体不可踩
@@ -77,5 +86,9 @@ func _draw() -> void:
 				Color(Palette.I.paper, 0.30))
 			x += seg * 2.0
 		draw_rect(r, Color(Palette.I.paper, 0.16), false, 1.0)
+	# WARNING 预警描边:红刻度 8Hz 硬闪(M9 Time 采样,减动效门控)
+	if _warning and not SettingsManager.reduced_motion:
+		var blink := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 62.5)
+		draw_rect(r, Color(Palette.I.red, 0.10 + 0.30 * blink), false, 2.0)
 	# 专属高亮描边(呼吸脉冲,§7.10)
 	TerrainKit.draw_focus(self, r, hl_color)

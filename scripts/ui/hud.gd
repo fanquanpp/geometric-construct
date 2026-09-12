@@ -38,10 +38,29 @@ var _chip_roster: Array = []
 @onready var _shapes_row: HBoxContainer = %ShapesRow
 @onready var _fade: ColorRect = %Fade
 
+var _fx: TransitionFX                    # 构成主义转场层(v0.37)
+var _anchor_flash := {                   # 置换锚闪(刻度带色序互换,≤0.15s)
+	"layer": null, "active": false, "t": 0.0}
+
 
 func _ready() -> void:
 	var touch := _touch_mode()
 	_apply_styles()
+	# —— 构成主义转场层(motion.md §2.3 实装,黑场之外的三类大流转)——
+	_fx = TransitionFX.new()
+	add_child(_fx)
+	# —— 置换锚闪画布(全屏 Control,常驻透明,置换时画上下刻度带)——
+	var flash_layer := CanvasLayer.new()
+	flash_layer.layer = 90
+	var flash_ctl := Control.new()
+	flash_ctl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	flash_ctl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash_ctl.visible = false
+	flash_ctl.draw.connect(_anchor_flash_draw)
+	flash_layer.add_child(flash_ctl)
+	add_child(flash_layer)
+	_anchor_flash["layer"] = flash_layer
+	_anchor_flash["ctl"] = flash_ctl
 	if touch:
 		_narration.anchor_top = 0.68
 		_narration.anchor_bottom = 0.80
@@ -145,9 +164,14 @@ func _adapt_copy(text: String) -> String:
 
 
 ## 左下角坐标:实时显示受控几何体的世界坐标(单位:格,1 格 = 100 px)。
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _intro.visible:
 		_layout_intro_skip()
+	if _anchor_flash.active:
+		_anchor_flash.t += delta
+		if _anchor_flash.t >= 0.14:
+			_anchor_flash.active = false
+			(_anchor_flash["ctl"] as Control).visible = false
 	var m = Main.I
 	if m == null or m.players.is_empty() or m.view_slot() < 0 \
 			or m.view_slot() >= m.players.size():
@@ -479,15 +503,67 @@ func show_win(on: bool) -> void:
 	_win.visible = on
 
 
+## ———— 转场(全部委托 TransitionFX;%Fade 保留为兼容占位)————
+
 func fade_from_black() -> void:
-	_fade.color = Color(0, 0, 0, 1)
-	create_tween().tween_property(_fade, "color:a", 0.0, 0.55)
+	_fx.reveal(TransitionFX.Style.FADE, 0.55)
 
 
 func fade_to_black(dur: float, on_done: Callable) -> void:
-	var tw := create_tween()
-	tw.tween_property(_fade, "color:a", 1.0, dur)
-	tw.tween_callback(on_done)
+	_fx.transition(TransitionFX.Style.FADE, dur, on_done)
+
+
+## 斜向扫掠(45° 红缘):换关 / 回菜单(M2 场景档)。
+func transition_sweep(dur: float, on_covered: Callable) -> void:
+	_fx.transition(TransitionFX.Style.SWEEP, dur, on_covered)
+
+
+## 阶跃溶解 · 红色刻度块:肉鸽片段节奏(开局即开场)。
+func transition_blocks(dur: float, on_covered: Callable) -> void:
+	_fx.transition(TransitionFX.Style.BLOCKS_RED, dur, on_covered)
+
+
+## 取景框四角收拢后揭开:进关卡(motion.md §2.3「取景框四角收拢」)。
+func transition_corners(dur: float, on_covered: Callable) -> void:
+	_fx.transition(TransitionFX.Style.CORNERS, dur, on_covered)
+
+
+## 取景框四角揭开(内容已就位的入场 reveal;reduced_motion = 硬切)。
+func reveal_corners() -> void:
+	_fx.reveal(TransitionFX.Style.CORNERS, 0.4)
+
+
+## 置换锚闪(fx-light 卷一 P0:「世界翻了,刻度是锚」)——上下刻度带
+## 色序互换一闪,≤0.15s 硬切;逆置换时由 Main 触发。
+func swap_anchor_flash() -> void:
+	if _anchor_flash.active or SettingsManager.reduced_motion:
+		return
+	var ctl: Control = _anchor_flash["ctl"]
+	_anchor_flash.active = true
+	_anchor_flash.t = 0.0
+	ctl.visible = true
+	ctl.queue_redraw()
+
+
+func _anchor_flash_draw() -> void:
+	var ctl: Control = _anchor_flash["ctl"]
+	var vs := ctl.get_viewport_rect().size
+	var band := 10.0
+	var step := 48.0
+	# 上带:红底纸白刻度;下带:互换(色序互换 = 世界翻了,锚还在)
+	ctl.draw_rect(Rect2(0, 0, vs.x, band), Color(Palette.I.red, 0.55))
+	ctl.draw_rect(Rect2(0, vs.y - band, vs.x, band),
+		Color(Palette.I.paper, 0.30))
+	var x := 0.0
+	while x < vs.x:
+		ctl.draw_rect(Rect2(x + 12, 2, 20, band - 4),
+			Color(Palette.I.paper, 0.65))
+		ctl.draw_rect(Rect2(x + 28, vs.y - band + 2, 20, band - 4),
+			Color(Palette.I.red, 0.75))
+		x += step
+
+
+
 
 
 ## 联机徽标:主机/客机 + 房名(net.md §7 房间 UI 的局内延伸)。

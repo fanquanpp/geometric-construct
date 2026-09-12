@@ -21,6 +21,8 @@ func on_switch() -> void:
 
 ## 冲击瞬间的镜头微震(死亡 / 重落地),连续冲击可叠加,快速衰减。
 func kick(strength := 6.0) -> void:
+	if SettingsManager.reduced_motion:
+		return   # 减动效:关闭语义化震动(fx-light §4.4)
 	_kick = minf(_kick + strength, 12.0)
 
 func _physics_process(delta: float) -> void:

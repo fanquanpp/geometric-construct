@@ -97,6 +97,17 @@ func _ready() -> void:
 
 	body.add_child(_rule())
 
+	# ———— 无障碍(fx-light §4.4:减动效——关 stagger/脉冲/抖动,保留硬切)————
+	body.add_child(_section_label("无障碍 ACCESSIBILITY"))
+	var motion_btn := _toggle_btn()
+	motion_btn.button_pressed = SettingsManager.reduced_motion
+	motion_btn.toggled.connect(func(on: bool) -> void:
+		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
+		SettingsManager.set_reduced_motion(on))
+	body.add_child(_row("减动效(关闭震屏 / 演出转场,保留硬切)", motion_btn))
+
+	body.add_child(_rule())
+
 	# ———— 调试(双端;坐标化辅助设计,levels.md §8.3)————
 	body.add_child(_section_label("调试 DEBUG"))
 	var dbg_btn := _toggle_btn()

@@ -80,6 +80,7 @@ var _shot_level := 0
 var _shot_dir := ""
 var _door_shot := false
 var _recall_shot := false       # --recalltest:召回链路自测(动作注册/按下/传送)
+var _transition_shot := false   # --transitionshot:三式转场覆盖/揭开分镜
 var _dual_test := false         # --dualtest:同屏双人自测(绑定/分区/禁切/死亡/到站)
 var _dual_shot := false
 var _room_shot := false   # --roomshot:房间流程页分镜(UI 图册)         # --dualshot:同屏双人视觉分镜(chips 双高亮/双取景)
@@ -251,7 +252,7 @@ func start_level(index: int, intro := true) -> void:
 	_hud.show_win(false)
 	_hud.set_level_info(_level_def)
 	_refresh_roster()
-	_hud.fade_from_black()
+	_hud.reveal_corners()
 	if intro:
 		var act_name := "序章" if act_i <= 0 else str(LevelData.ACTS[act_i]["name"])
 		_hud.show_intro("%s · 第 %d 场 · %s" % [act_name, LevelData.scene_no_of(_current),
@@ -622,7 +623,7 @@ func _restart_level() -> void:
 	Sfx.play("restart")
 	# 肉鸽局内重来:重开当前片段(不计死亡,不烧刻度)
 	if _rogue:
-		_hud.fade_to_black(0.25, func() -> void: start_rogue_fragment(_level_def))
+		_hud.transition_blocks(0.3, func() -> void: start_rogue_fragment(_level_def))
 	else:
 		_hud.fade_to_black(0.25, func() -> void: start_level(_current))
 	_state = State.TRANSITION
@@ -832,6 +833,12 @@ func set_checkpoint(body_key: int, pos: Vector2) -> void:
 	roster.set_checkpoint(body_key, pos)
 
 
+## 置换锚闪(fx-light 卷一 P0:世界翻了,刻度是锚——上下刻度带色序互换一闪)。
+func hud_swap_flash() -> void:
+	if _hud != null:
+		_hud.swap_anchor_flash()
+
+
 ## 加速门首次强化时的旁白提示。
 func notify_buff(mult: float, gd: GeometryDef) -> void:
 	if _hud != null:
@@ -901,7 +908,7 @@ func _after_complete() -> void:
 			get_tree().paused = true
 			show_story("epilogue")
 	else:
-		_hud.fade_to_black(0.5, func() -> void: start_level(_current + 1))
+		_hud.transition_sweep(0.55, func() -> void: start_level(_current + 1))
 
 
 # ———————————————— 自动截图(开发调试) ————————————————
@@ -923,6 +930,8 @@ func _parse_auto_shot() -> void:
 			_door_shot = true
 		elif raw == "--recalltest":
 			_recall_shot = true
+		elif raw == "--transitionshot":
+			_transition_shot = true
 		elif raw == "--dualtest":
 			_dual_test = true
 		elif raw == "--dualshot":
@@ -993,6 +1002,8 @@ func _parse_auto_shot() -> void:
 			h.run_door_shot()
 		if _recall_shot:
 			h.run_recall_test()
+		if _transition_shot:
+			h.run_transition_shot()
 		if _tap_shot:
 			h.run_tap_shot()
 		if _dual_test:

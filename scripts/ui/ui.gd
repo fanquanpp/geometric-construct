@@ -233,11 +233,28 @@ static func wire_button(b: Button, click_sfx := "ui_click") -> void:
 	b.mouse_exited.connect(func() -> void: _button_scale(b, 1.0))
 	b.focus_entered.connect(func() -> void: _button_scale(b, 1.03))
 	b.focus_exited.connect(func() -> void: _button_scale(b, 1.0))
-	b.button_down.connect(func() -> void: _button_scale(b, 0.97))
+	b.button_down.connect(func() -> void: _button_scale(b, 0.92))
 	b.button_up.connect(func() -> void: _button_scale(b, 1.0))
 	b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 	if click_sfx != "":
 		b.pressed.connect(func() -> void: Sfx.play(click_sfx))
+
+
+## 错误反馈(fx-light 卷二 Error 态视觉半边:沿轴抖动 + 红色刻度闪;
+## 音由调用方播 ui_error)。抖动受减动效门控(关抖动,保留红色闪)。
+static func error_feedback(node: Control) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	if not SettingsManager.reduced_motion:
+		var origin: Vector2 = node.position
+		var shake := node.create_tween()
+		for offset in [4.0, -4.0, 3.0, -3.0, 0.0]:
+			shake.tween_property(node, "position:x", origin.x + offset, 0.035)
+	var flash := node.create_tween()
+	for a in [0.5, 1.0, 0.5, 1.0]:
+		flash.tween_property(node, "modulate",
+			Color(Palette.I.red.r, Palette.I.red.g, Palette.I.red.b, a), 0.05)
+	flash.tween_property(node, "modulate", Color.WHITE, 0.05)
 
 
 static func _button_scale(b: Button, target: float) -> void:

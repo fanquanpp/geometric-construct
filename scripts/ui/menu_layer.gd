@@ -226,6 +226,7 @@ func try_open_act(idx: int) -> void:
 		_open_act_panel(idx)
 	else:
 		Sfx.play("ui_error")
+		Ui.error_feedback(_act_btns[idx])
 		toast("%s · %s — %s,敬请期待" % [act["name"], act["title"],
 			"开发中" if String(act["hint"]).begins_with("开发中") else "未开演"])
 
@@ -241,6 +242,7 @@ func _on_level_pressed(li: int) -> void:
 	var def: LevelDef = LevelData.LEVELS[li]
 	if li > _unlocked:
 		Sfx.play("ui_error")
+		_act_panel.error_feedback_row(li)
 		toast("%02d %s — 先通关前一场" % [LevelData.scene_no_of(li), def.name])
 		return
 	Sfx.play("ui_click")
@@ -292,6 +294,7 @@ func act_level_digit(digit: int) -> void:
 	var li: int = levels[digit - 1]
 	if li > _unlocked:
 		Sfx.play("ui_error")
+		_act_panel.error_feedback_row(li)
 		toast("%02d — 先通关前一场" % digit)
 		return
 	Sfx.play("ui_click")

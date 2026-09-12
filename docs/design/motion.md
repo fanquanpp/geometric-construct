@@ -74,10 +74,14 @@ complete/fanfare/start/restart/pause/resume + ui_* 系列 + story_next
 2. **转场时长档**(M2 场景转场 0.5–0.8s 的落位):重开 0.25s(快,失败重试
    不拖沓)/ 换关 0.5s / 回菜单 0.5s;同屏只允许一个转场在飞
    (`_complete_seq` 序列号已防重入)。
-3. **构成主义转场(规划)**:纯黑渐变保持为"中性默认";三类**大流转**
-   配专属语言——肉鸽开局(红色刻度块横向擦除 wipe)/ 进关卡
-   (取景框四角收拢)/ 幕间换幕(折线幕帘);TitleMark 的印刷错位故障
-   为同语言资产可复用。逐项立项,不批量替换现有黑场。
+3. **构成主义转场(v0.37 首批实装)**:纯黑渐变保持为"中性默认"
+   (重开快档 0.25s 保留);三类**大流转**落地其二——肉鸽片段节奏
+   (红色刻度块阶跃溶解,`BLOCKS_RED`)/ 换关(斜向扫掠 45° 红缘,
+   `SWEEP`)/ 进关卡(取景框四角收拢揭开,`CORNERS`);宿主 = Hud 内
+   TransitionFX 层(不引入 autoload,§2.1 裁定不变),同屏单飞,
+   shader 两枚按 fx-light 卷三准入登记。幕间折线幕帘仍为规划。
+   验收:`--transitionshot` 分镜 + `tests/transition_check.gd` 断言
+   (四式 covered 恰一次 / 单飞 / 减动效硬切 / shader 可实例化)。
 4. **出入场方向律**(M3 直线优先的页面版):面板自上而下入场、
    卡片中心 BACK 弹出、列表自上而下 stagger;禁止斜向滑入(除非 45° 折线感)。
 
@@ -127,6 +131,15 @@ complete/fanfare/start/restart/pause/resume + ui_* 系列 + story_next
 - 音视效联动验收:`--rogueautotest` 全流程跑通 = 打点音链完整触发。
 
 ## 7. 修订记录
+
+- **v0.37(2026-09-13)**:§2.3 构成主义转场首批实装(斜向扫掠 / 红色
+  刻度块 / 取景框四角,TransitionFX 层 + 白名单 shader 两枚);
+  §3 玩法配合——限时桥补 WARNING 预警态(翻转前 0.75s 红刻度 8Hz 硬闪,
+  五态模板首二态落地,减动效门控);UI_FEEDBACK Error 态视觉半边落地
+  (`Ui.error_feedback`:沿轴抖动 + 红闪,音侧 ui_error 既有);按钮按下
+  缩放 0.97 → 0.92 对齐 fx-light §4.2 规格;§4.4 减动效设置项落地
+  (SettingsManager.reduced_motion:关 kick/演出转场/抖动,保留硬切)。
+  置换锚闪 P0 落地(逆置换时 HUD 上下刻度带色序互换一闪 ≤0.15s)。
 
 - **M8 扩档(2026-09-09)**:镜头微震 `CameraRig.kick` 实装上限 12px,
   超出 art-style §3 M8 的"幅度 ≤8px"。修订:M8 主档 ≤8px 不变

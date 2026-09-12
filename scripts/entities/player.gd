@@ -316,6 +316,9 @@ func _physics_process(delta: float) -> void:
 	elif _swap_buffer > 0.0 and def.can_swap \
 			and (on_ground or _coyote > 0.0) and _swap_cd <= 0.0:
 		vel = _perform_swap(vel)
+		# 置换锚闪(fx-light 卷一 P0):世界翻了,上下刻度带色序互换一闪
+		if Main.I != null:
+			Main.I.hud_swap_flash()
 	# 松开跳跃键截断上升(只截断一次)
 	if not _jump_cut and def.can_jump and not jump_held \
 			and vel.y * gravity_dir < -def.jump_v * MovementTuning.I.jump_cut_ratio:

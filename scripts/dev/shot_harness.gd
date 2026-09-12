@@ -336,6 +336,31 @@ func run_panel_shot() -> void:
 ## 召回链路自测(headless):动作注册 → 按下 → 召回至出生点;
 ## v0.21.0 扩展双体链路:chips 同位再点即切另一半,界/边各回各的
 ## 出生点(body_key 隔离),重力方向随各半基准复位。
+## 转场分镜(v0.37):三式各截「覆盖末帧」+「揭开中帧」——
+## 构成主义转场的验收 = 关键帧截图序列(motion.md §6 精神)。
+func run_transition_shot() -> void:
+	if m._shot_dir.is_empty():
+		m._shot_dir = ".shots_v37"
+	var fxd: TransitionFX = m._hud._fx
+	for style_name in ["sweep", "blocks", "corners"]:
+		var style := TransitionFX.Style.SWEEP
+		match style_name:
+			"blocks":
+				style = TransitionFX.Style.BLOCKS_RED
+			"corners":
+				style = TransitionFX.Style.CORNERS
+		fxd.transition(style, 0.3, func() -> void: pass)
+		await m.get_tree().create_timer(0.26).timeout
+		await _shot("transition_%s_cover" % style_name)
+		await m.get_tree().create_timer(0.12).timeout
+		await _shot("transition_%s_reveal" % style_name)
+		var guard := 0
+		while fxd.is_busy() and guard < 300:
+			await m.get_tree().process_frame
+			guard += 1
+	m.get_tree().quit()
+
+
 func run_recall_test() -> void:
 	if m._shot_dir.is_empty():
 		m._shot_dir = ".shots_v17"
