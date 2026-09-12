@@ -99,6 +99,31 @@
 > PASS / dualtest ALL PASS / gridcheck warns=13 同基线 / trait_check
 > ALL PASS / 三组分镜零脚本错误。规格见 audio.md §3。
 
+> ——
+> **同版第四主项 · 动态感升级包(构成主义转场 + UI 反馈 + 减动效)**:
+> motion.md §2.3 三类大流转首批落地(斜向扫掠 45° 红缘换关 / 红色刻度
+> 块阶跃溶解肉鸽节奏 / 取景框四角收拢进关卡),TransitionFX 层挂 Hud
+> 同屏单飞 + 白名单 shader 两枚登记实装(block_dissolve /
+> sweep_diagonal);置换锚闪 P0(逆置换时上下刻度带色序互换一闪);
+> 限时桥 WARNING 预警态(翻转前 0.75s 红刻度 8Hz 硬闪);UI Error 态
+> 视觉半边(Ui.error_feedback 沿轴抖动+红闪,锁定行三处接线);按钮
+> 按下 0.92 对齐规格;减动效设置项(SettingsManager.reduced_motion:
+> 关 kick/演出转场/抖动,保留硬切)。联网核对:Godot 转场通行方案
+> (高层 CanvasLayer + Tween 驱 uniform + 满幅切内容;按 motion.md
+> 裁定挂 Hud 非 autoload)、块溶解逐格 hash vs threshold、转场设计
+> 「隐形桥梁」哲学。验收:`--transitionshot` 分镜 + tests/
+> transition_check.gd(四式 covered 恰一次/单飞/减动效硬切/shader
+> 实例化,ALL PASS);recalltest 4 PASS / dualtest ALL PASS /
+> trait_check ALL PASS / trialshot 零脚本错误。
+
+> ——
+> **同版第五主项 · M-7 音乐数值资源化(R2 收口)**:AmbienceMotif /
+> AmbiencePad / AmbienceStep 三数据类(@export)+ data/music/*.tres
+> 六表,音乐调参全部出代码进 Inspector;MOTIFS const 只留键名→路径
+> 拓扑;迁移经 ResourceSaver 生成 + 回读逐字段平价断言(AMBCHECK
+> 6 motif 峰值/RMS 逐位一致);SFX 合成层规格裁定暂不资源化(合成
+> 引擎实现细节,先例 run_modifiers)——台账 REFACTOR §八 M-7 ✅。
+
 ## v0.36.0(2026-09-13)
 
 > **实体图鉴补全 + 记录点信标实装 + 孤儿清退(总纲卷二/卷六销账)**。
