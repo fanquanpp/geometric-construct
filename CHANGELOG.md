@@ -3,6 +3,42 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.34.0(2026-09-13)
+
+> **M-3 再深化:弹层升格组合子场景**——剧目二级菜单 / 双人联接选择
+> 从 menu_layer 内建函数升格为 ActPanelCard / DualPickCard 子场景
+> (实例化组合 + 信号上行);settings_panel 骨架场景化;boot_intro
+> 裁定为动画编排豁免本位。setshot 0.0000% / actshot 0.024%,五门禁
+> 全绿。
+
+### 新增
+- **`ActPanelCard`**(scenes/ui/act_panel_card.tscn):压暗层 + 居中
+  卡片 + 红色标题条 + 关卡行动态列表;只发 `back_pressed /
+  level_pressed(li) / wip_pressed(k)` 信号,解锁判定 / toast / 开演
+  流转归宿主 MenuLayer(R3 边界);关卡行仍为运行时动态生成(随剧目
+  与解锁态,动态生成豁免)。
+- **`DualPickCard`**(scenes/ui/dual_pick_card.tscn):橙色标题条 +
+  同设备 / 跨设备两选项;`open_card(touch)` 做设备置灰,发
+  `same_pressed / cross_pressed`。
+- menu_layer.tscn 以实例组合两卡(`%ActPanel / %DualPick`),公开 API
+  (is_act_panel_open / act_level_digit / is_dual_pick_open 等)原样
+  保留,main / net 调用点零改动。
+- **`scenes/ui/settings_panel.tscn` 骨架**:压暗层 / 卡片 / 红色标题条
+  / 内容体入场景;行内容(分辨率按钮随 SettingsManager 生成等)仍为
+  运行时数据驱动。
+
+### 裁定
+- **boot_intro 不场景化**:开屏为纯动画编排(逐字落位 / 刻线横扫 /
+  自毁),节点即动画道具,属动态生成豁免本位。
+- 联网核对弹层组合模式(GDQuest signals 最佳实践 / GH-83582 代码
+  实例化连信号坑):走 .tscn 实例 + 父层 `_ready` 连接,信号单跳
+  上行不跨层冒泡。
+
+### 门禁
+- check-only 全绿;trait_check ALL PASS;gridcheck warns=11 同基线;
+  recalltest 3 PASS;dualtest ALL PASS;actshot / setshot / menushot
+  零脚本错误;setshot vs 基线 0.0000% 全等,actshot 0.024%(噪底)。
+
 ## v0.33.0(2026-09-13)
 
 > **M-3 深化:菜单侧场景化**——暂停菜单全结构 + 标题菜单海报骨架

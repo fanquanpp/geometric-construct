@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/menu_layer.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/ui/act_panel_card.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/ui/dual_pick_card.tscn" id="4"]
 
 [node name="MenuLayer" type="CanvasLayer"]
 layer = 20
@@ -251,3 +253,9 @@ pivot_offset = Vector2(32, 32)
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
+
+[node name="ActPanel" parent="Root" instance=ExtResource("3")]
+unique_name_in_owner = true
+
+[node name="DualPick" parent="Root" instance=ExtResource("4")]
+unique_name_in_owner = true

@@ -13,11 +13,11 @@ extends CanvasLayer
 signal closed
 
 var is_open := false
-
-var _root: Control
-var _shade: ColorRect
-var _card: PanelContainer
 var _tween: Tween
+
+@onready var _root: Control = %Root
+@onready var _shade: ColorRect = %Shade
+@onready var _card: PanelContainer = %Card
 var _wheel_fixed_btn: Button
 var _wheel_float_btn: Button
 var _vib_btn: Button
@@ -30,64 +30,9 @@ var _fs_btn: CheckButton
 
 
 func _ready() -> void:
-	layer = 38
 	process_mode = Node.PROCESS_MODE_ALWAYS
-
-	_root = Control.new()
-	_root.theme = Ui.make_theme()
-	_root.visible = false
-	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_root)
-
-	_shade = ColorRect.new()
-	_shade.color = Palette.I.ink
-	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.add_child(_shade)
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(center)
-
-	_card = PanelContainer.new()
-	_card.custom_minimum_size = Vector2(560, 0)
-	_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
-	_card.draw.connect(func() -> void:
-		var r := Rect2(Vector2.ZERO, _card.size)
-		# 顶缘亮线 + 四角红色刻度(与几何档案外框同语言)
-		_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
-		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
-				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
-			var sx := -1.0 if corner.x == 0.0 else 1.0
-			var sy := -1.0 if corner.y == 0.0 else 1.0
-			_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
-			_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
-	center.add_child(_card)
-	Adaptive.register_card(_card)
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 8)
-	_card.add_child(vb)
-
-	# —— 标题条:红块 + 大字(自带红色底条,与暂停菜单标题同语言) ——
-	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
-	var title_vb := VBoxContainer.new()
-	title_vb.add_child(Ui.l("设 置", 34, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
-	title_vb.add_child(Ui.l("SETTINGS", 13, Ui.LIGHT, Color(1, 1, 1, 0.7),
-		HORIZONTAL_ALIGNMENT_CENTER))
-	title_bar.add_child(title_vb)
-	vb.add_child(title_bar)
-
-	var body := VBoxContainer.new()
-	body.add_theme_constant_override("separation", 10)
-	var body_wrap := PanelContainer.new()
-	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, null, 0, 24, 20))
-	body_wrap.add_child(body)
-	vb.add_child(body_wrap)
+	_apply_styles()
+	var body: VBoxContainer = %Body
 
 	# ———— 操控 ————
 	body.add_child(_section_label("操控 CONTROL"))
@@ -182,6 +127,32 @@ func _ready() -> void:
 	close_btn.pressed.connect(func() -> void: close())
 	foot.add_child(close_btn)
 	body.add_child(foot)
+
+
+## 场景骨架的样式施加(颜色经 Palette、文字经 Ui;场景文件零色值)。
+func _apply_styles() -> void:
+	_root.theme = Ui.make_theme()
+	_shade.color = Palette.I.ink
+	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_card.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
+	_card.draw.connect(func() -> void:
+		var r := Rect2(Vector2.ZERO, _card.size)
+		# 顶缘亮线 + 四角红色刻度(与几何档案外框同语言)
+		_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
+		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
+				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
+			var sx := -1.0 if corner.x == 0.0 else 1.0
+			var sy := -1.0 if corner.y == 0.0 else 1.0
+			_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
+			_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
+	Adaptive.register_card(_card)
+	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",
+		Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
+	Ui.style(%TitleLabel, 34, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.style(%SubLabel, 13, Ui.LIGHT, Color(1, 1, 1, 0.7), HORIZONTAL_ALIGNMENT_CENTER)
+	(%BodyWrap as PanelContainer).add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, null, 0, 24, 20))
 
 
 # ———— 行 / 控件工厂 ————

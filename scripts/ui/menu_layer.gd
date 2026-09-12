@@ -18,19 +18,7 @@ var _title_mark: TitleMark
 var _floaters: Array = []          # 漂浮几何徽标(常驻慢速旋转 + 浮动)
 var _floater_seed: Array = []      # 每枚徽标的相位/方向
 var _t := 0.0
-
-# —— 剧目二级菜单(关卡列;覆盖层暂留代码侧) ——
-var _act_root: Control
-var _act_shade: ColorRect
-var _act_card: PanelContainer
-var _act_title: Label
-var _act_sub: Label
-var _act_rows: VBoxContainer
-var _act_level_hint: Label
-var _act_keys_hint: Label
-var _act_open := false
-var _act_idx := -1
-var _act_tween: Tween
+var _act_idx := -1                 # 当前打开的剧目(二级菜单卡片态由卡自持)
 
 @onready var _root: Control = %Root
 @onready var _content: Control = %Content
@@ -47,13 +35,12 @@ var _act_tween: Tween
 @onready var _dual_btn: Button = %DualBtn
 @onready var _panel_btn: Button = %PanelBtn
 @onready var _settings_btn: Button = %SettingsBtn
+@onready var _act_panel: ActPanelCard = %ActPanel
+@onready var _dual_pick: DualPickCard = %DualPick
 
-# —— 双人试炼 · 联接方式选择(net.md §1 前两档;覆盖层暂留代码侧) ——
-var _dual_root: Control
-var _dual_shade: ColorRect
-var _dual_card: PanelContainer
-var _dual_same: Button
-var _dual_open := false
+# —— 双人试炼 · 联接方式选择(net.md §1 前两档)——
+## 弹层为组合子场景(scenes/ui/act_panel_card.tscn / dual_pick_card.tscn,
+## v0.34.0):卡片只发信号,解锁判定 / toast / 开演与房间流转在宿主。
 
 
 func _ready() -> void:
@@ -159,8 +146,18 @@ func _ready() -> void:
 	Ui.wire_button(_settings_btn)
 	_settings_btn.pressed.connect(func() -> void: m.open_settings())
 
-	_build_act_panel(root)
-	_build_dual_pick_panel(root)
+	# —— 弹层卡信号接线(R3:卡只发信号,流转在宿主) ——
+	_act_panel.back_pressed.connect(func() -> void: close_act_panel())
+	_act_panel.level_pressed.connect(_on_level_pressed)
+	_act_panel.wip_pressed.connect(func(k: int) -> void:
+		toast("%02d — 未上演,敬请期待" % (k + 1)))
+	_dual_pick.same_pressed.connect(func() -> void:
+		close_dual_pick()
+		m.start_level_dual())
+	_dual_pick.cross_pressed.connect(func() -> void:
+		Sfx.play("ui_open")
+		close_dual_pick()
+		m.open_net_room())
 
 	# —— 漂浮几何徽标:纹理 + 常驻慢速旋转 + 浮动参数 ——
 	var xs := [0.05, 0.42, 0.95, 0.80]
@@ -235,95 +232,20 @@ func try_open_act(idx: int) -> void:
 
 # ———————————————— 剧目二级菜单(关卡列) ————————————————
 
-## 组建二级菜单:整层 Control(压暗层 + 居中卡片,容器排版自适应任意宽高比)。
-## 层内顺序 压暗层 → 卡片,卡片不会被遮罩盖住。默认隐藏。
-func _build_act_panel(root: Control) -> void:
-	_act_root = Control.new()
-	_act_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_act_root.theme = Ui.make_theme()
-	_act_root.visible = false
-	_act_root.mouse_filter = Control.MOUSE_FILTER_STOP
-	root.add_child(_act_root)
-
-	_act_shade = ColorRect.new()
-	_act_shade.color = Color(Palette.I.ink, 0.92)
-	_act_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_act_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_act_root.add_child(_act_shade)
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_act_root.add_child(center)
-
-	_act_card = PanelContainer.new()
-	_act_card.custom_minimum_size = Vector2(780, 0)
-	_act_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
-	_act_card.mouse_filter = Control.MOUSE_FILTER_STOP
-	_act_card.draw.connect(func() -> void:
-		var r := Rect2(Vector2.ZERO, _act_card.size)
-		_act_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
-		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
-				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
-			var sx := -1.0 if corner.x == 0.0 else 1.0
-			var sy := -1.0 if corner.y == 0.0 else 1.0
-			_act_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
-			_act_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
-	_act_card.resized.connect(func() -> void:
-		_act_card.pivot_offset = _act_card.size / 2.0)
-	center.add_child(_act_card)
-	Adaptive.register_card(_act_card)
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 10)
-	_act_card.add_child(vb)
-
-	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
-	var title_vb := VBoxContainer.new()
-	_act_title = Ui.l("", 32, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-	title_vb.add_child(_act_title)
-	_act_sub = Ui.l("SELECT A SCENE · 选一场开演", 13, Ui.LIGHT,
-		Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER)
-	title_vb.add_child(_act_sub)
-	title_bar.add_child(title_vb)
-	vb.add_child(title_bar)
-
-	var body := VBoxContainer.new()
-	body.add_theme_constant_override("separation", 8)
-	var body_wrap := PanelContainer.new()
-	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 22, 16))
-	body_wrap.add_child(body)
-	vb.add_child(body_wrap)
-
-	_act_rows = VBoxContainer.new()
-	_act_rows.add_theme_constant_override("separation", 8)
-	body.add_child(_act_rows)
-
-	_act_level_hint = Ui.l("", 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT, false, 4)
-	_act_level_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_act_level_hint.custom_minimum_size = Vector2(700, 44)
-	body.add_child(_act_level_hint)
-
-	var back_row := HBoxContainer.new()
-	back_row.add_theme_constant_override("separation", 12)
-	var back := Button.new()
-	back.text = "«  返回剧目"
-	back.custom_minimum_size = Vector2(170, 42)
-	back.add_theme_font_size_override("font_size", 16)
-	Ui.wire_button(back, "ui_back")
-	back.pressed.connect(func() -> void: close_act_panel())
-	back_row.add_child(back)
-	var keys_hint := "1-%d 直达 · Esc 返回" % LevelData.ACTS[0]["levels"].size()
-	_act_keys_hint = Ui.l(keys_hint, 12, Ui.LIGHT, Color(Palette.I.dim, 0.9))
-	back_row.add_child(_act_keys_hint)
-	vb.add_child(back_row)
-
-
 func is_act_panel_open() -> bool:
-	return _act_open
+	return _act_panel.is_open()
+
+
+## 二级菜单行按下(卡片信号):解锁判定 / 反馈音 / 开演流转在宿主。
+func _on_level_pressed(li: int) -> void:
+	var def: LevelDef = LevelData.LEVELS[li]
+	if li > _unlocked:
+		Sfx.play("ui_error")
+		toast("%02d %s — 先通关前一场" % [LevelData.scene_no_of(li), def.name])
+		return
+	Sfx.play("ui_click")
+	close_act_panel()
+	m.start_chapter(li)
 
 
 
@@ -334,234 +256,35 @@ func is_act_panel_open() -> bool:
 ## 设备判断在此处收口:触屏设备无分区键鼠 / 双手柄前提,同设备项置灰不可用。
 
 
-func _build_dual_pick_panel(root: Control) -> void:
-	_dual_root = Control.new()
-	_dual_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_dual_root.theme = Ui.make_theme()
-	_dual_root.visible = false
-	_dual_root.mouse_filter = Control.MOUSE_FILTER_STOP
-	root.add_child(_dual_root)
-
-	_dual_shade = ColorRect.new()
-	_dual_shade.color = Color(Palette.I.ink, 0.92)
-	_dual_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_dual_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_dual_root.add_child(_dual_shade)
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_dual_root.add_child(center)
-
-	_dual_card = PanelContainer.new()
-	_dual_card.custom_minimum_size = Vector2(780, 0)
-	_dual_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
-	_dual_card.mouse_filter = Control.MOUSE_FILTER_STOP
-	center.add_child(_dual_card)
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 12)
-	_dual_card.add_child(vb)
-
-	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.orange, 0, null, 0, 24, 12))
-	var title_vb := VBoxContainer.new()
-	title_vb.add_child(Ui.l("双人试炼", 32, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
-	title_vb.add_child(Ui.l("TWO PLAYERS · 选择联接方式", 13, Ui.LIGHT,
-		Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER))
-	title_bar.add_child(title_vb)
-	vb.add_child(title_bar)
-
-	var body := VBoxContainer.new()
-	body.add_theme_constant_override("separation", 12)
-	var pad := MarginContainer.new()
-	pad.add_theme_constant_override("margin_left", 40)
-	pad.add_theme_constant_override("margin_right", 40)
-	pad.add_theme_constant_override("margin_top", 24)
-	pad.add_theme_constant_override("margin_bottom", 28)
-	pad.add_child(body)
-	vb.add_child(pad)
-
-	# 选项一:同设备双人(桌面专属;触屏设备置灰,文案在 open 时按设备态刷新)
-	_dual_same = Button.new()
-	_dual_same.custom_minimum_size = Vector2(0, 86)
-	_dual_same.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_dual_same.add_theme_font_override("font", Ui.HEAD)
-	_dual_same.add_theme_font_size_override("font_size", 22)
-	Ui.wire_button(_dual_same)
-	_dual_same.pressed.connect(func() -> void:
-		close_dual_pick()
-		m.start_level_dual())
-	body.add_child(_dual_same)
-
-	# 选项二:跨设备双人(同网直连:LAN 搜索 / 手动 IP)
-	var cross := Button.new()
-	cross.custom_minimum_size = Vector2(0, 86)
-	cross.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	cross.text = "跨设备双人\n      同网直连 · 局域网搜索附近房间,或手动输入 IP"
-	cross.add_theme_font_override("font", Ui.HEAD)
-	cross.add_theme_font_size_override("font_size", 22)
-	Ui.wire_button(cross)
-	cross.pressed.connect(func() -> void:
-		Sfx.play("ui_open")
-		close_dual_pick()
-		m.open_net_room())
-	body.add_child(cross)
-
-	var hint := Ui.l("Esc 返回", 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
-	vb.add_child(hint)
-
-
 func _open_dual_pick() -> void:
 	Sfx.play("ui_open")
-	_dual_open = true
-	var touch := Adaptive.is_touch_mode()
-	_dual_same.text = "同设备双人\n      %s" % (
-		"移动端不可用 · 同屏分区需键鼠 / 双手柄" if touch
-		else "同屏分键 · P1 键盘左区 + P2 右区 / 双手柄")
-	_dual_same.disabled = touch
-	_dual_same.modulate = Color(1, 1, 1, 0.42 if touch else 1.0)
-	_dual_root.visible = true
-	_dual_shade.modulate.a = 0.0
-	_dual_card.modulate.a = 0.0
-	_dual_card.pivot_offset = _dual_card.size / 2.0
-	var tw := create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(_dual_shade, "modulate:a", 1.0, 0.16)
-	tw.tween_property(_dual_card, "modulate:a", 1.0, 0.18)
-	tw.tween_property(_dual_card, "scale", Vector2.ONE, 0.26) \
-		.from(Vector2(0.95, 0.95)).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_dual_pick.open_card(Adaptive.is_touch_mode())
 
 
 func close_dual_pick() -> void:
-	if not _dual_open:
-		return
-	_dual_open = false
-	_dual_root.visible = false
+	_dual_pick.close_card()
 
 
 func is_dual_pick_open() -> bool:
-	return _dual_open
+	return _dual_pick.is_open()
 
 
-
-
-## 进入某剧目的二级菜单:重排关卡行(解锁状态逐次刷新)。
+## 进入某剧目的二级菜单:卡片重排关卡行(解锁状态逐次刷新)。
 func _open_act_panel(idx: int) -> void:
 	_act_idx = idx
-	var act: Dictionary = LevelData.ACTS[idx]
-	_act_title.text = "%s · %s" % [act["name"], act["title"]]
-	_act_keys_hint.text = "1-%d 直达 · Esc 返回" % act["levels"].size()
-	_populate_act_rows(idx)
-	_act_open = true
-	Sfx.play("ui_open")
-	_act_root.visible = true
-	if _act_tween != null:
-		_act_tween.kill()
-	_act_shade.modulate.a = 0.0
-	_act_card.modulate.a = 0.0
-	_act_tween = create_tween()
-	_act_tween.set_parallel(true)
-	_act_tween.tween_property(_act_shade, "modulate:a", 1.0, 0.16)
-	_act_tween.tween_property(_act_card, "modulate:a", 1.0, 0.18)
-	_act_tween.tween_property(_act_card, "scale", Vector2.ONE, 0.26) \
-		.from(Vector2(0.95, 0.95)).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_act_panel.open_act(idx, _unlocked)
 
 
 func close_act_panel() -> void:
-	if not _act_open:
+	if not _act_panel.is_open():
 		return
-	_act_open = false
 	_act_idx = -1
-	_act_root.visible = false
-
-
-## 关卡行:编号 + 几何体徽标 + 场次名 + 右侧状态(已通关 / 下一场 / 未解锁)。
-## 悬停 / 聚焦在行下方显示该场的特性讲解;锁定场可点但只给反馈。
-## 幕条目可带 "total"(预设场次总数):超出已制作场次的编号渲染为
-## 「未上演」占位行 —— 只表意剧目规模,不可开演。
-func _populate_act_rows(idx: int) -> void:
-	for c in _act_rows.get_children():
-		c.queue_free()
-	var act: Dictionary = LevelData.ACTS[idx]
-	var levels: Array = act["levels"]
-	var total: int = maxi(act.get("total", levels.size()), levels.size())
-	for k in total:
-		if k >= levels.size():
-			_add_wip_row(k)
-			continue
-		var li: int = levels[k]
-		var def: LevelDef = LevelData.LEVELS[li]
-		var unlocked := li <= _unlocked
-		var cleared := li < _unlocked
-		var is_next := li == _unlocked
-
-		var b := Button.new()
-		b.custom_minimum_size = Vector2(700, 54)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.add_theme_font_override("font", Ui.HEAD)
-		b.add_theme_font_size_override("font_size", 19)
-		b.add_theme_constant_override("h_separation", 14)
-		# 图标限宽 28:SVG 原始尺寸会把行高撑到 ~80px,
-		# 六行关卡的卡片总高超出 720 设计稿被上下裁切(真机实测修复)
-		b.add_theme_constant_override("icon_max_width", 28)
-		b.icon = Ui.icon("characters/%s-flat.svg" % Geometries.get_def(def.focus).slug)
-		b.text = "%02d   %s" % [k + 1, def.name]
-		b.pivot_offset = Vector2(12, 27)
-		b.self_modulate = Color(1, 1, 1, 1.0 if unlocked else 0.45)
-		Ui.wire_button(b, "")   # 未解锁给拒绝音、可演给确认音,条件音效自管
-		b.mouse_entered.connect(func() -> void:
-			_act_level_hint.text = def.intro.replace("\n", "  "))
-		b.focus_entered.connect(func() -> void:
-			_act_level_hint.text = def.intro.replace("\n", "  "))
-		b.pressed.connect(func() -> void:
-			if not unlocked:
-				Sfx.play("ui_error")
-				toast("%02d %s — 先通关前一场" % [k + 1, def.name])
-				return
-			Sfx.play("ui_click")
-			close_act_panel()
-			m.start_chapter(li))
-		_act_rows.add_child(b)
-
-		# 右侧状态角标(钉在按钮右缘,不参与点击)。
-		# 用色纪律:红色只给"下一场"这一个行动焦点,已通关/未解锁走灰阶
-		var status := Ui.tag(
-			"已通关" if cleared else ("下一场" if is_next else "未解锁"),
-			Color(Palette.I.paper, 0.10) if cleared
-				else (Palette.I.red if is_next else Color(Palette.I.paper, 0.05)),
-			Color(Palette.I.paper, 0.62) if cleared
-				else (Color.WHITE if is_next else Color(Palette.I.dim, 0.8)), 12, 8, 3)
-		b.add_child(status)
-		status.anchor_left = 1.0
-		status.anchor_right = 1.0
-		status.offset_left = -96
-		status.offset_right = -14
-		status.offset_top = (54.0 - 24.0) / 2.0
-	_act_level_hint.text = ""
-
-
-## 未上演占位行:表意本幕的预设场次规模,不可开演,点击只给排练中的反馈。
-func _add_wip_row(k: int) -> void:
-	var b := Button.new()
-	b.custom_minimum_size = Vector2(700, 54)
-	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	b.add_theme_font_override("font", Ui.HEAD)
-	b.add_theme_font_size_override("font_size", 19)
-	b.text = "%02d   —— 未上演 · 排练中 ——" % (k + 1)
-	b.self_modulate = Color(1, 1, 1, 0.28)
-	Ui.wire_button(b, "ui_error")
-	b.mouse_entered.connect(func() -> void:
-		_act_level_hint.text = "这一场还在排练——巨构尚未搭完。")
-	b.pressed.connect(func() -> void:
-		toast("%02d — 未上演,敬请期待" % (k + 1)))
-	_act_rows.add_child(b)
+	_act_panel.close_panel()
 
 
 ## 二级菜单开着时的数字键直达(Main 的 MENU 分支转发)。
 func act_level_digit(digit: int) -> void:
-	if not _act_open or _act_idx < 0:
+	if not _act_panel.is_open() or _act_idx < 0:
 		return
 	var levels: Array = LevelData.ACTS[_act_idx]["levels"]
 	if digit < 1 or digit > levels.size():

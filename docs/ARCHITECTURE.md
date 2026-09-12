@@ -20,7 +20,8 @@ geometric-construct/
 │   │                        #   / backdrop / camera_rig
 │   ├── entities/            #   player(几何体实体;碰撞形按角色动态建,豁免)
 │   ├── ui/                  #   hud(结构骨架 + EdgeIndicator 子场景)/ menu_layer
-│   │                        #   (海报骨架)/ pause_menu / archive_panel / settings_panel
+│   │                        #   (海报骨架 + ActPanelCard / DualPickCard 弹层子场景)
+│   │                        #   / pause_menu / settings_panel(骨架)/ archive_panel
 │   │                        #   / touch_controls / net_room_layer / rogue_layer
 │   │                        #   / boot_intro / story_layer
 │   ├── fx/                  #   ambience
