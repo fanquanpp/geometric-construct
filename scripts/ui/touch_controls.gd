@@ -95,12 +95,14 @@ func _input(event: InputEvent) -> void:
 			if _jump_finger == -1 and t.position.y > UI_STRIP_TOP:
 				_jump_finger = t.index
 				Input.action_press("jump")
+				tap_burst_at(t.position)
 				get_viewport().set_input_as_handled()
 			return
 		# 固定模式:空白处按下 = 跳跃;轮盘触控区/顶层 UI 带/小按钮不抢占
-		if _jump_finger == -1 and t.position.y > UI_STRIP_TOP 				and not _pos_reserved(t.position):
+		if _jump_finger == -1 and t.position.y > UI_STRIP_TOP 			and not _pos_reserved(t.position):
 			_jump_finger = t.index
 			Input.action_press("jump")
+			tap_burst_at(t.position)
 			get_viewport().set_input_as_handled()
 	elif t.index == _jump_finger:
 		_jump_finger = -1
@@ -260,6 +262,62 @@ func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 static func buzz(ms := 24) -> void:
 	if SettingsManager.vibration:
 		Input.vibrate_handheld(ms)
+
+
+## 点按位置的粒子反馈(FX-1 轻微反馈,presentation/00 卷八 · Fragment
+## 色块碎片):一圈向外扩张的菱形回包 + 纸白小方块迸散(含一枚构成红)。
+## 0.32s 内散尽,全部硬边方块无柔化;跳域点按(双模式)自动触发,
+## 开发钩子(--tapshot)亦可程序化调用。
+func tap_burst_at(pos: Vector2) -> void:
+	var burst := CPUParticles2D.new()
+	burst.one_shot = true
+	burst.emitting = true
+	burst.amount = 10
+	burst.lifetime = 0.32
+	burst.explosiveness = 1.0
+	burst.spread = 180.0
+	burst.gravity = Vector2.ZERO
+	burst.damping_min = 40.0
+	burst.damping_max = 90.0
+	burst.initial_velocity_min = 60.0
+	burst.initial_velocity_max = 170.0
+	burst.scale_amount_min = 2.0
+	burst.scale_amount_max = 3.5
+	var ramp := Gradient.new()
+	ramp.colors = PackedColorArray([Palette.PAPER, Palette.PAPER, Palette.RED])
+	burst.color_initial_ramp = ramp
+	burst.position = pos
+	burst.finished.connect(burst.queue_free)
+	_root.add_child(burst)
+	var ring := TapRing.new()
+	ring.position = pos
+	_root.add_child(ring)
+
+
+## 点按回包:向外扩张的 45° 方形轮廓(构成菱,与传送菱标/徽章同母题),
+## 0.28s 淡出 —— M2 微交互档、二次缓出(M1 白名单)、M9 时间驱动。
+class TapRing extends Node2D:
+	const DUR := 0.28
+	const R0 := 8.0
+	const R1 := 46.0
+	var _elapsed := 0.0
+
+	func _process(delta: float) -> void:
+		_elapsed += delta
+		if _elapsed >= DUR:
+			queue_free()
+			return
+		queue_redraw()
+
+	func _draw() -> void:
+		var k := clampf(_elapsed / DUR, 0.0, 1.0)
+		var ease_k := 1.0 - (1.0 - k) * (1.0 - k)
+		var r := lerpf(R0, R1, ease_k)
+		var a := 0.7 * (1.0 - k)
+		var pts := PackedVector2Array([
+			Vector2(r, 0), Vector2(0, r), Vector2(-r, 0), Vector2(0, -r), Vector2(r, 0),
+		])
+		draw_polyline(pts, Color(Ui.PAPER, a), 2.0, true)
 
 
 func _process(_delta: float) -> void:
