@@ -27,3 +27,4 @@ can_sprint = false
 bounce = 0.5
 weight = 0.5
 carry = 0.0
+can_be_pushed = true

@@ -23,6 +23,7 @@ ski_friction_mult = 0.12
 standard_mu = 1.2667
 ball_mu_roll = 0.43
 overload_jump_ratio = 0.5
+top_boost_height_ratio = 2.0
 climb_units = 2.0
 climb_up = 150.0
 climb_slide = 55.0

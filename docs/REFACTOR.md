@@ -32,7 +32,7 @@
 | 02 | Geometry Character(数据面) | data/geometries.gd + geometry_def.gd | 角色心理/剧情面归 09;台词面归 08(已由 bible 分域) |
 | 03 | Movement & Physics | entities/player.gd(1073 行**大混装**)+ characters.md §2 手感公约数 | **Phase 4 主手术**:拆 movement_core / input / 演出 cosmetics / 机制交互四片;角色只交参数表 |
 | 04 | Level | data/level_data.gd + level_def.gd + data/component.gd + world/level_builder.gd + levels.md | LEVELS 字面量 → levels/*.json 迁移(编辑器契约已就绪);levels.md 瘦身为规范,关卡内容出走 |
-| 05 | Puzzle & Mechanism | world/mechanisms/(12)+ mechanism_registry + mechanism_tags + structures.md §7 | 已成形态;解 world↔mechanisms 环(§三.2-①) |
+| 05 | Puzzle & Mechanism | world/mechanisms/(12)+ structures.md §7(注册表/标签表代码 v0.31.1 撤除) | 已成形态;解 world↔mechanisms 环(§三.2-①) |
 | 06 | Roguelike | modes/rogue/* + data/run_modifiers + rogue_fragments + roguelike.md | 休眠保留;剧情接口面(bible 卷七)与系统分离 |
 | 07 | Story & Narrative | story.md(实装档案)+ **design/bible.md(总纲 v1.0)** | story.md 瘦身:实装档案专用;七幕文学层在 bible |
 | 08 | Dialogue & Performance | story/*.ks + ui/story_layer + Konado | **Phase 5**:剧情数据库(docs/story/)与 .ks 演出脚本分离 |
@@ -55,7 +55,7 @@
 |---|---|---|
 | scripts/ 共 54 个 .gd ≈ 13,286 行 | core 5/1343 · data 9/1187 · dev 1/468 · entities 3/1316 · fx 2/713 · net 5/830 · ui 12/4817 · world 5/897 · mechanisms 12/795 · render 4/391 · modes/rogue 2/329 | 全部在用(无死文件) |
 | scenes/ | Main.tscn(唯一游戏场景) | 在用 |
-| tests/ | grid_check / layer_check / modifier_check / mover_check + level_shot / shot_all / story_shot / win_shot(场景+脚本) | 在用;level_shot.gd 含 v4 坐标(僵)**待随 v5 重排** |
+| tests/ | grid_check / layer_check / modifier_check / mover_check / trait_check + level_shot / shot_all / story_shot / win_shot(场景+脚本) | 在用;v4 坐标重排事项随 v0.30.0 关卡 JSON 化消失 |
 | tools/ | shot_diff.py | 在用 |
 | story/ | 9 个 .ks(prologue/act1/epilogue/rogue_intro + 四单章) | 在用 |
 | docs/ 根 | ARCHITECTURE / ASSETS / CHANGELOG / DESIGN / ROADMAP / UPDATE / **REFACTOR(本文)** | 在用 |

@@ -47,7 +47,11 @@ static func _static_init() -> void:
 @export var ball_mu_roll := 0.43       ## 圆球滚动阻力系数(μ 滚动版)
 
 # ———— 跳跃与攀爬 ————
-@export var overload_jump_ratio := 0.5 ## 背负超载时跳跃高度倍率(减半仍可跳)
+## 背负超载跳跃高度倍率(减半仍可跳)与顶弹翻倍高度倍率(贰·跃)。
+## 两者都是「高度」语义:起跳速度乘 √倍率(h = v₀²/2g),相乘即
+## characters.md §3「顶弹 ×2 × 超载 ×0.5 = 原地满跳」。
+@export var overload_jump_ratio := 0.5
+@export var top_boost_height_ratio := 2.0
 @export var climb_units := 2.0         ## 爬墙单次离地可爬总高度(格)
 @export var climb_up := 150.0          ## 爬墙:按住跳跃键的上升速度
 @export var climb_slide := 55.0        ## 爬墙:只按方向贴墙时的缓降速度

@@ -184,24 +184,3 @@ static func _json_comp(p) -> Dictionary:
 	var d: Dictionary = p.duplicate()
 	d["rect"] = _json_rect(d.get("rect", {"x": 0, "y": 0, "w": 100, "h": 100}))
 	return d
-
-
-static func _make(name: String, focus: int, intro: String, size: Vector2,
-		roster: Array, platforms: Array, ramps: Array, gates: Array, exits: Array,
-		spawns: Array, movers: Array = [], hints: Array = [],
-		zones: Array = []) -> LevelDef:
-	var def := LevelDef.new()
-	def.name = name
-	def.focus = focus
-	def.intro = intro
-	def.size = size
-	def.roster = roster
-	def.platforms = platforms
-	def.ramps = ramps
-	def.gates = gates
-	def.exits = exits
-	def.spawns = spawns
-	def.movers = movers
-	def.hints = hints
-	def.zones = zones
-	return def

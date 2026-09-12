@@ -1035,19 +1035,8 @@ func _parse_auto_shot() -> void:
 			h.run_auto_test()
 
 
-## 性能基线日志(ROADMAP §5 Android 性能 P0):每秒向 stdout 打一行
-## Performance 监视数据,`adb logcat` 抓取;与 --autotest / 手工试玩同用。
-func _run_perf_log() -> void:
-	while is_inside_tree():
-		await get_tree().create_timer(1.0).timeout
-		print("PERF fps=%d process=%.2fms draw=%d prim=%d obj=%d mem=%.1fMB" % [
-			int(Performance.get_monitor(Performance.TIME_FPS)),
-			Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
-			int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
-			int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
-			int(Performance.get_monitor(Performance.OBJECT_COUNT)),
-			Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0,
-		])
+## 性能基线日志已迁 scripts/dev/shot_harness.gd run_perf_log()
+## (v0.31.1 死代码清扫:原 _run_perf_log 无调用点,harness 侧补上真身)。
 
 
 var dual_mode := false   # N1 同屏双人:双活绑定(各控各的,不切换)

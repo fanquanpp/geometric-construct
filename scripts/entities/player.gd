@@ -495,6 +495,7 @@ func effective_bounce() -> float:
 
 ## 背负超载时跳跃高度减半:头顶来者总重大于自身负重力 → 0.5,否则 1.0。
 ## 只削弱跳跃,不禁止跳跃(超载的几何体仍能背着同伴跳起一半高度)。
+## 倍率是「高度」语义,起跳速度乘 √值(h = v₀²/2g,characters.md §2)。
 func _overload_jump_ratio() -> float:
 	if Main.I == null:
 		return 1.0
@@ -503,15 +504,16 @@ func _overload_jump_ratio() -> float:
 		if p != self and is_instance_valid(p) and p.rider_of == self:
 			rider_load += RunState.modified(p.def, "weight")
 	if rider_load > RunState.modified(def, "carry") + 0.01:
-		return MovementTuning.I.I.overload_jump_ratio
+		return sqrt(MovementTuning.I.overload_jump_ratio)
 	return 1.0
 
 
-## 顶弹翻倍(贰·跃,characters.md §3):从可顶弹几何体头顶起跳 → 该跳高度 ×2。
-## 只作用于第一段跳(地面/土狼);空中跳不继承。与超载减半自然相乘。
+## 顶弹翻倍(贰·跃,characters.md §3):从可顶弹几何体头顶起跳 → 跳高 ×2。
+## 高度 ×2 ⇔ 起跳速度 ×√2;只作用于第一段跳(地面/土狼),空中跳不继承。
+## 与超载减半按高度相乘(×2 × ×0.5 = 原地满跳)。
 func _top_boost_ratio() -> float:
 	if rider_of != null and is_instance_valid(rider_of) and rider_of.def.can_top_boost:
-		return 2.0
+		return sqrt(MovementTuning.I.top_boost_height_ratio)
 	return 1.0
 
 

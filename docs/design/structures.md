@@ -1,6 +1,7 @@
 # 特殊建筑物设计 · STRUCTURES
 
-> 状态:现行(v0.23)· 数据源:`scripts/entities/*`、`scripts/world/mechanisms/*`(kind → 脚本注册表 `MechanismRegistry`)
+> 状态:现行(v0.23,注册表代码 v0.31.1 撤除)· 数据源:`scripts/entities/*`、`scripts/world/mechanisms/*`
+> (kind 路由实际落点 = LevelBuilder 装配与机制脚本自身;本文保留生命周期契约与登记纪律)
 > 关卡里除地面平台外的一切可交互构件,统一在本文登记;新构件先立项再实现。
 > v0.13 增补:§0 组件语义统一 + §5 新增动态构件(开关门 / 限时桥)。
 
@@ -73,8 +74,8 @@
 
 ## 6. 命名与登记规则
 
-- 新构件:实体脚本进 `scripts/entities/`,地图机关进 `scripts/world/mechanisms/`
-  并在 `MechanismRegistry` 登记(kind → 脚本一行,structures.md §7);
+- 新构件:实体脚本进 `scripts/entities/`,地图机关进
+  `scripts/world/mechanisms/`(按 §7 生命周期契约实现,LevelBuilder 装配);
   渲染辅助进 `scripts/world/render/`。
 - LevelDef 新字段必须可被 JSON 同构表达(未来数据互通的前置)。
 - 构件外观 = 引擎侧 `_draw()` 程序化绘制(art-style.md §6);
@@ -83,9 +84,11 @@
 
 ## 7. 机制生命周期契约与标签(v0.23.0,统合重构终案 Sprint 2)
 
-一切地图机关(`scripts/world/mechanisms/`)遵循统一契约;注册表
-`MechanismRegistry`(`scripts/world/mechanism_registry.gd`)是 kind → 脚本
-的唯一映射。新机制三步:新建脚本 → 注册表登记一行 → 本文档补条目。
+一切地图机关(`scripts/world/mechanisms/`)遵循统一契约。
+(v0.31.1 注:原 `MechanismRegistry` kind→脚本注册表因从未接线被撤除——
+实装路由一直在 LevelBuilder 装配与机制脚本自身;契约本身不受影响。)
+新机制三步:新建脚本(按需实现钩子)→ LevelBuilder 装配分支登记 →
+本文档补条目。
 
 ### 生命周期(鸭子类型,机制脚本可选实现)
 
@@ -101,7 +104,8 @@
 
 ### 语义标签(Comp.tags 通路)
 
-标签常量登记于 `MechanismTags`(`scripts/data/mechanism_tags.gd`)。
+(v0.31.1 注:原 `MechanismTags` 常量表因从未被引用被撤除;标签继续以
+StringName 直书于 Comp.tags 与 levels 数据。)
 纪律:**StringName 一旦写入即稳定契约,改名 = 破坏性变更** —— 只加不改
 不删;命名 flat snake_case,不搞层级(2026-09-10 甄别结论:项目规模下
 层级查询零收益)。

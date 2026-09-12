@@ -52,7 +52,6 @@ geometric-construct/
 │   │   ├── level_def.gd     #   关卡定义类(含 movers 移动构件字段)
 │   │   ├── level_data.gd    #   关卡数据表(序章 4 场 + 第一幕 6 场巨构)
 │   │   ├── component.gd     #   地图组件语义组 v3:id/layer(八层定值)/faces/who 集合(levels.md §7.10)
-│   │   ├── mechanism_tags.gd#   机制标签常量表(Comp.tags 通路;StringName 稳定契约,structures.md §7)
 │   │   ├── run_modifiers.gd #   肉鸽词条表(通用 + 主角专属,稀有度)
 │   │   └── rogue_fragments.gd # 肉鸽单人片段库(按主角分组的快/稳排法 + 精英考)
 │   ├── entities/            # 场景内实体
@@ -73,7 +72,7 @@ geometric-construct/
 │   │   │                    #   / grid_layer(定位网格 LOD)/ debug_grid_overlay(--debug-grid)
 │   │   ├── mechanisms/      #   机关物:ramp / mover(+slab·track) / timed_bridge
 │   │   │                    #   / lever_gate / piano_tile / mag_boundary
-│   │   ├── mechanism_registry.gd # 机制注册表(kind → 脚本)+ 生命周期契约落档(structures.md §7)
+│   │   ├── mechanism_registry.gd # (已撤除,见 CHANGELOG v0.31.1;契约存 structures.md §7)
 │   │   ├── camera_rig.gd    #   镜头(前瞻偏移/速度变焦/双人动态缩放框)
 │   │   ├── hint_marker.gd   #   教学悬浮提示牌
 │   │   └── backdrop.gd      #   构成主义几何背景(视差)
@@ -114,8 +113,6 @@ geometric-construct/
 │   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入)
 │   ├── archive/             # 档案几何示例图(aseprite 导出的 200×200 PNG,
 │   │                        #   唯一入引擎的 aseprite 衍生素材;源在 art/tiles_v2)
-│   ├── tiles/               # (废止)v0.12 aseprite 瓦片存档,.gdignore 不导入,
-│   │                        #   仅历史留档 —— 地图全 _draw 渲染(art-style.md §6)
 │   ├── fonts/               # NotoSansSC 可变字体
 │   └── svg/                 # 全部图标(仅 flat 单样式,见 docs/DESIGN.md)
 │       ├── characters/      #   角色徽标(与 slug 对应)
@@ -128,7 +125,8 @@ geometric-construct/
 ├── tools/
 │   └── gen_svgs.py          # SVG 素材生成器(改素材先改这里再生成)
 ├── tests/                   # 开发用截图 / 验证场景(shot_*.tscn;
-│                            #   layer_check.gd 分层语义 v3 headless 验证(LAYER CHECK))
+│                            #   grid_check / layer_check / modifier_check /
+│                            #   mover_check / trait_check headless 验证脚本)
 ├── build/                   # 构建产物(已 gitignore)
 └── docs/                    # ARCHITECTURE / DESIGN / ROADMAP / UPDATE / CHANGELOG
 	└── design/              # 策划侧设计档案(总纲/美术/动效/音频/氛围/角色/建筑/关卡/UI流/剧情/肉鸽)

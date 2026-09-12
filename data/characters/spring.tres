@@ -27,3 +27,4 @@ can_sprint = false
 bounce = 2.0
 weight = 1.5
 carry = 1.5
+can_top_boost = true

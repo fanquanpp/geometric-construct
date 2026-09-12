@@ -4,9 +4,25 @@ extends RefCounted
 ## 命令行分镜与自测的唯一实现。经 Main._dev_harness() 软引用装载,
 ## 导出包剥离 scripts/dev/* 后 load 失败 → 钩子整体关闭;
 ## 旗标解析留守 Main(_parse_auto_shot),本文件只管执行。
-## _run_perf_log 留守 Main:服务 Android debug 真机自动 PERF 日志。
+## run_perf_log:Android debug 真机自动 PERF 日志(每秒一行监视数据,
+## adb logcat 抓取;ROADMAP §5)。原留守 Main,v0.31.1 随死代码清扫迁入。
 
 var m: Main
+
+
+## 性能基线日志(原 Main._run_perf_log,零改动迁入):每秒向 stdout 打
+## 一行 Performance 监视数据。
+func run_perf_log() -> void:
+	while m != null and m.is_inside_tree():
+		await m.get_tree().create_timer(1.0).timeout
+		print("PERF fps=%d process=%.2fms draw=%d prim=%d obj=%d mem=%.1fMB" % [
+			int(Performance.get_monitor(Performance.TIME_FPS)),
+			Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+			int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
+			int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
+			int(Performance.get_monitor(Performance.OBJECT_COUNT)),
+			Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0,
+		])
 
 
 ## 截取设置面板。

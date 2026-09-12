@@ -24,13 +24,17 @@
    - `--headless --path . --check-only --script res://<改动脚本>` 全绿;
    - `--headless --script res://tests/grid_check.gd` 不得新增违规;
    - 涉及分层 / 双体 / 机关:`-- --laneshot`、`-- --recalltest` 通过;
+   - 涉及特性 / 手感数值:`--headless --script res://tests/trait_check.gd`
+	 通过(顶弹 / 可推动 / 跳高的物理仿真);
    - 真机(Android debug apk)触屏走查关键链路。
 5. **已知坑速查**(详见各记忆与 docs):GDScript 方法内不支持嵌套
    `func`(用 lambda);spawns 按下标索引;FontVariation 无渲染属性;
    Rect2 无 is_empty();ThorVG 弧线 `A` 命令方向反直觉(用折线);
    MIUI adb tap 偶发双注入;`--quit-after` 单位是帧;Resource 共享
    引用(默认同一份数据,运行时写入串改全部使用者,`duplicate()`
-   是浅拷贝)。
+   是浅拷贝);headless 下 process 不锁帧(≈150Hz,`--quit-after`
+   与帧计时全部失真——计时依赖物理量的仿真须 `Engine.max_fps=60`
+   且以物理量而非帧号判停,trait_check.gd 为范本)。
 
 6. **场景与资源强制约束**(2026-09-13 用户拍板,细则见下节):
    常驻节点结构一律 `.tscn` 场景组合,禁单场景巨石与脚本拼树;
