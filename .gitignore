@@ -10,6 +10,11 @@
 build/
 # 开发截图(各版本迭代,.shots / .shots_vNN)
 .shots*/
+# 构建产物扩展名兜底:防 apk / aab 被误落到 build/ 之外时混入提交
+# (本项目日常导出 Android debug apk,误提交一次就是几十 MB)
+*.apk
+*.aab
+*.idsig
 
 # ===== 凭据与密钥(绝不入库) =====
 # Godot 导出凭据(Android keystore 密码等,导出对话框「保存凭据」时生成)
