@@ -1,89 +1,55 @@
 class_name PauseMenu
 extends CanvasLayer
 ## 暂停菜单:继续 / 重开 / 档案几何 / 虚拟按键 / 返回标题。树暂停时仍可交互。
+## 结构骨架在 scenes/ui/pause_menu.tscn(R1 场景化,v0.33.0);本脚本负责
+## 行为与运行时样式施加(颜色经 Palette、文字经 Ui 工厂,场景零色值)。
 
 var m: Main
 
-var _root: Control
-var _resume: Button
-var _restart_btn: Button
-var _leave_btn: Button
-var _panel: PanelContainer
-var _dim: ColorRect
 var _open_tween: Tween
+
+@onready var _root: Control = %Root
+@onready var _resume: Button = %ResumeBtn
+@onready var _restart_btn: Button = %RestartBtn
+@onready var _leave_btn: Button = %LeaveBtn
+@onready var _panel: PanelContainer = %Panel
+@onready var _dim: ColorRect = %Dim
 
 
 func _ready() -> void:
-	layer = 30
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_apply_styles()
 
-	_root = Control.new()
-	_root.theme = Ui.make_theme()
-	_root.visible = false
-	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_root)
-
-	var dim := ColorRect.new()
-	dim.color = Color(Palette.I.ink, 0.78)
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.add_child(dim)
-	_dim = dim
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.add_child(center)
-
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(400, 0)
-	panel.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, Color(Palette.I.paper, 0.2), 1, 0, 0))
-	panel.pivot_offset = Vector2(200, 0)
-	center.add_child(panel)
-	Adaptive.register_card(panel)
-	_panel = panel
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 10)
-	panel.add_child(vb)
-
-	# 标题条:红块 + 大字
-	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
-	var title_vb := VBoxContainer.new()
-	title_vb.add_child(Ui.l("暂 停", 34, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
-	title_vb.add_child(Ui.l("PAUSED", 13, Ui.LIGHT, Color(1, 1, 1, 0.7),
-		HORIZONTAL_ALIGNMENT_CENTER))
-	title_bar.add_child(title_vb)
-	vb.add_child(title_bar)
-
-	var body := VBoxContainer.new()
-	body.add_theme_constant_override("separation", 10)
-	var body_wrap := PanelContainer.new()
-	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, null, 0, 24, 20))
-	body_wrap.add_child(body)
-	vb.add_child(body_wrap)
-
-	body.add_child(Ui.l("稍作歇息,几何体们不会跑掉。", 14, Ui.LIGHT, Palette.I.dim,
-		HORIZONTAL_ALIGNMENT_CENTER))
-
-	_resume = _make_button("继 续", func() -> void: m.resume_game())
-	body.add_child(_resume)
-	_restart_btn = _make_button("重 新 开 始", func() -> void: m.restart_from_pause())
-	body.add_child(_restart_btn)
-	body.add_child(_make_button("档 案 几 何", func() -> void: m.open_archive()))
-	body.add_child(_make_button("设 置", func() -> void: m.open_settings()))
-	_leave_btn = _make_button("返 回 标 题", func() -> void: m.quit_to_menu())
-	body.add_child(_leave_btn)
-	var touch_btn := _make_button("虚拟按键 · 关", func() -> void: pass)
-	touch_btn.pressed.connect(func() -> void: _toggle_touch(touch_btn))
-	body.add_child(touch_btn)
-
-	body.add_child(_spacer(0, 4))
-	var esc_hint := "点按按钮继续游戏" if DisplayServer.is_touchscreen_available() \
+	# —— 按钮接线(桌面端虚拟按键开关见 _toggle_touch)——
+	_resume.pressed.connect(func() -> void: m.resume_game())
+	_restart_btn.pressed.connect(func() -> void: m.restart_from_pause())
+	%ArchiveBtn.pressed.connect(func() -> void: m.open_archive())
+	%SettingsBtn.pressed.connect(func() -> void: m.open_settings())
+	_leave_btn.pressed.connect(func() -> void: m.quit_to_menu())
+	%TouchBtn.pressed.connect(func() -> void: _toggle_touch(%TouchBtn))
+	%EscHint.text = "点按按钮继续游戏" if DisplayServer.is_touchscreen_available() \
 		else "Esc · 继续游戏"
-	body.add_child(Ui.l(esc_hint, 12, Ui.LIGHT, Color(Palette.I.dim, 0.85),
-		HORIZONTAL_ALIGNMENT_CENTER))
+
+
+## 场景骨架的样式施加(颜色经 Palette、文字预设经 Ui)。
+func _apply_styles() -> void:
+	_root.theme = Ui.make_theme()
+	_dim.color = Color(Palette.I.ink, 0.78)
+	_panel.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, Color(Palette.I.paper, 0.2), 1, 0, 0))
+	Adaptive.register_card(_panel)
+	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",
+		Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
+	Ui.style(%TitleLabel, 34, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.style(%SubLabel, 13, Ui.LIGHT, Color(1, 1, 1, 0.7), HORIZONTAL_ALIGNMENT_CENTER)
+	(%BodyWrap as PanelContainer).add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, null, 0, 24, 20))
+	Ui.style(%Caption, 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.style(%EscHint, 12, Ui.LIGHT, Color(Palette.I.dim, 0.85), HORIZONTAL_ALIGNMENT_CENTER)
+	for b: Button in [%ResumeBtn, %RestartBtn, %ArchiveBtn, %SettingsBtn,
+			%LeaveBtn, %TouchBtn]:
+		b.add_theme_font_size_override("font_size", 18)
+		Ui.wire_button(b)
 
 
 ## 虚拟按键开关:桌面端临时开启触摸按钮(触摸屏设备默认已显示)。
@@ -92,22 +58,6 @@ func _toggle_touch(btn: Button) -> void:
 		return
 	m.touch_controls.toggle()
 	btn.text = "虚拟按键 · 开" if m.touch_controls.is_forced() else "虚拟按键 · 关"
-
-
-func _spacer(w: float, h: float) -> Control:
-	var c := Control.new()
-	c.custom_minimum_size = Vector2(w, h)
-	return c
-
-
-func _make_button(text: String, on_click: Callable) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.custom_minimum_size = Vector2(0, 46)
-	b.add_theme_font_size_override("font_size", 18)
-	Ui.wire_button(b)
-	b.pressed.connect(func() -> void: on_click.call())
-	return b
 
 
 func open() -> void:

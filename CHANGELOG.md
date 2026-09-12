@@ -3,6 +3,40 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.33.0(2026-09-13)
+
+> **M-3 深化:菜单侧场景化**——暂停菜单全结构 + 标题菜单海报骨架
+> 落 .tscn;联网核对后裁定 Theme 不走 .tres(主题色全为 Palette 派生
+> 混合值,资源副本会破坏 SSOT)。menu 像素差 0.62%(漂浮徽标/标题
+> 呼吸噪声带),五门禁全绿。
+
+### 新增
+- **`scenes/ui/pause_menu.tscn` 全结构场景化**:压暗层 / 居中面板 /
+  红色标题条 / 六按钮 / 提示行全部入场景,pause_menu.gd 162→~120 行
+  改节点引用 + 样式施加;行为(open/close/联机语义/虚拟按键开关)
+  逐位不变。
+- **`scenes/ui/menu_layer.tscn` 海报骨架场景化**:1280×720 设计稿
+  坐标(外框 / 四角刻度 / 左栏标题位 / 双红线 / 定位语 / 右栏剧目列
+  / 四主按钮 / 四漂浮徽标位)全部以节点骨架入场景;menu_layer.gd
+  696→~560 行改 `%` 引用 + 运行时样式施加。剧目二级菜单 / 双人联接
+  弹层暂留代码侧(overlay 卡片,下刀收口)。
+
+### 裁定
+- **Theme 不做 .tres**:官方最佳实践是项目级 Theme 资源,但本项目
+  主题色全为 Palette 派生混合(`Color(PAPER,0.04)` / `Color(RED,0.72)`
+  等),.tres 字面量会冻结派生色、造成第二份色板副本 —— make_theme
+  留在代码,Palette 仍是唯一颜色 SSOT(联网核对:Godot 主题编辑器
+  / Theme 资源为社区标准做法,本项目按 SSOT 纪律变通)。
+- settings_panel / boot_intro 场景化留下刀:前者行内容数据驱动占比高
+  (分辨率按钮随 SettingsManager 生成),后者为开屏动画编排(动态
+  内容豁免本位)。
+
+### 门禁
+- check-only 全绿;trait_check ALL PASS;gridcheck warns=11 同基线;
+  recalltest 3 PASS;dualtest ALL PASS;menushot / setshot 零脚本错误;
+  menu vs 基线像素差 0.62%(漂浮徽标旋转 + 标题呼吸噪声带,结构
+  零漂移,目检全要素在位)。
+
 ## v0.32.0(2026-09-13)
 
 > **UI 侧资源化与场景化(M-2 全量落地 + M-3 hud 批)**:调色板整体

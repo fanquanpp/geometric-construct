@@ -7,20 +7,19 @@ extends CanvasLayer
 ## 未上演的幕没有二级菜单,点击给错误音 + toast 反馈。
 ## 细线外框 + 角部刻度 + 版本号,一切直角、平面、锐利;
 ## 入场为分层 stagger 演出,常驻动效遵循 art-style.md §3(M5 呼吸 / M6 打点)。
+## 海报骨架(设计稿坐标)在 scenes/ui/menu_layer.tscn(R1 场景化,v0.33.0);
+## 剧目二级菜单 / 双人联接弹层仍为代码侧覆盖层(overlay 卡片,下刀收口)。
 
 var m: Main
 
 var _act_btns: Array = []
-var _chapter_hint: Label
-var _toast: Label
-var _toast_tw: Tween
 var _unlocked := 0
 var _title_mark: TitleMark
 var _floaters: Array = []          # 漂浮几何徽标(常驻慢速旋转 + 浮动)
 var _floater_seed: Array = []      # 每枚徽标的相位/方向
 var _t := 0.0
 
-# —— 剧目二级菜单(关卡列) ——
+# —— 剧目二级菜单(关卡列;覆盖层暂留代码侧) ——
 var _act_root: Control
 var _act_shade: ColorRect
 var _act_card: PanelContainer
@@ -33,97 +32,61 @@ var _act_open := false
 var _act_idx := -1
 var _act_tween: Tween
 
+@onready var _root: Control = %Root
+@onready var _content: Control = %Content
+@onready var _frame: Control = %FrameOutline
+@onready var _kicker: Label = %Kicker
+@onready var _intro: Label = %Intro
+@onready var _keys: Label = %Keys
+@onready var _ver_left: Label = %VerLeft
+@onready var _sec: Label = %SecLabel
+@onready var _chapter_hint: Label = %ChapterHint
+@onready var _toast_label: Label = %Toast
+@onready var _start_btn: Button = %StartBtn
+@onready var _rogue_btn: Button = %RogueBtn
+@onready var _dual_btn: Button = %DualBtn
+@onready var _panel_btn: Button = %PanelBtn
+@onready var _settings_btn: Button = %SettingsBtn
+
+# —— 双人试炼 · 联接方式选择(net.md §1 前两档;覆盖层暂留代码侧) ——
+var _dual_root: Control
+var _dual_shade: ColorRect
+var _dual_card: PanelContainer
+var _dual_same: Button
+var _dual_open := false
+
 
 func _ready() -> void:
-	layer = 20
-	var root := Control.new()
+	var root := _root
 	root.theme = Ui.make_theme()
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(root)
 
-	# 海报排版写死在 1280×720 设计稿坐标系,由 fit_design 等比缩放居中,
-	# 适配任意屏幕宽高比(20:9 手机 / 4:3 平板)
-	var content := Control.new()
-	content.size = Adaptive.DESIGN
-	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(content)
-
-	# —— 海报外框 + 角部刻度 ——
-	var frame := ColorRect.new()
-	frame.color = Color(Palette.I.paper, 0.16)
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	frame.offset_left = 16
-	frame.offset_right = -16
-	frame.offset_top = 16
-	frame.offset_bottom = -16
-	content.add_child(_outline_rect(frame.position, frame.size, root))
-	for corner in [Vector2(16, 16), Vector2(1264, 16), Vector2(16, 704), Vector2(1264, 704)]:
-		var c := ColorRect.new()
+	# —— 海报外框 + 角部刻度(色值运行时施加) ——
+	_frame.draw.connect(func() -> void:
+		_frame.draw_rect(Rect2(Vector2.ZERO, _frame.size), Color(Palette.I.paper, 0.16), false, 1.0))
+	for c: ColorRect in [%CornerTL, %CornerTR, %CornerBL, %CornerBR]:
 		c.color = Palette.I.red
-		c.size = Vector2(10, 10)
-		c.position = corner - Vector2(5, 5)
-		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.add_child(c)
 
 	# —— 左栏:动态标题 ——
-	var left := Control.new()
-	left.position = Vector2(84, 0)
-	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content.add_child(left)
-
-	var kicker := Ui.l("GEOMETRIC CONSTRUCT · 构成主义几何肉鸽游戏", 15, Ui.LIGHT, Palette.I.dim)
-	kicker.position = Vector2(0, 112)
-	kicker.modulate.a = 0.0
-	left.add_child(kicker)
-
-	# 动态标题:逐字入场 / 呼吸浮动 / 印刷错位故障 / 红块节拍
 	_title_mark = TitleMark.new()
 	_title_mark.setup(Version.GAME_TITLE, 104, Palette.I.paper, Palette.I.red)
-	_title_mark.position = Vector2(0, 150)
-	left.add_child(_title_mark)
-
-	left.add_child(_place(Ui.rule(430, 3, Palette.I.red), Vector2(4, 306)))
-	left.add_child(_place(Ui.rule(430, 1), Vector2(4, 313)))
-
-	var intro := Ui.l("四个几何体,被丢进一个不存在的地方。\n形状即性格,属性即命运——\n速度、弹性、置换与惯性,\n唯有互相依靠,才能找到各自的出口。",
-		17, Ui.BODY, Color(Palette.I.paper, 0.78), HORIZONTAL_ALIGNMENT_LEFT, false, 8)
-	intro.position = Vector2(4, 342)
-	intro.modulate.a = 0.0
-	left.add_child(intro)
-
+	(%TitleSlot as Control).add_child(_title_mark)
+	Ui.style(_kicker, 15, Ui.LIGHT, Palette.I.dim)
+	(%Rule1 as ColorRect).color = Palette.I.red
+	(%Rule2 as ColorRect).color = Color(Palette.I.paper, 0.28)
+	Ui.style(_intro, 17, Ui.BODY, Color(Palette.I.paper, 0.78),
+		HORIZONTAL_ALIGNMENT_LEFT, false, 8)
+	_intro.text = "四个几何体,被丢进一个不存在的地方。\n形状即性格,属性即命运——\n速度、弹性、置换与惯性,\n唯有互相依靠,才能找到各自的出口。"
 	# 左下:操作提示(触屏设备无键盘,改为触摸指引)
-	var keys_text := "1–4 选择剧目    C 档案几何    Esc 退出" \
+	_keys.text = "1–4 选择剧目    C 档案几何    Esc 退出" \
 		if not DisplayServer.is_touchscreen_available() \
 		else "点按剧目进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
-	var keys := Ui.l(keys_text, 13, Ui.LIGHT, Color(Palette.I.dim, 0.9))
-	keys.position = Vector2(4, 618)
-	keys.modulate.a = 0.0
-	left.add_child(keys)
+	Ui.style(_keys, 13, Ui.LIGHT, Color(Palette.I.dim, 0.9))
+	_ver_left.text = "%s · 反犬旁僻(fanquanpp)" % Version.full_string()
+	Ui.style(_ver_left, 12, Ui.LIGHT, Color(Palette.I.dim, 0.8))
 
-	var ver_left := Ui.l("%s · 反犬旁僻(fanquanpp)" % Version.full_string(),
-		12, Ui.LIGHT, Color(Palette.I.dim, 0.8))
-	ver_left.position = Vector2(4, 648)
-	ver_left.modulate.a = 0.0
-	left.add_child(ver_left)
-
-	# —— 右栏:剧目行(序章 + 三幕) ——
-	var right := Control.new()
-	right.position = Vector2(640, 0)
-	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content.add_child(right)
-
-	var sec := Ui.l("剧目 REPERTOIRE", 14, Ui.HEAD, Palette.I.dim)
-	sec.position = Vector2(30, 128)
-	right.add_child(sec)
-	right.add_child(_place(Ui.rule(490, 1), Vector2(30, 156)))
-
-	var list := VBoxContainer.new()
-	list.position = Vector2(30, 176)
-	list.add_theme_constant_override("separation", 10)
-	right.add_child(list)
-
+	# —— 右栏:剧目行 ——
+	Ui.style(_sec, 14, Ui.HEAD, Palette.I.dim)
+	(%RightRule as ColorRect).color = Color(Palette.I.paper, 0.28)
 	for i in LevelData.ACTS.size():
 		var idx := i
 		var act: Dictionary = LevelData.ACTS[idx]
@@ -140,140 +103,105 @@ func _ready() -> void:
 		Ui.wire_button(b, "")   # try_open_act 自播 click / error(开演与拒绝语义不同)
 		b.pressed.connect(func() -> void: try_open_act(idx))
 		b.focus_entered.connect(func() -> void: show_act_hint(idx))
-		list.add_child(b)
+		%ActList.add_child(b)
 		_act_btns.append(b)
+	Ui.style(_chapter_hint, 14, Ui.LIGHT, Palette.I.dim)
+	Ui.style(_toast_label, 15, Ui.HEAD, Palette.I.red)
 
-	_chapter_hint = Ui.l("", 14, Ui.LIGHT, Palette.I.dim)
-	_chapter_hint.position = Vector2(30, 480)
-	right.add_child(_chapter_hint)
-
-	# 轻提示行:未上演幕的点击反馈(红色,短暂停留后自行淡出)
-	_toast = Ui.l("", 15, Ui.HEAD, Palette.I.red)
-	_toast.position = Vector2(30, 512)
-	_toast.modulate.a = 0.0
-	right.add_child(_toast)
-
-	# —— 右下:主按钮(三行两列) ——
-	var start := Button.new()
-	start.text = "开始 / 继续"
-	start.custom_minimum_size = Vector2(240, 44)
-	start.position = Vector2(670, 554)
-	start.add_theme_font_size_override("font_size", 18)
-	start.add_theme_font_override("font", Ui.HEAD)
-	start.add_theme_stylebox_override("normal", Ui.sb(Palette.I.red, 0, null, 0, 20, 8))
-	start.add_theme_stylebox_override("hover", Ui.sb(Color(Palette.I.red, 0.82), 0, null, 0, 20, 8))
-	start.add_theme_stylebox_override("pressed", Ui.sb(Color(Palette.I.red, 0.65), 0, null, 0, 20, 8))
-	start.add_theme_color_override("font_color", Color.WHITE)
-	Ui.wire_button(start)
-	start.pressed.connect(func() -> void: m.start_game())
-	content.add_child(start)
+	# —— 右下:主按钮 ——
+	_start_btn.add_theme_font_size_override("font_size", 18)
+	_start_btn.add_theme_font_override("font", Ui.HEAD)
+	_start_btn.add_theme_stylebox_override("normal", Ui.sb(Palette.I.red, 0, null, 0, 20, 8))
+	_start_btn.add_theme_stylebox_override("hover",
+		Ui.sb(Color(Palette.I.red, 0.82), 0, null, 0, 20, 8))
+	_start_btn.add_theme_stylebox_override("pressed",
+		Ui.sb(Color(Palette.I.red, 0.65), 0, null, 0, 20, 8))
+	_start_btn.add_theme_color_override("font_color", Color.WHITE)
+	Ui.wire_button(_start_btn)
+	_start_btn.pressed.connect(func() -> void: m.start_game())
 
 	# 肉鸽(重跑)入口移除 —— 机制完善期之后随关卡设计一起回归(v0.17.3)
-	var rogue_btn := Button.new()
-	rogue_btn.visible = false
-	rogue_btn.text = "重跑 · RE-RUN"
-	rogue_btn.custom_minimum_size = Vector2(240, 44)
-	rogue_btn.position = Vector2(930, 554)
-	rogue_btn.add_theme_font_size_override("font_size", 18)
-	rogue_btn.add_theme_font_override("font", Ui.HEAD)
-	rogue_btn.add_theme_color_override("font_color", Palette.I.red)
-	rogue_btn.add_theme_color_override("font_hover_color", Color.WHITE)
-	rogue_btn.add_theme_color_override("font_pressed_color", Color.WHITE)
-	rogue_btn.add_theme_stylebox_override("normal",
+	_rogue_btn.add_theme_font_size_override("font_size", 18)
+	_rogue_btn.add_theme_font_override("font", Ui.HEAD)
+	_rogue_btn.add_theme_color_override("font_color", Palette.I.red)
+	_rogue_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	_rogue_btn.add_theme_color_override("font_pressed_color", Color.WHITE)
+	_rogue_btn.add_theme_stylebox_override("normal",
 		Ui.sb(Color(Palette.I.red, 0.10), 0, Palette.I.red, 1, 20, 8))
-	rogue_btn.add_theme_stylebox_override("hover", Ui.sb(Palette.I.red, 0, Palette.I.red, 1, 20, 8))
-	rogue_btn.add_theme_stylebox_override("pressed",
+	_rogue_btn.add_theme_stylebox_override("hover",
+		Ui.sb(Palette.I.red, 0, Palette.I.red, 1, 20, 8))
+	_rogue_btn.add_theme_stylebox_override("pressed",
 		Ui.sb(Color(Palette.I.red, 0.68), 0, Palette.I.red, 1, 20, 8))
-	Ui.wire_button(rogue_btn)
-	rogue_btn.pressed.connect(func() -> void: m.start_rogue_run())
-	content.add_child(rogue_btn)
+	Ui.wire_button(_rogue_btn)
+	_rogue_btn.pressed.connect(func() -> void: m.start_rogue_run())
 
 	# N1 同屏双人入口(net.md §3):橙 = P2 侧语言(与 chips 双人高亮同源);
 	# 触屏设备首版仅 P1 触屏、P2 手柄(双触屏分区后置,net.md §11)。
-	var dual_btn := Button.new()
-	dual_btn.text = "双人试炼"
-	dual_btn.custom_minimum_size = Vector2(240, 44)
-	dual_btn.position = Vector2(930, 554)
-	dual_btn.add_theme_font_size_override("font_size", 18)
-	dual_btn.add_theme_font_override("font", Ui.HEAD)
-	dual_btn.add_theme_color_override("font_color", Palette.I.orange)
-	dual_btn.add_theme_color_override("font_hover_color", Color.WHITE)
-	dual_btn.add_theme_color_override("font_pressed_color", Color.WHITE)
-	dual_btn.add_theme_stylebox_override("normal",
+	_dual_btn.add_theme_font_size_override("font_size", 18)
+	_dual_btn.add_theme_font_override("font", Ui.HEAD)
+	_dual_btn.add_theme_color_override("font_color", Palette.I.orange)
+	_dual_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	_dual_btn.add_theme_color_override("font_pressed_color", Color.WHITE)
+	_dual_btn.add_theme_stylebox_override("normal",
 		Ui.sb(Color(Palette.I.orange, 0.10), 0, Palette.I.orange, 1, 20, 8))
-	dual_btn.add_theme_stylebox_override("hover", Ui.sb(Palette.I.orange, 0, Palette.I.orange, 1, 20, 8))
-	dual_btn.add_theme_stylebox_override("pressed",
+	_dual_btn.add_theme_stylebox_override("hover",
+		Ui.sb(Palette.I.orange, 0, Palette.I.orange, 1, 20, 8))
+	_dual_btn.add_theme_stylebox_override("pressed",
 		Ui.sb(Color(Palette.I.orange, 0.68), 0, Palette.I.orange, 1, 20, 8))
-	Ui.wire_button(dual_btn)
-	dual_btn.pressed.connect(func() -> void: _open_dual_pick())
-	content.add_child(dual_btn)
+	Ui.wire_button(_dual_btn)
+	_dual_btn.pressed.connect(func() -> void: _open_dual_pick())
 
-	var panel_btn := Button.new()
-	panel_btn.text = "档案几何"
-	panel_btn.custom_minimum_size = Vector2(240, 44)
-	panel_btn.position = Vector2(670, 610)
-	panel_btn.add_theme_font_size_override("font_size", 18)
-	Ui.wire_button(panel_btn)
-	panel_btn.pressed.connect(func() -> void: m.open_archive())
-	content.add_child(panel_btn)
+	_panel_btn.add_theme_font_size_override("font_size", 18)
+	Ui.wire_button(_panel_btn)
+	_panel_btn.pressed.connect(func() -> void: m.open_archive())
 
-	var settings_btn := Button.new()
-	settings_btn.text = "设 置"
-	settings_btn.custom_minimum_size = Vector2(240, 44)
-	settings_btn.position = Vector2(930, 610)
-	settings_btn.add_theme_font_size_override("font_size", 18)
-	Ui.wire_button(settings_btn)
-	settings_btn.pressed.connect(func() -> void: m.open_settings())
-	content.add_child(settings_btn)
+	_settings_btn.add_theme_font_size_override("font_size", 18)
+	Ui.wire_button(_settings_btn)
+	_settings_btn.pressed.connect(func() -> void: m.open_settings())
 
 	_build_act_panel(root)
 	_build_dual_pick_panel(root)
 
-	# —— 漂浮几何徽标(常驻慢速旋转 + 浮动,方向/速率各异) ——
+	# —— 漂浮几何徽标:纹理 + 常驻慢速旋转 + 浮动参数 ——
 	var xs := [0.05, 0.42, 0.95, 0.80]
 	var ys := [0.22, 0.07, 0.62, 0.06]
 	for i in 4:
 		var s := 34.0 + i * 10.0
-		var ico := TextureRect.new()
+		var ico: TextureRect = _floaters_node(i)
 		ico.texture = Ui.icon("characters/%s-flat.svg" % Geometries.ALL[i].slug)
-		ico.modulate = Color(1, 1, 1, 0.30)
-		ico.custom_minimum_size = Vector2(s, s)
-		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ico.pivot_offset = Vector2(s / 2.0, s / 2.0)
 		ico.position = Vector2(xs[i] * 1280.0, ys[i] * 720.0)
-		content.add_child(ico)
 		_floaters.append(ico)
 		_floater_seed.append({"spin": (0.22 if i % 2 == 0 else -0.16) * (1.0 + i * 0.12),
 			"phase": i * 1.7, "base_y": ico.position.y})
 
 	# 适配:可见区变化(旋转 / 改窗口)时重新缩放居中
-	Adaptive.fit_design(content)
-	root.resized.connect(func() -> void: Adaptive.fit_design(content))
+	Adaptive.fit_design(_content)
+	root.resized.connect(func() -> void: Adaptive.fit_design(_content))
 
-	_play_entrance(kicker, intro, keys, ver_left,
-		[sec, _chapter_hint, start, dual_btn, panel_btn, settings_btn])
+	_play_entrance()
+
+
+func _floaters_node(i: int) -> TextureRect:
+	return [%Floater0, %Floater1, %Floater2, %Floater3][i] as TextureRect
 
 
 ## 入场演出:标题逐字落位(TitleMark)→ 定位语 / 简介浮现 → 右栏与按钮逐项浮现(M7)。
-func _play_entrance(kicker: Label, intro: Label, keys: Label, ver: Label,
-		right_items: Array) -> void:
+func _play_entrance() -> void:
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(kicker, "modulate:a", 1.0, 0.30).set_delay(0.10)
-	tw.tween_property(intro, "modulate:a", 1.0, 0.35).set_delay(0.72)
-	for item in right_items:
-		var ctl := item as Control
-		ctl.modulate.a = 0.0
-		tw.tween_property(ctl, "modulate:a", 1.0, 0.22).set_delay(0.55)
+	tw.tween_property(_kicker, "modulate:a", 1.0, 0.30).set_delay(0.10)
+	tw.tween_property(_intro, "modulate:a", 1.0, 0.35).set_delay(0.72)
+	for item: Control in [_sec, _chapter_hint, _start_btn, _dual_btn, _panel_btn,
+			_settings_btn]:
+		item.modulate.a = 0.0
+		tw.tween_property(item, "modulate:a", 1.0, 0.22).set_delay(0.55)
 	# 剧目行逐项浮现(M7:自上而下 stagger 0.06s)
 	for i in _act_btns.size():
 		var b: Button = _act_btns[i]
 		b.modulate.a = 0.0
 		tw.tween_property(b, "modulate:a", 1.0, 0.22).set_delay(0.55 + i * 0.06)
-	tw.tween_property(keys, "modulate:a", 1.0, 0.25).set_delay(1.30)
-	tw.tween_property(ver, "modulate:a", 1.0, 0.25).set_delay(1.40)
+	tw.tween_property(_keys, "modulate:a", 1.0, 0.25).set_delay(1.30)
+	tw.tween_property(_ver_left, "modulate:a", 1.0, 0.25).set_delay(1.40)
 	if _title_mark != null:
 		_title_mark.play_entrance()
 
@@ -404,11 +332,6 @@ func is_act_panel_open() -> bool:
 
 ## 点击「双人试炼」先选联接方式:同设备(桌面专属)/ 跨设备(同网直连)。
 ## 设备判断在此处收口:触屏设备无分区键鼠 / 双手柄前提,同设备项置灰不可用。
-var _dual_root: Control
-var _dual_shade: ColorRect
-var _dual_card: PanelContainer
-var _dual_same: Button
-var _dual_open := false
 
 
 func _build_dual_pick_panel(root: Control) -> void:
@@ -655,32 +578,20 @@ func act_level_digit(digit: int) -> void:
 
 ## 轻提示:红色一行,短暂停留后自行淡出。
 func toast(msg: String) -> void:
-	_toast.text = "» " + msg
+	_toast_label.text = "» " + msg
 	if _toast_tw != null and _toast_tw.is_valid():
 		_toast_tw.kill()
 	_toast_tw = create_tween()
-	_toast_tw.tween_property(_toast, "modulate:a", 1.0, 0.12)
+	_toast_tw.tween_property(_toast_label, "modulate:a", 1.0, 0.12)
 	_toast_tw.tween_interval(1.6)
-	_toast_tw.tween_property(_toast, "modulate:a", 0.0, 0.45)
+	_toast_tw.tween_property(_toast_label, "modulate:a", 0.0, 0.45)
+
+
+var _toast_tw: Tween
 
 
 func show_act_hint(idx: int) -> void:
 	_chapter_hint.text = LevelData.ACTS[idx]["hint"]
-
-
-func _outline_rect(pos: Vector2, size_: Vector2, _parent: Control) -> Control:
-	var box := Control.new()
-	box.position = pos
-	box.size = size_
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.draw.connect(func() -> void:
-		box.draw_rect(Rect2(Vector2.ZERO, size_), Color(Palette.I.paper, 0.16), false, 1.0))
-	return box
-
-
-func _place(c: Control, pos: Vector2) -> Control:
-	c.position = pos
-	return c
 
 
 func set_unlocked(unlocked: int) -> void:

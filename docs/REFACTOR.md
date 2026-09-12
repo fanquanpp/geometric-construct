@@ -230,10 +230,13 @@ Foreshadow / Symbol(模板入 levels.md §0;测试道免登记)。
 - **M-2 · 视觉常量 ✅(v0.32.0)**:`Palette` 改 Resource +
   `data/palette.tres`(10 色 @export),全库 386 处颜色引用改读资源,
   ui.gd 兼容别名退役。
-- **M-3 · 场景拆分 ✅ 第一批(v0.31.0)**:16 子系统常驻层 + level_root +
-  player 实体落 .tscn(共 22 场景),main.gd / level_builder 全部改
-  场景实例化;`main.gd` / `ui.gd` 层内拼树仍随 Phase 4 逐文件小步
-  (拆哪个文件顺手把该层内部结构搬进对应 .tscn),不一次性大改。
+- **M-3 · 场景拆分 ✅ 第一批(v0.31.0)/ 第二批(v0.32.0)/ 第三批(v0.33.0)**:
+  第一批:16 子系统常驻层 + level_root + player 实体落 .tscn(22 场景);
+  第二批:hud.tscn 结构骨架 + EdgeIndicator 独立场景,Pipeline palette
+  .tres 化(M-2);第三批:pause_menu 全结构 + menu_layer 海报骨架
+  场景化(剧目/双人弹层与 settings/boot 留下刀)。main.gd /
+  level_builder 全部改场景实例化;剩余层随触改渐进。
+  Theme 不做 .tres(主题色为 Palette 派生混合,副本破坏 SSOT,v0.33.0 裁定)。
 - **M-4 · 角色参数表管理器化 ✅(v0.31.0)**:GeometryDef → Resource
   (data/characters/*.tres 五份)+ CharacterManager(读表建体入池,
   发 `character_created`)+ LevelRoot 表现层预连接挂载——兑现 Phase 4
