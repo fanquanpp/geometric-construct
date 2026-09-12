@@ -52,98 +52,14 @@ static func _static_init() -> void:
 		"levels": [],
 	})
 
-	#   v5 管道测试道(aseprite 地图,art 字段接管地形外观):
-	#   地板与天花板并行的直通道,机关沿地板一线排开 —— 纯测试不考验玩家。
-	#   Z0 出生 | Z1 滑雪带 | Z2 推箱室 | Z3 弹射+传送对 | Z4 机关长廊
-	#   (琴键/躲避动板/限时桥坑/气闸门) | Z5 归门(圆丘坡 + 伍壁龛)
-	LEVELS.append(_make("机制试炼场", 0,
-		"试炼场 v5 · 管道测试道:地板与天花板并行直通道,机关沿地板一线排开。\n纯测试道——机关作用 / 涂装分层 / 几何体数值,不考验玩家。",
-		Vector2(6400, 1080), [0, 1, 2, 3, 4],
-		[
-			# —— 管道主体:地板两段(夹限时桥坑) + 天花板全线 ——
-			Rect2(0, 880, 4300, 200),
-			Rect2(4700, 880, 1700, 200),
-			Rect2(0, 0, 6400, 200),
-			# —— 竖隔墙:弹射越墙 / 传送穿墙(墙顶低于天花 100px 给界的
-			#   天路让行;底缘全部嵌地 ≥50,共面接缝纪律 levels.md §8.4)——
-			Rect2(2600, 280, 100, 650),
-			Rect2(3200, 300, 100, 630),
-			# —— 伍壁龛:边两级台阶上龛,界自天花经踏步落入(嵌地 ≥50;
-			#   龛顶踏步 6100,480 底缘 540 ∈ 门心-15±50,gridcheck §5 双落点)——
-			Rect2(6100, 480, 300, 60),
-			Rect2(6150, 620, 250, 330),
-			Rect2(6320, 760, 80, 190),
-		],
-		[   # ramps:归门前圆丘双向坡(≤37° 纪律)
-			{"pts": [Vector2(4900, 880), Vector2(5300, 640), Vector2(5700, 880)],
-				"base": 880.0},
-		],
-		[[Vector2(2200, 830), Vector2(140, 160)]],   # gates:弹射助跑加速门
-		[
-			[0, Vector2(5780, 826)],
-			[1, Vector2(5870, 826)],
-			[2, Vector2(5960, 826)],
-			[3, Vector2(6050, 826)],
-			[4, Vector2(6220, 574)],   # 伍双体门:壁龛台上,界边同区到站
-		],
-		[
-			Vector2(200, 855),
-			Vector2(320, 855),
-			Vector2(440, 855),
-			Vector2(560, 855),
-			{"a": Vector2(300, 215), "b": Vector2(390, 855)},   # 界嵌天花 10px / 边行地面(v4 模式,防磁界扫掠微推)
-		],
-		[   # movers:长廊躲避动板(纵向往复,择时通过)
-			{"rect": Rect2(4150, 640, 260, 60), "offset": Vector2(0, -420),
-				"period": 3.0},
-		],
-		[   # hints
-			{"pos": Vector2(300, 700), "text": "试炼场 v5 · 管道测试道:纯测试,不考验玩家"},
-			{"pos": Vector2(950, 700), "text": "滑雪带:摩擦骤降,收油慢打"},
-			{"pos": Vector2(1850, 700), "text": "推箱:侧面顶入,整格滑动,遇墙即停"},
-			{"pos": Vector2(2300, 640), "text": "加速门 + 弹射板:踩上即飞越隔墙"},
-			{"pos": Vector2(3050, 560), "text": "传送对:进 A 出 B,速度保留"},
-			{"pos": Vector2(3800, 700), "text": "琴键砖:踩踏发声,圆滚过即琶音"},
-			{"pos": Vector2(4280, 560), "text": "躲避动板:择时通过;限时桥跨坑"},
-			{"pos": Vector2(5000, 460), "text": "气闸门:两侧开关任一踩住即开"},
-			{"pos": Vector2(5300, 500), "text": "圆丘坡:双向登顶,圆滚速最快"},
-			{"pos": Vector2(6180, 480), "text": "归门:伍两半同区到站(界天花/边台阶)"},
-		],
-		[   # zones:命名分区(levels.md §8.2)
-			{"rect": Rect2(0, 0, 500, 1080), "name": "Z0 出生"},
-			{"rect": Rect2(500, 0, 1000, 1080), "name": "Z1 滑雪带"},
-			{"rect": Rect2(1500, 0, 900, 1080), "name": "Z2 推箱室"},
-			{"rect": Rect2(2400, 0, 1200, 1080), "name": "Z3 弹射传送"},
-			{"rect": Rect2(3600, 0, 1600, 1080), "name": "Z4 机关长廊"},
-			{"rect": Rect2(5200, 0, 1200, 1080), "name": "Z5 归门"},
-		],
-	))
-	LEVELS[0].art = "res://assets/levels/trial_v5.png"
-	LEVELS[0].piano_tiles = [
-		{"rect": Rect2(3650, 880, 100, 200), "note": "C4"},
-		{"rect": Rect2(3750, 880, 100, 200), "note": "E4"},
-		{"rect": Rect2(3850, 880, 100, 200), "note": "G4"},
-		{"rect": Rect2(3950, 880, 100, 200), "note": "C5"},
-	]
-	LEVELS[0].push_boxes = [
-		{"cell": Vector2(1650, 830)},
-		{"cell": Vector2(1850, 830)},
-		{"cell": Vector2(2050, 830)},
-	]
-	LEVELS[0].ski_patches = [Rect2(600, 830, 760, 50)]
-	LEVELS[0].portals = [{"a": Vector2(3050, 760), "b": Vector2(3450, 760)}]
-	LEVELS[0].launch_pads = [
-		{"pos": Vector2(2450, 850), "vec": Vector2(700, -2000)},
-	]
-	LEVELS[0].lever_gates = [
-		{"levers": [Rect2(4850, 800, 150, 80), Rect2(5150, 800, 150, 80)],
-			"door": {"rect": Rect2(5000, 580, 100, 400)}},
-	]
-	LEVELS[0].timed_bridges = [
-		{"rect": Rect2(4300, 880, 400, 60), "on_time": 2.0, "off_time": 2.0,
-			"phase": 0.0},
-	]
-	LEVELS[0].kill_y = 1400.0
+	#   v5 管道测试道 —— SSOT = aseprite 语义层(v0.30.0 地图管线):
+	#   assets/art/levels/trial_v5.aseprite 的 map / map_ent 两层(颜色图例)
+	#   经 tools/ase2level.py 编译为 levels/trial_v5.json(像素承载几何与
+	#   锚点,JSON 承载参数与文案);本文件不再硬编码任何关卡数据。
+	#   编辑流程:改 aseprite → aseprite CLI 导出 map/ent PNG → 跑编译器。
+	var f := FileAccess.open("res://levels/trial_v5.json", FileAccess.READ)
+	assert(f != null, "level json missing: res://levels/trial_v5.json")
+	LEVELS.append(from_json_text(f.get_as_text()))
 
 
 ## 关卡 JSON 契约版本(levels.md §0 / speed-dev data-contract.md §5):

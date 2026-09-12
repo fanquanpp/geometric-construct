@@ -23,6 +23,30 @@
   缺项退回原点并告警(下标坑,layer_check 教训)。
 - 教学关铁律:**一关只教一个新概念**;能力组合放在该概念之后的第二关。
 
+### 0.1 地图 SSOT:Aseprite 语义层编译管线(v0.30.0,硬编码退役)
+
+关卡几何与锚点的**唯一来源 = aseprite 语义层**,不再在 `level_data.gd`
+硬编码任何关卡数据。两层图例(1px = 1px 世界坐标):
+
+| 层 | 颜色 | 语义 |
+|---|---|---|
+| `map` | `#FFnn00`(R=255,G=序号,B=0,逐矩形唯一索引色) | 实体平台/墙(嵌地重叠处后画者盖前画者,各 bbox 仍精确) |
+| `map_ent` | 五几何色 **空心 24×24** | 终点门(中心锚点) |
+| `map_ent` | 五几何色 **实心 16×16**(同色两块 = 双子 `{a, b}`,a 取最上) | 出生点 |
+| `map_ent` | `#00nnFF`(B=255,G=序号,逐块索引色) | 琴键砖(音符按 x 序取 meta) |
+| `map_ent` | `#7FD4FF` / `#FF3EF5` | 滑雪带 / 加速门(实心矩形) |
+
+其余参数化实体(斜坡/动板/气闸门/限时桥/推箱/传送对/弹射板/提示/分区/
+文案/名册)**JSON 承载**(`levels/<关>.meta.json`)——契约:**像素承载几何
+与锚点,JSON 承载参数与文案**。
+
+编辑流程:改 aseprite → `aseprite -b <关>.aseprite --layer map -save-as
+<关>_map.png`(+ `--layer map_ent`)→ `python tools/ase2level.py --map …
+--ent … --meta … --out levels/<关>.json` → `LevelData._static_init` 生产装
+载 `levels/*.json`(缺失即启动断言,不静默回退)。平价验证:编译产物与
+原硬编码坐标逐字段断言一致 + gridcheck warns 数不变 + recalltest/dualtest
+全绿。
+
 ## 1. 关卡写作流程(从 TWA 学到的)
 
 1. 先定教学段名(像 TWA 作者给段落命名 "Jump Up" / "Jump Gap with Rise"),

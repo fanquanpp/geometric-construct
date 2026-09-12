@@ -35,6 +35,34 @@
   --tapshot / --tourshot 截图目检(信标呼吸相位、雪屑、滴水蓝点、
   菱形回包 + 方块迸散全程)。
 
+## v0.30.0(2026-09-13)
+
+> **地图系统 Aseprite 化(硬编码退役)+ 机关精灵图库量产**。
+
+### 新增
+- **地图 SSOT 编译管线**(levels.md §0.1):`trial_v5.aseprite` 增 `map` /
+  `map_ent` 双语义层(颜色图例:索引色平台 / 五几何色空心门+实心出生 /
+  琴键索引色 / 滑雪 / 加速门,1px = 1px 世界);`tools/ase2level.py` 编译
+  两层 PNG + meta JSON(参数与文案)→ `levels/trial_v5.json`;
+  `LevelData._static_init` 生产装载 `levels/*.json`。**平价断言**:编译产物
+  与原硬编码坐标逐字段一致(platforms/exits/spawns 含双子 a,b/gates/ski/
+  piano);gridcheck warns=11 与硬码基线相同,五门禁全绿。
+- **机关/效果精灵图库**(assets/art/mech/,13 张 aseprite 源 + 横向条带
+  PNG,共 43 帧,200×200 构成主义平面风):气闸门(开合 4 帧)/ 限时桥
+  (完好→裂纹→碎散→重组)/ 传送门(6 帧旋涡)/ 弹射板(蓄力 3 帧)/
+  琴键(按下 2 帧)/ 加速门(能量环 4 帧)/ 推箱(基准)/ 动板(推进器
+  2 帧)/ 拉杆(开合 2 帧)/ 曲面 buff 环(3 帧)/ 置换爆点(6 帧)/
+  落地尘(4 帧)/ 死亡碎片(重力抛散 6 帧)。供机关 `_draw` →
+  AnimatedSprite2D 迁移与图鉴动帧取用。
+
+### 变更
+- `level_data.gd` 285→207 行:trial_v5 硬编码数组整块退役,改为
+  `levels/*.json` 装载(缺失即断言,不静默回退);`_make` 保留为
+  LevelDef 构造工具。
+- aseprite 语义层编辑坑沉淀:Lua `cel.image = img` 赋值即拷贝(必须
+  画完再赋值);相接矩形会被连通合并(逐矩形唯一索引色解);偶数尺寸
+  bbox 中心 = (x0+x1+1)//2。
+
 ## v0.29.1(2026-09-12)
 
 > **地图皮组件细化 + 分辨率升格**:MapSkin 画布从半分辨率(3200×540,

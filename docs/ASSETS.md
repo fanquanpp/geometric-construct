@@ -22,7 +22,7 @@
 | 关卡(在演) | 1(机制试炼场 v4,分区 Z0–Z5)| `level_data.gd` LEVELS |
 | 关卡(历史文件未接线) | 1(伍试水 · 界与边)| `levels/pair_trial.json` |
 | 图鉴插图(入引擎) | 34 张 png | `assets/archive/` |
-| aseprite 源 | 26 个(tiles_v2 24 + icon_construct + levels/trial_v5)| `assets/art/`、`assets/art/levels/` |
+| aseprite 源 | 39 个(tiles_v2 24 + icon_construct + levels/trial_v5 + mech 精灵 13)| `assets/art/`、`assets/art/levels/`、`assets/art/mech/` |
 | svg 图标 | 69 个(7 类)| `assets/svg/` |
 | 字体 | 1(NotoSansSC-VF)| `assets/fonts/` |
 
@@ -198,7 +198,9 @@
 | 几何体肖像 svg | 5 | `assets/svg/characters/` | dash / spring / fall / roll / pair |
 | 图鉴插图 png | **34** | `assets/archive/` | 建筑 6 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200 |
 | 图鉴 aseprite 源 | 24 | `assets/art/tiles_v2/` | `bld_*` 6 + `geo_*` 5 + `mech_*` 13(v0.29 补 push_box / ski_patch / launch_pad 母版)|
-| 关卡美术层 | 1 | `assets/levels/trial_v5.png`(源 `assets/art/levels/trial_v5.aseprite`,**全分辨率 6400×1080**)| 试炼场 v5 地图皮「长卷 · 归门圣环」(v0.29.1 细化升格,契约 art-style.md §6.2;沿革:v0.29 修 v0.27 双倍放大)|
+| 关卡美术层 | 1 | `assets/levels/trial_v5.png`(源 `assets/art/levels/trial_v5.aseprite`,**全分辨率 6400×1080**)| 试炼场 v5 地图皮「长卷 · 归门圣环」(v0.29.1 细化升格,契约 art-style.md §6.2;沿革:v0.29 修 v0.27 双倍放大)|| 关卡语义层 | 2 | `assets/levels/trial_v5_map.png` + `_ent.png`(源同上 `map`/`map_ent` 层)| 颜色图例几何+锚点 SSOT,`tools/ase2level.py` 编译 `levels/trial_v5.json`(v0.30.0,契约见 levels.md §0.1)|
+| 机关精灵图库 | 13 源 + 13 条带 | `assets/art/mech/` | 气闸/限时桥/传送/弹射/琴键/加速门/推箱/动板/拉杆/曲面 buff + 爆点/尘/碎片动画,200×200 共 43 帧(v0.30.0,供机关 _draw→AnimatedSprite2D 迁移与图鉴动帧取用)|
+
 | 游戏图标 | 7 | `icon.png`(256)+ `icon_192` + `icon_fg/bg/mono_432`(源 `assets/art/icon_construct.aseprite`)| 构成徽章 v3:墨底幽灵菱线 + 构成红斜面菱芯 + 四纸白卫星(菱/三角/圆/方);432 母版 ×4 整数导出,安全区内构图(v0.28.1,Android 启动器四字段已接线)|
 | svg 图标 | **69** | `assets/svg/` | arrows 7 / audio 4 / buttons 18 / characters 5 / icons 14 / keys 10 / objects 5 / ui 6 |
 | svg 场景物件 | 5 | `assets/svg/objects/` | exit-door / platform / portal / spike / spring |
