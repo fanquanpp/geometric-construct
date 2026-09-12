@@ -5,12 +5,15 @@ extends Resource
 ## Inspector 直调;resource 只作静态数据,运行时禁止写入(共享引用,
 ## 一处写处处变)。
 ##
-## 属性规范(glossary.md §4 标尺 v2):
+## 属性规范(glossary.md §4 加成数值条 v3,v0.36.0):
 ##   内部存储 = 物理倍率(0.0 – 2.0):1.0 = 标准物理基准,0.0 = 无该能力,
 ##   2.0 = 物理上限;物理公式(px/s、格、反弹率)与本文件数值绑定。
-##   面板/文档展示 = 标尺 v2 读数:读数 = 物理倍率 + 1.0(物理 0.0 → 读数
-##   -1.0"关闭");跳高例外:读数 = 格数(标准跳 2.0 格 = 基准 2.0)。
-##   常规域读数 -1.0 – 3.0,正常模式硬顶 5.0,肉鸽不设限。
+##   **基础值只属于几何体自己**;局内修正走「加成数值条」(StatBonus):
+##   档位 0 = 无加成,+1..+4 = 基础 × (1 + 0.25×档),−1 = 锁定,
+##   基础 ≤ 0 的能力 = "状态-1"(非禁用,是天生没有)。
+##   基础读数(存档/文档兼容记法)= 物理倍率 + 1.0(物理 0.0 → -1.0);
+##   跳高例外:读数 = 格数(标准跳 2.0 格 = 基准 2.0)。常规域读数
+##   -1.0 – 3.0;词条满档硬顶读数 5.0。
 ##
 ## 标尺换算:1.0 属性单位 = 100 px(1 格)。
 ##   跳高(格) = jump_units(独立属性,二段跳几何体统一 2.0 格/跳);
@@ -109,8 +112,13 @@ func friction_reading() -> float:
 	return snappedf(mu / t.standard_mu * 2.0, 0.1)
 
 
-## 档案页属性行:{label, value, hint} 或 {label, text}。value 为标尺 v2 读数
-## (-1.0 关闭 – 3.0 常规上限;glossary.md §4)。
+## 档案页属性行(纯基础数据,不含局内加成——加成由 ArchivePanel 渲染时
+## 经 RunState 叠加):
+##   {label, bar: true,  key, absent, base_read, hint} —— 加成数值条行
+##   (bar 键 ∈ StatBonus.BAR_KEYS;absent = 基础不具备 → 面板显示"状态-1");
+##   {label, bar: false, absent, value, hint} —— 派生/材质读数行(无档位);
+##   {label, text} —— 形体行。
+## 基础读数 = 标尺记法(物理 + 1.0,物理 0 → -1.0;glossary.md §4)。
 ## 派生量一律按真实物理式换算:
 ##   速度 → v = (读数−1.0) × RUN_SPEED(3.0 格/秒 = 300 px/s);
 ##   跳高 → h = v₀² / 2g(起跳速度按能量守恒反推);
@@ -146,19 +154,31 @@ func stat_rows() -> Array:
 	weight_hint += " · 摩擦 a = μ·g"
 
 	return [
-		{"label": "速度", "value": scale_reading(base_speed), "hint": speed_hint},
-		{"label": "弹性", "value": scale_reading(bounce), "hint": bounce_hint},
-		{"label": "跳跃", "value": jump_units if can_jump else -1.0,
+		{"label": "速度", "bar": true, "key": "base_speed",
+			"absent": base_speed <= 0.0, "base_read": scale_reading(base_speed),
+			"hint": speed_hint},
+		{"label": "弹性", "bar": true, "key": "bounce",
+			"absent": bounce <= 0.0, "base_read": scale_reading(bounce),
+			"hint": bounce_hint},
+		{"label": "跳跃", "bar": true, "key": "jump_units",
+			"absent": not can_jump or jump_units <= 0.0,
+			"base_read": jump_units if can_jump else -1.0,
 			"hint": jump_hint},
-		{"label": "攀墙", "value": MovementTuning.I.climb_units if can_climb else -1.0,
+		{"label": "攀墙", "bar": false, "absent": not can_climb,
+			"value": MovementTuning.I.climb_units if can_climb else -1.0,
 			"hint": climb_hint},
-		{"label": "重量", "value": scale_reading(weight), "hint": weight_hint},
-		{"label": "负载", "value": scale_reading(carry), "hint":
-			"头顶超载:跳跃高度减半" if carry <= 0.05
-			else _band_hint(carry, "仅轻量", "标准", "强力承载")},
-		{"label": "惯性", "value": inertia_reading(), "hint":
+		{"label": "重量", "bar": true, "key": "weight",
+			"absent": weight <= 0.0, "base_read": scale_reading(weight),
+			"hint": weight_hint},
+		{"label": "负载", "bar": true, "key": "carry",
+			"absent": carry <= 0.0, "base_read": scale_reading(carry),
+			"hint": "头顶超载:跳跃高度减半" if carry <= 0.05
+				else _band_hint(carry, "仅轻量", "标准", "强力承载")},
+		{"label": "惯性", "bar": false, "absent": false,
+			"value": inertia_reading(), "hint":
 			"动量保持程度(与重量同源耦合,解耦预留)"},
-		{"label": "摩擦系数", "value": friction_reading(), "hint":
+		{"label": "摩擦系数", "bar": false, "absent": false,
+			"value": friction_reading(), "hint":
 			"地面减速 a = μ·g(标准读数 2.0;滚动材质更低)"},
 		{"label": "形体", "text": "%.2f × %.2f 格(%d × %d px)"
 			% [bottom_units(), height_units(), int(size.x), int(size.y)]},

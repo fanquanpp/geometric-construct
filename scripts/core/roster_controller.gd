@@ -160,8 +160,19 @@ func refresh_roster() -> void:
 	var active: int = players[active_slot].index \
 		if (active_slot >= 0 and active_slot < players.size()) else -1
 	# 同屏双人:无单一"受控"槽,active 高亮让位给 binds 双人描边
-	# (P1 纸白 / P2 橙,hud.refresh_roster)
-	var binds: Array = dual_binds() if main.dual_mode else []
+	# (P1 纸白 / P2 橙,hud.refresh_roster)。联机(N2)同样双方描边:
+	# own = slot 0(纸白)/ other = slot 1(橙),数据源 = NetSession
+	# 开局绑定集(v0.36.0 选角认领,net.md §8)——不画出来,玩家无从
+	# 知道哪些几何体归自己。
+	var binds: Array = []
+	if main.dual_mode:
+		binds = dual_binds()
+	elif NetSession.I != null and NetSession.I.in_game() \
+			and main._level_def != null:
+		var own: Array = NetSession.I.own_geo_arr()
+		var other: Array = NetSession.I.other_geo_arr()
+		for g in main._level_def.roster:
+			binds.append({"slot": 0 if own.has(int(g)) else 1, "geo": int(g)})
 	main._hud.refresh_roster(main._level_def.roster, active, mask, binds)
 
 

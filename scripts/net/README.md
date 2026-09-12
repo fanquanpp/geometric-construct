@@ -24,10 +24,12 @@
 
 - **拓扑**:listen-server 主机权威,物理与判定只在主机算;中继服转发
   全量流量,不做配对后 P2P 打洞。
-- **同步**:运动走 MultiplayerSynchronizer 不可靠通道(20Hz,
-  `position / velocity / gravity_dir / facing`,接收端插值);事件走
-  可靠 RPC(复用 `Main.I` 回调);movers 只同步开局时间戳;生成用
-  MultiplayerSpawner + 自定义 `spawn_function`。
+- **同步**(v0.37.0 按实装口径勘误,与 net.md §6 对齐):运动走自定义
+  不可靠有序 RPC(`rpc_state`,PackedFloat32Array 快照,20Hz);客机输入
+  上传 `rpc_input`(60Hz);事件走可靠 RPC(复用 `Main.I` 回调);movers
+  只随快照携带关卡时钟;**无 Spawner/Synchronizer**——两端由同一
+  LevelDef 同构 build(D7 版本 + 哈希门禁)。选图选角 = 可靠 RPC
+  (`rpc_map_picked / rpc_claim / rpc_claims`,主机权威仲裁)。
 - **data 层保持纯数据可直接序列化**;entities 的输入读取走输入槽抽象
   (`Player.input_source`,与同屏双人共用,N0 公共前置)。
 - 明确不做(首版):lockstep、客户端预测、WebRTC、第三方后端、

@@ -2,8 +2,16 @@ class_name RunState
 extends RefCounted
 ## 肉鸽一局的运行时状态(docs/design/roguelike.md)。
 ## 词条 = 属性钩子覆盖层:Player 对属性的全部读取改走
-## `RunState.modified(def, key)`——标准闯关(无局)时逐字段直通,零影响;
-## 局内堆叠词条后按 effects 覆盖,六项标尺属性钳制回 0.0–2.0。
+## `RunState.modified(def, key)`——标准闯关(无局)时逐字段直通,零影响。
+##
+## 能力修正两族(v0.36.0,glossary.md §4 v3):
+##   加成档位(op = "bonus",整数)——加成数值条语言:净档位 = 各词条
+##     val 之和,钳 [-1, 4];有效值 = StatBonus.resolve(基础, 档位)
+##     (+4 = ×2,-1 = 锁定,基础 ≤ 0 的能力不受加成 = 状态-1)。
+##   微调(op = "add"/"mul")——物理小步,用于非加成钩子(coyote /
+##     friction / swap_cooldown 等)与加成键上的轻量微调(失重镀层),
+##     先加后乘,落在加成换算之后;加成键最后统一钳 [0, 4]
+##     (读数 5.0 硬顶,roguelike.md §2)。
 ##
 ## 红色刻度(序幕 §4 的叙事落地):每次重拼(死亡重生)消耗一段;
 ## 刻度耗尽,这一局落幕,进入结算。
@@ -11,7 +19,7 @@ extends RefCounted
 ## 当前进行中的一局(标准闯关 / 菜单时为 null)。
 static var active: RunState
 
-## 非标尺钩子的默认值(无词条 / 无局时的直通读数)。
+## 非加成钩子的默认值(无词条 / 无局时的直通读数)。
 const DEFAULTS := {
 	"friction": 1.0,          # 摩擦倍率(乘在等效摩擦系数上)
 	"coyote": 0.09,           # 土狼时间(秒)
@@ -21,9 +29,6 @@ const DEFAULTS := {
 	"gravity_fall_mult": 1.24,  # 三段重力:下落加重(跳-落曲线不对称,更利落)
 	"gravity_apex_mult": 0.86,  # 三段重力:抛物线顶点轻微悬停(目标感)
 }
-## 受标尺 0.0–2.0 约束的属性键(数值纪律:覆盖后不突破标尺)。
-const SCALED_KEYS := ["base_speed", "bounce", "jump_units", "weight", "carry",
-	"buff_sprint_speed"]
 
 const MAX_TICKS := 5         # 一局携带的红色刻度(重拼次数)
 
@@ -49,14 +54,35 @@ static func rng_randomize() -> void:
 		active.rng.randomize()
 
 
+## 能力基础值(absent 感知):加成键按几何体自身数据取,
+## 不具备的能力(不可跳等)基础 = 0 → 数值条显示"状态-1"。
+static func base_of(def: GeometryDef, key: String) -> float:
+	match key:
+		"jump_units":
+			return def.jump_units if def.can_jump else 0.0
+		_:
+			if DEFAULTS.has(key):
+				return float(DEFAULTS[key])
+			var v: Variant = def.get(key)
+			return float(v) if v != null else 0.0
+
+
+## 加成键净档位(当前局词条堆叠;无局 = 0)。
+static func bonus_level(key: String) -> int:
+	var run := active
+	if run == null or not StatBonus.BAR_KEYS.has(key):
+		return 0
+	var lvl := 0
+	for m in run.mods:
+		for e in m["effects"]:
+			if e["key"] == key and e["op"] == "bonus":
+				lvl += int(e["val"])
+	return clampi(lvl, StatBonus.MIN_LEVEL, StatBonus.MAX_LEVEL)
+
+
 ## 属性钩子读取总入口:def 的字段直通,局内被词条覆盖。
 static func modified(def: GeometryDef, key: String) -> float:
-	var base: float
-	if DEFAULTS.has(key):
-		base = float(DEFAULTS[key])
-	else:
-		var v: Variant = def.get(key)
-		base = float(v) if v != null else 0.0
+	var base := base_of(def, key)
 	var run := active
 	if run == null or run.mods.is_empty():
 		return base
@@ -75,7 +101,8 @@ static func has_flag(def: GeometryDef, key: String) -> bool:
 	return false
 
 
-## 起跳速度:按(可能被词条加高的)跳高档位反推 h = v₀²/2g。
+## 起跳速度:按(可能被词条加高 / 锁定的)跳高档位反推 h = v₀²/2g。
+## 锁定档(−1)有效值 0 → 起跳速度 0(禁跳);不可跳几何体恒 0。
 static func jump_v(def: GeometryDef) -> float:
 	if not def.can_jump:
 		return 0.0
@@ -140,6 +167,10 @@ func shards_earned(cleared: bool) -> int:
 
 func _apply_effects(base: float, key: String) -> float:
 	var value := base
+	# 第一层:加成档位换算(仅加成键;锁定/缺席在 StatBonus.resolve 内裁决)
+	if StatBonus.BAR_KEYS.has(key):
+		value = StatBonus.resolve(base, bonus_level(key))
+	# 第二层:微调 add → mul(非加成钩子的主通道;加成键上的轻量微调)
 	for m in mods:
 		for e in m["effects"]:
 			if e["key"] != key:
@@ -149,7 +180,7 @@ func _apply_effects(base: float, key: String) -> float:
 					value += e["val"]
 				"mul":
 					value *= e["val"]
-	# 标尺纪律:六项属性覆盖后钳制回 0.0–2.0
-	if key in SCALED_KEYS:
-		value = clampf(value, 0.0, 2.0)
+	# 纪律:加成键统一钳 [0, 4](读数 5.0 硬顶);非加成钩子不钳(保持既有)
+	if StatBonus.BAR_KEYS.has(key):
+		value = clampf(value, 0.0, 4.0)
 	return value

@@ -177,11 +177,121 @@ func in_game() -> bool:
 	return mode == Mode.IN_GAME
 
 
-## 本侧绑定的几何体下标集合(玩法基线:roster 对半分,net.md §8;
-## 分配方案后调时只动这里)。
+## 本侧绑定的几何体下标集合(v0.36.0 起为选角认领的兜底,见 on_level_built):
+## 主机前 ⌈n/2⌉ 位、客机其余。纯函数,--nettest 有形状断言。
 static func split_roster(roster: Array) -> Array:
 	var mid := int(ceil(roster.size() / 2.0))
-	return [[roster.slice(0, mid)], [roster.slice(mid, roster.size())]]
+	return [roster.slice(0, mid), roster.slice(mid, roster.size())]
+
+
+## 认领合法性(index 进/出):位属本关名册、未被对方持有、未超上限。
+## 纯函数,--nettest 有断言;上限 = MAX_PICKS 与 ⌈n/2⌉ 的较大者
+## (名册位多于 2×MAX_PICKS 时覆盖率优先,允许单侧多认领)。
+static func claim_ok(roster: Array, mine: Array, other: Array, index: int, on: bool) -> bool:
+	if not on:
+		return mine.has(index)
+	return roster.has(index) and not other.has(index) \
+		and mine.size() < maxi(MAX_PICKS, int(ceil(roster.size() / 2.0)))
+
+
+## 开演条件:每个名册位都被某一方认领(全员有主,到站契约才可满足)。
+static func claims_cover(roster: Array, host_claims: Array, client_claims: Array) -> bool:
+	for g in roster:
+		if not (host_claims.has(int(g)) or client_claims.has(int(g))):
+			return false
+	return true
+
+
+## —— 选角认领集访问(房间选角页 / HUD 双方描边的数据源) ——
+func host_claims_arr() -> Array:
+	return _host_geo
+
+
+func client_claims_arr() -> Array:
+	return _client_geo
+
+
+func my_claims() -> Array:
+	return _host_geo if is_host() else _client_geo
+
+
+func other_claims() -> Array:
+	return _client_geo if is_host() else _host_geo
+
+
+func own_geo_arr() -> Array:
+	return _own_geo
+
+
+func other_geo_arr() -> Array:
+	return _other_geo
+
+
+## 主机侧:当前选图下认领是否覆盖齐全(开演钮解锁条件)。
+func can_start() -> bool:
+	if not (is_host() and pick_level >= 0 and pick_level < LevelData.LEVELS.size()):
+		return false
+	return claims_cover(LevelData.LEVELS[pick_level].roster, _host_geo, _client_geo)
+
+
+## 主机选图:广播定档,两端房间页转选角页。
+func host_pick_level(index: int) -> void:
+	if not (is_host() and mode != Mode.NONE
+			and index >= 0 and index < LevelData.LEVELS.size()):
+		return
+	pick_level = index
+	rpc_map_picked.rpc(index)
+	map_picked.emit(index)
+
+
+@rpc("authority", "call_remote", "reliable", 0)
+func rpc_map_picked(index: int) -> void:
+	pick_level = index
+	map_picked.emit(index)
+
+
+## 主机认领 / 释放:本地权威仲裁 + 全量广播(2 人房,流量可忽略)。
+func host_toggle_claim(index: int, on: bool) -> void:
+	if not (is_host() and pick_level >= 0 and pick_level < LevelData.LEVELS.size()):
+		return
+	if claim_ok(LevelData.LEVELS[pick_level].roster, _host_geo, _client_geo, index, on):
+		if on:
+			_host_geo.append(index)
+		else:
+			_host_geo.erase(index)
+	_claims_broadcast()
+
+
+## 客机认领 / 释放:发主机仲裁,以广播回包为准(不乐观本地生效)。
+func client_toggle_claim(index: int, on: bool) -> void:
+	if is_host():
+		return
+	rpc_claim.rpc_id(1, index, on)
+
+
+@rpc("any_peer", "call_remote", "reliable", 0)
+func rpc_claim(index: int, on: bool) -> void:
+	if not (is_host() and pick_level >= 0 and pick_level < LevelData.LEVELS.size()):
+		return
+	if claim_ok(LevelData.LEVELS[pick_level].roster, _client_geo, _host_geo, index, on):
+		if on:
+			_client_geo.append(index)
+		else:
+			_client_geo.erase(index)
+	_claims_broadcast()
+
+
+@rpc("authority", "call_remote", "reliable", 0)
+func rpc_claims(level: int, h_claims: Array, c_claims: Array) -> void:
+	pick_level = level
+	_host_geo = (h_claims as Array).duplicate()
+	_client_geo = (c_claims as Array).duplicate()
+	claims_changed.emit()
+
+
+func _claims_broadcast() -> void:
+	rpc_claims.rpc(pick_level, _host_geo, _client_geo)
+	claims_changed.emit()
 
 
 func own_slots_arr() -> Array:
@@ -285,17 +395,22 @@ func on_level_built() -> void:
 	_clock = 0.0
 	_clock_target = 0.0
 	_tick = 0
-	var split := split_roster(_m._level_def.roster)
+	# 绑定分边(v0.36.0):优先选角认领集(net.md §8);未走选图流程
+	# (--netauto 等自动化钩子 / 旧调用点)退回对半分——主机前 ⌈n/2⌉ 位。
+	# 按几何体下标分边再映射 players 槽:双子(伍)同下标两具同属一侧。
+	var own := my_claims()
+	var other := other_claims()
+	if own.is_empty() and other.is_empty():
+		var split := split_roster(_m._level_def.roster)
+		own = split[0] if is_host() else split[1]
+		other = split[1] if is_host() else split[0]
+	_own_geo = (own as Array).duplicate()
+	_other_geo = (other as Array).duplicate()
 	_client_slots_clear()
 	_own_slots.clear()
-	# 绑定分边必须按本机角色算:同一 split 两侧各取各的集合 ——
-	# 主机 own = split[0] / client = split[1];客机 own = split[1](上传目标)
-	# / client = split[0](主机钳制 rpc_input 的合法目标集)。
 	for i in _m.players.size():
 		var p: Player = _m.players[i]
-		var client_side: bool = (split[1] as Array).has(p.index)
-		var mine := client_side if not is_host() else not client_side
-		if mine:
+		if _own_geo.has(p.index):
 			_own_slots.append(i)
 		else:
 			_client_slots.append(i)
@@ -506,7 +621,9 @@ func _on_peer_disconnected(_id: int) -> void:
 	if mode == Mode.NONE:
 		return
 	if is_host():
+		_client_geo.clear()   # 掉线方认领作废,选角页/开演条件随之刷新
 		_client_slots_clear()
+		claims_changed.emit()
 		members_changed.emit()
 		if _m != null:
 			_m.net_peer_lost()   # 局内:弹回房间;大厅:仅刷新
@@ -612,6 +729,32 @@ func run_self_test() -> void:
 		fails += 1
 	s_peer.close()
 	c_peer.close()
+	# ⑤ 分边与认领逻辑(v0.36.0 选图选角,net.md §8;纯函数 headless 可测)
+	# split_roster 形状:两侧平铺数组(v0.35.1 前曾双层嵌套,致客机绑定集
+	# 恒空 = 只有主机能控制的根因),并集覆盖名册、尺寸 ⌈n/2⌉/⌊n/2⌋。
+	var roster := [0, 1, 2, 3, 4]
+	var split := split_roster(roster)
+	var split_ok: bool = split.size() == 2 \
+		and split[0] is Array and (split[0] as Array).size() == 3 \
+		and ((split[0] as Array)[0] is int) \
+		and split[1] is Array and (split[1] as Array).size() == 2
+	print("NETTEST split ", "PASS" if split_ok else "FAIL",
+		" host=", split[0], " client=", split[1])
+	if not split_ok:
+		fails += 1
+	# 认领规则:对方持有不可抢 / 未持有可领 / 释放须先持有 / 越界拒绝 /
+	# 上限拒绝;覆盖判定:全有主才可开演。
+	var claims_ok: bool = \
+		(not claim_ok(roster, [], [4], 4, true)) and \
+		claim_ok(roster, [], [4], 0, true) and \
+		claim_ok(roster, [0], [], 0, false) and \
+		(not claim_ok(roster, [0], [], 5, true)) and \
+		(not claim_ok(roster, [0, 1, 2], [], 3, true)) and \
+		claims_cover(roster, [0, 1, 2], [3, 4]) and \
+		(not claims_cover(roster, [0, 1], [3, 4]))
+	print("NETTEST claims ", "PASS" if claims_ok else "FAIL")
+	if not claims_ok:
+		fails += 1
 	leave("NETTEST done")
 	print("NETTEST ALL ", "PASS" if fails == 0 else "FAIL(%d)" % fails)
 	get_tree().quit(0 if fails == 0 else 1)

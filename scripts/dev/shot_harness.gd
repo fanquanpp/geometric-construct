@@ -538,6 +538,17 @@ func run_room_shot() -> void:
 	m.net_room_layer.autostart_host()
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("room_host")
+	# 选图 / 选角两页(v0.36.0,net.md §8):主机定档 → 双方认领态分镜
+	# (headless 单机 = 仅主机侧"我方"认领,未认领位照常渲染)
+	m.net_room_layer._show_map()
+	await m.get_tree().create_timer(0.4).timeout
+	await _shot("room_map")
+	NetSession.I.host_pick_level(0)
+	await m.get_tree().create_timer(0.4).timeout
+	NetSession.I.host_toggle_claim(0, true)
+	NetSession.I.host_toggle_claim(1, true)
+	await m.get_tree().create_timer(0.4).timeout
+	await _shot("room_role")
 	m.net_room_layer.beacon_stop_only()
 	m._state = Main.State.ROOM
 	m.net_room_layer.open()

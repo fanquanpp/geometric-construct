@@ -7,12 +7,15 @@ class_name RunModifiers
 ## 专属词条只强化该主角的核心机制——疾 = 冲刺 / 跳 / 爬;跃 = 弹性 /
 ## 二段跳;逆 = 置换;圆 = 滚动 / 加速门。
 ##
-## 数值纪律(设计档 §2):单词条幅度 ±0.5 以内;六项标尺属性
-## (base_speed / bounce / jump_units / weight / carry / buff_sprint_speed)
-## 覆盖后由 RunState 统一钳制回 0.0–2.0(形状可读性)。
-## 非标尺钩子:friction(摩擦倍率)/ coyote(土狼时间秒)/
-## swap_cooldown(置换冷却秒)/ air_jumps(空中跳次数)/
-## gate_mult(加速门倍率)/ glass(重落地即碎标记)。
+## 数值纪律(设计档 §2;v0.36.0 加成数值条口径,glossary.md §4):
+##   加成档位(op = "bonus",整数)——加成数值条语言:净档位钳 [-1, 4],
+##     +1 档 = 基础 × 1.25,+4 档 = ×2(满档读数 5.0 硬顶),-1 = 锁定
+##     该能力;基础 ≤ 0 的能力不受加成(状态-1,加成词条对其无意义)。
+##     禁止撰写"锁定重量"词条:重量 0 会使加速度公式退化(内容纪律)。
+##   微调(op = "add"/"mul")——非加成钩子(coyote / friction /
+##     swap_cooldown / air_jumps / gate_mult / glass)与加成键上的轻量
+##     物理小步(失重镀层等),单条幅度 ±0.5 以内,先加后乘,落在
+##     加成换算之后;加成键最终由 RunState 统一钳 [0, 4]。
 ##
 ## 局外解锁(设计档 §3):locked = true 的词条需用「刻度残段」兑换入池;
 ## 解锁只扩充词条池,不解锁数值强度。
@@ -55,24 +58,29 @@ static func _static_init() -> void:
 		false,
 		[{"key": "weight", "op": "add", "val": -0.3}]))
 	ALL.append(_make("glass_dash", "玻璃疾走", GEO_ANY, Rarity.DANGER,
-		"速度 +0.5,但重落地即碎——高风险高移速。",
+		"速度 +2 档,但重落地即碎——高风险高移速。",
 		false,
-		[{"key": "base_speed", "op": "add", "val": 0.5},
+		[{"key": "base_speed", "op": "bonus", "val": 2},
 			{"key": "glass", "op": "flag", "val": true}]))
 	ALL.append(_make("tailwind", "顺风格", GEO_ANY, Rarity.COMMON,
-		"基础速度 +0.2——温和的常驻提速。",
+		"速度 +1 档——温和的常驻提速。",
 		true,
-		[{"key": "base_speed", "op": "add", "val": 0.2}]))
+		[{"key": "base_speed", "op": "bonus", "val": 1}]))
 	ALL.append(_make("steady_base", "沉稳底盘", GEO_ANY, Rarity.COMMON,
 		"弹性 −0.2——落地更稳,反弹更克制。",
 		true,
 		[{"key": "bounce", "op": "add", "val": -0.2}]))
+	ALL.append(_make("deaden_coat", "钝化涂层", GEO_ANY, Rarity.DANGER,
+		"弹性锁定(−1),跳跃 +1 档——落地绝不反弹,但跳得更高。",
+		false,
+		[{"key": "bounce", "op": "bonus", "val": -1},
+			{"key": "jump_units", "op": "bonus", "val": 1}]))
 
 	# ———— 疾 · 专属(速度 / 跳 / 爬) ————
 	ALL.append(_make("high_freq", "高频踏点", 0, Rarity.RARE,
-		"跳高 +0.3 格——每一次起跳都更高一线。",
+		"跳高 +1 档——每一次起跳都更高一线。",
 		false,
-		[{"key": "jump_units", "op": "add", "val": 0.3}]))
+		[{"key": "jump_units", "op": "bonus", "val": 1}]))
 
 	# ———— 跃 · 专属(弹性 / 二段跳) ————
 	ALL.append(_make("cloud_ladder", "云梯踏", 1, Rarity.RARE,
@@ -80,9 +88,9 @@ static func _static_init() -> void:
 		false,
 		[{"key": "air_jumps", "op": "add", "val": 1.0}]))
 	ALL.append(_make("glass_spring", "琉璃跳", 1, Rarity.DANGER,
-		"跳高 +0.4,但重落地即碎——跃的高风险一跳。",
+		"跳高 +2 档,但重落地即碎——跃的高风险一跳。",
 		true,
-		[{"key": "jump_units", "op": "add", "val": 0.4},
+		[{"key": "jump_units", "op": "bonus", "val": 2},
 			{"key": "glass", "op": "flag", "val": true}]))
 
 	# ———— 逆 · 专属(置换) ————

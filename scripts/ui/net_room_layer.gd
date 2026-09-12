@@ -1,12 +1,13 @@
 class_name NetRoomLayer
 extends CanvasLayer
-## 房间流程页(net.md §4/§7,N2 同网直连):PICK 选择创建/加入 →
-## HOST 建房等待 → JOIN 搜索/手动 IP → LOBBY 已连接等待开演。
+## 房间流程页(net.md §4/§7/§8,N2 同网直连):PICK 选择创建/加入 →
+## HOST 建房等待 → JOIN 搜索/手动 IP → LOBBY 已连接 → MAP 主机选图 →
+## ROLE 双方认领几何体(每人 1–3 位,名册位全覆盖才可开演)。
 ## Flow 型页面(ui-flow.md):落流程带 30(与 RogueLayer 同带互斥),
 ## 不改玩法状态,只与 Main.State.ROOM 配合;Esc 由 Main 路由进 back_out()。
 ## 版本门禁(D7):版本或关卡指纹不齐的房间标灰"版本不同"。
 
-enum Phase { NONE, PICK, HOST, JOIN, LOBBY }
+enum Phase { NONE, PICK, HOST, JOIN, LOBBY, MAP, ROLE }
 
 var m: Main                    # Main(避免类型环引用,运行时注入)
 
@@ -20,6 +21,8 @@ var _rooms_box: VBoxContainer
 var _ip_edit: LineEdit
 # LOBBY 页
 var _lobby_line: Label
+# ROLE 页
+var _role_start: Button
 
 var _toast_tw: Tween
 
@@ -38,6 +41,8 @@ func _ready() -> void:
 	NetSession.I.net_message.connect(_on_net_message)
 	NetSession.I.members_changed.connect(_on_members_changed)
 	NetSession.I.room_closed.connect(_on_room_closed)
+	NetSession.I.map_picked.connect(_on_map_picked)
+	NetSession.I.claims_changed.connect(_on_claims_changed)
 	# 场景骨架样式施加(R1:壳在 scenes/ui/net_room_layer.tscn,四页内容
 	# 由会话状态驱动动态重建,动态生成豁免)
 	_root.theme = Ui.make_theme()
@@ -100,6 +105,13 @@ func back_out() -> void:
 		Phase.LOBBY:
 			NetSession.I.leave("已离开房间")
 			close_to_menu()
+		Phase.MAP:
+			_show_host()
+		Phase.ROLE:
+			if NetSession.I.is_host():
+				_show_map()
+			else:
+				_show_lobby()   # 客机收起选角(认领保留),回等待页
 		_:
 			close_to_menu()
 
@@ -141,8 +153,12 @@ func _title_of(t: String, s: String) -> void:
 
 
 ## 状态行:常驻 _body 尾部,net_message / members_changed 驱动刷新。
+## 注意 queue_free 帧末才生效:换页后旧状态行仍"有效且挂着父",
+## 必须追加 is_queued_for_deletion 检查,否则复用垂死节点 = 状态行消失
+## (v0.37.0 修复;MAP/ROLE 两新页首次暴露)。
 func _ensure_status() -> void:
-	if _status != null and is_instance_valid(_status) and _status.get_parent() == _body:
+	if _status != null and is_instance_valid(_status) \
+			and _status.get_parent() == _body and not _status.is_queued_for_deletion():
 		return
 	_status = Ui.l("", 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
 	_body.add_child(_status)
@@ -210,10 +226,8 @@ func _show_host() -> void:
 	_body.add_child(Ui.l("本机 IP:%s" % (" / ".join(ips) if ips.size() > 0 else "获取中"),
 		15, Ui.HEAD, Palette.I.paper))
 	_body.add_child(Ui.l("找不到房间?让对手手动输入上面的 IP。", 13, Ui.LIGHT, Palette.I.dim))
-	_host_start = _big_btn("开 演", "首版固定剧目:机制试炼场 · 双人合演",
-		func() -> void:
-			visible = false
-			NetSession.I.host_start_level(0),
+	_host_start = _big_btn("开 演", "选图开演 · 双方各认领 1–3 位几何体",
+		func() -> void: _show_map(),
 		true)
 	_body.add_child(_host_start)
 	_body.add_child(_big_btn("解散房间", "返回标题菜单",
@@ -289,15 +303,21 @@ func _join_ip(ip: String) -> void:
 
 func _show_lobby() -> void:
 	_phase = Phase.LOBBY
-	_title_of("已连接", "LOBBY · 等待主机开演")
+	_title_of("已连接", "LOBBY · 等待主机选图开演")
 	_clear_body()
 	_ensure_status()
+	# 已有选图认领时直接展示"你将操控谁";否则显示绑定集合兜底文案。
 	var names := PackedStringArray()
-	if NetSession.I != null and m != null and not m.players.is_empty():
-		for slot: int in NetSession.I.own_slots_arr():
+	var ns: NetSession = NetSession.I
+	if ns != null and ns.pick_level >= 0 and ns.pick_level < LevelData.LEVELS.size():
+		for g: int in ns.my_claims():
+			var cd: GeometryDef = Geometries.get_def(g)
+			names.append(cd.name + ("/" + cd.name_half if cd.paired else ""))
+	if names.is_empty() and ns != null and m != null and not m.players.is_empty():
+		for slot: int in ns.own_slots_arr():
 			names.append(m.players[slot].display_name())
 	_lobby_line = Ui.l("你将操控:%s(绑定集合内可切换)" % " / ".join(names)
-		if not names.is_empty() else "你将操控:绑定集合(由主机分派)",
+		if not names.is_empty() else "你将操控:绑定集合(主机选图后双方认领)",
 		15, Ui.HEAD, Palette.I.paper)
 	_body.add_child(_lobby_line)
 	_body.add_child(_big_btn("离开房间", "断开连接,返回标题菜单",
@@ -305,11 +325,152 @@ func _show_lobby() -> void:
 	_refresh_status_line()
 
 
+# —— ⑤ MAP:主机选图(仅主机端;客机经 rpc_map_picked 直达选角页) ——
+
+func _show_map() -> void:
+	_phase = Phase.MAP
+	_title_of("选择剧目", "MAP PICK · 主机选择合演关卡")
+	_clear_body()
+	_ensure_status()
+	_status.text = "选定后双方各认领 1–3 位几何体,全员有主才开演"
+	for a in LevelData.ACTS.size():
+		var levels: Array = LevelData.ACTS[a]["levels"]
+		if levels.is_empty():
+			continue
+		_body.add_child(Ui.l(str(LevelData.ACTS[a]["name"]), 15, Ui.HEAD,
+			Color(Palette.I.paper, 0.6)))
+		for li in levels:
+			var idx := int(li)
+			var d: LevelDef = LevelData.LEVELS[idx]
+			var names := PackedStringArray()
+			for g in d.roster:
+				var cd: GeometryDef = Geometries.get_def(int(g))
+				names.append(cd.name + ("/" + cd.name_half if cd.paired else ""))
+			_body.add_child(_big_btn(d.name,
+				"第 %d 场 · %d 具体身 · %s" % [LevelData.scene_no_of(idx),
+					Geometries.roster_body_total(d.roster), " / ".join(names)],
+				func() -> void: NetSession.I.host_pick_level(idx),
+				not NetSession.I.is_host()))
+	_body.add_child(_big_btn("返回", "回到房间等待页",
+		func() -> void: _show_host()))
+	_refresh_status_line()
+
+
+# —— ⑥ ROLE:双方认领几何体(claim 上传主机仲裁,广播回包驱动重建) ——
+
+func _show_role() -> void:
+	var ns: NetSession = NetSession.I
+	if ns.pick_level < 0 or ns.pick_level >= LevelData.LEVELS.size():
+		if ns.is_host():
+			_show_host()
+		else:
+			_show_lobby()
+		return
+	_phase = Phase.ROLE
+	var d: LevelDef = LevelData.LEVELS[ns.pick_level]
+	_title_of("选择角色", "ROLE PICK · %s · 每人 1–3 位,点按认领 / 再点释放" % d.name)
+	_clear_body()
+	_ensure_status()
+	var chips := HBoxContainer.new()
+	chips.add_theme_constant_override("separation", 10)
+	chips.alignment = BoxContainer.ALIGNMENT_CENTER
+	_body.add_child(chips)
+	var mine: Array = ns.my_claims()
+	var other: Array = ns.other_claims()
+	for g in d.roster:
+		chips.add_child(_role_chip(int(g), mine, other))
+	if ns.is_host():
+		_role_start = _big_btn("开 演", "全员有主 · 绑定即定,开局后集合内可切换",
+			func() -> void:
+				visible = false
+				NetSession.I.host_start_level(ns.pick_level),
+			true)
+		_body.add_child(_role_start)
+		_body.add_child(_big_btn("返回选图", "重新选择关卡",
+			func() -> void: _show_map()))
+	else:
+		_body.add_child(_big_btn("返回等待页", "收起选角(认领保留)",
+			func() -> void: _show_lobby()))
+	_refresh_role_line()
+	_refresh_role_btn()
+
+
+## 一枚选角芯片:几何体代号 + 认领态(我方纸白描边 / 对方橙描边 /
+## 未认领暗色),配几何体色托底。双子(伍)一枚芯片 = 界 / 边两具同属。
+func _role_chip(gi: int, mine: Array, other: Array) -> Button:
+	var cd: GeometryDef = Geometries.get_def(gi)
+	var side := 0 if mine.has(gi) else (1 if other.has(gi) else -1)
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(112, 92)
+	b.toggle_mode = true
+	b.set_pressed_no_signal(side == 0)
+	b.text = "%s\n%s" % [cd.name + ("/" + cd.name_half if cd.paired else ""),
+		["未认领", "我 方", "对 方"][side + 1]]
+	b.add_theme_font_override("font", Ui.HEAD)
+	b.add_theme_font_size_override("font_size", 20)
+	b.add_theme_stylebox_override("pressed",
+		Ui.sb(Color(cd.color, 0.30), 0, Color(Palette.I.paper, 0.95), 2, 10, 8))
+	var border := Color(Palette.I.paper, 0.16)
+	if side == 0:
+		border = Color(Palette.I.paper, 0.95)
+	elif side == 1:
+		border = Palette.I.orange
+	b.add_theme_stylebox_override("normal",
+		Ui.sb(Color(Palette.I.ink_3, 0.95), 0, border, 2, 10, 8))
+	b.disabled = side == 1
+	b.modulate = Color(1, 1, 1, 0.55 if side == 1 else 1.0)
+	Ui.wire_button(b)
+	b.pressed.connect(func() -> void: _toggle_claim(gi, side != 0))
+	return b
+
+
+func _toggle_claim(gi: int, on: bool) -> void:
+	if NetSession.I.is_host():
+		NetSession.I.host_toggle_claim(gi, on)
+	else:
+		NetSession.I.client_toggle_claim(gi, on)
+	# 主机本地仲裁后经 claims_changed 重建;客机等广播回包重建。
+
+
+func _refresh_role_line() -> void:
+	if _phase != Phase.ROLE or _status == null or not is_instance_valid(_status):
+		return
+	var ns: NetSession = NetSession.I
+	if ns.pick_level < 0 or ns.pick_level >= LevelData.LEVELS.size():
+		return
+	var roster: Array = LevelData.LEVELS[ns.pick_level].roster
+	var uncovered := 0
+	for g in roster:
+		if not (ns.host_claims_arr().has(int(g)) or ns.client_claims_arr().has(int(g))):
+			uncovered += 1
+	var cap := maxi(NetSession.MAX_PICKS, int(ceil(roster.size() / 2.0)))
+	if _status.modulate != Palette.I.red:
+		_status.text = "我方 %d / %d · 未认领 %d 位%s" % [ns.my_claims().size(),
+			cap, uncovered, "" if uncovered > 0 else " · 覆盖齐全,可开演"]
+
+
+func _refresh_role_btn() -> void:
+	if _phase == Phase.ROLE and _role_start != null and is_instance_valid(_role_start):
+		_role_start.disabled = not NetSession.I.can_start()
+
+
 # ———————————————— 会话信号 → 页面刷新 ————————————————
 
 func _on_members_changed() -> void:
 	_refresh_status_line()
 	_refresh_host_btn()
+
+
+## 选图定档(两端):主机本地点选 / 客机经广播,统一转选角页。
+func _on_map_picked(_index: int) -> void:
+	if visible:
+		_show_role()
+
+
+## 认领集变化(本机点按仲裁回执 / 对端广播 / 掉线清空):重建选角页。
+func _on_claims_changed() -> void:
+	if visible and _phase == Phase.ROLE:
+		_show_role()
 
 
 func _refresh_host_btn() -> void:

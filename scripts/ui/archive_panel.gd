@@ -178,7 +178,7 @@ func _build_geo_page() -> void:
 	_quote_label.custom_minimum_size = Vector2(640, 0)
 	right.add_child(_quote_label)
 
-	var stats_title := Ui.l("属性 ATTRIBUTES(-1.0 – 3.0 标尺,红刻度 = 标准基准 2.0)",
+	var stats_title := Ui.l("属性 ATTRIBUTES(条 = 加成档位:0 基础 · +1~+4 每档 +25% · −1 锁定 · 状态-1 天生没有)",
 		13, Ui.LIGHT, Palette.I.dim)
 	right.add_child(stats_title)
 	_stats_box = VBoxContainer.new()
@@ -225,7 +225,11 @@ func _refresh_geo() -> void:
 		_traits_box.add_child(hb)
 
 
-## 单条属性行:标签 + 标尺 v2 条(-1.0–3.0,红刻度 = 2.0 标准)+ 数值 + 释义。
+## 单条属性行:标签 + 加成数值条(档位格 ×4 + 锁定区)+ 数值 + 释义。
+## 条语言(glossary.md §4 v3):格 = 加成档位(0 无加成 → 4 满),锁定区
+## 红块 = 档位 -1;基础不具备的能力整条不画,数值列示"状态-1"。
+## 数值列:无加成时显示基础读数;局内有加成时显示"+N",释义列前缀
+## 「基础 → 实际」读数换算(肉鸽局内暂停打开档案 = 实时生效中)。
 func _make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 14)
@@ -242,27 +246,64 @@ func _make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 		return hb
 
 	const BAR_W := 300.0
+	const LOCK_W := 34.0
 	var bar := Control.new()
 	bar.custom_minimum_size = Vector2(BAR_W, 12)
 	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var v: float = row["value"]
+
+	var is_bar: bool = row.get("bar", false)
+	var absent: bool = row.get("absent", false)
+	var lvl: int = RunState.bonus_level(str(row.get("key", ""))) if is_bar else 0
 	var col: Color = gd.color
+	var shown := not absent   # 状态-1(天生没有):条区整段留白
 	bar.draw.connect(func() -> void:
-		bar.draw_rect(Rect2(0, 4, BAR_W, 4), Color(Palette.I.paper, 0.14))
-		bar.draw_rect(Rect2(0, 4, BAR_W * clampf(v + 1.0, 0.0, 4.0) / 4.0, 4), col)
-		bar.draw_rect(Rect2(BAR_W * 0.75 - 1.0, -2, 2, 16), Color(Palette.I.red, 0.9))
+		if not shown:
+			return
+		if is_bar:
+			# 锁定区(-1 档):未锁 = 空槽,锁定 = 红块
+			bar.draw_rect(Rect2(0, 2, LOCK_W, 8), Color(Palette.I.paper, 0.10))
+			if lvl <= -1:
+				bar.draw_rect(Rect2(0, 2, LOCK_W, 8), Color(Palette.I.red, 0.9))
+			# 4 个档位格:+1..+4 逐格点亮
+			var cell_w := (BAR_W - LOCK_W - 10.0) / 4.0
+			for i in 4:
+				var cx := LOCK_W + 4.0 + float(i) * (cell_w + 2.0)
+				var on := lvl >= i + 1
+				bar.draw_rect(Rect2(cx, 2, cell_w, 8),
+					col if on else Color(Palette.I.paper, 0.14))
+		else:
+			# 派生读数行(攀墙 / 惯性 / 摩擦):保留连续读数条
+			bar.draw_rect(Rect2(0, 4, BAR_W, 4), Color(Palette.I.paper, 0.10))
+			bar.draw_rect(Rect2(0, 4, BAR_W * clampf(row["value"] + 1.0, 0.0, 4.0) / 4.0, 4),
+				Color(Palette.I.paper, 0.45))
 	)
 	hb.add_child(bar)
 
-	var value := Ui.l("%.1f" % row["value"], 16, Ui.TITLE, Palette.I.paper)
-	value.custom_minimum_size = Vector2(44, 0)
+	# 数值列:基础读数 / +N / 锁定 / 状态-1
+	var vtext := "%.1f" % row.get("base_read", row.get("value", 0.0))
+	var vcol := Palette.I.paper
+	if absent:
+		vtext = "状态-1"
+		vcol = Palette.I.dim
+	elif is_bar and lvl <= -1:
+		vtext = "锁定"
+		vcol = Palette.I.red
+	elif is_bar and lvl > 0:
+		vtext = "+%d" % lvl
+	var value := Ui.l(vtext, 16, Ui.TITLE, vcol)
+	value.custom_minimum_size = Vector2(64, 0)
 	value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(value)
 
-	var hint := Ui.l(row["hint"], 13, Ui.LIGHT, Palette.I.dim)
+	var hint_text: String = row["hint"]
+	if is_bar and not absent and lvl != 0:
+		var eff := RunState.modified(gd, str(row["key"]))
+		hint_text = "基础 %.1f → 实际 %.1f · %s" % [row["base_read"],
+			StatBonus.to_reading(str(row["key"]), eff), hint_text]
+	var hint := Ui.l(hint_text, 13, Ui.LIGHT, Palette.I.dim)
 	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.custom_minimum_size = Vector2(264, 0)
+	hint.custom_minimum_size = Vector2(244, 0)
 	hb.add_child(hint)
 	return hb
 

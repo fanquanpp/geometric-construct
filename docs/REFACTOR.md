@@ -243,3 +243,21 @@ Foreshadow / Symbol(模板入 levels.md §0;测试道免登记)。
   (data/characters/*.tres 五份)+ CharacterManager(读表建体入池,
   发 `character_created`)+ LevelRoot 表现层预连接挂载——兑现 Phase 4
   「角色只交参数表」,R3 标准形首个实装样板完成。
+- **M-5 · 加成数值条 ✅(v0.37.0)**:`StatBonus`(`scripts/data/stat_bonus.gd`,
+  档位模型:0 = 无加成 / +1..+4 = 基础 × (1 + 0.25×档) / −1 = 锁定 /
+  状态−1 = 基础不具备)+ `RunState` 两层解算(档位 → 微调 add/mul →
+  钳 [0, 4])+ 档案页条形重绘(档位格 / 锁定红块 / 状态−1 留白)+
+  词条表加成语言化(glass_dash/tailwind/high_freq/glass_spring 转 bonus
+  op,新增「钝化涂层」锁定词条)+ `modifier_check` 重写(六组断言含
+  内容纪律:禁锁重量)。glossary §4 v3 为口径权威。待办:攀墙
+  (climb_units)接 `modified` 钩子后入 BAR_KEYS(现 player 直读
+  MovementTuning,不卖假档位)。
+- **M-6 · 联机选图选角编排 ✅(v0.37.0)**:MAP 选图页(LevelData 注册表
+  主机选关)+ ROLE 选角页(claim 认领制:每人 1–3 位、主机权威仲裁、
+  名册位全覆盖开演)+ `split_roster` 双层嵌套修复(v0.22.0 起「只有主机
+  能控制」根因,`--nettest` 增形状/认领断言看守)+ HUD chips 联机双方
+  描边 + `--roomshot` 增 room_map/room_role 分镜。待办:①真机双端
+  全链联测(RPC 输入链路 headless 测不到);②`levels/pair_trial.json`
+  入库前置 = 过现行 grid_check(aseprite 源重编译);③肉鸽 × 联机
+  (per-player RunState)另立项;④UiRouter 页面栈(触发线已到,
+  随下一批页面增量抽取)。

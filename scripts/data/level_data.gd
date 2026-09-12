@@ -52,11 +52,13 @@ static func _static_init() -> void:
 		"levels": [],
 	})
 
-	#   v5 管道测试道 —— SSOT = aseprite 语义层(v0.30.0 地图管线):
-	#   assets/art/levels/trial_v5.aseprite 的 map / map_ent 两层(颜色图例)
-	#   经 tools/ase2level.py 编译为 levels/trial_v5.json(像素承载几何与
-	#   锚点,JSON 承载参数与文案);本文件不再硬编码任何关卡数据。
+	#   SSOT = aseprite 语义层(v0.30.0 地图管线):像素承载几何与锚点,
+	#   JSON 承载参数与文案;本文件不再硬编码任何关卡数据。
 	#   编辑流程:改 aseprite → aseprite CLI 导出 map/ent PNG → 跑编译器。
+	#   注:levels/pair_trial.json(双子试水关)未入库——不满足现行
+	#   grid_check 规则(摆渡扫掠 / 伍门可达 / 共面接缝,2026-09-13 实测
+	#   5 项),修复须经 aseprite 源重编译,登记待办见 REFACTOR §八。
+	#   联机选图页随本注册表增长,多关卡自然出现。
 	var f := FileAccess.open("res://levels/trial_v5.json", FileAccess.READ)
 	assert(f != null, "level json missing: res://levels/trial_v5.json")
 	LEVELS.append(from_json_text(f.get_as_text()))

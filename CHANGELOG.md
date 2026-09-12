@@ -3,6 +3,102 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.37.0(2026-09-13)
+
+> **加成数值条(标尺 v2 → v3)+ 联机选图选角编排**双主项。数值系统:
+> 基础值归几何体自己(.tres 不动),-1~4 数值条重构为加成档位语言
+> (0 = 无加成 / +1~+4 = 基础 × (1+0.25×档) / −1 = 锁定 / 状态−1 = 天生
+> 没有该能力,与硬编码禁用严格分立)。联机:修掉 v0.22.0 起「只有主机
+> 能控制角色」的 split_roster 双层嵌套根因,连接成功后新增选图(MAP)
+> → 选角认领(ROLE,每人 1–3 位、覆盖齐全开演)编排,标准关卡皆可
+> 开合作局。23 张分镜基线重生成(.base_v37),七门禁全绿。
+
+### 新增
+- **`StatBonus` 加成档位模型**(`scripts/data/stat_bonus.gd`):BAR_KEYS
+  六键 / MIN −1 / MAX +4 / STEP 0.25;`resolve`(锁定→0、缺席免疫→0、
+  满档 ×2 钳 4.0 = 读数 5.0 硬顶承 v2)+ `to_reading`(跳高读数 = 格数
+  例外保留)。基础值永不改写,加成不无中生有。
+- **词条加成档位 op(`bonus`)**:净档 = 各词条之和钳 [-1, 4];玻璃疾走
+  (速度 +2 档)/ 顺风格(+1 档)/ 高频踏点(跳高 +1 档)/ 琉璃跳
+  (+2 档)转档位语言;新增危险词条**钝化涂层**(弹性锁定 −1 + 跳跃
+  +1 档——锁定机制首个内容样例)。失重镀层等微调族保持 add/mul。
+- **联机选图 MAP 页**:主机从 `LevelData.LEVELS` 注册表选关(不同地图
+  阵容不同 = roster 契约),`rpc_map_picked` 可靠广播定档。
+- **联机选角 ROLE 页**:名册芯片点按认领 / 再点释放(我方纸白描边 /
+  对方橙描边置灰 / 未认领暗色,双子一枚芯片 = 界/边两具同属);
+  `claim_ok` 主机权威仲裁(不可抢、不超上限、越界拒)+ `rpc_claims`
+  全量广播回包驱动两端重建;**开演条件 = 名册位全覆盖**
+  (`claims_cover`,全员有主到站契约才可满足),开演钮随覆盖解锁。
+- **HUD chips 联机双方描边**:refresh_roster 在联机态按开局绑定集输出
+  binds(own = slot0 纸白 / other = slot1 橙,契约同 N1)——不画出来
+  玩家无从知道哪些体归自己。
+- **`--roomshot` 增 room_map / room_role 分镜**(四页 → 六页);
+  `--nettest` 增 ⑤分边形状 + 认领规则断言(纯函数 headless 可测)。
+
+### 变更
+- **`RunState` 两层解算**:加成键先经 `StatBonus.resolve` 档位换算,再叠
+  微调 add → mul,加成键统一钳 [0, 4](原 0–2 钳退役;非加成钩子
+  coyote/friction/swap_cooldown/air_jumps/gate_mult/gravity 双键不钳,
+  保持既有);无局直通恒等不变(trait_check 物理逐位不动)。
+- **档案页数值条重绘**:标尺 v2 连续条(红刻度基准位)→ 加成档位条
+  (锁定区 + 4 档位格);数值列 = 基础读数(+N / 锁定 / 状态−1),
+  肉鸽局内打开实时显示「基础 → 实际」读数换算;攀墙/惯性/摩擦保留
+  派生读数条(攀墙暂无档位钩子,不卖假档位,登记 M-5 待办)。
+- **房间流程页四页 → 六页**(PICK/HOST/JOIN/LOBBY + MAP/ROLE),
+  Host 页「开演」改走选图;Esc 逐级返回(ROLE→MAP/LOBBY→…);
+  客机掉线其认领作废、`--netauto` 自动开演降级对半分(自动化钩子
+  零改动兼容)。
+- **房间状态行修复**:`_ensure_status` 复用 queue_free 帧末才生效的
+  垂死节点致换页后状态行消失(既有潜伏缺陷,MAP/ROLE 首次暴露),
+  追加 `is_queued_for_deletion` 检查。
+- 文档口径收口:glossary §4 升 v3(加成数值条权威定义)、characters §1/§9、
+  roguelike §2(词条纪律 + 示例池)、DESIGN 速查同步;net.md §6 同步
+  规格按实装勘误(自定义 RPC,无 Synchronizer/Spawner)、§7 六页、
+  §8 选图选角拍板落档、§11 议题 1 销账;scripts/net/README 同步;
+  REFACTOR §八 新增 M-5/M-6 两笔(各带待办)。
+- 仓库卫生(批间清理):`assets/svg/engine/godot-icon.png.import` 孤儿
+  导入清退(源图 v0.27.0 删除时漏删 .import,静态/动态零引用);
+  `.gitignore` 补构建产物扩展名兜底(`*.apk` / `*.aab` / `*.idsig`,
+  防 apk 误落 build/ 之外混入提交);本地产物清扫(build/ 旧 apk 与
+  图标中间产物 65M、旧截图目录 5 个 + 对比输出、被 .base_v37 取代的
+  基线 .base_v35,合计 ≈80M,均为忽略区内可再生产物,现行基线保留)。
+
+### 修复
+- **联机「只有主机能控制角色」**(v0.22.0 引入的根因):
+  `NetSession.split_roster` 返回 `[[前半],[后半]]` 双层嵌套,
+  `split[1].has(index)` 恒 false → 全部体判给主机、客机绑定集恒空、
+  输入上传(`_net_active = -1`)与主机注入(`_client_slots` 恒空)被
+  三重守卫依次掐死。改返回平铺双数组;开局绑定改按「选角认领集」
+  分边(无认领时对半分兜底)。`--nettest` 形状断言看守防复发。
+
+### 门禁
+- modifier_check 重写全过(identity/gravity/bonus/micro/flag/discipline
+  六组);trait_check ALL PASS(无局物理逐位不变);gridcheck PASS
+  warns=13 同基线(信标建议级 ×2 承 v0.36.0 裁定);recalltest 4 PASS;
+  dualtest ALL PASS;nettest ALL PASS(hash/host/discover/transport/
+  split/claims);check-only 全绿。
+- 像素回归:panel_geo0-4 差异 2.7~2.96% 全部圈定在属性栏区域
+  (= 加成条本意改动),rogue reward/settle 0.3~0.7%(词条档位文案),
+  room_host 0.25%(开演钮文案),bld 页差异承 v0.36.0 图鉴扩容;
+  其余 0.00% 全等。23 张基线重生成 `.base_v37`。
+- **待真机**:联机双端全链(MAP/ROLE 认领 → 客机输入上传 → 主机注入
+  → 位移)headless 测不到,照 v0.29.0 惯例由真机联测收口。
+
+> ——
+> **同版第三主项 · BGM「深空圣咏」v2 + 深空星野背景层(太空 / 空灵 /
+> 幽深向)**:Ambience 序列器整体升格,七件音色盘(drone / pads /
+> steps 铃音 / wind / delay / shimmer / 节拍时钟)全部实时合成、零音频
+> 文件;6 条 motif 按角色画像深空化重设计(序章 C-sus2 圣咏 / 第一幕
+> Am(add9) 起与落 / 肉鸽四主角各一);配套 backdrop 最远视差深空星野
+> 层(银河带 + 十字亮星 + 8Hz 闪烁,零贴图)。联网核对:空灵声位理论
+> (sus2/add9 无解决倾向、五声铃音)与太空氛围合成技法(慢包络、延迟
+> 反馈替代混响)。开发期自捕「声部音量丢失」缺陷(扁平数组重构漏乘
+> vol 全幅削波)并修复;**新增 tests/ambience_check.gd 静音断言**
+> (audio.md §6 验收项落地):6 motif + 热切换 ALL PASS,混合水位
+> RMS ≈ -26 dBFS(垫底低于玩法 SFX 约 10dB)。门禁:recalltest 4
+> PASS / dualtest ALL PASS / gridcheck warns=13 同基线 / trait_check
+> ALL PASS / 三组分镜零脚本错误。规格见 audio.md §3。
+
 ## v0.36.0(2026-09-13)
 
 > **实体图鉴补全 + 记录点信标实装 + 孤儿清退(总纲卷二/卷六销账)**。
