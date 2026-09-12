@@ -7,42 +7,30 @@ extends CanvasLayer
 
 var dir = null                   # RogueDirector(避免类型环引用,运行时注入)
 
-var _root: Control
-var _overlay: Control            # 压暗层 + 居中卡片(选路 / 奖励 / 结算 / 选体)
-var _status: Control             # 局内常驻状态条
 var _status_labels := {}
-var _status_mods: HBoxContainer
 var _card_tween: Tween
+
+@onready var _root: Control = %Root
+@onready var _status: Control = %Status
+@onready var _overlay: Control = %Overlay   # 压暗层 + 居中卡片(选路 / 奖励 / 结算 / 选体)
+var _status_mods: HBoxContainer
 
 
 func _ready() -> void:
-	layer = 30
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_root = Control.new()
 	_root.theme = Ui.make_theme()
-	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_root)
+	# 场景骨架样式施加(R1:壳在 scenes/ui/rogue_layer.tscn;四页卡片由
+	# 局内状态驱动动态重建,动态生成豁免)
+	(%StatusPanel as PanelContainer).add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.88), 0, Color(Palette.I.paper, 0.16), 1, 12, 6))
+	(%Shade as ColorRect).color = Color(Palette.I.ink, 0.92)
 	_build_status()
-	_build_overlay()
 
 
 # —————————————————————————— 局内状态条 ——————————————————————————
 
 func _build_status() -> void:
-	_status = Control.new()
-	_status.visible = false
-	_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_status.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var panel := PanelContainer.new()
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.88), 0, Color(Palette.I.paper, 0.16), 1, 12, 6))
-	panel.position = Vector2(24, 64)
-	_status.add_child(panel)
-	var hb := HBoxContainer.new()
-	hb.add_theme_constant_override("separation", 14)
-	panel.add_child(hb)
+	var hb: HBoxContainer = %StatusHB
 	# 红色刻度(剩余重拼次数):红块序列
 	_status_labels["ticks"] = HBoxContainer.new()
 	_status_labels["ticks"].add_theme_constant_override("separation", 3)
@@ -54,7 +42,6 @@ func _build_status() -> void:
 	_status_mods = HBoxContainer.new()
 	_status_mods.add_theme_constant_override("separation", 6)
 	_wrap_labeled(hb, "残留", _status_mods)
-	_root.add_child(_status)
 
 
 func _wrap_labeled(hb: HBoxContainer, label: String, content: Control) -> void:
@@ -90,27 +77,12 @@ func refresh_status(run) -> void:
 
 
 # —————————————————————————— 覆盖层通用 ——————————————————————————
-
-func _build_overlay() -> void:
-	_overlay = Control.new()
-	_overlay.visible = false
-	_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var shade := ColorRect.new()
-	shade.color = Color(Palette.I.ink, 0.92)
-	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_overlay.add_child(shade)
-	var center := CenterContainer.new()
-	center.name = "Center"
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_overlay.add_child(center)
-	_root.add_child(_overlay)
-
+## 覆盖层骨架(压暗层 + 居中容器)在场景内;每次打开动态建一张卡片
+## (随局内状态生成,动态生成豁免)。
 
 func _open_overlay() -> VBoxContainer:
-	for c in (_overlay.get_node("Center") as CenterContainer).get_children():
+	var center: CenterContainer = _overlay.get_node("Center")
+	for c in center.get_children():
 		c.queue_free()
 	_overlay.visible = true
 	var card := PanelContainer.new()
@@ -127,7 +99,7 @@ func _open_overlay() -> VBoxContainer:
 			card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
 			card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
 	card.resized.connect(func() -> void: card.pivot_offset = card.size / 2.0)
-	(_overlay.get_node("Center") as CenterContainer).add_child(card)
+	center.add_child(card)
 	Adaptive.register_card(card)
 	var vb := VBoxContainer.new()
 	vb.add_theme_constant_override("separation", 10)

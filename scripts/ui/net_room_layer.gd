@@ -10,12 +10,6 @@ enum Phase { NONE, PICK, HOST, JOIN, LOBBY }
 
 var m: Main                    # Main(避免类型环引用,运行时注入)
 
-var _root: Control
-var _shade: ColorRect
-var _card: PanelContainer
-var _title: Label
-var _sub: Label
-var _body: VBoxContainer
 var _status: Label             # 状态行(net_message / members_changed 刷新)
 var _phase: int = Phase.NONE
 
@@ -29,60 +23,31 @@ var _lobby_line: Label
 
 var _toast_tw: Tween
 
+@onready var _root: Control = %Root
+@onready var _shade: ColorRect = %Shade
+@onready var _card: PanelContainer = %Card
+@onready var _title: Label = %TitleLabel
+@onready var _sub: Label = %SubLabel
+@onready var _body: VBoxContainer = %Body
+
 
 func _ready() -> void:
-	layer = 30
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	# 会话信号 → 页面刷新(Main 先建 NetSession 再建本层,_ready 顺序成立)
 	NetSession.I.net_message.connect(_on_net_message)
 	NetSession.I.members_changed.connect(_on_members_changed)
 	NetSession.I.room_closed.connect(_on_room_closed)
-	_root = Control.new()
+	# 场景骨架样式施加(R1:壳在 scenes/ui/net_room_layer.tscn,四页内容
+	# 由会话状态驱动动态重建,动态生成豁免)
 	_root.theme = Ui.make_theme()
-	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_root)
-
-	_shade = ColorRect.new()
 	_shade.color = Color(Palette.I.ink, 0.96)
-	_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.add_child(_shade)
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.add_child(center)
-
-	_card = PanelContainer.new()
-	_card.custom_minimum_size = Vector2(760, 0)
 	_card.add_theme_stylebox_override("panel",
 		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
-	center.add_child(_card)
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 10)
-	_card.add_child(vb)
-
-	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
-	var tv := VBoxContainer.new()
-	_title = Ui.l("跨设备双人", 30, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-	tv.add_child(_title)
-	_sub = Ui.l("LAN DIRECT · 同网直连", 13, Ui.LIGHT, Color(1, 1, 1, 0.72),
-		HORIZONTAL_ALIGNMENT_CENTER)
-	tv.add_child(_sub)
-	title_bar.add_child(tv)
-	vb.add_child(title_bar)
-
-	var pad := MarginContainer.new()
-	pad.add_theme_constant_override("margin_left", 40)
-	pad.add_theme_constant_override("margin_right", 40)
-	pad.add_theme_constant_override("margin_top", 20)
-	pad.add_theme_constant_override("margin_bottom", 26)
-	vb.add_child(pad)
-
-	_body = VBoxContainer.new()
-	_body.add_theme_constant_override("separation", 12)
-	pad.add_child(_body)
+	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",
+		Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
+	Ui.style(_title, 30, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.style(_sub, 13, Ui.LIGHT, Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER)
 
 
 # ———————————————— 页面切换 ————————————————

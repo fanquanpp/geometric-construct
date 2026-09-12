@@ -3,6 +3,39 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.35.0(2026-09-13)
+
+> **M-3 收官**:net_room / rogue / archive 三层持久壳入场景,R1 全量
+> 达标——每个子系统都是场景;剩余代码建树全部为已登记的动态生成
+> 豁免(数据驱动页 / 动画编排)。像素回归 20 张分镜:panel 12 张
+> 0.0000~0.0001% 全等、rogue ≤0.05%、room ≤0.025%,五门禁全绿。
+
+### 新增
+- **`scenes/ui/net_room_layer.tscn` 骨架**:卡片壳(压暗层 / 红色
+  标题条 / 内容体)入场景;四页(PICK/HOST/JOIN/LOBBY)仍由会话状态
+  驱动动态重建(动态生成豁免)。
+- **`scenes/ui/rogue_layer.tscn` 骨架**:局内状态条(刻度 / 进度 /
+  词条 chips 容器)+ 覆盖层(压暗层 / 居中容器)入场景;四页卡片
+  (选体 / 选路 / 奖励 / 结算)仍随局内状态动态重建(豁免)。
+- **`scenes/ui/archive_panel.tscn` 壳**:根 / 压暗层 / 设计稿内容 /
+  外框(角刻度 draw 回调)/ 动态精灵时钟入场景;五页内容仍由
+  ArchiveData 数据驱动动态生成(豁免)。
+
+### 变更
+- **M-3 正式关闭**(REFACTOR 台账):R1「常驻节点结构一律 .tscn」
+  全量达标——游戏本体 26 个场景,脚本内拼树全部为已登记豁免
+  (数据驱动页内容 / 动画编排 / 运行时实体);P4-5 档案按页签拆
+  子构建器在原代码已成立(_build_geo / codex / keys / gallery /
+  story 页构建器)。
+- rogueshot 编排既有窗口期登记:`_on_rogue_picked` 先置 PLAYING 后
+  开片段,期间 `_level_def` 为 null 每帧报 Nil(157 帧)——先于本轮
+  存在(main.gd 该路径 v0.31.1 后零触碰),登记待修不阻塞。
+
+### 门禁
+- check-only 全绿;trait_check ALL PASS;gridcheck warns=11 同基线;
+  recalltest 3 PASS;dualtest ALL PASS;roomshot / rogueshot /
+  panelshot 20 张分镜像素回归通过(见上)。
+
 ## v0.34.0(2026-09-13)
 
 > **M-3 再深化:弹层升格组合子场景**——剧目二级菜单 / 双人联接选择

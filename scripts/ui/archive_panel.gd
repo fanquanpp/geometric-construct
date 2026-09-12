@@ -42,43 +42,22 @@ var _anim_timer: Timer        # 图鉴动态精灵循环(anim 条目)
 
 
 func _ready() -> void:
-	layer = 35
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	_root = Control.new()
+	# 场景骨架样式施加(R1:壳在 scenes/ui/archive_panel.tscn;五页内容
+	# 由 ArchiveData 数据驱动动态生成,动态生成豁免)
+	_root = %Root
+	_shade = %Shade
+	_content = %Content
+	_anim_timer = %AnimTimer
 	_root.theme = Ui.make_theme()
-	_root.visible = false
-	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_root)
-
-	# 动态精灵时钟:one_shot,每次展示按条目周期重启
-	_anim_timer = Timer.new()
-	_anim_timer.one_shot = true
+	_shade.color = Palette.I.ink
+	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_anim_timer.timeout.connect(_on_anim_tick)
-	add_child(_anim_timer)
-
-	var shade := ColorRect.new()
-	shade.color = Palette.I.ink
-	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.add_child(shade)
-	_shade = shade
-
-	# 固定设计稿排版:整体等比缩放居中(海报式页面,Adaptive.fit_design 兜底)
-	_content = Control.new()
-	_content.size = Adaptive.DESIGN
-	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(_content)
 	_root.resized.connect(_fit_content)
 
 	# 外框 + 角部刻度(与主菜单同语言)
-	var frame := Control.new()
-	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	frame.offset_left = 16
-	frame.offset_right = -16
-	frame.offset_top = 16
-	frame.offset_bottom = -16
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var frame: Control = %Frame
 	frame.draw.connect(func() -> void:
 		frame.draw_rect(Rect2(Vector2.ZERO, frame.size), Color(Palette.I.paper, 0.16), false, 1.0)
 		for corner: Vector2 in [Vector2(0, 0), Vector2(frame.size.x, 0),
@@ -87,7 +66,6 @@ func _ready() -> void:
 			var sy := -1.0 if corner.y == 0.0 else 1.0
 			frame.draw_line(corner, corner + Vector2(-sx * 18.0, 0), Palette.I.red, 3.0)
 			frame.draw_line(corner, corner + Vector2(0, -sy * 18.0), Palette.I.red, 3.0))
-	_content.add_child(frame)
 
 	_build_header()
 	_build_geo_page()
