@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="AmbienceMotif" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ambience_pad.gd" id="1_lkklt"]
+[ext_resource type="Script" path="res://scripts/data/ambience_motif.gd" id="2_qd4jm"]
+[ext_resource type="Script" path="res://scripts/data/ambience_step.gd" id="3_463kq"]
+
+[sub_resource type="Resource" id="Resource_mhyd7"]
+script = ExtResource("1_lkklt")
+notes = Array[String](["A2", "E3", "C4"])
+
+[sub_resource type="Resource" id="Resource_83b31"]
+script = ExtResource("1_lkklt")
+beat = 8.0
+notes = Array[String](["A2", "E3", "B3"])
+
+[sub_resource type="Resource" id="Resource_smxl0"]
+script = ExtResource("3_463kq")
+note = "A3"
+
+[sub_resource type="Resource" id="Resource_68hmi"]
+script = ExtResource("3_463kq")
+beat = 2.0
+vol = 0.09
+
+[sub_resource type="Resource" id="Resource_6icdm"]
+script = ExtResource("3_463kq")
+beat = 4.0
+note = "E4"
+dur_beats = 2.0
+
+[sub_resource type="Resource" id="Resource_bu8ff"]
+script = ExtResource("3_463kq")
+beat = 8.0
+vol = 0.09
+
+[sub_resource type="Resource" id="Resource_1j8md"]
+script = ExtResource("3_463kq")
+beat = 10.0
+note = "E4"
+vol = 0.09
+
+[sub_resource type="Resource" id="Resource_nq5yf"]
+script = ExtResource("3_463kq")
+beat = 12.0
+note = "B4"
+dur_beats = 2.0
+wave = "bell"
+vol = 0.08
+
+[resource]
+script = ExtResource("2_qd4jm")
+id = "act1"
+bpm = 66.0
+wind = 0.8
+drone = Array[float]([110.0, 164.81, 220.0, 246.94])
+pads = Array[ExtResource("1_lkklt")]([SubResource("Resource_mhyd7"), SubResource("Resource_83b31")])
+steps = Array[ExtResource("3_463kq")]([SubResource("Resource_smxl0"), SubResource("Resource_68hmi"), SubResource("Resource_6icdm"), SubResource("Resource_bu8ff"), SubResource("Resource_1j8md"), SubResource("Resource_nq5yf")])

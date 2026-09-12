@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="AmbienceMotif" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ambience_pad.gd" id="1_nbvg7"]
+[ext_resource type="Script" path="res://scripts/data/ambience_motif.gd" id="2_ncqu4"]
+[ext_resource type="Script" path="res://scripts/data/ambience_step.gd" id="3_pl16m"]
+
+[sub_resource type="Resource" id="Resource_cxpau"]
+script = ExtResource("1_nbvg7")
+notes = Array[String](["C3", "G3", "C4"])
+vol = 0.09
+
+[sub_resource type="Resource" id="Resource_rsuw4"]
+script = ExtResource("1_nbvg7")
+beat = 8.0
+notes = Array[String](["E3", "G3", "D4"])
+
+[sub_resource type="Resource" id="Resource_lrc1o"]
+script = ExtResource("3_pl16m")
+dur_beats = 3.5
+
+[sub_resource type="Resource" id="Resource_0kw3p"]
+script = ExtResource("3_pl16m")
+beat = 4.0
+note = "E4"
+dur_beats = 3.5
+
+[sub_resource type="Resource" id="Resource_vi2mm"]
+script = ExtResource("3_pl16m")
+beat = 8.0
+note = "G4"
+dur_beats = 3.5
+
+[sub_resource type="Resource" id="Resource_pbgd1"]
+script = ExtResource("3_pl16m")
+beat = 12.0
+note = "G5"
+dur_beats = 2.0
+wave = "bell"
+vol = 0.08
+
+[resource]
+script = ExtResource("2_ncqu4")
+id = "rogue_spring"
+bpm = 54.0
+wind = 0.4
+drone = Array[float]([98.0, 130.81, 196.0, 261.63])
+pads = Array[ExtResource("1_nbvg7")]([SubResource("Resource_cxpau"), SubResource("Resource_rsuw4")])
+steps = Array[ExtResource("3_pl16m")]([SubResource("Resource_lrc1o"), SubResource("Resource_0kw3p"), SubResource("Resource_vi2mm"), SubResource("Resource_pbgd1")])

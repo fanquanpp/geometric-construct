@@ -260,4 +260,15 @@ Foreshadow / Symbol(模板入 levels.md §0;测试道免登记)。
   全链联测(RPC 输入链路 headless 测不到);②`levels/pair_trial.json`
   入库前置 = 过现行 grid_check(aseprite 源重编译);③肉鸽 × 联机
   (per-player RunState)另立项;④UiRouter 页面栈(触发线已到,
+
+- **M-7 · 音乐数值 .tres 化 ✅(v0.38.0)**:`AmbienceMotif` / `AmbiencePad` /
+  `AmbienceStep`(`scripts/data/ambience_*.gd`,全部 `@export`)+
+  `data/music/*.tres` 六表(序章/第一幕/肉鸽四主角)——bpm/循环拍数/
+  深空风/drone 音级/pads 声位/steps 短句全部出代码进 Inspector
+  (R2:数值 .tres,编辑器直调);`MOTIFS` const 只留键名→路径拓扑
+  (R2 允许的结构性常量);迁移经 ResourceSaver 生成 + 回读逐字段平价
+  断言(AMBCHECK 6 motif 峰值/RMS 逐位一致);一次性生成器已退役。
+  SFX 合成层规格(28 条 _reg 参数)**裁定暂不资源化**:其为合成引擎
+  实现细节而非调参面板数值(先例:run_modifiers 拍板保持 .gd),
+  若未来需要音效微调面板再立 M 项。
   随下一批页面增量抽取)。

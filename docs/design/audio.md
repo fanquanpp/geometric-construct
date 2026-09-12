@@ -100,6 +100,9 @@
   | delay | 立体声延迟(空间感主来源) | 2 拍环长,反馈 0.45 × 阻尼 0.6 + 交叉馈送;铃音 send 0.55 = "另一面的余响" |
   | shimmer | 高频闪烁 | drone 第三 partial 高两个八度,极低音量慢颤音(星尘层) |
   | 节拍时钟 | `Sfx.beat_clock_start` | TimedBridge `sync_beat` 照常对齐(§5) |
+- **motif 数据源(M-7 数值资源化 v0.38)**:`data/music/*.tres`
+  (AmbienceMotif/Pad/Step,@export,Inspector 直调)——换幕/主角画像
+  调参不再改代码;`MOTIFS` const 只留键名→路径拓扑。
 - **motif = 章节 / 角色音乐画像**(全部 C 大调自然音级,抒情段 Am):
   序章 56 BPM C-sus2 圣咏 / 第一幕 66 BPM Am(add9) 起与落 /
   肉鸽按主角:疾 92 深空巡航(半拍脉冲)、跃 54 失重托举(长音上行)、

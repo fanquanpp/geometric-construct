@@ -27,89 +27,41 @@ const FADE := 0.12   # 收音防咔哒(秒)
 ## steps: [拍位, 音名, 时长(拍), 波形(sine/tri/bell), 音量]
 ## pads:  [拍位, [音名…], 时长(拍), 音量] —— sus2 / add9 和声垫
 ## wind:  深空风 0-1(风涌在循环边界触发,替代旧 hat 打击声明)
+## motif 数据源(M-7 数值资源化 v0.38):数值全部在 data/music/*.tres
+## (AmbienceMotif,Inspector 直调);本表只登记键名→路径 = 结构性拓扑
+## (R2 允许 const 保留枚举/键名/拓扑),新增 motif = 复制 .tres + 登记一行。
 const MOTIFS := {
-	"prologue": {
-		"bpm": 56.0, "cycle": 16.0, "wind": 0.5,
-		"drone": [65.41, 98.0, 130.81, 196.0],
-		"pads": [
-			[0.0, ["C3", "G3", "D4"], 8.0, 0.085],
-			[8.0, ["C3", "A3", "E4"], 8.0, 0.085],
-		],
-		"steps": [
-			[0.0, "C5", 2.0, "bell", 0.09], [6.0, "G4", 1.5, "bell", 0.07],
-			[10.0, "D5", 2.0, "bell", 0.08], [14.0, "A4", 1.5, "bell", 0.06],
-		],
-	},
-	"act1": {
-		"bpm": 66.0, "cycle": 16.0, "wind": 0.8,
-		"drone": [110.0, 164.81, 220.0, 246.94],
-		# Am → Am(add9) 往复:引力排练的"起与落"(空灵化)
-		"pads": [
-			[0.0, ["A2", "E3", "C4"], 8.0, 0.085],
-			[8.0, ["A2", "E3", "B3"], 8.0, 0.085],
-		],
-		"steps": [
-			[0.0, "A3", 1.0, "tri", 0.10], [2.0, "C4", 1.0, "tri", 0.09],
-			[4.0, "E4", 2.0, "tri", 0.10], [8.0, "C4", 1.0, "tri", 0.09],
-			[10.0, "E4", 1.0, "tri", 0.09], [12.0, "B4", 2.0, "bell", 0.08],
-		],
-	},
-	"rogue_dash": {
-		"bpm": 92.0, "cycle": 8.0, "wind": 1.0,
-		"drone": [65.41, 130.81, 196.0, 293.66],
-		# 疾:半拍脉冲 + 铃音重音 —— 深空巡航的速度画像
-		"pads": [
-			[0.0, ["C3", "G3", "D4"], 4.0, 0.07],
-			[4.0, ["A2", "E3", "G3"], 4.0, 0.07],
-		],
-		"steps": [
-			[0.0, "C5", 0.5, "tri", 0.09], [1.0, "E5", 0.5, "tri", 0.08],
-			[2.0, "G5", 0.5, "tri", 0.09], [3.0, "E5", 0.5, "tri", 0.07],
-			[4.0, "C5", 1.0, "bell", 0.09], [6.0, "D5", 1.0, "bell", 0.08],
-		],
-	},
-	"rogue_spring": {
-		"bpm": 54.0, "cycle": 16.0, "wind": 0.4,
-		"drone": [98.0, 130.81, 196.0, 261.63],
-		# 跃:长音上行托举 —— 失重弹性画像
-		"pads": [
-			[0.0, ["C3", "G3", "C4"], 8.0, 0.09],
-			[8.0, ["E3", "G3", "D4"], 8.0, 0.085],
-		],
-		"steps": [
-			[0.0, "C4", 3.5, "tri", 0.10], [4.0, "E4", 3.5, "tri", 0.10],
-			[8.0, "G4", 3.5, "tri", 0.10], [12.0, "G5", 2.0, "bell", 0.08],
-		],
-	},
-	"rogue_fall": {
-		"bpm": 60.0, "cycle": 16.0, "wind": 0.5,
-		"drone": [65.41, 110.0, 130.81, 220.0],
-		# 逆:低音问、高铃答 —— 镜像置换画像(回声 = 另一面的余响)
-		"pads": [
-			[0.0, ["C3", "G3"], 8.0, 0.08],
-			[8.0, ["A2", "E3"], 8.0, 0.08],
-		],
-		"steps": [
-			[0.0, "C3", 1.0, "tri", 0.11], [2.0, "C5", 1.5, "bell", 0.09],
-			[4.0, "E3", 1.0, "tri", 0.11], [6.0, "E5", 1.5, "bell", 0.09],
-			[8.0, "A2", 1.0, "tri", 0.11], [10.0, "A4", 1.5, "bell", 0.09],
-			[12.0, "G3", 1.5, "tri", 0.10], [14.0, "G5", 1.5, "bell", 0.07],
-		],
-	},
-	"rogue_roll": {
-		"bpm": 68.0, "cycle": 16.0, "wind": 0.6,
-		"drone": [87.31, 130.81, 174.61, 261.63],
-		# 圆:五度双声部连绵循环(F-C / G-D),无句读 —— 惯性画像
-		"pads": [
-			[0.0, ["F3", "C4"], 8.0, 0.085],
-			[8.0, ["G3", "D4"], 8.0, 0.085],
-		],
-		"steps": [
-			[0.0, "F4", 3.5, "sine", 0.09], [0.0, "C5", 3.5, "tri", 0.07],
-			[8.0, "G4", 3.5, "sine", 0.09], [8.0, "D5", 3.5, "tri", 0.07],
-		],
-	},
+	"prologue": "res://data/music/prologue.tres",
+	"act1": "res://data/music/act1.tres",
+	"rogue_dash": "res://data/music/rogue_dash.tres",
+	"rogue_spring": "res://data/music/rogue_spring.tres",
+	"rogue_fall": "res://data/music/rogue_fall.tres",
+	"rogue_roll": "res://data/music/rogue_roll.tres",
 }
+static var _motif_cache := {}
+
+
+static func _load_motif(id: String) -> AmbienceMotif:
+	if _motif_cache.has(id):
+		return _motif_cache[id]
+	if not MOTIFS.has(id):
+		return null
+	var res: AmbienceMotif = load(MOTIFS[id])
+	_motif_cache[id] = res
+	return res
+
+
+## 资源 → 运行时视图(资源是 SSOT,字典只是 _fill 的消费形态)。
+static func _motif_view(res: AmbienceMotif) -> Dictionary:
+	var steps: Array = []
+	for st in res.steps:
+		steps.append([st.beat, st.note, st.dur_beats, st.wave, st.vol])
+	var pads: Array = []
+	for pad in res.pads:
+		pads.append([pad.beat, pad.notes, pad.dur_beats, pad.vol])
+	return {"bpm": res.bpm, "cycle": res.cycle, "wind": res.wind,
+		"drone": res.drone, "steps": steps, "pads": pads}
+
 
 static var _instance: Ambience = null
 static var _volume_scale := 1.0
@@ -118,7 +70,7 @@ var _player: AudioStreamPlayer
 var _playback: AudioStreamGeneratorPlayback
 var _t := 0.0
 var _beat_pos := 0.0
-var _motif: Dictionary = MOTIFS["prologue"]
+var _motif: Dictionary = {}
 var _motif_name := "prologue"
 var _step_idx := 0
 var _pad_idx := 0
@@ -191,10 +143,12 @@ func _exit_tree() -> void:
 
 ## 切换章节 / 主角 motif(章节切换、进肉鸽时由 Main 调用);重启节拍时钟。
 func set_motif(motif_name: String) -> void:
-	if not MOTIFS.has(motif_name):
+	var res := _load_motif(motif_name)
+	if res == null:
+		push_warning("Ambience: motif 不存在 %s" % motif_name)
 		return
 	_motif_name = motif_name
-	_motif = MOTIFS[motif_name]
+	_motif = _motif_view(res)
 	_step_idx = 0
 	_pad_idx = 0
 	_beat_pos = 0.0
@@ -282,6 +236,10 @@ func _v_kill(i: int) -> void:
 
 ## 按序推进节拍与采样,填充一个缓冲块。
 func _fill(buf: PackedVector2Array) -> void:
+	if _motif.is_empty():
+		for i in CHUNK:
+			buf[i] = Vector2.ZERO
+		return
 	var bpm: float = _motif["bpm"]
 	var cycle: float = _motif["cycle"]
 	var wind_base: float = _motif["wind"]
