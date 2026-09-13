@@ -19,6 +19,14 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.42.3(2026-09-14)
+
+> **修复:双人试炼选择面板真机错位**(遮罩半屏 + 卡片偏左上,v0.38.1 三处同修时真机未复验的漏网处)。
+
+### 修复
+- DualPickCard 补齐视口重锚(与 act_panel_card 同款):open_card 强制重锚 Shade/Center 铺满当前视口 + 延迟二次确认 + 视口 size_changed 重挂(横竖屏旋转不残留旧矩形)。
+- 真机 K60 复现路径验证:双人试炼钮 → 面板居中、遮罩全屏(修复前左上贴边 + 半屏遮罩,截图 .shots/dev_dual_fixed.png 对照)。
+
 ## v0.42.2(2026-09-14)
 
 > **修复:HUD chips / 提示条域拆回引缺失导致的静默失效(v0.39.4 引入回归)**。UI 全量走查批(截图每页)捕获。

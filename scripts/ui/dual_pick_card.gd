@@ -21,6 +21,8 @@ func _ready() -> void:
 	theme = Ui.make_theme()
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	# 真机旋转/分辨率变化重挂(与 open 重锚同款,横竖屏切换不残留旧矩形)
+	get_viewport().size_changed.connect(_reanchor_full)
 	_shade.color = Color(Palette.I.ink, 0.92)
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	%Center.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -51,6 +53,10 @@ func open_card(touch: bool) -> void:
 		else "同屏分键 · P1 键盘左区 + P2 右区 / 双手柄")
 	_same.disabled = touch
 	_same.modulate = Color(1, 1, 1, 0.42 if touch else 1.0)
+	# 真机修复(v0.42.2,与 act_panel_card 同款):开卡瞬间视口可能仍是
+	# 布局一瞬间的旧矩形(竖屏残留/首帧未展开)→ 卡片偏左、遮罩半屏。
+	# 每次展开强制重锚全矩形并延迟二次确认(布局时序无关)。
+	_reanchor_full.call_deferred()
 	visible = true
 	_shade.modulate.a = 0.0
 	_card.modulate.a = 0.0
@@ -68,6 +74,16 @@ func close_card() -> void:
 		return
 	_open = false
 	visible = false
+
+
+## 强制 Shade / Center 铺满当前视口(布局时序无关;act_panel_card 同款)。
+func _reanchor_full() -> void:
+	await get_tree().process_frame
+	var vis := get_viewport().get_visible_rect().size
+	for c: Control in [%Shade, %Center]:
+		c.set_anchors_preset(Control.PRESET_FULL_RECT)
+		c.size = vis
+		c.position = Vector2.ZERO
 
 
 func is_open() -> bool:
