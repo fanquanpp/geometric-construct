@@ -111,7 +111,7 @@ func refresh() -> void:
 
 	for c in _stats_box.get_children():
 		c.queue_free()
-	for row in gd.stat_rows():
+	for row in gd.stat_rows(func(def, key): return RunState.modified(def, key)):
 		_stats_box.add_child(make_stat_row(gd, row))
 
 	for c in _traits_box.get_children():

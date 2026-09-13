@@ -19,6 +19,22 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.41.3(2026-09-14)
+
+> **收官批:自家剧本八维基线 + M-5 尾款真闭环 + Phase 7 扫尾**(纯内容/文档批+一处数据层小改)。
+
+### 新增
+- **tools/ks_stylometry.py**:Konado .ks 八维基线工具(与 ZATO 同法对本项目剧本量化);**自家基线剖面落 docs/story/scenes.md 附录**——八剧本全表 + **声线纪律量化实锤**:逆/圆两章问感双零(不外露/禁疑问句零违反)、圆全库均长最短(6.0-15.0)=「只说结论」的量化形态、epilogue 全陈述句(「归位」的句法形态);节奏杠杆与 ZATO 同向(旁白稳定、对白随场压变化)。局限:拍数检出仅对「——」式分拍注释有效。
+- research/narrative README 补 Thomas Was Alone 矩阵行(v0.41.3 联网复核:Danny Wallace 旁白获 BAFTA——「旁白承担叙事重担」在纯抽象形体上成立,与本项目同构)。
+
+### 变更
+- **M-5 尾款真闭环**:GeometryDef.stat_rows 攀墙行走词条钩子——依赖注入式(Callable 参数,data 层叶节点不反向依赖 modes 层 RunState;教训:直接引用曾造成 data→modes 循环依赖,static_init 装载崩);ArchiveGeoPage 注入 `RunState.modified` 钩子,局内拿攀墙词条时档案行实时反映倍率。
+- ROADMAP.md 加「历史规划存档」状态注记(现行计划唯一出处 = REFACTOR.md + story.md §1.5)。
+
+### 门禁
+- MODCHECK / TRAIT ALL PASS / panelshot 零错(archive 数值条渲染正常);check-only 单查 geometry_def 的 static_init 时序错为既有噪音(stash 对照 HEAD 同报,Geometries 注册表 ↔ GeometryDef 加载顺序环,运行时门禁为准)。
+- version PATCH 3。
+
 ## v0.41.2(2026-09-14)
 
 > **ZATO 八维量化剖面(二轮细读)+ 肉鸽×联机零行为预埋**。

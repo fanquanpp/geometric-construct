@@ -124,7 +124,14 @@ func friction_reading() -> float:
 ##   跳高 → h = v₀² / 2g(起跳速度按能量守恒反推);
 ##   弹性 → 反弹率 e = bounce × 0.5(牛顿碰撞定律 v′ = e·v);
 ##   摩擦 → 减速度 a = μ·g(库伦摩擦,重量项视作材质差异)。
-func stat_rows() -> Array:
+## modifier(可选,依赖注入):词条钩子解算函数 `func(def, key) -> float`
+## (data 层叶节点不反向依赖 modes 层的 RunState;由 UI 消费方注入,
+##  缺省 = 直通原始值)。M-5 尾款:攀墙行走钩子,局内实时反映词条倍率。
+func stat_rows(modifier: Callable = Callable()) -> Array:
+	var hook := func(key: String, base: float) -> float:
+		if modifier.is_valid():
+			return float(modifier.call(self, key)) * base
+		return base
 	var speed_hint := "固定极速"
 	if can_sprint and sprint_speed > base_speed:
 		speed_hint = "冲刺 %.1f" % scale_reading(sprint_speed)
@@ -146,6 +153,9 @@ func stat_rows() -> Array:
 
 	var climb_hint := "贴墙按住方向缓降 · 按住跳跃键爬升(单次 %.1f 格)" % MovementTuning.I.climb_units \
 		if can_climb else "不可攀墙"
+	# 攀墙值走词条钩子(注入式,见本函数头注);不可爬 = -1(状态-1 行)
+	var climb_eff: float = hook.call("climb_units", MovementTuning.I.climb_units) \
+		if can_climb else -1.0
 
 	var bounce_hint := "反弹率约 %.0f%%(v′ = e·v)" % roundf(bounce * 50.0)
 
@@ -165,7 +175,7 @@ func stat_rows() -> Array:
 			"base_read": jump_units if can_jump else -1.0,
 			"hint": jump_hint},
 		{"label": "攀墙", "bar": false, "absent": not can_climb,
-			"value": MovementTuning.I.climb_units if can_climb else -1.0,
+			"value": climb_eff,
 			"hint": climb_hint},
 		{"label": "重量", "bar": true, "key": "weight",
 			"absent": weight <= 0.0, "base_read": scale_reading(weight),
