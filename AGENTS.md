@@ -43,6 +43,18 @@
    可调数值一律 `@export` 存 `.tres`(resource 只作静态数据);
    数据层 Manager 建实体入池只发信号,表现层场景预连接信号做
    挂载与演出。
+7. **Godot 工作流强制令**(2026-09-14 用户拍板,永久生效):
+   - **每次都使用 godot-prompter**:凡涉及 Godot 的任务(系统实现 /
+     编辑器操作 / 运行走查 / 调试 / 评审),动笔前必须先经 Skill 工具
+     调用对应 godot-prompter 域技能——总入口 `using-godot-prompter`
+     (内含域映射表:player-controller / state-machine / scene-organization /
+     godot-ui / godot-testing / godot-debugging / godot-code-review 等),
+     子代理同样适用;不得凭记忆直接写码。
+   - **截图文件夹与截图文件一律放项目根目录**:`--shotdir` 指向项目根
+     下固定文件夹(现行默认 `res://.shots` 即根目录,保持),桌面 /
+     真机 / 导出 exe 走查统一以项目根为基准解析路径;禁止把截图落进
+     build/、user:// 或系统临时目录(防 exe 相对 shotdir 解析成
+     build/build/ 的既有坑)。
 
 ## 场景与资源强制约束(tscn 优先 · 数值 .tres · 数据驱动画面)
 
