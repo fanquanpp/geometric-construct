@@ -474,7 +474,7 @@ func run_panel_shot() -> void:
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("panel_bld0")
 	m.archive_panel._sel["bld"] = 6   # 梁(v0.36 Kit 构件补绘首批)
-	m.archive_panel._refresh_codex("bld")
+	m.archive_panel.builders["bld"].refresh()
 	await m.get_tree().create_timer(0.4).timeout
 	await _shot("panel_bld_beam")
 	m.archive_panel.open(0, "mech")
@@ -482,18 +482,18 @@ func run_panel_shot() -> void:
 	await _shot("panel_mech0")
 	var refs: Dictionary = m.archive_panel._pages["mech"].get_meta("refs")
 	(refs["toggle"] as Button).button_pressed = true
-	m.archive_panel._refresh_codex("mech")
+	m.archive_panel.builders["mech"].refresh()
 	await m.get_tree().create_timer(0.4).timeout
 	await _shot("panel_mech_f2")
 	m.archive_panel._sel["mech"] = ArchiveData.MECHS.size() - 1  # 传送对(规划中·动态)
-	m.archive_panel._refresh_codex("mech")
+	m.archive_panel.builders["mech"].refresh()
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("panel_mech_portal")
 	# 剧情目录 + 全文本阅读器(序幕)
 	m.archive_panel.open(0, "gallery")
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("panel_gallery")
-	m.archive_panel._open_story(ArchiveData.STORIES[0])
+	m.archive_panel.open_story(ArchiveData.STORIES[0])
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("panel_story")
 	m.get_tree().quit()

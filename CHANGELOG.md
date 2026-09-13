@@ -19,6 +19,18 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.39.3(2026-09-14)
+
+> **第三阶段续批:archive_panel 五页签拆子构建器**(REFACTOR §十 5 / P4-5 勾销;上批避让的并行全屏化批已稳定)。
+
+### 变更
+- archive_panel.gd **1275 → 370 行**:壳只留页签路由 / 翻页过渡 / 输入分派 / 版面适配;页内容委托 **scripts/ui/archive/ 五构建器**(RefCounted,数据驱动页 = 动态生成豁免)——ArchiveGeoPage(212:肖像 + 标尺 v3 数值条)/ ArchiveCodexPage(262:建筑·机关主从 + 两态静帧 + 动态精灵,壳 AnimTimer 经 on_tick() 推帧)/ ArchiveKeysPage(148:键位一册)/ ArchiveGalleryPage(135:剧情目录)/ ArchiveStoryPage(181:全文本阅读器);行为逐行平移,refs 经 page.set_meta 契约不变,geo 页 portrait_zone/right_col 公开供壳翻页动画。
+- scripts/dev/shot_harness.gd 分镜对旧 API 的四处直调(_refresh_codex ×3 / _open_story)改新接口(builders[...].refresh() / panel.open_story)。
+- 联网核对(godot-ui 技能 + 论坛/GDQuest/Reddit):数据驱动页一节点一脚本不适用时,以「per-category 构建器 / 静态工厂」分 concerns——与 P4-5 子构建器原案同向。
+
+### 门禁
+- check-only 六文件全绿 / panelshot 13 镜窗口目检零脚本错误(geo×5·keys·bld×2·mech×3·gallery·story,shotdir=项目根 .shots),阅读器深链(目录→装填台词)无损。
+
 ## v0.39.2(2026-09-14)
 
 > **第三阶段续批:net 面归位流转域 + M-5 尾款 climb_units 入词条体系**。

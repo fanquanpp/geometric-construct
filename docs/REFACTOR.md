@@ -346,7 +346,10 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
    调用点零改动。
 4. 输入分派抽离 = 缓议(InputRouter 审计 2026-09-11 结论:不立第二路由层;
    仅当净行数收益显著再议)。
-5. archive_panel 按五页签拆子构建器(P4-5;约 1275 行)。
+5. ✅(v0.39.3)archive_panel 按五页签拆子构建器:壳 1275→370 行(路由/
+   翻页/输入/版面适配),页内容委托 scripts/ui/archive/ 五构建器
+   (geo 212 / codex 262 / keys 148 / gallery 135 / story 181);行为逐行
+   平移,panelshot 13 镜目检零错。
 6. hud chips / 提示条域拆(P4-2 尾款)。
 7. M-5 待办:climb_units 接 modified 钩子后入 BAR_KEYS。
 8. M-6 待办:真机双端联测 / pair_trial 过 gridcheck 入库 / 肉鸽×联机

@@ -91,8 +91,12 @@ geometric-construct/
 │   │   ├── net_room_layer.gd#   N2 房间流程页(带 30:选择/创建/加入/等待;Flow 型)
 │   │   ├── menu_layer.gd    #   标题菜单(动态标题 TitleMark + 分层入场演出)
 │   │   ├── title_mark.gd    #   动态标题:逐字落位 / 呼吸浮动 / 印刷错位 / 红块节拍
-│   │   ├── archive_panel.gd #   档案几何(五页签:几何体 / 建筑物 / 机关 / 键位 / 剧情;
-│   │   │                    #   图鉴主从页 + 机关两态预览;数据只读自 ArchiveData)
+│   │   ├── archive_panel.gd #   档案几何壳(五页签路由/翻页/输入/版面适配;页内容
+│   │   │                    #   由 builders 委托 scripts/ui/archive/ 五构建器,
+│   │   │                    #   v0.39.3 页签拆分;数据只读自 ArchiveData)
+│   │   ├── archive/         #   档案页构建器 ×5:geo(肖像+数值条)/ codex(建筑·机关
+│   │   │                    #   主从+两态/动态精灵)/ keys(键位一册)/ gallery(剧情目录)
+│   │   │                    #   / story(全文本阅读器)——RefCounted,数据驱动页豁免
 │   │   ├── touch_controls.gd#   虚拟按键层(TouchScreenButton → InputMap 动作)
 │   │   ├── story_layer.gd   #   Konado 剧情层(story/*.ks,播放时暂停世界)
 │   │   ├── rogue_layer.gd   #   肉鸽 UI:选主角 / 选路卡 / 词条三选一 / 结算页
