@@ -1,11 +1,12 @@
 extends SceneTree
 ## 分层语义 v3 headless 验证(levels.md §7.10):
-##   Comp 归一化(裸 Rect2 缺省 / 旧 lane 只读兼容 / who int 收敛)
+##   Comp 归一化(裸 Rect2 缺省 / who int 收敛)
 ##   组件编号 id:显式保留 + 按层分段自动分配(L4 首件 = 401)
 ##   实体化谓词 solid_for 与高亮三档 display_role 真值表
 ##   签名编译 (layer, who) / 签名位 ≤ bit29 不侵磁界特权位(位上限守卫)
 ##   玩家 mask 出生算定 / who 整体不碰撞 / faces top·bottom 单向碰撞
-##   开关门运行时切位 / 限时桥周期切换 / 八层渲染器在树 / FocusDriver 登记
+##   开关门运行时切位 / 限时桥周期切换 / 层容器 z 契约 / FocusDriver 登记
+##   (v0.43.0:八层渲染控制器 LayerVisual 退役,平台 = 引擎原生节点分层)
 ## 运行:godot --headless --path . --script res://tests/layer_check.gd
 ## 全部通过输出 LAYER CHECK PASS,否则逐条列出 FAIL。
 
@@ -231,16 +232,10 @@ func _process(delta: float) -> bool:
 
 ## v3 纯函数语义 + 渲染器在树 + 位上限守卫 + FocusDriver 登记。
 func _check_semantics() -> bool:
-	# —— 归一化:裸 Rect2 / 旧 lane 只读兼容 / who int 收敛 ——
+	# —— 归一化:裸 Rect2 / who int 收敛 ——
 	var norm := Comp.normalize(Rect2(0, 0, 10, 10))
 	if norm["layer"] != Comp.LAYER_MAIN or not (norm["who"] as Array).is_empty():
 		_fail("裸 Rect2 归一化应为 L4/full/全员")
-	var legacy := Comp.normalize({"rect": Rect2(), "lane": "back"})
-	if legacy["layer"] != Comp.LAYER_BACK:
-		_fail("旧 lane:'back' 未映射进 L3(只读兼容失效)")
-	var legacy2 := Comp.normalize({"rect": Rect2(), "lane": "front"})
-	if legacy2["layer"] != Comp.LAYER_FRONT:
-		_fail("旧 lane:'front' 未映射进 L8(只读兼容失效)")
 	if (Comp.norm_who(["2", 3, 3, "x"]) as Array) != [2, 3]:
 		_fail("who int 收敛失败(字符串数字 / 去重 / 非法项丢弃)")
 	# —— 实体化谓词 solid_for 真值表(唯一函数)——
@@ -264,35 +259,40 @@ func _check_semantics() -> bool:
 	# —— 签名键:(layer, who) 异层异集不同名 ——
 	if Comp.sig_key(wall) == Comp.sig_key({"rect": Rect2(), "layer": 6, "who": [0]}):
 		_fail("签名键未区分图层")
-	# —— 组件编号 id:显式保留 + 按层分段自动分配(401)——
+	# —— 组件编号 id:显式保留 + 按层分段自动分配(401;构建期登记 root meta)——
 	var ids_l4: Array = []
 	var ids_l5: Array = []
-	for nn in _level.get_children():
-		if nn is LayerVisual and (nn as LayerVisual).layer == 4:
-			for it in (nn as LayerVisual).items:
-				ids_l4.append(Comp.id_of(it))
-		if nn is LayerVisual and (nn as LayerVisual).layer == 5:
-			for it in (nn as LayerVisual).items:
-				ids_l5.append(Comp.id_of(it))
+	for it0: Dictionary in _level.get_meta("items"):
+		var il: int = it0["layer"]
+		if il == 4:
+			ids_l4.append(Comp.id_of(it0))
+		elif il == 5:
+			ids_l5.append(Comp.id_of(it0))
 	if not ids_l4.has(401):
 		_fail("自动编号未按层分段(缺 401)")
 	if not ids_l5.has(501) or not ids_l5.has(502):
 		_fail("显式编号 501/502 未保留")
-	# —— 八层视觉层在树(z -2,-1,0,1,2,3,4,6)——
-	var zs := {}
+	# —— 层容器 z 契约(引擎原生:容器 z_index + 树序;实体层全在玩家
+	# z5 之下,L8 前景 6 在其上;无常量表,纯函数推导)——
+	for l in range(1, 8):
+		if LevelBuilder._layer_z(l) != l - 3:
+			_fail("_layer_z(%d) 应为 %d" % [l, l - 3])
+	if LevelBuilder._layer_z(8) != 6:
+		_fail("_layer_z(8) 前景应为 6(玩家 z5 之上)")
 	var focus_found := false
+	var holders := {}
 	for nn in _level.get_children():
-		if nn is LayerVisual:
-			zs[(nn as Node2D).z_index] = true
+		var nname := str((nn as Node2D).name) if nn is Node2D else ""
+		if nname.begins_with("Layer"):
+			holders[nname] = (nn as Node2D).z_index
 		if nn is FocusDriver:
 			focus_found = true
 			if ((nn as FocusDriver).entries as Array).size() != 2:
 				_fail("FocusDriver 应登记 2 件机关(开关门 + 限时桥)")
 	if not focus_found:
 		_fail("FocusDriver 不在树")
-	for z in [-2, -1, 0, 1, 2, 3, 4, 6]:
-		if not zs.has(z):
-			_fail("缺 z=%d 层渲染器" % z)
+	if holders.get("Layer4", -99) != 1 or holders.get("Layer5", -99) != 2:
+		_fail("实体层容器 z 与契约不符(L4=1 / L5=2,玩家 z5 之下)")
 	# —— 位上限守卫:40 个签名压测,全部位 ≤ bit29 ——
 	var stress := LevelDef.new()
 	stress.size = Vector2(100, 100)

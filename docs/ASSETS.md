@@ -211,7 +211,7 @@
 | 几何体肖像 svg | 5 | `assets/svg/characters/` | dash / spring / fall / roll / pair |
 | 图鉴插图 png | **43** | `assets/archive/` | 建筑 15 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200 |
 | ~~图鉴 aseprite 源~~ | ~~33~~ | ~~`assets/art/tiles_v2/`~~ | v0.39.0 清退(三套自研分层系统退役);assets/archive PNG 为孤本 |
-| ~~关卡美术层~~ | ~~30~~ | ~~`assets/levels/`~~ | v0.39.0 清退:地图皮与语义层 PNG 全退,渲染 = LayerVisual 节点分层(levels.md §0) |
+| ~~关卡美术层~~ | ~~30~~ | ~~`assets/levels/`~~ | v0.39.0 清退:地图皮与语义层 PNG 全退,渲染 = 引擎原生节点分层(v0.43.0,levels.md §0) |
 | 机关精灵图库 | 12 源 + 12 条带 | `assets/art/mech/` | 限时桥/传送/弹射/琴键/加速门/推箱/动板/拉杆/曲面 buff + 爆点/尘/碎片动画,200×200 共 39 帧(v0.30.0,供机关 _draw→AnimatedSprite2D 迁移与图鉴动帧取用;气闸 4 帧随 v0.36 孤儿清退移除——「气闸」语义 = 踩踏开关多开关布局,由 LeverGate levers 承载)|
 
 | 游戏图标 | 7 | `icon.png`(256)+ `icon_192` + `icon_fg/bg/mono_432`(源 `assets/art/icon_construct.aseprite`)| 构成徽章 v3:墨底幽灵菱线 + 构成红斜面菱芯 + 四纸白卫星(菱/三角/圆/方);432 母版 ×4 整数导出,安全区内构图(v0.28.1,Android 启动器四字段已接线)|

@@ -17,12 +17,13 @@
   (v0.14–v0.38,全 `_draw`);② MapSkin 地图皮
   (v0.27–v0.38,`def.art` 非空时 aseprite 整图接管外观 + MapSkinFX 动效);
   ③ tiles_v2 七层栈瓦片(33 源,仅图鉴绘制源)。
-  **现行唯一管线 = LayerVisual 引擎内置节点分层**(world/render/
-  layer_visual.gd):每层一个 LayerVisual 容器(z_index = Comp.LAYER_Z,
-  层间树序即画序),层内每件组件一个 Node2D —— 面板 / 亮肩 / 缘线 /
-  刻度 / 裙角全部 Polygon2D,专属高亮描边 Line2D 逐帧呼吸,档位透明度
-  走容器 modulate.a,零自定义绘制;八层定值×who 集合的层语义(§7.10)
-  与高亮三档不变。**分层存在必要性结论改判**:作者侧分层不再必要 ——
+  **现行唯一管线 = 引擎原生节点分层**(v0.43.0:LayerVisual 渲染控制器
+  退役)——level_builder 每层一个 Node2D 容器,层间画序 = 容器 z_index
+  (契约 `LevelBuilder._layer_z`)+ 树序;层内每件石板一个
+  `TerrainKit.slab_node`——面板 / 亮肩 / 缘线 / 刻度 / 裙角全部
+  Polygon2D,零自定义绘制零运行时控制器;八层定值×who 集合的层语义
+  (§7.10)不变,机关物高亮三档由 FocusDriver 承载。**分层存在必要性
+  结论改判**:作者侧分层不再必要 ——
   语义层 PNG 曾是 ase2level 的碰撞 SSOT 输入,JSON 直出后层级表达完全
   由引擎节点承载(R0 反例存档兑现:压平地图皮 → 节点分层 + z_index)。
 - **SSOT = levels/*.json(v0.39.0 起)**:地图皮 30 张、语义层 PNG 60 张、
@@ -315,11 +316,11 @@
   (32 位预算,常用组合 < 10);玩家 `collision_mask` = 其适用组合位并集,
   **出生时算定一次,运行时零开销**。动态构件(§7.8 / structures.md §5)
   运行时 `set_collision_layer_value` 切换。
-- **渲染映射**(v0.14 五档):显示档 → z_index
-  (far2=-2 / far1=-1 / back=0 / mid=1 / front=2),远景两档沉到定位网格
-  之下;`_rests_on` 投影裙角逻辑只认**同档且可见**的承接块(承接块沉入
-  远景后,立块投影自动还原为落地态)。渲染唯一管线为
-  LayerVisual 节点分层(v0.39.0,引擎内置 Polygon2D/Line2D)。
+- **渲染映射**(v0.14 五档 → v0.18 八层定值):显示层 → 容器 z_index
+  (契约 `LevelBuilder._layer_z`:L1..L7 = layer−3,L8 = 6;L1/L2 沉到
+  定位网格之下,L3 与网格同 z0 由树序定先后);`_rests_on` 投影裙角
+  只认**同层**的承接块。渲染唯一管线为引擎原生节点分层(v0.43.0,
+  LayerVisual 控制器退役;Polygon2D/Line2D 直出)。
 - **兼容性**:默认值 `lane=mid / faces=full / who=全员 / lanes={} / far=-1`
   与现状行为一致,序章 + 第一幕 10 关**零迁移**(官方关尚无 `who` 数据,
   自动沉降暂只在图层实验室生效)。

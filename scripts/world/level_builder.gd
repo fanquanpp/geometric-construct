@@ -28,10 +28,11 @@ const LIGHT_SUN_ROTATION := -0.70   # rad ≈ -40°
 ##   (layer, who) 签名编译为 Godot 碰撞位(位 1 弃用,位 2 = 玩家几何体,
 ##   签名位 3..29 按出场顺序分配);玩家 collision_mask = 适用签名位并集,
 ##   出生算定一次。faces 用 one-way 碰撞实现(top 顶面可站 / bottom 底面
-##   可站,逆向天花板)。渲染每层一个 LayerVisual(引擎内置节点分层:
-##   Polygon2D 面 / Line2D 描边,层间树序即画序),实体层组件按高亮
-##   三档呈现(专属亮 / 共享常 / 无关暗);机关物由 FocusDriver 驱动同款
-##   三档呈现,切换受控几何体时按距离波次交叉淡化。
+##   可站,逆向天花板)。渲染 = 引擎原生节点分层(v0.43.0,LayerVisual
+##   渲染控制器退役):每层一个 Node2D 容器,层间画序 = 容器 z_index
+##   (契约 _layer_z)+ 树序,层内每件石板一个 TerrainKit.slab_node
+##   (Polygon2D/Line2D,零自定义绘制);机关物由 FocusDriver 驱动高亮
+##   三档呈现,切换受控几何体时波次交叉淡化。
 
 
 ## 关卡表现层宿主与镜头场景(场景资源强制约束 R1:常驻结构走 .tscn;
@@ -107,16 +108,27 @@ static func build(def: LevelDef) -> Node2D:
 		bodies[ckey].add_child(_rect_shape(it["rect"], it["faces"]))
 	for w in walls:
 		bodies["walls"].add_child(_rect_shape(w, Comp.FACES_FULL))
-	# 每层一个 LayerVisual(引擎内置节点:Polygon2D 面 / Line2D 描边),
-	# 只装自己层的组件 —— 实体层按高亮三档呈现(专属亮 / 共享常 / 无关暗),
-	# 档间转移走交叉淡化(§7.10);层间画序 = 树序 + Comp.LAYER_Z
-	for layer in [1, 2, 3, 4, 5, 6, 7, 8]:
-		var visual := LayerVisual.new()
-		visual.layer = layer
-		visual.items = items.filter(func(it: Dictionary) -> bool:
-			return it["layer"] == layer)
-		visual.z_index = Comp.LAYER_Z[layer]
-		root.add_child(visual)
+	# 每层一个 Node2D 容器(引擎原生分层,R0):层间画序 = 容器 z_index
+	# (契约 _layer_z)+ 树序;层内大块先画(面积降序,树序即画序),
+	# 每件石板一个 TerrainKit.slab_node(零 _draw、零运行时控制器)
+	var buckets := {}
+	for it2 in items:
+		var l: int = it2["layer"]
+		if not buckets.has(l):
+			buckets[l] = []
+		(buckets[l] as Array).append(it2)
+	for l: int in buckets.keys():
+		var bucket: Array = buckets[l]
+		bucket.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			var ra: Rect2 = a["rect"]
+			var rb: Rect2 = b["rect"]
+			return ra.size.x * ra.size.y > rb.size.x * rb.size.y)
+		var holder := Node2D.new()
+		holder.name = "Layer%d" % l
+		holder.z_index = _layer_z(l)
+		root.add_child(holder)
+		for it3: Dictionary in bucket:
+			holder.add_child(TerrainKit.slab_node(it3, bucket))
 
 	# —— 机关物的高亮三档呈现由 FocusDriver 统一驱动(§7.10) ——
 	var focus_entries: Array = []
@@ -127,7 +139,7 @@ static func build(def: LevelDef) -> Node2D:
 		ramp.pts = PackedVector2Array(r["pts"])
 		ramp.base_y = r["base"]
 		ramp.layer_value = _bit_value(combos, Comp.sig_key(r))
-		ramp.z_index = Comp.LAYER_Z[Comp.layer_of(r)]
+		ramp.z_index = _layer_z(Comp.layer_of(r))
 		root.add_child(ramp)
 		focus_entries.append({"node": ramp,
 			"item": {"layer": Comp.layer_of(r), "who": Comp.who_of(r)},
@@ -153,7 +165,7 @@ static func build(def: LevelDef) -> Node2D:
 		mover.period = mv.get("period", 3.0)
 		mover.phase = mv.get("phase", 0.0)
 		mover.layer_value = _bit_value(combos, Comp.sig_key(mv))
-		mover.z_index = Comp.LAYER_Z[Comp.layer_of(mv)]
+		mover.z_index = _layer_z(Comp.layer_of(mv))
 		root.add_child(mover)
 		focus_entries.append({"node": mover,
 			"item": {"layer": Comp.layer_of(mv), "who": Comp.who_of(mv)},
@@ -172,7 +184,7 @@ static func build(def: LevelDef) -> Node2D:
 		gate.door_item = Comp.normalize(lg["door"])
 		gate.invert = lg.get("invert", false)
 		gate.layer_bit = combos["dyn:lg:%d" % li]["bit"]
-		gate.z_index = Comp.LAYER_Z[gate.door_item["layer"]]
+		gate.z_index = _layer_z(gate.door_item["layer"])
 		root.add_child(gate)
 		focus_entries.append({"node": gate, "item": gate.door_item,
 			"rect": gate.door_item["rect"]})
@@ -187,7 +199,7 @@ static func build(def: LevelDef) -> Node2D:
 		bridge.phase = tb.get("phase", 0.0)
 		bridge.sync_beat = tb.get("sync_beat", false)
 		bridge.layer_bit = combos["dyn:tb:%d" % ti]["bit"]
-		bridge.z_index = Comp.LAYER_Z[Comp.layer_of(tb)]
+		bridge.z_index = _layer_z(Comp.layer_of(tb))
 		root.add_child(bridge)
 		focus_entries.append({"node": bridge,
 			"item": {"layer": Comp.layer_of(tb), "who": Comp.who_of(tb)},
@@ -199,7 +211,7 @@ static func build(def: LevelDef) -> Node2D:
 		tile.slab_rect = pt["rect"]
 		tile.note = pt.get("note", "")
 		tile.layer_value = _bit_value(combos, Comp.sig_key(pt))
-		tile.z_index = Comp.LAYER_Z[Comp.layer_of(pt)]
+		tile.z_index = _layer_z(Comp.layer_of(pt))
 		root.add_child(tile)
 		focus_entries.append({"node": tile,
 			"item": {"layer": Comp.layer_of(pt), "who": Comp.who_of(pt)},
@@ -209,7 +221,7 @@ static func build(def: LevelDef) -> Node2D:
 	for pb in def.push_boxes:
 		var box := PushBox.new()
 		box.cell = pb["cell"]
-		box.z_index = Comp.LAYER_Z[Comp.LAYER_MAIN]
+		box.z_index = _layer_z(Comp.LAYER_MAIN)
 		root.add_child(box)
 		focus_entries.append({"node": box,
 			"item": {"layer": Comp.LAYER_MAIN, "who": []},
@@ -329,6 +341,15 @@ static func build(def: LevelDef) -> Node2D:
 	cam.limit_bottom = int(def.size.y)
 	root.add_child(cam)
 	return root
+
+
+## 显示层 z 契约(levels.md §7.10,引擎原生 z_index 直接承载,无常量表):
+## 景观 L1–L3 递增沉底,实体 L4–L7 递增且全在玩家 z5 之下(所见即所碰,
+## 角色永不被实体石板盖住);L8 前景剪影 = 6,唯一压在玩家之上的层。
+static func _layer_z(layer: int) -> int:
+	if layer >= Comp.LAYER_FRONT:
+		return 6
+	return layer - 3
 
 
 ## 分层语义 v3(levels.md §7.10):碰撞位编译。

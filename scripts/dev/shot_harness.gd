@@ -1,7 +1,7 @@
 extends RefCounted
 ## 开发验证钩子执行器(统合重构终案 Sprint 4 自 main.gd 迁出;v0.39.1 起
 ## 旗标解析与分派一并下沉):--*shot / --autotest / --recalltest /
-## --laneshot / --tourshot 等命令行分镜与自测的唯一实现。经 Main._dev_harness()
+## --tourshot / --trialshot 等命令行分镜与自测的唯一实现。经 Main._dev_harness()
 ## 软引用装载,导出包剥离 scripts/dev/* 后 load 失败 → 钩子整体关闭。
 ## Main 只保留游戏侧旋钮解析(--debug-grid/--zoom/--leveljson)与
 ## debug_* 运行时成员;run_perf_log:Android debug 真机自动 PERF 日志。
@@ -35,7 +35,6 @@ var _rogue_auto := false
 var _rogue_focus := 0           # --rogueautotest=N:指定主角跑通局
 var _trial_shot := false        # --trialshot:JSON 关卡出生点连拍(双体/磁界验证)
 var _tour_shot := false
-var _lane_shot := false
 var _tap_shot := false          # --tapshot:点按粒子反馈分镜(TouchControls 触点反馈)
 var _perf_log := false
 var _auto_test := false
@@ -100,8 +99,6 @@ func boot(args: Array) -> void:
 				_rogue_focus = raw.substr(15).to_int()
 		elif raw == "--tourshot":
 			_tour_shot = true
-		elif raw == "--laneshot":
-			_lane_shot = true
 		elif raw == "--tapshot":
 			_tap_shot = true
 		elif raw == "--trialshot":
@@ -165,8 +162,6 @@ func boot(args: Array) -> void:
 		run_rogue_auto_test()
 	if _tour_shot:
 		run_tour_shot()
-	if _lane_shot:
-		run_lane_shot()
 	if _perf_log:
 		run_perf_log()
 	elif OS.is_debug_build() and OS.has_feature("mobile"):
@@ -360,75 +355,6 @@ func run_tour_shot() -> void:
 		p.velocity = Vector2.ZERO
 		await m.get_tree().create_timer(0.55).timeout
 		await _shot("tour_" + str(wp[0]))
-	m.get_tree().quit()
-
-
-## 分层语义 v3 截图验收(levels.md §7.10):装载机制试炼场,分镜截取
-## L3 背景可穿行 / L6 专属高亮(圆站上台面)/ L5 专属域(疾墙对疾高亮、
-## 逆墙对逆)/ L8 前景躲入降透明 / 动态机关两态;配合 --zoom=N 验网格 LOD。
-func run_lane_shot() -> void:
-	if _shot_dir.is_empty():
-		_shot_dir = "res://.shots"
-	_shot_level = 99
-	m._level_def = LevelData.LEVELS[0]   # 分层演示即机制试炼场(v0.17 起)
-	m._rogue = false
-	m._current = -1
-	m._clear_level()
-	m._level_root = LevelBuilder.build(m._level_def)
-	m.add_child(m._level_root)
-	m._collect_players()
-	m._state = Main.State.PLAYING
-	m._menu.visible = false
-	m._hud.visible = true
-	m.touch_controls.set_in_game(true)
-	m.touch_controls.set_switch_available(true)
-	m._hud.show_win(false)
-	m._hud.set_level_info(m._level_def)
-	m._refresh_roster()
-	m._hud.fade_from_black()
-	m._switch_to(0, true)
-	await m.get_tree().create_timer(0.8).timeout
-
-	# ① 疾 @ Z1:L3 背景建筑(1700)与 L8 前景遮挡(2200)同框,右侧 L5 疾域墙
-	m.players[0].position = Vector2(2350, 1740)
-	m.players[0].velocity = Vector2.ZERO
-	await m.get_tree().create_timer(0.8).timeout
-	await _shot("lane_L3_L8_dash")
-	# ② 圆 @ L6 圆域实台:专属高亮描边(呼吸脉冲)
-	if m.players.size() > 3:
-		m._switch_to(3, true)
-		m.players[3].position = Vector2(3930, 1370)
-		m.players[3].velocity = Vector2.ZERO
-		await m.get_tree().create_timer(0.9).timeout
-		await _shot("lane_L6_focus_roll")
-	# ③ 疾 @ L5 疾域墙:对疾实体 + 高亮描边
-	m._switch_to(0, true)
-	m.players[0].position = Vector2(2560, 1740)
-	m.players[0].velocity = Vector2.ZERO
-	await m.get_tree().create_timer(0.8).timeout
-	await _shot("lane_L5_focus_dash")
-	# ④ 疾躲入 L8 前景:组件降透明呈剪影
-	m.players[0].position = Vector2(2380, 1740)
-	m.players[0].velocity = Vector2.ZERO
-	await m.get_tree().create_timer(0.7).timeout
-	await _shot("lane_L8_dim")
-	# ⑤ 逆 @ Z2 置换走廊:L5 逆域墙高亮;上方 faces=bottom 天路
-	m._switch_to(2, true)
-	m.players[2].position = Vector2(4700, 1740)
-	m.players[2].velocity = Vector2.ZERO
-	await m.get_tree().create_timer(0.8).timeout
-	await _shot("lane_L5_focus_fall")
-	# ⑥ 气闸开关门(共享件常亮,无描边)
-	m._switch_to(0, true)
-	m.players[0].position = Vector2(9900, 1740)
-	m.players[0].velocity = Vector2.ZERO
-	await m.get_tree().create_timer(0.6).timeout
-	await _shot("lane_dyn_gate")
-	# ⑦ 限时桥 + 双子磁界室远景
-	m.players[0].position = Vector2(10800, 1740)
-	m.players[0].velocity = Vector2.ZERO
-	await m.get_tree().create_timer(0.8).timeout
-	await _shot("lane_dyn_bridge")
 	m.get_tree().quit()
 
 

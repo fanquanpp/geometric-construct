@@ -17,8 +17,8 @@ class_name Comp
 ##
 ## 兼容约定:平台项可以是裸 Rect2(旧格式,等价 L4 / full / 全员),
 ## 也可以是字典 {rect, id?, layer?, faces?, who?, tags?}。旧字段
-## lane / lanes / far 仅在读取时兼容(norm_layer 把 lane 映射进 layer,
-## lanes / far 丢弃)——v3 数据不再写出。全部字段可 JSON 同构。
+## lane / lanes / far 兼容已随八层渲染退役移除(v0.43.0)。全部字段可
+## JSON 同构。
 
 ## —— 八层定值表(全局固定,一次定稿;每关选用子集,未用即空)——
 const LAYER_DEEP := 1      # L1 深景:纯视觉最暗档(原 far2)
@@ -30,12 +30,8 @@ const LAYER_EXTRA2 := 6    # L6 扩展实体层·乙
 const LAYER_EXTRA3 := 7    # L7 扩展实体层·丙
 const LAYER_FRONT := 8     # L8 前景遮挡:玩家之上剪影(原 front)
 
-## 显示层 → z_index(L8 在玩家 z5 之上;L7 与既有机关 z 相邻,树序定先后)。
-const LAYER_Z := {1: -2, 2: -1, 3: 0, 4: 1, 5: 2, 6: 3, 7: 4, 8: 6}
-
-## 各层基础透明度(L1 / L2 渗雾远景;其余原色,配合 modulate 深度梯度)。
-const LAYER_BASE_ALPHA := {1: 0.26, 2: 0.34, 3: 1.0, 4: 1.0,
-	5: 1.0, 6: 1.0, 7: 1.0, 8: 1.0}
+## 显示层 → z_index 契约已下沉 LevelBuilder._layer_z(v0.43.0,引擎原生
+## z_index 直接承载,无常量表):L1..L7 = layer-3,L8 = 6,玩家 z5。
 
 const FACES_FULL := "full"
 const FACES_TOP := "top"
@@ -50,18 +46,6 @@ const ROLE_DIM := 3         # who 非空不含受控者:幽灵暗度
 
 
 static func norm_layer(v) -> int:
-	if v is String:   # 旧 lane 字符串只读兼容(映射进八层,v3 不再写出)
-		match v:
-			"back":
-				return LAYER_BACK
-			"front":
-				return LAYER_FRONT
-			"far1":
-				return LAYER_FAR
-			"far2":
-				return LAYER_DEEP
-			_:
-				return LAYER_MAIN
 	var l := int(v)
 	return l if l >= 1 and l <= 8 else LAYER_MAIN
 
@@ -96,7 +80,7 @@ static func normalize(item) -> Dictionary:
 	return {
 		"rect": d["rect"],
 		"id": int(d.get("id", 0)),
-		"layer": norm_layer(d.get("layer", d.get("lane", LAYER_MAIN))),
+		"layer": norm_layer(d.get("layer", LAYER_MAIN)),
 		"faces": norm_faces(d.get("faces", FACES_FULL)),
 		"who": norm_who(d.get("who", [])),
 		"tags": d.get("tags", []) if d.get("tags", []) is Array else [],
@@ -112,7 +96,7 @@ static func id_of(item) -> int:
 
 
 static func layer_of(item) -> int:
-	return norm_layer(item.get("layer", item.get("lane", LAYER_MAIN))) \
+	return norm_layer(item.get("layer", LAYER_MAIN)) \
 		if item is Dictionary else LAYER_MAIN
 
 

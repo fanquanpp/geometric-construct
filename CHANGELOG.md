@@ -3,6 +3,24 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.43.0(2026-09-14)
+
+> **八层渲染退役收官:平台渲染 = 引擎原生节点分层(R0)**。LayerVisual 渲染控制器自研件清退,层间画序由引擎 z_index + 树序直接承载;八层×who×签名的碰撞语义为玩法契约原样不动。PC 双端截图对照渲染逐位一致。
+
+### 移除
+- `scripts/world/render/layer_visual.gd`(250 行)整删:八层渲染控制器连同运行时三档透明度 / 波次交叉淡化 / L8 前景躲入降透明一并退役(现役 36 关 L1/L2/L8 与 who 集合零使用,实践死代码;机关物三档由 FocusDriver 保留)。
+- `Comp.LAYER_Z` / `Comp.LAYER_BASE_ALPHA` 定值表退役:z 契约下沉为 `LevelBuilder._layer_z` 纯函数(L1..L7 = layer−3,L8 = 6,玩家 z5,无常量表)。
+- 旧 lane / lanes / far 字段读取兼容分支移除(v3 数据零使用);`--laneshot` 分镜钩子退役(仍引用已清退的 v4 布局坐标,传送点越界,分镜失真)。
+
+### 变更
+- level_builder:每层一个 Node2D 容器(容器 z_index + 树序即画序),层内大块先画(面积降序),每件石板一个 `TerrainKit.slab_node`(Polygon2D 面 / 亮肩 / 缘线 / 红刻度 / 裙角,原 LayerVisual 静态视觉迁入,零 `_draw` 零运行时控制器)。
+- focus_driver 仅司机关物高亮三档;基础透明度常量随表退役取 1.0。
+- tests/layer_check.gd:渲染断言改版(LayerVisual 在树检查 → 层容器 z 契约 + `_layer_z` 纯函数断言,id 检查改读构建期 root meta);碰撞语义断言(mask 编译 / who 碰撞 / 单向面 / 开关门 / 限时桥 / 位上限)原样保留。
+
+### 门禁
+- check-only 六文件零错 / LAYER CHECK PASS(probes=5)/ GRIDCHECK PASS(36 关,17 warns = 既有基线)/ MODCHECK PASS / REACH PASS 全关 / recalltest 四链 PASS。
+- PC 截图回归:trialshot 三镜 + tourshot 13 节拍 + 肉鸽两关(--leveljson)渲染逐位一致(.shots_v43/);真机 K60 局内走查与 logcat 零脚本错。
+
 ## v0.38.2(2026-09-13)
 
 > **第三阶段开工:外部架构方案甄别落档(REFACTOR v2.0 §九)+ Main 流转域收口(GameFlow)**。纯架构批,行为逐位不变。

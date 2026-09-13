@@ -23,7 +23,8 @@
 4. **验收基线**:改动物理 / 关卡 / UI 后——
    - `--headless --path . --check-only --script res://<改动脚本>` 全绿;
    - `--headless --script res://tests/grid_check.gd` 不得新增违规;
-   - 涉及分层 / 双体 / 机关:`-- --laneshot`、`-- --recalltest` 通过;
+   - 涉及分层 / 双体 / 机关:`--headless --script res://tests/layer_check.gd`、
+	 `-- --recalltest` 通过;
    - 涉及特性 / 手感数值:`--headless --script res://tests/trait_check.gd`
 	 通过(顶弹 / 可推动 / 跳高的物理仿真);
    - 真机(Android debug apk)触屏走查关键链路。
@@ -45,16 +46,16 @@
    挂载与演出。
 7. **Godot 工作流强制令**(2026-09-14 用户拍板,永久生效):
    - **每次都使用 godot-prompter**:凡涉及 Godot 的任务(系统实现 /
-     编辑器操作 / 运行走查 / 调试 / 评审),动笔前必须先经 Skill 工具
-     调用对应 godot-prompter 域技能——总入口 `using-godot-prompter`
-     (内含域映射表:player-controller / state-machine / scene-organization /
-     godot-ui / godot-testing / godot-debugging / godot-code-review 等),
-     子代理同样适用;不得凭记忆直接写码。
+	 编辑器操作 / 运行走查 / 调试 / 评审),动笔前必须先经 Skill 工具
+	 调用对应 godot-prompter 域技能——总入口 `using-godot-prompter`
+	 (内含域映射表:player-controller / state-machine / scene-organization /
+	 godot-ui / godot-testing / godot-debugging / godot-code-review 等),
+	 子代理同样适用;不得凭记忆直接写码。
    - **截图文件夹与截图文件一律放项目根目录**:`--shotdir` 指向项目根
-     下固定文件夹(现行默认 `res://.shots` 即根目录,保持),桌面 /
-     真机 / 导出 exe 走查统一以项目根为基准解析路径;禁止把截图落进
-     build/、user:// 或系统临时目录(防 exe 相对 shotdir 解析成
-     build/build/ 的既有坑)。
+	 下固定文件夹(现行默认 `res://.shots` 即根目录,保持),桌面 /
+	 真机 / 导出 exe 走查统一以项目根为基准解析路径;禁止把截图落进
+	 build/、user:// 或系统临时目录(防 exe 相对 shotdir 解析成
+	 build/build/ 的既有坑)。
 
 ## 场景与资源强制约束(tscn 优先 · 数值 .tres · 数据驱动画面)
 

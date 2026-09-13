@@ -73,8 +73,9 @@ geometric-construct/
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)
 │   ├── world/               # 关卡装配与环境
 │   │   ├── level_builder.gd #   LevelDef → 节点树装配编排 + 碰撞签名编译(§7.10);
-│   │   │                    #   渲染唯一管线 = LayerVisual 引擎内置节点分层(v0.39.0,R0)
-│   │   ├── render/          #   渲染层:layer_visual(八层节点分层)/ focus_driver(高亮三档)
+│   │   │                    #   渲染唯一管线 = 引擎原生节点分层(v0.43.0,R0:
+│   │   │                    #   每层 Node2D 容器 z_index + TerrainKit.slab_node)
+│   │   ├── render/          #   渲染层:focus_driver(机关高亮三档)
 │   │   │                    #   / grid_layer(定位网格 LOD)/ debug_grid_overlay(--debug-grid)
 │   │   ├── mechanisms/      #   机关物:ramp / mover(+slab·track) / timed_bridge
 │   │   │                    #   / lever_gate / piano_tile / mag_boundary
