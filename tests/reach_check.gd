@@ -121,6 +121,10 @@ func _surfaces(def: LevelDef) -> Array:
 		if it["faces"] != Comp.FACES_TOP:
 			out.append({"y": r.end.y, "x0": r.position.x, "x1": r.end.x,
 				"bottom": true})
+	for tb in def.timed_bridges:
+		var r: Rect2 = tb.get("rect", tb) if tb is Dictionary else tb
+		out.append({"y": r.position.y, "x0": r.position.x, "x1": r.end.x,
+			"bottom": false})
 	for r0 in def.ramps:
 		# 曲面:两端点各给一个 60px 宽的立足面(简化:坡面本身可行走)
 		var pts: Array = r0["pts"]
@@ -154,15 +158,34 @@ func _blocked_at(def: LevelDef, x: float, y_top: float) -> bool:
 # —————————————————— 图构建 + BFS ——————————————————
 
 func _check(label: String, def: LevelDef) -> void:
-	var focus: GeometryDef = Geometries.get_def(def.focus)
 	var surfs := _surfaces(def)
 	if surfs.is_empty():
 		_fail(label, "无可站立面")
 		return
-	# —— 归门面:门中心脚下(door_probe 半径内)须有面 ——
+	# —— 逐名册成员判定(主线合作关:每位成员以其自身物理建图,
+	# 各自的出生点 → 各自的归门;单人关 roster 一位,退化为原行为)——
+	var notes: Array = []
+	var all_ok := true
+	var member_log: Array = []
+	for geo in def.roster:
+		if not _check_member(label, def, geo, surfs, notes):
+			all_ok = false
+		member_log.append(Geometries.get_def(geo).name)
+	if all_ok:
+		print("REACH PASS %-16s faces=%d members=%s %s" % [label, surfs.size(),
+			"".join(member_log), "; ".join(notes)])
+	else:
+		_fail(label, "成员不可达:%s | %s" % ["".join(member_log), "; ".join(notes)])
+
+
+## 单名册成员:出生点 → 归门 BFS 可达(以该成员的物理常量建边)。
+func _check_member(label: String, def: LevelDef, geo: int, surfs: Array,
+		notes: Array) -> bool:
+	var gdef: GeometryDef = Geometries.get_def(geo)
+	# —— 归门面:该成员的门,中心脚下(door_probe 半径内)须有面 ——
 	var door_surfs: Array = []
 	for e in def.exits:
-		if int(e[0]) != def.focus:
+		if int(e[0]) != geo:
 			continue
 		var dc: Vector2 = e[1]
 		var found := -1
@@ -176,15 +199,15 @@ func _check(label: String, def: LevelDef) -> void:
 			found = i
 			break
 		if found < 0:
-			_fail(label, "归门落点无面:door=%s" % dc)
-			return
+			notes.append("geo%d 归门无面:%s" % [geo, dc])
+			return false
 		door_surfs.append(found)
 	if door_surfs.is_empty():
-		_fail(label, "roster 无本主角归门")
-		return
+		notes.append("geo%d 无归门" % geo)
+		return false
 	# —— 出生面 ——
-	var sp: Variant = def.spawns[def.focus] \
-		if def.focus < def.spawns.size() else null
+	var sp: Variant = def.spawns[geo] \
+		if geo < def.spawns.size() else null
 	var sp_pts: Array = []
 	if sp is Dictionary and sp.has("a"):
 		sp_pts = [sp["a"], sp["b"]]
@@ -202,19 +225,15 @@ func _check(label: String, def: LevelDef) -> void:
 				found = i
 				break
 		if found < 0:
-			_fail(label, "出生点无面:%s" % p)
-			return
-	# —— 邻接边(带裕度日志) ——
-	var edges: Dictionary = {}   # i -> [(j, note)]
-	var notes: Array = []
+			notes.append("geo%d 出生点无面:%s" % [geo, p])
+			return false
+	# —— 邻接边(该成员物理) ——
+	var edges: Dictionary = {}   # i -> [j]
 	for i in surfs.size():
 		for j in surfs.size():
 			if i == j:
 				continue
-			var a: Dictionary = surfs[i]
-			var b: Dictionary = surfs[j]
-			var edge := _edge(focus, def, a, b, notes)
-			if edge != "":
+			if _edge(gdef, def, surfs[i], surfs[j], notes) != "":
 				if not edges.has(i):
 					edges[i] = []
 				edges[i].append(j)
@@ -246,7 +265,29 @@ func _check(label: String, def: LevelDef) -> void:
 			if not edges.has(i):
 				edges[i] = []
 			edges[i].append(j)
-	# —— 逆:出生 / 天花连通性由 swap 边覆盖(见 _edge) ——
+	# —— 电梯(mover)边:底位面 ↔ 顶位面,全员可乘(载具语义) ——
+	for mv in def.movers:
+		var r: Rect2 = mv["rect"]
+		var off: Vector2 = mv.get("offset", Vector2.ZERO)
+		var cx := r.get_center().x
+		var i_lo := _surf_index(surfs, cx, r.end.y)
+		var i_hi := _surf_index(surfs, cx, r.position.y + off.y)
+		if i_lo >= 0 and i_hi >= 0 and i_lo != i_hi:
+			for pair in [[i_lo, i_hi], [i_hi, i_lo]]:
+				if not edges.has(pair[0]):
+					edges[pair[0]] = []
+				edges[pair[0]].append(pair[1])
+			notes.append("电梯 %.0f→%.0f" % [r.end.y, r.position.y + off.y])
+	# —— 传送对(portal)边:a 面 ↔ b 面,全员可用 ——
+	for po in def.portals:
+		var ia := _surf_index(surfs, float(po["a"]["x"]), float(po["a"]["y"]))
+		var ib := _surf_index(surfs, float(po["b"]["x"]), float(po["b"]["y"]))
+		if ia >= 0 and ib >= 0 and ia != ib:
+			for pair in [[ia, ib], [ib, ia]]:
+				if not edges.has(pair[0]):
+					edges[pair[0]] = []
+				edges[pair[0]].append(pair[1])
+			notes.append("传送对 %s" % [po["a"]])
 	# —— BFS 多源(全部出生面)→ 任一归门面 ——
 	var starts: Array = []
 	for i in surfs.size():
@@ -257,8 +298,8 @@ func _check(label: String, def: LevelDef) -> void:
 					and float(p["x"]) <= s["x1"] + 40.0:
 				starts.append(i)
 	if starts.is_empty():
-		_fail(label, "出生面不在图中")
-		return
+		notes.append("geo%d 出生面不在图中" % geo)
+		return false
 	var seen := {}
 	var queue := starts.duplicate()
 	while not queue.is_empty():
@@ -269,16 +310,11 @@ func _check(label: String, def: LevelDef) -> void:
 		for j in edges.get(i, []):
 			if not seen.has(j):
 				queue.append(j)
-	var ok := false
 	for d in door_surfs:
 		if seen.has(d):
-			ok = true
-	if ok:
-		var log := "; ".join(notes)
-		print("REACH PASS %-16s faces=%d edges=%d %s" % [label, surfs.size(),
-			edges.size(), log])
-	else:
-		_fail(label, "BFS 不可达:%s" % " ; ".join(notes))
+			return true
+	notes.append("geo%d BFS 不可达" % geo)
+	return false
 
 
 ## a → b 是否可行,返回边类型(不可行 = 空串);数据注记追加 notes。
@@ -287,6 +323,10 @@ func _edge(focus: GeometryDef, def: LevelDef, a: Dictionary, b: Dictionary,
 	var gap_x := maxf(b["x0"] - a["x1"], a["x0"] - b["x1"])
 	var dy: float = float(a["y"]) - float(b["y"])   # >0 = b 更低
 	var x_overlap := minf(a["x1"], b["x1"]) - maxf(a["x0"], b["x0"])
+	# 双底面(界的天花行走):镜像 y——她的「下落」朝 +y(房间系),
+	# 深处底面 = 镜像空间里的低平台,同套跳/落/台阶语义取镜像 dy
+	if a["bottom"] and b["bottom"]:
+		dy = -dy
 	# 台阶 / 贴邻上行:面相接(缝极小)且 b 高 dy 在可用跳高内 → 原地跳上
 	if focus.can_jump and gap_x <= float(MARGINS.walk_crack) and dy > 2.0:
 		if _reach_up(focus, dy) >= 0.0:

@@ -18,7 +18,7 @@ signal closed
 var current := 0              # 几何体页下标
 var is_open := false
 var _tab := "geo"             # geo / bld / mech / gallery / story
-var _sel := {"geo": 0, "bld": 0, "mech": 0}   # 各图鉴页选中下标
+var _sel := {"geo": 0, "bld": 0, "mech": 0, "gallery": 0}   # 各图鉴页选中下标
 
 var _root: Control
 var _content: Control
@@ -103,7 +103,7 @@ func _build_header() -> void:
 	tab_row.offset_top = 44
 	tab_row.alignment = BoxContainer.ALIGNMENT_END
 	_content.add_child(tab_row)
-	for spec in [["geo", "几何体"], ["bld", "建筑物"], ["mech", "机 关"],
+	for spec in [["geo", "几何体"], ["bld", "建 筑"], ["mech", "机 关"],
 			["keys", "键 位"], ["gallery", "剧 情"]]:
 		var b := _tab_button(str(spec[1]))
 		b.pressed.connect(func() -> void: _switch_tab(str(spec[0])))
@@ -717,73 +717,134 @@ func _keycap(text: String) -> Control:
 # ———————————————— 页签五:剧情(回顾目录 + 全文本阅读器) ————————————————
 
 func _build_gallery_page() -> void:
+	## v0.38.1 剧情页重构:仿建筑 / 机关页的主从布局——
+	## 左条目列表(各幕剧情)+ 右详情(标题 / 副题 / 拍子规格 / 阅读全文)。
 	var page := _make_page("gallery")
-	# 卡片区夹在页眉之下、页脚之上
-	var zone := Control.new()
-	zone.anchor_left = 0.0
-	zone.anchor_right = 1.0
-	zone.anchor_top = 0.0
-	zone.anchor_bottom = 1.0
-	zone.offset_left = 24
-	zone.offset_right = -24
-	zone.offset_top = 108
-	zone.offset_bottom = -34
-	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	page.add_child(zone)
 
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	zone.add_child(center)
-
-	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(880, 0)
-	card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
-	center.add_child(card)
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 10)
-	card.add_child(vb)
-
-	var title_bar := PanelContainer.new()
-	title_bar.add_theme_stylebox_override("panel", Ui.sb(Palette.I.red, 0, null, 0, 24, 10))
-	var tcol := VBoxContainer.new()
-	tcol.add_child(Ui.l("剧情回顾", 24, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
-	tcol.add_child(Ui.l("ARCHIVE OF SCRIPTS · 选一段重看", 12, Ui.LIGHT,
-		Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER))
-	title_bar.add_child(tcol)
-	vb.add_child(title_bar)
-
-	var body_wrap := PanelContainer.new()
-	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 14))
-	vb.add_child(body_wrap)
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 8)
-	body_wrap.add_child(grid)
-
+	# 左列:条目列表(与建筑 / 机关页同款坐标与行语言)
+	var list_panel := PanelContainer.new()
+	list_panel.position = Vector2(48, 116)
+	list_panel.size = Vector2(300, 520)
+	list_panel.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.14), 1, 6, 6))
+	page.add_child(list_panel)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	list_panel.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 6)
+	scroll.add_child(list)
+	var rows: Array = []
 	for i in ArchiveData.STORIES.size():
 		var s: Dictionary = ArchiveData.STORIES[i]
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(414, 58)
+		b.toggle_mode = true
+		b.custom_minimum_size = Vector2(276, 58)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.add_theme_font_override("font", Ui.HEAD)
-		b.add_theme_font_size_override("font_size", 17)
-		b.add_theme_constant_override("icon_max_width", 24)
-		b.add_theme_constant_override("h_separation", 12)
+		b.add_theme_constant_override("icon_max_width", 38)
+		b.add_theme_constant_override("h_separation", 10)
+		b.add_theme_stylebox_override("pressed",
+			Ui.sb(Color(Palette.I.ink_3, 1.0), 0, Color(Palette.I.paper, 0.55), 1, 10, 6))
 		b.icon = Ui.icon("buttons/story-flat.svg") if ResourceLoader.exists(
 			"res://assets/svg/buttons/story-flat.svg") else Ui.icon("buttons/play-flat.svg")
-		b.text = s["title"]
-		b.pivot_offset = Vector2(12, 26)
-		Ui.wire_button(b)
-		b.pressed.connect(func() -> void: _open_story(s))
-		grid.add_child(b)
-		var sub := Ui.l(s["sub"], 10, Ui.LIGHT, Palette.I.dim)
-		sub.position = Vector2(46, 38)
-		b.add_child(sub)
+		b.pivot_offset = Vector2(12, 29)
+		Ui.wire_button(b, "ui_page")
+		b.pressed.connect(func() -> void:
+			_sel["gallery"] = i
+			_refresh_gallery())
+		list.add_child(b)
+		rows.append(b)
+		var col := VBoxContainer.new()
+		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		col.add_theme_constant_override("separation", 1)
+		col.add_child(Ui.l(str(s["title"]), 15, Ui.HEAD, Palette.I.paper))
+		col.add_child(Ui.l(str(s["sub"]), 9, Ui.LIGHT, Palette.I.dim))
+		col.position = Vector2(58.0, 10.0)
+		b.add_child(col)
+
+	# 右列:详情区(标题 / 副题 / 拍子规格 / 阅读全文)
+	var detail := Control.new()
+	detail.position = Vector2(376, 116)
+	detail.size = Vector2(836, 540)
+	detail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.add_child(detail)
+
+	var text := VBoxContainer.new()
+	text.position = Vector2(0, 0)
+	text.size = Vector2(836, 540)
+	text.add_theme_constant_override("separation", 10)
+	detail.add_child(text)
+
+	var name_row := HBoxContainer.new()
+	name_row.add_theme_constant_override("separation", 12)
+	var name_l := Ui.l("", 34, Ui.TITLE, Palette.I.paper)
+	name_row.add_child(name_l)
+	var tag_panel := Ui.tag("剧情", Color(Palette.I.ink_3, 1.0),
+		Palette.I.red, 12, 10, 4)
+	tag_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	name_row.add_child(tag_panel)
+	text.add_child(name_row)
+
+	var sub_l := Ui.l("", 13, Ui.LIGHT, Palette.I.dim)
+	text.add_child(sub_l)
+	text.add_child(Ui.rule(836, 2))
+
+	var intro_l := Ui.l("回看已解锁的演出剧本:台词按角色着色,整段重读,不重播对话演出。",
+		15, Ui.BODY, Color(Palette.I.paper, 0.9), HORIZONTAL_ALIGNMENT_LEFT, false, 4)
+	intro_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intro_l.custom_minimum_size = Vector2(836, 0)
+	text.add_child(intro_l)
+
+	text.add_child(Ui.l("拍子 BEATS", 12, Ui.LIGHT, Palette.I.dim))
+	var beats_box := VBoxContainer.new()
+	beats_box.add_theme_constant_override("separation", 4)
+	text.add_child(beats_box)
+
+	var read_btn := Button.new()
+	read_btn.text = "阅读全文 ▸"
+	read_btn.custom_minimum_size = Vector2(220, 46)
+	read_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	read_btn.add_theme_font_size_override("font_size", 16)
+	Ui.wire_button(read_btn, "ui_open")
+	text.add_child(read_btn)
+
+	page.set_meta("refs", {"rows": rows, "name": name_l, "sub": sub_l,
+		"beats": beats_box, "read": read_btn})
+	_refresh_gallery()
+
+
+## 剧情详情刷新(选中行同步 + 拍子装填 + 阅读按钮接线)。
+func _refresh_gallery() -> void:
+	var entries: Array = ArchiveData.STORIES
+	var idx: int = clampi(int(_sel["gallery"]), 0, entries.size() - 1)
+	_sel["gallery"] = idx
+	var refs: Dictionary = _pages["gallery"].get_meta("refs")
+	var s: Dictionary = entries[idx]
+	for r_i in (refs["rows"] as Array).size():
+		var row := (refs["rows"] as Array)[r_i] as Button
+		row.set_pressed_no_signal(r_i == idx)
+	(refs["name"] as Label).text = str(s["title"])
+	(refs["sub"] as Label).text = str(s["sub"])
+	var beats := refs["beats"] as VBoxContainer
+	for c in beats.get_children():
+		c.queue_free()
+	for i in (s["beats"] as Array).size():
+		var hb := HBoxContainer.new()
+		hb.add_theme_constant_override("separation", 12)
+		var no := Ui.l("%02d" % (i + 1), 13, Ui.LIGHT, Palette.I.dim)
+		no.custom_minimum_size = Vector2(64, 0)
+		hb.add_child(no)
+		hb.add_child(Ui.l(str(s["beats"][i]), 13, Ui.BODY,
+			Color(Palette.I.paper, 0.88)))
+		beats.add_child(hb)
+	var btn := refs["read"] as Button
+	for c in btn.get_signal_connection_list("pressed"):
+		btn.pressed.disconnect(c["callable"])
+	var story: Dictionary = s
+	btn.pressed.connect(func() -> void: _open_story(story))
+	_index_label.text = "%d / %d" % [idx + 1, entries.size()]
 
 
 var _story_title: Label

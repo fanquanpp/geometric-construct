@@ -40,11 +40,19 @@ LAYER_NAMES = ["bg_deep", "bg_towers", "bg_mid", "terrain", "edge",
 
 
 def rects(defn):
+    """(x, y, w, h, layer) 五元组;层语义 v3:L1 深景 / L2 远景 /
+    L3 背景建筑(可穿行剪影)/ L4+ 主实体。"""
     out = []
     for p in defn.get("platforms", []):
         r = p["rect"] if isinstance(p, dict) else p
-        out.append((int(r["x"]), int(r["y"]), int(r["w"]), int(r["h"])))
+        layer = int(p.get("layer", 4)) if isinstance(p, dict) else 4
+        out.append((int(r["x"]), int(r["y"]), int(r["w"]), int(r["h"]), layer))
     return out
+
+
+DEEP = (22, 25, 31, 255)      # L1 深景剪影
+FAR = (26, 30, 38, 255)       # L2 远景剪影
+BACK = (32, 37, 47, 255)      # L3 背景建筑剪影(可穿行,亮于远景暗于主体)
 
 
 def paint_layers(defn, outdir, name):
@@ -71,7 +79,7 @@ def paint_layers(defn, outdir, name):
     fill(im, 0, 0, w, h, INK)
     save_layer("bg_deep", im)
 
-    # —— bg_towers:竖向塔影剪影(平台 x 中心的回声,构成主义垂直势) ——
+    # —— bg_towers:竖向塔影剪影(回声)+ L1/L2 组件剪影(分层语义入画) ——
     im = blank()
     xs = sorted({r[0] + r[2] // 2 for r in rects(defn)})
     for i, cx in enumerate(xs):
@@ -79,18 +87,29 @@ def paint_layers(defn, outdir, name):
         th = int(h * (0.38 + 0.10 * ((i + int(defn["focus"])) % 3)))
         fill(im, cx - tw // 2 + ((i % 2) * 40) - 40, h - th, tw, th,
              (20, 23, 28, 255))
+    for (x, y, rw, rh, layer) in rects(defn):
+        if layer == 1:
+            fill(im, x, y, rw, rh, DEEP)
+        elif layer == 2:
+            fill(im, x, y, rw, rh, FAR)
     save_layer("bg_towers", im)
 
-    # —— bg_mid:两条水平色带 + 一道细横梁(静中有层,禁渐变) ——
+    # —— bg_mid:两条水平色带 + L3 背景建筑剪影(可穿行,亮于远景暗于主体) ——
     im = blank()
     fill(im, 0, int(h * 0.34), w, int(h * 0.10), (24, 28, 35, 255))
     fill(im, 0, int(h * 0.62), w, int(h * 0.16), (35, 40, 51, 255))
     fill(im, 0, int(h * 0.30), w, 6, (35, 40, 51, 255))
+    for (x, y, rw, rh, layer) in rects(defn):
+        if layer == 3:
+            fill(im, x, y, rw, rh, BACK)
+            fill(im, x, y, rw, min(6, rh), (46, 52, 64, 255))   # 剪影顶缘微亮
     save_layer("bg_mid", im)
 
-    # —— terrain:体 + 亮面板带 + 曲面填充 ——
+    # —— terrain:体 + 亮面板带(仅 L4+ 主实体;背景剪影不进主地形) ——
     im = blank()
-    for (x, y, rw, rh) in rects(defn):
+    for (x, y, rw, rh, layer) in rects(defn):
+        if layer < 3:
+            continue
         fill(im, x, y, rw, rh, BODY)
         slab = min(int(rh * 0.4), 22)
         if slab > 2:
@@ -111,7 +130,9 @@ def paint_layers(defn, outdir, name):
     # —— edge:顶缘纸白亮线 + 曲面折线 ——
     im = blank()
     px = im.load()
-    for (x, y, rw, _rh) in rects(defn):
+    for (x, y, rw, _rh, layer) in rects(defn):
+        if layer < 3:
+            continue
         fill(im, x, y, rw, 2, (*PAPER, 77))
     for ramp in defn.get("ramps", []):
         pts = [(int(q["x"]), int(q["y"])) for q in ramp["pts"]]
@@ -127,7 +148,9 @@ def paint_layers(defn, outdir, name):
 
     # —— accent:红色刻度块(顶缘 x=40 起每 480px 一处,14×3) ——
     im = blank()
-    for (x, y, rw, _rh) in rects(defn):
+    for (x, y, rw, _rh, layer) in rects(defn):
+        if layer < 3:
+            continue
         mx = 40
         while mx < rw - 20:
             fill(im, x + mx, y, 14, 3, (*RED, 140))
@@ -139,8 +162,12 @@ def paint_layers(defn, outdir, name):
 
     # —— map 语义层:平台逐矩形唯一索引绿(255,g,0),相邻不粘连 ——
     im = blank()
-    for i, (x, y, rw, rh) in enumerate(rects(defn)):
-        fill(im, x, y, rw, rh, (255, (i % 254) + 1, 0, 255))
+    li = 0
+    for (x, y, rw, rh, layer) in rects(defn):
+        if layer < 4 or layer > 7:
+            continue   # 仅 L4-L7 实体层进碰撞语义(Comp.is_solid_layer 对齐)
+        fill(im, x, y, rw, rh, (255, (li % 254) + 1, 0, 255))
+        li += 1
     save_layer("map", im)
 
     # —— map_ent 语义层:门(空心 24×24)/ 出生(实心 16×16)/
@@ -325,6 +352,15 @@ def process(path):
             print("  COMPILE FAIL:", compiled.stderr[-600:])
             return False
         out = json.load(open(path + ".compiled", encoding="utf-8"))
+        # 装饰回填:L1-L3 背景剪影不进语义层(编译器无从表达),编译后
+        # 从手稿回填进产物 platforms——运行时 LaneRenderer 按 LAYER_BASE_ALPHA
+        # 剪影化渲染,Comp.is_solid_layer 判非实体,不参与碰撞。
+        decor = [p0 for p0 in defn.get("platforms", [])
+                 if isinstance(p0, dict) and int(p0.get("layer", 4)) < 4]
+        if decor:
+            out["platforms"] = decor + [
+                q for q in out["platforms"]
+                if not any(key_rect(q) == key_rect(d0) for d0 in decor)]
         ok = parity(defn, out)
         os.remove(path + ".compiled")
         if ok:

@@ -40,7 +40,7 @@ func _ready() -> void:
 	frame.texture = _card_frame
 	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
 		frame.set_texture_margin(side, 20.0)
-		frame.set_content_margin(side, 0.0)
+		frame.set_content_margin(side, 20.0)   # 内容内缩 = 纹理边距,不压框线
 	_card.add_theme_stylebox_override("panel", frame)
 	_card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # 像素纪律:禁柔化
 	_card.resized.connect(func() -> void:

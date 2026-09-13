@@ -50,6 +50,17 @@
 > 单场景(Main.tscn 独苗)与代码 `const` 数值是待清偿债,按
 > REFACTOR.md §八台账分批迁移,不阻塞机制优先。
 
+**R0 · 引擎自带优先(2026-09-13 用户拍板,最高优先级)**
+- 任何功能与设计的实现,动笔前**必须先核对一次 Godot 编辑器 / 引擎
+  是否自带**:优先使用引擎节点、功能与属性(Inspector 可配的优先于
+  代码),引擎确实没有或不适配,再考虑自研。背书:官方 Best Practices
+  「Node alternatives」与节点文档(CanvasLayer / z_index 画序、
+  Parallax2D 视差、Camera2D 限制与平滑、VisibleOnScreenNotifier/Enabler
+  屏外优化、Y-Sort 深度排序、TileMap/NavigationServer 等,皆零代码或
+  极少代码)。**反例存档**:压平地图皮(应直接用节点分层 + z_index)、
+  手写 _draw 装饰(应使用素材 + 九宫格节点)、手写屏外剔除(应使用
+  VisibleOnScreenEnabler2D)。每次技术方案须附「引擎自带核对」一节。
+
 **R1 · tscn 优先,多场景组合(禁单场景巨石 · 强制检查项)**
 - **不允许只有一个 Main 场景**——这是硬性验收项,不是风格建议:
   游戏本体必须由多个合理设计的场景组合而成(子系统容器 / UI 面板 /

@@ -1,8 +1,8 @@
 class_name LevelData
-## 关卡数据(v0.38.0):幕 0「机制试炼场」= 机制试炼场(全机关物逐区自检)
-## + 伍试水·界与边(双子试水关,纯 JSON 手写);
-## 幕 1「关卡设计」仍为占位幕——机制全部达到完美与正常后,
-## 才开始游戏关卡与剧情设计(用户决策 2026-09-10)。
+## 关卡数据(v0.38.1):幕 0「机制试炼场」= 机关全览 + 伍试水;
+## 幕 1「第一幕 · 各自的路上」= 五位几何体的机关课六场
+## (疾速 / 弹阶 / 对面 / 坡道 / 双生阶 + 合演终场),
+## 全部走 aseprite 分层管线(L3 背景剪影 + L4 主实体),逐成员可达门禁。
 ## 数值标准:1 格 = 100 px;可跳台阶高必须比 jump_units 低 0.1。
 
 static var LEVELS: Array[LevelDef] = []
@@ -45,11 +45,11 @@ static func _static_init() -> void:
 		"levels": [0, 1],
 	})
 	ACTS.append({
-		"name": "关卡设计",
-		"title": "未启动",
-		"hint": "机制全部完善与正常后,才开始关卡与剧情设计(2026-09-10 决策)",
-		"icon": "icons/lock-flat.svg",
-		"levels": [],
+		"name": "第一幕",
+		"title": "各自的路上",
+		"hint": "五位几何体的机关课:疾速 / 弹阶 / 对面 / 坡道 / 双生阶,终场合演",
+		"icon": "buttons/play-flat.svg",
+		"levels": [2, 3, 4, 5, 6, 7],
 	})
 
 	#   SSOT = aseprite 语义层(v0.30.0 地图管线):像素承载几何与锚点,
@@ -58,7 +58,12 @@ static func _static_init() -> void:
 	#   例外:levels/pair_trial.json 为纯 JSON 手写关(无 aseprite 源、
 	#   无 art 皮,LaneRenderer 出图);v0.38.0 起修复五项 gridcheck 违规
 	#   并入编幕 0 第 2 场。
-	var files := ["res://levels/trial_v5.json", "res://levels/pair_trial.json"]
+	var files := [
+		"res://levels/trial_v5.json", "res://levels/pair_trial.json",
+		"res://levels/act1/a1_dash.json", "res://levels/act1/a1_spring.json",
+		"res://levels/act1/a1_fall.json", "res://levels/act1/a1_roll.json",
+		"res://levels/act1/a1_pair.json", "res://levels/act1/a1_finale.json",
+	]
 	for path in files:
 		var f := FileAccess.open(path, FileAccess.READ)
 		assert(f != null, "level json missing: %s" % path)

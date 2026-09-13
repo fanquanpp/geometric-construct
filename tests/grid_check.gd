@@ -239,5 +239,5 @@ func _check_level(li: Variant, def: LevelDef) -> void:
 				continue
 			var sink: float = wr.end.y - sr.position.y
 			if sink >= 0.0 and sink < 50.0:
-				_fail("[%s] 共面接缝:竖直件 %d 底缘嵌入仅 %.0fpx(需 ≥50,levels.md §8.4)"
-					% [li, Comp.id_of(w), sink])
+				_fail("[%s] 共面接缝:竖直件 %d %s 底缘嵌入仅 %.0fpx(需 ≥50,levels.md §8.4)"
+					% [li, Comp.id_of(w), wr, sink])
