@@ -21,6 +21,7 @@ func adapt_copy(text: String) -> String:
 ## 按键提示条:按当前关卡的角色能力动态生成。
 ## 触屏设备显示操作文字(轮盘 / 按键),桌面显示键位图标。
 func rebuild(def: LevelDef) -> void:
+	assert(hud != null, "HudHints.hud 未接线(Hud._ready 赋值)——域拆回引回归防线")
 	var host: HBoxContainer = hud._hint_row
 	for c in host.get_children():
 		c.queue_free()

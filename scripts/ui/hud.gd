@@ -44,6 +44,11 @@ var _anchor_flash := {                   # 置换锚闪(刻度带色序互换,�
 
 
 func _ready() -> void:
+	# 域构建器回引接线(v0.42.2 修复:域拆时漏赋,构建器 hud 为 Nil
+	# → chips/提示条自域拆起静默失效,且 start_level 链在 set_level_info
+	# 处中断致开局黑屏——recalltest/dualtest 判定不含 chips 节点,未抓住)
+	chips.hud = self
+	hints.hud = self
 	var touch := _touch_mode()
 	_apply_styles()
 	# —— %Fade 退役(v0.38 修复):场景占位节点自带不透明全屏黑(v0.32 起),

@@ -19,6 +19,19 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.42.2(2026-09-14)
+
+> **修复:HUD chips / 提示条域拆回引缺失导致的静默失效(v0.39.4 引入回归)**。UI 全量走查批(截图每页)捕获。
+
+### 修复
+- **HudChips / HudHints 的 `hud` 回引从未赋值**(v0.39.4 hud 域拆时漏接线)——后果:①队伍 chips 与按键提示条在**全平台静默消失**四批(v0.39.4–v0.42.1);②start_level 链在 set_level_info 处中断(_nil 访问),reveal/受控切换未执行→**introshot/dualshot 分镜全黑**。
+- 修复 = Hud._ready 接线 `chips.hud = self; hints.hud = self`;**回归防线** = 两构建器入口 assert(回引未接即断,debug 构建必炸不再静默)。
+- 门禁盲区教训入档:域拆分必须验证**拆出物的可见产物**(截图含 chips/提示条),「不炸」≠「在」;recalltest/dualtest 判定不含 chips 节点存在性——已由 assert 防线 + 截图目检补位。
+
+### 验证
+- introshot/dualshot 复跑零脚本错,intro 图实拍 chips 五枚 + 键位提示条回归;
+- **真机 K60 重装复验**:chips 四枚 + 触屏提示条(轮盘/右半屏点按话术)真机回归实锤(截图 .shots/dev_v422_play.png)。
+
 ## v0.42.1(2026-09-14)
 
 > **散项清账:摩擦行钩子 + ROADMAP §5 核对 + UI 图册刷新**。

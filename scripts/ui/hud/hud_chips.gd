@@ -18,6 +18,7 @@ var _chip_roster: Array = []
 ## 单机模式 binds 为空 = 原行为不变。
 func refresh_roster(roster: Array, active: int, exited_mask: int,
 		binds: Array = []) -> void:
+	assert(hud != null, "HudChips.hud 未接线(Hud._ready 赋值)——域拆回引回归防线")
 	if _chip_roster != roster or _chips.is_empty():
 		_chip_roster = roster.duplicate()
 		_rebuild_chips(roster)
