@@ -17,6 +17,10 @@
 2. 在 `CHANGELOG.md` 顶部加一节(格式见该文件);
 3. UI 会自动在标题菜单右下角显示 `Version.full_string()`,不要在别处硬编码版本号。
 
+**强制条款(2026-09-14 增补)**:hotfix / 小批提交同样必须走完上述三步,
+不允许「版本号与 CHANGELOG 下批补」——v0.38.1 两个热修提交双双缺号,
+追溯靠考古(已补录);同一版本号只允许一个提交占用,后到者顺延。
+
 ## 2. 存档兼容(`scripts/core/save_manager.gd`)
 
 - 存档文件:`user://speed-rouge.cfg`;结构版本存在 `meta/save_version`。

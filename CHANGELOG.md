@@ -19,6 +19,29 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.39.1(2026-09-14)
+
+> **门禁全量盘点 + 修复 + Main dev 面下沉**(洞察驱动:门禁不跑即负债)。
+
+### 修复
+- mover_check 复活:补 headless 裸 SceneTree 的 CharacterManager.I 手动点亮(layer_check 同款),并改「按内容选样」——取首个含移动构件的关,v0.38 幕1 激活后表尾换关(a1_finale 无 movers)导致的采样失配一并治愈。
+- 发版规范缺口:UPDATE §1 增补「hotfix 同样必须 bump version + 记 CHANGELOG,同号不二占」强制条款;CHANGELOG 追溯补录 v0.38.1 两节(630281d / 763ed9a)。
+
+### 变更
+- main.gd(946 → 791 行):29 个 dev 旗标与 `_parse_auto_shot` 分派真身下沉 scripts/dev/shot_harness.gd `boot()`(REFACTOR §十 2 勾销);Main 只留游戏侧旋钮解析(--debug-grid / --zoom= / --leveljson=)与 debug_* 运行时成员;钩子旗标同名成员平移,reduced_motion 硬切与 dispatch 原样,行为逐项不变。
+- REFACTOR §十一 门禁台账立档(九脚本门禁 + 流转钩子现役状态);headless 退出码恒 0 陷阱(godot#85062)的「文本断言为主 + quit(1) 为辅」硬规矩入档。
+
+### 门禁
+- 全量盘点实跑:grid / reach / rogue / trait / layer / modifier / ambience / transition / mover 九门禁 + recalltest / dualtest / nettest 全 PASS;下沉后 laneshot 钩子链实测 4 PASS。
+
+## v0.38.1(2026-09-13,追溯补录)
+
+> 两个热修提交当时未随 version / CHANGELOG(发版规范执行缺口,v0.39.1
+> 起 UPDATE §1 增补强制条款),此处按提交信息事实补录。
+
+- 630281d:真机选关卡卡片偏左 / 遮罩半屏修复 + 三弹层视口重锚(K60 实测定案,详见该提交说明)。
+- 763ed9a:自适应窗口模式 + 设置页全屏化 + register_card 布局竞态修复(详见该提交说明)。
+
 ## v0.39.0(2026-09-14)
 
 > **地图分层系统全退役:三套自研系统清退,渲染唯一管线 = Godot 内置节点分层(R0 收口)**。用户拍板「彻底删除之前设计的几种地图分层系统设计以及对应内容,全部改用 Godot 自带场景与节点」。

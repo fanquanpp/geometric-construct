@@ -95,37 +95,11 @@ var debug_solo := false
 
 var _held_keys := {}
 
-# ———— 自动截图(开发调试) ————
-var _shot_level := 0
-var _shot_dir := ""
-var _door_shot := false
-var _recall_shot := false       # --recalltest:召回链路自测(动作注册/按下/传送)
-var _transition_shot := false   # --transitionshot:三式转场覆盖/揭开分镜
-var _dual_test := false         # --dualtest:同屏双人自测(绑定/分区/禁切/死亡/到站)
-var _dual_shot := false
-var _room_shot := false   # --roomshot:房间流程页分镜(UI 图册)         # --dualshot:同屏双人视觉分镜(chips 双高亮/双取景)
-var _net_test := false          # --nettest:LAN 发现 / ENet 传输回环自测(net.md §4.3-2)
-var _net_auto := false
-var _net_join := false
-var _net_join_ip := ""          # --netauto:主机自动化(自动建房 + 满员自动开演,联测用)
-var _panel_shot := false
-var _set_shot := false
-var _act_shot := false
-var _act_shot_idx := 0
-var _boot_shot := false
-var _intro_shot := false
-var _story_shot := false
-var _story_kind := "prologue"   # --storyshot=NAME:指定要截图/验证的剧本
-var _rogue_shot := false
-var _rogue_auto := false
-var _rogue_focus := 0           # --rogueautotest=N:指定主角跑通局
+# ———— 开发钩子 ————
+## dev 旗标与分派真身已下沉 scripts/dev/shot_harness.gd(v0.39.1,导出
+## 剥离);这里只留游戏侧命令行旋钮与 game_flow 通关打印开关。
 var _json_level_path := ""      # --leveljson=<res://...>:JSON 关卡覆盖(editor 契约前置)
-var _trial_shot := false        # --trialshot:JSON 关卡出生点连拍(双体/磁界验证)
-var _tour_shot := false
-var _lane_shot := false
-var _tap_shot := false          # --tapshot:点按粒子反馈分镜(TouchControls 触点反馈)
-var _perf_log := false
-var _auto_test := false
+var _auto_test := false         # --autotest=N:通关流转打印(game_flow 读)
 
 
 func _ready() -> void:
@@ -783,147 +757,18 @@ func _check_complete() -> void:
 # ———————————————— 自动截图(开发调试) ————————————————
 
 func _parse_auto_shot() -> void:
-	var args := OS.get_cmdline_user_args()
-	for raw in args:
-		if raw.begins_with("--autoshot="):
-			_auto_shot = true
-			_shot_level = raw.substr(11).to_int()
-		elif raw.begins_with("--shotdir="):
-			_shot_dir = raw.substr(10)
-		elif raw.begins_with("--autotest="):
-			_auto_test = true
-			_shot_level = raw.substr(11).to_int()
-		elif raw == "--menushot":
-			_auto_shot = true
-		elif raw == "--doorshot":
-			_door_shot = true
-		elif raw == "--recalltest":
-			_recall_shot = true
-		elif raw == "--transitionshot":
-			_transition_shot = true
-		elif raw == "--dualtest":
-			_dual_test = true
-		elif raw == "--dualshot":
-			_dual_shot = true
-		elif raw == "--roomshot":
-			_room_shot = true
-		elif raw == "--nettest":
-			_net_test = true
-		elif raw == "--netauto":
-			_net_test = true
-			_net_auto = true
-		elif raw.begins_with("--netjoin"):
-			_net_test = true
-			_net_join = true
-			_net_join_ip = raw.substr(10) if raw.contains("=") else ""
-		elif raw == "--panelshot":
-			_panel_shot = true
-		elif raw == "--setshot":
-			_set_shot = true
-		elif raw.begins_with("--actshot"):
-			_act_shot = true
-			if raw.contains("="):
-				_act_shot_idx = raw.substr(9).to_int()
-		elif raw == "--bootshot":
-			_boot_shot = true
-		elif raw == "--introshot":
-			_intro_shot = true
-		elif raw.begins_with("--storyshot"):
-			_story_shot = true
-			if raw.contains("="):
-				_story_kind = raw.substr(12)
-		elif raw == "--rogueshot":
-			_rogue_shot = true
-		elif raw.begins_with("--rogueautotest"):
-			_rogue_auto = true
-			if raw.contains("="):
-				_rogue_focus = raw.substr(15).to_int()
-		elif raw == "--tourshot":
-			_tour_shot = true
-		elif raw == "--laneshot":
-			_lane_shot = true
-		elif raw == "--tapshot":
-			_tap_shot = true
-		elif raw == "--debug-grid":
+	# 游戏侧旋钮(main 所有物,dev 面不碰;v0.39.1 起 dev 旗标全部下沉)
+	for raw in OS.get_cmdline_user_args():
+		if raw == "--debug-grid":
 			debug_grid = true
-		elif raw == "--perflog":
-			_perf_log = true
 		elif raw.begins_with("--zoom="):
 			debug_zoom = raw.substr(7).to_float()
-		elif raw.begins_with("--level="):
-			_shot_level = raw.substr(8).to_int()
-		elif raw == "--trialshot":
-			_trial_shot = true
 		elif raw.begins_with("--leveljson="):
 			_json_level_path = raw.substr(12)
-	if _auto_shot and _shot_dir.is_empty():
-		_shot_dir = "res://.shots"
-	# 分派给开发钩子执行器(scripts/dev/,导出剥离;缺失 = 钩子关闭)
+	# dev 旗标解析与分派真身(shot_harness;导出剥离,缺失 = 钩子关闭)
 	var h := _dev_harness()
 	if h != null:
-		# 分镜 / 自动化钩子统一减动效硬切(reveal/transition 走硬切分支,
-		# on_covered 照常触发):后台 / 被遮挡窗口的 Tween 冻结会把全屏黑幕
-		# 卡在 TransitionFX 层致截图全灭(v0.38 诊断定案);
-		# --transitionshot 例外——它验的就是转场动画本身。
-		if not _transition_shot:
-			SettingsManager.reduced_motion = true
-		if _auto_shot and args.has("--menushot"):
-			h.run_menu_shot()
-		# --introshot / --storyshot 自带开局流程,跳过通用 autoshot 以免抢关卡
-		if _auto_shot and not args.has("--menushot") \
-				and not _intro_shot and not _story_shot:
-			h.run_auto_shot()
-		if _door_shot:
-			h.run_door_shot()
-		if _recall_shot:
-			h.run_recall_test()
-		if _transition_shot:
-			h.run_transition_shot()
-		if _tap_shot:
-			h.run_tap_shot()
-		if _dual_test:
-			h.run_dual_test()
-		if _dual_shot:
-			h.run_dual_shot()
-		if _room_shot:
-			h.run_room_shot()
-		if _net_test:
-			if _net_auto:
-				h.run_net_auto()
-			elif _net_join:
-				h.run_net_join(_net_join_ip)
-			else:
-				net_session.run_self_test()
-		if _trial_shot:
-			h.run_trial_shot()
-		if _panel_shot:
-			h.run_panel_shot()
-		if _set_shot:
-			h.run_set_shot()
-		if _act_shot:
-			h.run_actshot()
-		if _boot_shot:
-			h.run_boot_shot()
-		if _intro_shot:
-			h.run_intro_shot()
-		if _story_shot:
-			h.run_story_shot()
-		if _rogue_shot:
-			h.run_rogue_shot()
-		if _rogue_auto:
-			h.run_rogue_auto_test()
-		if _tour_shot:
-			h.run_tour_shot()
-		if _lane_shot:
-			h.run_lane_shot()
-		if _perf_log:
-			h.run_perf_log()
-		elif OS.is_debug_build() and OS.has_feature("mobile"):
-			# Android debug 包自动开基线日志(真机无法传 user args,
-			# adb logcat 直接抓 PERF 行);桌面 debug 不受影响。
-			h.run_perf_log()
-		if _auto_test:
-			h.run_auto_test()
+		h.boot(OS.get_cmdline_user_args())
 
 
 ## 性能基线日志已迁 scripts/dev/shot_harness.gd run_perf_log()

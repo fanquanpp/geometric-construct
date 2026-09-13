@@ -1,13 +1,180 @@
 extends RefCounted
-## 开发验证钩子执行器(统合重构终案 Sprint 4 自 main.gd 迁出):
-## --*shot / --autotest / --recalltest / --laneshot / --tourshot 等
-## 命令行分镜与自测的唯一实现。经 Main._dev_harness() 软引用装载,
-## 导出包剥离 scripts/dev/* 后 load 失败 → 钩子整体关闭;
-## 旗标解析留守 Main(_parse_auto_shot),本文件只管执行。
-## run_perf_log:Android debug 真机自动 PERF 日志(每秒一行监视数据,
-## adb logcat 抓取;ROADMAP §5)。原留守 Main,v0.31.1 随死代码清扫迁入。
+## 开发验证钩子执行器(统合重构终案 Sprint 4 自 main.gd 迁出;v0.39.1 起
+## 旗标解析与分派一并下沉):--*shot / --autotest / --recalltest /
+## --laneshot / --tourshot 等命令行分镜与自测的唯一实现。经 Main._dev_harness()
+## 软引用装载,导出包剥离 scripts/dev/* 后 load 失败 → 钩子整体关闭。
+## Main 只保留游戏侧旋钮解析(--debug-grid/--zoom/--leveljson)与
+## debug_* 运行时成员;run_perf_log:Android debug 真机自动 PERF 日志。
 
 var m: Main
+
+# ———— 开发旗标(原 Main 侧声明,v0.39.1 下沉;boot() 解析赋值) ————
+var _auto_shot := false
+var _shot_level := 0
+var _shot_dir := ""
+var _door_shot := false
+var _recall_shot := false       # --recalltest:召回链路自测(动作注册/按下/传送)
+var _transition_shot := false   # --transitionshot:三式转场覆盖/揭开分镜
+var _dual_test := false         # --dualtest:同屏双人自测(绑定/分区/禁切/死亡/到站)
+var _dual_shot := false
+var _room_shot := false   # --roomshot:房间流程页分镜(UI 图册)         # --dualshot:同屏双人视觉分镜(chips 双高亮/双取景)
+var _net_test := false          # --nettest:LAN 发现 / ENet 传输回环自测(net.md §4.3-2)
+var _net_auto := false
+var _net_join := false
+var _net_join_ip := ""          # --netauto:主机自动化(自动建房 + 满员自动开演,联测用)
+var _panel_shot := false
+var _set_shot := false
+var _act_shot := false
+var _act_shot_idx := 0
+var _boot_shot := false
+var _intro_shot := false
+var _story_shot := false
+var _story_kind := "prologue"   # --storyshot=NAME:指定要截图/验证的剧本
+var _rogue_shot := false
+var _rogue_auto := false
+var _rogue_focus := 0           # --rogueautotest=N:指定主角跑通局
+var _trial_shot := false        # --trialshot:JSON 关卡出生点连拍(双体/磁界验证)
+var _tour_shot := false
+var _lane_shot := false
+var _tap_shot := false          # --tapshot:点按粒子反馈分镜(TouchControls 触点反馈)
+var _perf_log := false
+var _auto_test := false
+
+
+## 旗标解析 + 减动效硬切 + 分派(原 Main._parse_auto_shot 主体,v0.39.1 下沉)。
+func boot(args: Array) -> void:
+	for raw: String in args:
+		if raw.begins_with("--autoshot="):
+			_auto_shot = true
+			_shot_level = raw.substr(11).to_int()
+		elif raw.begins_with("--shotdir="):
+			_shot_dir = raw.substr(10)
+		elif raw.begins_with("--autotest="):
+			_auto_test = true
+			m._auto_test = true   # game_flow 通关打印读 Main 侧
+			_shot_level = raw.substr(11).to_int()
+		elif raw == "--menushot":
+			_auto_shot = true
+		elif raw == "--doorshot":
+			_door_shot = true
+		elif raw == "--recalltest":
+			_recall_shot = true
+		elif raw == "--transitionshot":
+			_transition_shot = true
+		elif raw == "--dualtest":
+			_dual_test = true
+		elif raw == "--dualshot":
+			_dual_shot = true
+		elif raw == "--roomshot":
+			_room_shot = true
+		elif raw == "--nettest":
+			_net_test = true
+		elif raw == "--netauto":
+			_net_test = true
+			_net_auto = true
+		elif raw.begins_with("--netjoin"):
+			_net_test = true
+			_net_join = true
+			_net_join_ip = raw.substr(10) if raw.contains("=") else ""
+		elif raw == "--panelshot":
+			_panel_shot = true
+		elif raw == "--setshot":
+			_set_shot = true
+		elif raw.begins_with("--actshot"):
+			_act_shot = true
+			if raw.contains("="):
+				_act_shot_idx = raw.substr(9).to_int()
+		elif raw == "--bootshot":
+			_boot_shot = true
+		elif raw == "--introshot":
+			_intro_shot = true
+		elif raw.begins_with("--storyshot"):
+			_story_shot = true
+			if raw.contains("="):
+				_story_kind = raw.substr(12)
+		elif raw == "--rogueshot":
+			_rogue_shot = true
+		elif raw.begins_with("--rogueautotest"):
+			_rogue_auto = true
+			if raw.contains("="):
+				_rogue_focus = raw.substr(15).to_int()
+		elif raw == "--tourshot":
+			_tour_shot = true
+		elif raw == "--laneshot":
+			_lane_shot = true
+		elif raw == "--tapshot":
+			_tap_shot = true
+		elif raw == "--trialshot":
+			_trial_shot = true
+		elif raw == "--perflog":
+			_perf_log = true
+		elif raw.begins_with("--level="):
+			_shot_level = raw.substr(8).to_int()
+	if _auto_shot and _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
+	# 分镜 / 自动化钩子统一减动效硬切(reveal/transition 走硬切分支,
+	# on_covered 照常触发):后台 / 被遮挡窗口的 Tween 冻结会把全屏黑幕
+	# 卡在 TransitionFX 层致截图全灭(v0.38 诊断定案);
+	# --transitionshot 例外——它验的就是转场动画本身。
+	if not _transition_shot:
+		SettingsManager.reduced_motion = true
+	if _auto_shot and args.has("--menushot"):
+		run_menu_shot()
+	# --introshot / --storyshot 自带开局流程,跳过通用 autoshot 以免抢关卡
+	if _auto_shot and not args.has("--menushot") \
+			and not _intro_shot and not _story_shot:
+		run_auto_shot()
+	if _door_shot:
+		run_door_shot()
+	if _recall_shot:
+		run_recall_test()
+	if _transition_shot:
+		run_transition_shot()
+	if _tap_shot:
+		run_tap_shot()
+	if _dual_test:
+		run_dual_test()
+	if _dual_shot:
+		run_dual_shot()
+	if _room_shot:
+		run_room_shot()
+	if _net_test:
+		if _net_auto:
+			run_net_auto()
+		elif _net_join:
+			run_net_join(_net_join_ip)
+		else:
+			m.net_session.run_self_test()
+	if _trial_shot:
+		run_trial_shot()
+	if _panel_shot:
+		run_panel_shot()
+	if _set_shot:
+		run_set_shot()
+	if _act_shot:
+		run_actshot()
+	if _boot_shot:
+		run_boot_shot()
+	if _intro_shot:
+		run_intro_shot()
+	if _story_shot:
+		run_story_shot()
+	if _rogue_shot:
+		run_rogue_shot()
+	if _rogue_auto:
+		run_rogue_auto_test()
+	if _tour_shot:
+		run_tour_shot()
+	if _lane_shot:
+		run_lane_shot()
+	if _perf_log:
+		run_perf_log()
+	elif OS.is_debug_build() and OS.has_feature("mobile"):
+		# Android debug 包自动开基线日志(真机无法传 user args,
+		# adb logcat 直接抓 PERF 行);桌面 debug 不受影响。
+		run_perf_log()
+	if _auto_test:
+		run_auto_test()
 
 
 ## 性能基线日志(原 Main._run_perf_log,零改动迁入):每秒向 stdout 打
@@ -27,8 +194,8 @@ func run_perf_log() -> void:
 
 ## 截取设置面板。
 func run_set_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	await m.get_tree().create_timer(0.6).timeout
 	m.settings_panel.open()
 	await m.get_tree().create_timer(0.5).timeout
@@ -38,10 +205,10 @@ func run_set_shot() -> void:
 
 ## 截取剧目二级菜单(关卡列)。
 func run_actshot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	await m.get_tree().create_timer(0.6).timeout
-	m._menu.try_open_act(m._act_shot_idx)
+	m._menu.try_open_act(_act_shot_idx)
 	await m.get_tree().create_timer(0.6).timeout
 	await _shot("act_panel")
 	m.get_tree().quit()
@@ -49,8 +216,8 @@ func run_actshot() -> void:
 
 ## 截取开屏动画(标题落定瞬间)。
 func run_boot_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	await m.get_tree().create_timer(1.35).timeout
 	await _shot("boot")
 	await m.get_tree().create_timer(1.8).timeout
@@ -60,9 +227,9 @@ func run_boot_shot() -> void:
 
 ## 截取章节开场卡。
 func run_intro_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
-	m.start_level(m._shot_level, true)
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
+	m.start_level(_shot_level, true)
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("intro")
 	m.get_tree().quit()
@@ -70,8 +237,8 @@ func run_intro_shot() -> void:
 
 ## 截取肉鸽模式 UI(选体 / 选路 / 词条三选一 / 结算,逐屏截图验收)。
 func run_rogue_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	m._state = Main.State.PLAYING
 	await m.get_tree().create_timer(0.6).timeout
 	var done := func(_a = null) -> void: pass
@@ -129,8 +296,8 @@ func run_rogue_auto_test() -> void:
 	m._hud.visible = true
 	m._state = Main.State.PLAYING
 	m.rogue_dir.auto = true
-	print("TEST: rogue focus=", Geometries.get_def(m._rogue_focus).name)
-	m.rogue_dir.begin(m._rogue_focus)
+	print("TEST: rogue focus=", Geometries.get_def(_rogue_focus).name)
+	m.rogue_dir.begin(_rogue_focus)
 	var deadline := Time.get_ticks_msec() + 120000
 	while Time.get_ticks_msec() < deadline \
 			and m.rogue_dir.phase != RogueDirector.Phase.IDLE:
@@ -145,8 +312,8 @@ func run_rogue_auto_test() -> void:
 ## 刻意先开局把相机带到关卡深处再开对话:验证变暗遮罩不再跟随相机
 ## (follow_viewport 关闭后,遮罩恒定铺满屏幕,左右两侧都不会漏光)。
 func run_story_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	await m.get_tree().create_timer(0.6).timeout
 	m.start_level(0, false)
 	await m.get_tree().create_timer(0.3).timeout
@@ -155,19 +322,19 @@ func run_story_shot() -> void:
 		m.players[0].velocity = Vector2.ZERO
 	await m.get_tree().create_timer(0.4).timeout
 	m.get_tree().paused = true
-	m.show_story(m._story_kind)
+	m.show_story(_story_kind)
 	await m.get_tree().create_timer(1.6).timeout
-	await _shot("story_" + m._story_kind)
+	await _shot("story_" + _story_kind)
 	m.get_tree().quit()
 
 
 ## 巡航截图:沿大型关卡的关键节拍传送受控几何体,逐点截图验收。
 ## 节拍表按当前关卡下标内建;新巨构关卡在此追加自己的节拍行。
 func run_tour_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	m._unlocked = LevelData.LEVELS.size() - 1
-	m.start_level(m._shot_level, false)
+	m.start_level(_shot_level, false)
 	await m.get_tree().create_timer(0.4).timeout
 	var tours := {
 		0: [["spawn", Vector2(300, 855)],
@@ -184,7 +351,7 @@ func run_tour_shot() -> void:
 			["wuwu_niche", Vector2(6220, 560)],
 			["ceiling_road", Vector2(6150, 225)]],
 	}
-	var waypoints: Array = tours.get(m._shot_level, [["spawn", Vector2(300, 850)]])
+	var waypoints: Array = tours.get(_shot_level, [["spawn", Vector2(300, 850)]])
 	for wp in waypoints:
 		if m.players.is_empty():
 			break
@@ -200,9 +367,9 @@ func run_tour_shot() -> void:
 ## L3 背景可穿行 / L6 专属高亮(圆站上台面)/ L5 专属域(疾墙对疾高亮、
 ## 逆墙对逆)/ L8 前景躲入降透明 / 动态机关两态;配合 --zoom=N 验网格 LOD。
 func run_lane_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
-	m._shot_level = 99
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
+	_shot_level = 99
 	m._level_def = LevelData.LEVELS[0]   # 分层演示即机制试炼场(v0.17 起)
 	m._rogue = false
 	m._current = -1
@@ -267,8 +434,8 @@ func run_lane_shot() -> void:
 
 ## 截取档案几何(全部页签,含动态精灵)。
 func run_panel_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	await m.get_tree().create_timer(0.6).timeout
 	m.archive_panel.open(0)
 	await m.get_tree().create_timer(0.5).timeout
@@ -339,8 +506,8 @@ func run_panel_shot() -> void:
 ## 转场分镜(v0.37):三式各截「覆盖末帧」+「揭开中帧」——
 ## 构成主义转场的验收 = 关键帧截图序列(motion.md §6 精神)。
 func run_transition_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = ".shots_v37"
+	if _shot_dir.is_empty():
+		_shot_dir = ".shots_v37"
 	var fxd: TransitionFX = m._hud._fx
 	for style_name in ["sweep", "blocks", "corners", "curtain"]:
 		var style := TransitionFX.Style.SWEEP
@@ -364,8 +531,8 @@ func run_transition_shot() -> void:
 
 
 func run_recall_test() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = ".shots_v17"
+	if _shot_dir.is_empty():
+		_shot_dir = ".shots_v17"
 	m.start_level(0, false)
 	await m.get_tree().create_timer(0.5).timeout
 	var fails := 0
@@ -505,8 +672,8 @@ func run_dual_test() -> void:
 ## 同屏双人视觉分镜(--dualshot):双活开局后连拍——chips 双人描边
 ## 高亮(P1 纸白 / P2 橙)、双人双取景构图、双体芯片「界 / 边」并示。
 func run_dual_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	m.start_level_dual()
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("dual_spawn")
@@ -550,8 +717,8 @@ func run_net_join(ip := "") -> void:
 ## N2 房间流程页分镜(--roomshot):双人联接选择面板 → 房间四页
 ## (选择 / 创建等待 / 加入搜索),配 UI 图册与 ui-flow 页面规范对照。
 func run_room_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	await m.get_tree().create_timer(0.6).timeout
 	m._menu._open_dual_pick()
 	await m.get_tree().create_timer(0.6).timeout
@@ -610,8 +777,8 @@ func run_net_auto() -> void:
 
 
 func run_door_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	m.start_level(0, false)
 	await m.get_tree().create_timer(0.3).timeout
 	m.players[0].position = Vector2(14450, 1700)
@@ -626,8 +793,8 @@ func run_door_shot() -> void:
 ## 点按粒子反馈分镜(--tapshot):在屏内三点程序化触发 TouchControls
 ## 的触点反馈(菱形回包 + 方块迸散),验证爆发与消散全程(开发验收用)。
 func run_tap_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = "res://.shots"
+	if _shot_dir.is_empty():
+		_shot_dir = "res://.shots"
 	m.start_level(0, false)
 	await m.get_tree().create_timer(0.5).timeout
 	var pts := [Vector2(1180, 560), Vector2(1420, 720), Vector2(980, 430)]
@@ -644,8 +811,8 @@ func run_tap_shot() -> void:
 
 ## JSON 试水关出生点连拍:验证双体渲染 / 磁力边界 / 双门(开发用)。
 func run_trial_shot() -> void:
-	if m._shot_dir.is_empty():
-		m._shot_dir = ".shots_v16"
+	if _shot_dir.is_empty():
+		_shot_dir = ".shots_v16"
 	m.start_level(0, false)
 	await m.get_tree().create_timer(0.4).timeout
 	await _shot("trial_spawn")
@@ -664,9 +831,9 @@ func run_trial_shot() -> void:
 func run_menu_shot() -> void:
 	await m.get_tree().create_timer(1.0).timeout
 	await m.get_tree().process_frame
-	DirAccess.make_dir_recursive_absolute(m._shot_dir)
+	DirAccess.make_dir_recursive_absolute(_shot_dir)
 	var img := m.get_viewport().get_texture().get_image()
-	var path := m._shot_dir.path_join("menu.png")
+	var path := _shot_dir.path_join("menu.png")
 	img.save_png(path)
 	print("SHOT_SAVED: ", ProjectSettings.globalize_path(path))
 	m.get_tree().quit()
@@ -675,8 +842,8 @@ func run_menu_shot() -> void:
 ## 自动通关测试:一直向右走 + 周期性跳跃,打印关键事件直到超时。
 func run_auto_test() -> void:
 	m._unlocked = LevelData.LEVELS.size() - 1
-	print("TEST: begin level ", m._shot_level)
-	m.start_level(m._shot_level, false)
+	print("TEST: begin level ", _shot_level)
+	m.start_level(_shot_level, false)
 	m.debug_move = Vector2(1, 0)
 	var deadline := Time.get_ticks_msec() + 60000
 	var tick := 0
@@ -695,7 +862,7 @@ func run_auto_test() -> void:
 
 func run_auto_shot() -> void:
 	m._unlocked = LevelData.LEVELS.size() - 1
-	m.start_level(m._shot_level, false)
+	m.start_level(_shot_level, false)
 	await m.get_tree().create_timer(1.0).timeout
 	await _shot("a")
 
@@ -717,8 +884,8 @@ func run_auto_shot() -> void:
 
 func _shot(tag: String) -> void:
 	await m.get_tree().process_frame
-	DirAccess.make_dir_recursive_absolute(m._shot_dir)
+	DirAccess.make_dir_recursive_absolute(_shot_dir)
 	var img := m.get_viewport().get_texture().get_image()
-	var path := m._shot_dir.path_join("L%d_%s.png" % [m._shot_level, tag])
+	var path := _shot_dir.path_join("L%d_%s.png" % [_shot_level, tag])
 	img.save_png(path)
 	print("SHOT_SAVED: ", ProjectSettings.globalize_path(path))

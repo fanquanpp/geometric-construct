@@ -10,12 +10,25 @@ var _seen := {}
 
 
 func _initialize() -> void:
+	# headless 裸 SceneTree 无 Main:R3 单例手动点亮(layer_check 同款补亮)
+	CharacterManager.I = CharacterManager.new()
 	var levels: Array[LevelDef] = LevelData.LEVELS
 	if levels.is_empty():
 		print("MOVER CHECK FAIL: 无关卡")
 		quit(1)
 		return
-	var level: Node2D = LevelBuilder.build(levels[levels.size() - 1])
+	# 采样关 = 首个含移动构件的关(v0.38 幕1 激活后表尾是 a1_finale 无
+	# movers——不依赖表序,按内容选样)
+	var sample: LevelDef = null
+	for lv in levels:
+		if not lv.movers.is_empty():
+			sample = lv
+			break
+	if sample == null:
+		print("MOVER CHECK FAIL: 无含移动构件的关卡")
+		quit(1)
+		return
+	var level: Node2D = LevelBuilder.build(sample)
 	# 裸 SceneTree 无 Ui 主题初始化(Ui.HEAD 未装载),教学牌 _ready 建标签
 	# 会炸 —— 本采样只看 Mover,入树前剔除 HintMarker
 	for n in level.get_children():

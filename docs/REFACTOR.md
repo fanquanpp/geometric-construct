@@ -334,8 +334,9 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
 
 1. ✅(v0.38.2 本批)Main 流转域收口:GameFlow 承接关卡装载 / 幕流转 /
    通关判定;Main 同名委托 + 属性转发,调用点零改动(名册域先例同构)。
-2. shot 钩子旗标与 `_parse_auto_shot` 分派下沉 shot_harness
-   (main 瘦身约 200 行;纯开发面,导出包不含)。
+2. ✅(v0.39.1)shot 钩子旗标与 `_parse_auto_shot` 分派下沉 shot_harness
+   boot();main 946→791 行,游戏侧旋钮(--debug-grid/--zoom/--leveljson)
+   留守 Main。
 3. net 联机面六回调归 NetSession 域(与 2 同批或随 N2 真机联测批)。
 4. 输入分派抽离 = 缓议(InputRouter 审计 2026-09-11 结论:不立第二路由层;
    仅当净行数收益显著再议)。
@@ -345,3 +346,27 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
 8. M-6 待办:真机双端联测 / pair_trial 过 gridcheck 入库 / 肉鸽×联机
    per-player RunState(另立项)/ UiRouter 页面栈(随页面增量)。
 9. Phase 5 剧情数据库 → Phase 6 关卡七维表 → Phase 7 清理(§五排序不变)。
+
+## 十一、门禁台账(2026-09-14 全量盘点,v0.39.1)
+
+> 洞察驱动:layer_check 带伤四个版本无人发现——**门禁不跑即负债**。
+> 本节为 tests/ 全量门禁的现役状态;新批次验收清单照此挑,连续多批
+> 未跑的门禁要么修活要么正式退役入档。
+
+| 门禁 | 跑法 | 状态(2026-09-14 盘点) |
+|---|---|---|
+| grid_check | `--script` | ✅ 现役 · 36 关 warns=17 基线 |
+| reach_check | `--script` | ✅ 现役 · 可玩性主门禁 |
+| rogue_check | `--script` | ✅ 现役 · 走查机器人 28 片段 |
+| trait_check | `--script` | ✅ 现役 · 物理仿真 |
+| layer_check | `--script` | ✅ 复活(v0.39.0,headless 补亮 CharacterManager.I) |
+| mover_check | `--script` | ✅ 复活(v0.39.1,补亮 + 按内容选样) |
+| modifier_check | `--script` | ✅ 现役 · 词条六组断言 |
+| ambience_check | `--script` | ✅ 现役 · 音频峰值/RMS |
+| transition_check | `--script` | ✅ 现役 · 转场五式 |
+| 流转钩子(recalltest / dualtest / nettest / autotest / --*shot) | 项目旗标 | ✅ 现役 · 分派真身 shot_harness.boot()(v0.39.1 下沉) |
+| level_shot / story_shot / win_shot / shot_all(.tscn) | 编辑器场景 | 🗄 分镜素材,随用随开,非门禁 |
+
+**硬规矩(联网核对 godot#85062 后立)**:headless 退出码对 SCRIPT ERROR
+恒为 0 —— 门禁判定一律以**输出文本断言为主**(PASS 行必须出现,批处理
+grep 无匹配即 FAIL);脚本内 `quit(1)` 为辅;CI/批量跑前先 `--import` 预热。
