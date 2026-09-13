@@ -19,6 +19,19 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.41.1(2026-09-14)
+
+> **剩余项清账:ZATO 首读立项 + 肉鸽×联机立项草案**(纯文档批,零代码)。
+
+### 新增
+- **docs/research/narrative/zato_reading.md**:《Z.A.T.O.》首读笔记(research 层)——素材恢复克隆(本人汉化仓库 ZATO-CN-Patch);结构统计(三章 68,767 行,ep2 按"天"分节,锯齿形张力曲线 2.1k↔11.7k 行交替)+ 三刀抽样(ep1 in medias res 开场 / ep2d5"天空低垂。"环境句起手 / ep3 终局俄英中三语逐词 0.2s 全屏阵列)。
+- **docs/design/bible-zato.md(草案,bible 卷十规划落地)**:五项技法映射——①信息滴灌采信为卷九执行细则候选;②锯齿节奏升格为幕内编排检查项;③终局语言阵列储备至第五幕;④冷旁白环境句起手采信为 .ks 写作范式候选;⑤"被世界忽略的消失"原型与卷六账本同构记档。差异边界:不采纳第一人称独白主视角与历史语境锚定。
+- **roguelike.md §7 肉鸽×联机(立项草案)**:per-player RunState 设计——主机权威+客机只读副本(词条是物理输入,双方持同份数据本地解算);改造点四项(active 单例→会话持有/选路 UI 主机弹/结算归主机/modcheck 双副本一致断言)+ 零行为预埋(owner_slot/EV_RUN_* 预留)。
+- research/narrative README 矩阵行登记(ZATO → 滴灌/锯齿/阵列 → 卷九执行范式 → 禁照搬独白视角)。
+
+### 性质
+- 纯文档批;version PATCH 1。ZATO 叙述语言八维细读(句长/停顿/空白/重复/断句/描述对白比/信息密度/场景切换速度)为二轮待办。
+
 ## v0.41.0(2026-09-14)
 
 > **REFACTOR Phase 5/6 内容工程批:剧情数据库 + 关卡七维登记**(纯文档批,零代码)。

@@ -124,3 +124,22 @@
    逆 = 深渊回廊 / 圆 = 终末过山车);当局词条写在考题措辞里。
 7. **选路随机**:每章 = 该主角本章母题的快 / 稳两种手工排法,二选一;
    随机性落在词条三选一与玩家的路线取舍上。
+
+## 7. 肉鸽 × 联机(立项草案 · v0.41.1,M-6/§十 8 剩余项)
+
+> 现状:RunState 为 `static active` 单例(单机假设);联机(N2)目前仅
+> 标准闯关。本节为 per-player RunState 的立项设计,实装另批。
+
+- **权威模型**:主机权威 + 客机只读副本。词条获取 / 刻度消耗 / 选路
+  事件由主机裁决并经 NetSession 事件(RPC)广播;**词条效果是物理输入**
+  ——两侧物理各自模拟,故双方都需持同一份 RunState 数据在本地解算
+  (`RunState.modified` 不改,数据同步后解算天然一致)。
+- **改造点**:①`RunState.active` 单例 → 会话持有(单机由 Main 挂,
+  联机由 NetSession 持,per-player = `run_of(slot)`;访问点扫描约
+  player.gd / game_flow.gd / rogue_director / archive 数处);
+  ②词条三选一 UI 仅主机弹,选择结果广播;③结算与残段入账归主机
+  (写主机的 SaveManager);④modcheck 增「双副本解算一致」断言。
+- **预埋(零行为,可先行)**:RunState 增 `owner_slot`(单机恒 0)、
+  `NetSession.EV_RUN_*` 事件位预留。
+- **验收**:nettest 扩展「双端 modified() 逐键一致」;真机×PC 联测
+  走 v0.40.0 同链路(发现/加入/认领后开一局肉鸽片段)。
