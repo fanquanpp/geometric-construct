@@ -355,9 +355,13 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
    同名委托,roster_controller 调用点零改动;recalltest/dualtest/
    laneshot 实测 + 真机 K60 冒烟(菜单/档案页/数值条)PASS。
 7. M-5 待办:climb_units 接 modified 钩子后入 BAR_KEYS。
-8. M-6 待办:真机双端联测 / pair_trial 过 gridcheck 入库 / 肉鸽×联机
-   per-player RunState(另立项)/ UiRouter 页面栈(随页面增量)。
+8. ✅(v0.40.0)M-6 真机联测:单机链路(菜单/档案/数值条/logcat)v0.39.4;
+   **双端联机全链真机闭环**(发现/版本守卫/加入/认领/开演/注入位移,
+   PC netauto × K60 客机,见 CHANGELOG v0.40.0)。同屏双人移动端限制
+   为 N1 设计内。肉鸽×联机(per-player RunState)仍另立项。
 9. Phase 5 剧情数据库 → Phase 6 关卡七维表 → Phase 7 清理(§五排序不变)。
+   **Phase 7 ✅(v0.40.0)**:README 预览换图 / 孤儿 import 清退 / §十·§十一
+   收口;Phase 5/6 为内容工程,随正式关卡与剧情生产推进。
 
 ## 十一、门禁台账(2026-09-14 全量盘点,v0.39.1)
 

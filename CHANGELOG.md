@@ -19,6 +19,21 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.40.0(2026-09-14)
+
+> **第三阶段完结:Phase 7 清理收口 + M-6 双端联机真机全链打通**。
+
+### 清理(Phase 7)
+- README 预览图换新:docs/preview 四图(节点分层专属高亮 / 机关动态 / 档案剧情页 / 真机菜单)替换退役的 tube_* 旧管道图;并行会话删图遗留的 5 个孤儿 .import 清退。
+- 文档收口:REFACTOR §十 全部可执行项勾销(1-3/5-7 ✅,4 缓议),§十一 门禁台账为现役盘点。
+
+### M-6 双端联机真机全链(PC 主机 netauto × K60 客机)
+- **发现 → 版本校验 → 加入 → 认领 → 自动开演 → 输入注入/远端驱动位移,全链真机闭环**:手机加入页正确发现 PC 房间(LanBeacon 广播,移动端定向广播限制已由子网广播地址方案覆盖);版本守卫真机验证(v0.39.3 包对 v0.39.4 主机明确提示「版本不同,无法加入」,升版后可加入);客机绑定圆并成功驱动位移(坐标读数离开出生点),右上「客机」联机徽标正确。
+- 双端同机对战(同屏双人移动端)仍为 N1 移动端限制(设计内,非缺陷)。
+
+### 门禁
+- 全量:gridcheck / reach_check / layer_check / mover_check / modifier_check / trait_check / recalltest / dualtest / nettest ALL PASS;panelshot 13 镜 + laneshot 7 镜零错。
+
 ## v0.39.4(2026-09-14)
 
 > **第三阶段续批:hud chips / 提示条域拆 + 真机 K60 冒烟**(REFACTOR §十 6 / P4-2 尾款勾销;M-6 真机单机链路完成)。

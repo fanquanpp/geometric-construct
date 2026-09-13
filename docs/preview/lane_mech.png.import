@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bo7fms6cqs0n0"
-path="res://.godot/imported/tube_ramp.png-070a9bf08fb04617c93d34de1f7f2e25.ctex"
+uid="uid://bjou0umfhttxp"
+path="res://.godot/imported/lane_mech.png-b99516f1f5af61f06f81c1cd71ebfb5e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://docs/preview/tube_ramp.png"
-dest_files=["res://.godot/imported/tube_ramp.png-070a9bf08fb04617c93d34de1f7f2e25.ctex"]
+source_file="res://docs/preview/lane_mech.png"
+dest_files=["res://.godot/imported/lane_mech.png-b99516f1f5af61f06f81c1cd71ebfb5e.ctex"]
 
 [params]
 
