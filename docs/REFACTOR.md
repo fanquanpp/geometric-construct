@@ -183,16 +183,18 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
 
 ### Phase 5 · 剧情层(1–2 天)
 
-1. 剧情数据库落地:`docs/story/`(scenes 表:场景/参与者/信息差/
-   伏笔增减/弧光节拍/演出要点),`.ks` 降为"最终演出脚本"。
-2. `docs/research/narrative/` 启用:ZATO 文本细读(用户指认素材路径后
-   立项)、轻小说/视觉小说/世界名著矩阵补行。
-3. story.md 完成"实装档案"瘦身。
+1. ✅(v0.41.0)剧情数据库落地:`docs/story/scenes.md`(八场实装剧本的
+   scenes 表:场景/参与者/信息差/伏笔增减/弧光节拍/演出要点;出处分工
+   正典 .ks / 解释权 bible / 档案 story.md);`.ks` = 最终演出脚本(定性
+   已立,内容不改)。
+2. 🔶 `docs/research/narrative/` 已建(README);ZATO 文本细读仍待素材
+   指认(D-4);轻小说/视觉小说/世界名著矩阵补行随读随补。
+3. ✅(v0.41.0)story.md 完成分工注记(实装档案专用,结构化层指向数据库)。
 
-### Phase 6 · 关卡七维绑定(随正式关卡)
+### Phase 6 · 关卡七维绑定(随正式关)——✅ 模板与首登记(v0.41.0)
 
-每正式关登记七维:Gameplay / Narrative / Character / Theme /
-Foreshadow / Symbol(模板入 levels.md §0;测试道免登记)。
+七维模板落 `docs/story/seven_dimensions.md`,**第一幕六场已完成登记**
+(幕0 两场测试道免登记);此后新正式关上线随批登记。
 
 ### Phase 7 · 清理(0.5 天)
 

@@ -8,6 +8,10 @@
 
 ## 0. 关卡数据规范
 
+- **七维登记(Phase 6,v0.41.0 起)**:每**正式关**上线随批登记七维——
+  Gameplay / Narrative / Character / Theme / Foreshadow / Symbol;
+  测试道免登记。**模板与现行登记 = `docs/story/seven_dimensions.md`**
+  (第一幕六场已登记);叙事字段出处 = `docs/story/scenes.md`(剧情数据库)。
 - **v0.39.0 分层系统定案(R0 引擎自带优先收口)**:项目先后出现过的三套地图分层
   开发系统**整体退役**——① LaneRenderer 程序化语义渲染
   (v0.14–v0.38,全 `_draw`);② MapSkin 地图皮

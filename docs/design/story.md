@@ -1,6 +1,10 @@
 # 剧情设计 · STORY
 
 > 状态:现行(v0.12–v0.15 实装)· **v0.16 七幕总结构定稿(本文 §1.5 为叙事主纲)**
+> **剧情数据库(v0.41.0,REFACTOR Phase 5)**:已实装八场的结构化数据层
+> (场景/参与者/信息差/伏笔增减/弧光节拍/演出要点)落 `docs/story/scenes.md`;
+> 关卡七维登记 = `docs/story/seven_dimensions.md`。写作新剧本前先对
+> 数据库与 bible 卷六伏笔账本对账;本文保持**实装档案**分工。
 > 剧本源:`story/prologue.ks` / `story/epilogue.ks` / `story/act1.ks` /
 > `story/rogue_intro.ks`(Konado KS)
 > 播放入口:`Main.show_story(kind)` → StoryLayer(播放时世界暂停);

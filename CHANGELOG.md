@@ -19,6 +19,18 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.41.0(2026-09-14)
+
+> **REFACTOR Phase 5/6 内容工程批:剧情数据库 + 关卡七维登记**(纯文档批,零代码)。
+
+### 新增
+- **docs/story/scenes.md 剧情数据库(Phase 5 ①)**:八场已实装剧本的结构化数据层——每场登记场景 / 参与者 / 信息差 / 伏笔增减 / 弧光节拍 / 演出要点(序幕七拍 / act1 三拍 / 尾声 / 重跑序说四拍 / 四单章三拍同构);出处分工 = 正典台词 story/*.ks、文学解释权 bible.md(卷五哲学问题/卷六伏笔账本/卷九信息控制)、实装档案 story.md;方法论参考 Game Developer「Story Starts With Gameplay」/ Brooke Maggs《Narrative Design 101》。
+- **docs/story/seven_dimensions.md 七维登记(Phase 6)**:模板落位 + 第一幕六场全登记(Gameplay/Narrative/Character/Theme/Foreshadow/Symbol——疾·初速/跃·台阶/逆·对面/圆·坡道/伍·双生阶/合演终场);幕0 两场测试道免登记。
+
+### 变更
+- levels.md §0 增七维登记条款(指向 seven_dimensions.md);story.md 头部分工注记(实装档案专用,结构化层指向数据库);REFACTOR §五 Phase 5/6 勾销(Phase 5 ② research/narrative 的 ZATO 细读仍待素材指认 D-4)。
+- version MINOR 41(内容工程里程碑);README 版本行同步。
+
 ## v0.40.0(2026-09-14)
 
 > **第三阶段完结:Phase 7 清理收口 + M-6 双端联机真机全链打通**。
