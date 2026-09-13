@@ -35,6 +35,10 @@ const EV_BUFFED := 5
 const EV_SEAL := 6
 const EV_COMPLETE := 7
 const EV_BACK := 8
+# —— 肉鸽×联机事件位预留(roguelike.md §7 立项草案;零行为,实装另批)——
+const EV_RUN_MOD := 9    # 词条变更广播(主机 → 客机只读副本)
+const EV_RUN_TICK := 10  # 刻度消耗广播
+const EV_RUN_PATH := 11  # 选路结果广播
 const EV_LEVER := 9     # arg = 关内门序号(LeverGate.gate_id),arg2 = 门态(1 开)
 const EV_CHECKPOINT := 10   # arg = 关内信标序号(CheckpointBeacon.beacon_id)
 

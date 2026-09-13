@@ -37,6 +37,7 @@ const MAX_TICKS := 5         # 一局携带的红色刻度(重拼次数)
 var focus := 0               # 主体几何体(入口选择;词条加权 + 叙事身份)
 var mods: Array = []         # 已拿词条(RunModifiers.ALL 的元素)
 var ticks := MAX_TICKS       # 剩余红色刻度
+var owner_slot := 0          # 归属槽位(单机恒 0;联机 per-player 预埋,roguelike.md §7)
 var chapter := 1             # 当前章节(1–3)
 var arrivals := 0            # 到站数(结算货币的一部分)
 var elites_done := 0         # 已通过的精英考数
