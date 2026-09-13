@@ -11,6 +11,7 @@ enum State { MENU, ROOM, PLAYING, PAUSED, TRANSITION, WIN }
 # HUD),故组合根以脚本按序装配,层内结构在各场景文件内编辑器组装) ——
 const CHARACTER_MANAGER_SCENE := preload("res://scenes/core/character_manager.tscn")
 const ROSTER_SCENE := preload("res://scenes/core/roster_controller.tscn")
+const GAME_FLOW_SCENE := preload("res://scenes/core/game_flow.tscn")
 const BACKDROP_SCENE := preload("res://scenes/world/backdrop.tscn")
 const AMBIENCE_SCENE := preload("res://scenes/fx/ambience.tscn")
 const TOUCH_SCENE := preload("res://scenes/ui/touch_controls.tscn")
@@ -37,7 +38,14 @@ var settings_panel: SettingsPanel
 var touch_controls: TouchControls
 var _save: SaveManager
 var _ambience: Ambience
-var _current := -1
+## 流转域属性转发(v0.38.2):真身在 game_flow,读写透传;域场景实例化前
+## 回退原默认值,与旧成员变量逐位一致(hud/net/名册/钢琴块/分镜钩子零改动)。
+var _current := -1:
+	get:
+		return game_flow.current if game_flow != null else -1
+	set(value):
+		if game_flow != null:
+			game_flow.current = value
 var _unlocked := 0
 var _auto_shot := false
 var debug_move := Vector2.ZERO
@@ -48,6 +56,7 @@ var debug_grid := false   # --debug-grid:组件 id·层 标注叠加层(levels.m
 var frame_no := 0
 
 var roster: RosterController  # 名册域控制器(Sprint 3):切换/召回/到站/记录点真身
+var game_flow: GameFlow       # 流转域控制器(v0.38.2):关卡装载/幕流转/通关真身
 var players: Array:
 	get:
 		return roster.players
@@ -55,13 +64,24 @@ var camera_rig = null            # CameraRig,切换时触发过渡动画
 var _doors: Dictionary:
 	get:
 		return roster.doors
-var _complete_seq := 0           # 通关链序列号:重开/换关时作废待执行的自动流转
+# (通关链序列号 _complete_seq 已随 v0.38.2 流转域迁 GameFlow.complete_seq)
 
 # ———— 肉鸽模式(RogueDirector 驱动,modes/rogue) ————
 var rogue_layer: RogueLayer
 var rogue_dir: RogueDirector
-var _rogue := false              # 当前片段是肉鸽局内关卡(不走标准解锁/流转)
-var _level_def: LevelDef         # 当前装载的关卡数据(标准关 = LEVELS[_current])
+## _rogue / _level_def 真身同在 GameFlow(上注:域未就绪回退原默认值)。
+var _rogue := false:
+	get:
+		return game_flow.rogue if game_flow != null else false
+	set(value):
+		if game_flow != null:
+			game_flow.rogue = value
+var _level_def: LevelDef:
+	get:
+		return game_flow.level_def if game_flow != null else null
+	set(value):
+		if game_flow != null:
+			game_flow.level_def = value
 var _pending_rogue_pick := false # 剧情播完后弹出"选本局主角"
 var _pending_rogue_focus := -1   # 已选主角:个人单章剧播完后开跑
 
@@ -118,6 +138,10 @@ func _ready() -> void:
 	roster = ROSTER_SCENE.instantiate() as RosterController
 	roster.main = self
 	add_child(roster)
+	# 流转域控制器(v0.38.2):关卡装载 / 幕流转 / 通关真身
+	game_flow = GAME_FLOW_SCENE.instantiate() as GameFlow
+	game_flow.main = self
+	add_child(game_flow)
 	_setup_dual_input()   # N1 分区动作注册(WASD / 方向键)
 	# 移动端传感器横屏(重力感应双横屏;桌面显示服务器不支持,守卫后不再告警)
 	if OS.has_feature("mobile"):
@@ -186,133 +210,28 @@ func _exit_tree() -> void:
 		I = null
 
 
-# ———————————————— 场景与流程 ————————————————
+# ———— 流转域委托(v0.38.2):真身在 GameFlow,本文件保留同名一行委托
+# 作为对外契约(hud / net / 名册 / 钢琴块 / 分镜钩子的调用点零改动)。 ————
 
 func _show_menu() -> void:
-	_state = State.MENU
-	dual_mode = false   # 退出即散伙:回菜单后普通开局不受残留双活态影响
-	_clear_level()
-	_hud.visible = false
-	touch_controls.set_in_game(false)
-	archive_panel.close()
-	settings_panel.close()
-	_menu.visible = true
-	_menu.set_unlocked(_unlocked)
+	game_flow.show_menu()
 
 
 func _clear_level() -> void:
-	players.clear()
-	camera_rig = null
-	_doors.clear()
-	if _level_root != null:
-		_level_root.queue_free()
-		_level_root = null
+	game_flow.clear_level()
 
 
 func start_level(index: int, intro := true) -> void:
-	if debug_solo:
-		print("TRACE start_level(", index, ") state_was=", State.keys()[_state])
-	_complete_seq += 1    # 作废任何待执行的通关自动流转(重开/换关不被拽走)
-	dual_mode = false   # 普通开局恒单人(双人走 start_level_dual 开局后再翻)
-	get_tree().paused = false
-	if _pause != null:
-		_pause.close()
-	_rogue = false
-	_current = clampi(index, 0, LevelData.LEVELS.size() - 1)
-	_level_def = LevelData.LEVELS[_current]
-	# JSON 关卡覆盖(--leveljson,editor 数据契约走查):不进 ACTS / 进度体系
-	if not _json_level_path.is_empty():
-		var f := FileAccess.open(_json_level_path, FileAccess.READ)
-		if f != null:
-			_level_def = LevelData.from_json_text(f.get_as_text())
-		else:
-			push_warning("start_level: --leveljson 打开失败 %s" % _json_level_path)
-	_clear_level()
-	_doors.clear()
-	_checkpoints.clear()   # 换关作废记录点:陈旧坐标会把召回/重生送进异世界
-	_level_root = LevelBuilder.build(_level_def)
-	add_child(_level_root)
-	_collect_players()
-	_state = State.PLAYING
-	Sfx.play("start")
-	# 幕归属由 LevelData.ACTS 推导(v0.15 序章扩容后不再按下标硬编码)
-	var act_i := LevelData.act_index_of(_current)
-	_ambience_motif("prologue" if act_i <= 0 else "act1")
-
-	_menu.visible = false
-	_menu.close_act_panel()
-	archive_panel.close()
-	settings_panel.close()
-	_hud.visible = true
-	touch_controls.set_in_game(true)
-	# 体数 > 1 才有"切换"可言(双子一位两具):按 roster 长度判断会把
-	# 纯双子阵容误判成"单人无切换"(v0.21.0 修正)
-	touch_controls.set_switch_available(
-		Geometries.roster_body_total(_level_def.roster) > 1)
-	_hud.show_win(false)
-	_hud.set_level_info(_level_def)
-	_refresh_roster()
-	_hud.reveal_corners()
-	if intro:
-		var act_name := "序章" if act_i <= 0 else str(LevelData.ACTS[act_i]["name"])
-		_hud.show_intro("%s · 第 %d 场 · %s" % [act_name, LevelData.scene_no_of(_current),
-			Geometries.get_def(_level_def.focus).full_name], _level_def)
-		var focus: GeometryDef = Geometries.get_def(_level_def.focus)
-		_hud.narration(focus.quote, focus.color, 3.8)
-	_switch_to(0, true)
-	# 联机(N2):两端装配完成后算定绑定 / 标注 remote_driven / 注入输入源
-	# (net.md §6 生成免 Spawner 的收尾;on_level_built 两端各自调用);
-	# 客机经 rpc_start_level 直达此处,房间页须在这里收起(主机路径自关)
-	if NetSession.I != null and NetSession.I.is_net():
-		net_room_layer.visible = false
-		NetSession.I.on_level_built()
-	# 第一幕首次开演:先看开演剧,再上手(序幕钩子的下一拍)
-	if _current == LevelData.first_level_of_act(1) and intro and not _save.seen_act1:
-		_save.note_story("act1")
-		get_tree().paused = true
-		show_story("act1")
+	game_flow.start_level(index, intro)
 
 
-## 肉鸽局内装载片段(RogueDirector 调用):不走标准解锁与通关流转。
+## 肉鸽局内装载片段(RogueDirector 调用):不走标准解锁与通关流转(域委托)。
 func start_rogue_fragment(def: LevelDef, elite_title := "") -> void:
-	_complete_seq += 1
-	dual_mode = false   # 肉鸽片段恒单人
-	get_tree().paused = false
-	if _pause != null:
-		_pause.close()
-	_rogue = true
-	_level_def = def
-	_clear_level()
-	_doors.clear()
-	_checkpoints.clear()   # 肉鸽片段换载:记录点同样作废
-	_level_root = LevelBuilder.build(def)
-	add_child(_level_root)
-	_collect_players()
-	_state = State.PLAYING
-	Sfx.play("start")
-	_ambience_motif("rogue_%s" % Geometries.get_def(rogue_dir.run.focus).slug)
-
-	_menu.visible = false
-	_menu.close_act_panel()
-	archive_panel.close()
-	settings_panel.close()
-	_hud.visible = true
-	touch_controls.set_in_game(true)
-	_hud.show_win(false)
-	_hud.set_level_info(def, "考" if not elite_title.is_empty() else "重跑")
-	touch_controls.set_switch_available(Geometries.roster_body_total(def.roster) > 1)
-	_refresh_roster()
-	_hud.fade_from_black()
-	var kicker := "重跑 · 精英考 · %s" % elite_title \
-		if not elite_title.is_empty() else "重跑 · %s章 · 第 %d 段" % [
-			["一", "二", "三"][clampi(rogue_dir.run.chapter - 1, 0, 2)],
-			rogue_dir.run.fragments_done + 1]
-	_hud.show_intro(kicker, def)
-	_switch_to(0, true)
+	game_flow.start_rogue_fragment(def, elite_title)
 
 
 func _collect_players() -> void:
-	roster.collect_players(_level_root)
+	game_flow.collect_players()
 
 
 # ———————————————— 几何体切换 ————————————————
@@ -627,15 +546,7 @@ func _check_deaths() -> void:
 
 
 func _restart_level() -> void:
-	if _state != State.PLAYING:
-		return
-	Sfx.play("restart")
-	# 肉鸽局内重来:重开当前片段(不计死亡,不烧刻度)
-	if _rogue:
-		_hud.transition_blocks(0.3, func() -> void: start_rogue_fragment(_level_def))
-	else:
-		_hud.fade_to_black(0.25, func() -> void: start_level(_current))
-	_state = State.TRANSITION
+	game_flow.restart_level()
 
 
 # ———————————————— 暂停与菜单回调 ————————————————
@@ -764,12 +675,9 @@ func _begin_rogue_run() -> void:
 	_pending_rogue_focus = -1
 
 
-## 幕落回菜单(motion.md §2.3 三类大流转之三:折线幕帘)——
-## 覆盖后换内容,幕继续坠出;在飞/减动效由 TransitionFX 兜底。
+## 幕落回菜单(motion.md §2.3 三类大流转之三:折线幕帘,域委托)。
 func _return_to_menu() -> void:
-	if _hud == null or _hud.transition_curtain(0.4, func() -> void: _show_menu()):
-		return
-	_show_menu()
+	game_flow.return_to_menu()
 
 
 ## 肉鸽落幕结算完成,回到标题菜单。
@@ -869,63 +777,7 @@ func notify_ramp(gd: GeometryDef) -> void:
 
 
 func _check_complete() -> void:
-	for p in players:
-		if not p.in_exit:
-			return
-
-	# 肉鸽局:通关流转交给 RogueDirector(选路 / 奖励 / 精英考 / 结算)
-	if _rogue:
-		_state = State.TRANSITION
-		_complete_seq += 1
-		var seq_r := _complete_seq
-		var elite := rogue_dir.in_elite
-		get_tree().create_timer(0.9).timeout.connect(func() -> void:
-			if seq_r == _complete_seq and rogue_dir != null:
-				if elite:
-					rogue_dir.on_elite_complete()
-				else:
-					rogue_dir.on_fragment_complete())
-		return
-
-	_state = State.TRANSITION
-	Sfx.play("complete")
-	if _auto_test:
-		print("TEST: LEVEL COMPLETE ", _current)
-	_hud.show_complete("归位。" if _current == LevelData.LEVELS.size() - 1 else "通过。")
-	# 联机(N2):客机由 EV_COMPLETE 复现结算画面;两端都不自动进下一关,
-	# 停留片刻后回房间等待主机再开演(net.md §7 主机选关)。
-	if NetSession.I != null and NetSession.I.is_net():
-		if NetSession.I.is_host():
-			NetSession.I.emit_event(NetSession.EV_COMPLETE)
-		_complete_seq += 1
-		var seq_n := _complete_seq
-		get_tree().create_timer(2.1).timeout.connect(func() -> void:
-			if seq_n == _complete_seq:
-				net_back_to_room())
-		return
-	if _current + 1 > _unlocked:
-		_unlocked = mini(_current + 1, LevelData.LEVELS.size() - 1)
-		_save.unlocked = _unlocked
-		_save.write_save()
-	# 延迟流转:期间重开/换关会递增序列号,令本次流转作废
-	_complete_seq += 1
-	var seq := _complete_seq
-	get_tree().create_timer(2.1).timeout.connect(func() -> void:
-		if seq == _complete_seq:
-			_after_complete())
-
-
-func _after_complete() -> void:
-	if _current >= LevelData.LEVELS.size() - 1:
-		_state = State.WIN
-		Sfx.play("fanfare")
-		_hud.show_win(true)
-		# 通关尾声剧情(仅一次,Esc/对话结束返回)
-		if not get_tree().paused:
-			get_tree().paused = true
-			show_story("epilogue")
-	else:
-		_hud.transition_sweep(0.55, func() -> void: start_level(_current + 1))
+	game_flow.check_complete()
 
 
 # ———————————————— 自动截图(开发调试) ————————————————

@@ -3,6 +3,22 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.38.2(2026-09-13)
+
+> **第三阶段开工:外部架构方案甄别落档(REFACTOR v2.0 §九)+ Main 流转域收口(GameFlow)**。纯架构批,行为逐位不变。
+
+### 新增
+- docs/REFACTOR.md 升 v2.0:§九 外部架构方案甄别——两份外部建议(Manager×15 / EventBus / LevelSpace 空间树 / InteractionSystem / RouteResolver / GoalGroup)对照实仓:15 类中 9 类已有对应物(GeometryDef.tres + CharacterManager = R3 标准形 / body_key 双体契约 / RunState 钩子层 / 八层 who 集合 = 编译期路线裁决 + reach_check 数学门禁 / 满员到门 = 组合目标 ALL 语义 / portal+电梯 = 显式过渡),EventBus 违 R3 依赖方向、LevelSpace 房间制与单画布卷轴范式相抵,均不采纳;采信「职责域分离 · Manager 只协调」内核,处理与 2026-09-10 甄别先例同构(内核采信、形制不搬);§十 第三阶段收口排序(流转域→shot 面下沉→net 面归位→输入分派缓议→archive 拆页签→hud 域拆→M-5/M-6 待办→Phase 5-7)。
+- `scenes/core/game_flow.tscn` + `scripts/core/game_flow.gd`:流转域控制器(REFACTOR Phase 4-4 前半,名册域先例同构)——start_level / start_rogue_fragment / 关卡装载 / 幕流转(_show_menu / _return_to_menu / _restart_level)/ 通关判定(_check_complete / _after_complete)真身;_complete_seq 随迁 GameFlow.complete_seq。
+- ARCHITECTURE.md:scenes/core 与 scripts/core 清单登记 game_flow;main.gd 注记补「流转域委托 game_flow」。
+
+### 变更
+- main.gd(1094 → 946 行):流转职责迁出;装配序 = 角色管理器 → 名册域 → 流转域;`_current / _level_def / _rogue` 改属性转发(域未就绪回退原默认值,行为逐位一致);hud / net / 名册 / 钢琴块 / 分镜钩子调用点零改动。
+- version.gd PATCH 0→2(v0.38.1 为热修提交,version / CHANGELOG 未随,本批连续计版)。
+
+### 门禁
+- 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
+
 ## v0.38.0(2026-09-13)
 
 > **重跑回归(RE-RUN)+ 关卡幕结构重置 + 地图全量 aseprite 化**三主项。

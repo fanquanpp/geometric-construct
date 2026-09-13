@@ -1,6 +1,6 @@
 # 第二阶段架构化重构 · 施工图(REFACTOR BLUEPRINT)
 
-> 状态:**v1.0(2026-09-12 定稿)** · 本文是"系统资产普查 / 依赖关系普查 /
+> 状态:**v2.0(2026-09-13 修订:§九 外部方案甄别 + §十 第三阶段排序;v1.0 = 2026-09-12 定稿)** · 本文是"系统资产普查 / 依赖关系普查 /
 > 文档职责普查"的结论与逐文件施工图,是第二阶段架构化重构的唯一执行依据。
 > 效力:Phase 0 的冻结清单与各 Phase 排期**须用户逐项拍板**后生效;
 > 本文本身是文档,不改任何代码。
@@ -174,7 +174,11 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
    EdgeIndicator 抽独立场景(728→~480 行);chips / 提示条域拆分随下次触改。
 3. ✅(v0.32.0 裁定收口)palette 已 .tres 化(M-2);typography / widgets
    不拆——259 行内聚工厂,拆分无净收益。
-4. `main.gd`(781)→ game_flow(幕流转/通关)/ 输入路由残留归 08。
+4. ✅(前半,v0.38.2)`main.gd` 幕流转/通关 → **GameFlow 流转域控制器**
+   (scenes/core/game_flow.tscn + scripts/core/game_flow.gd;名册域先例
+   同构:Main 同名一行委托 + `_current/_level_def/_rogue` 属性转发,
+   hud/net/名册/钢琴块/分镜钩子调用点零改动)。剩余:shot 旗标下沉 /
+   net 面归位(§十 2-3),输入分派缓议(§十 4)。
 5. `archive_panel` 按五页签拆子构建器。
 
 ### Phase 5 · 剧情层(1–2 天)
@@ -281,3 +285,63 @@ Foreshadow / Symbol(模板入 levels.md §0;测试道免登记)。
   `_render/_layer` 零改动);一次性生成器退役。R2 收口:音频域数值
   (BGM motif + 音效规格)全部进 Inspector。
   随下一批页面增量抽取)。
+
+---
+
+## 九、外部架构方案甄别(2026-09-13,v2.0 新增)
+
+> 背景:用户提交两份外部 AI 架构方案(《角色池与地图节点架构重构迭代
+> 第一版 / 第二版》),建议引入 Manager×15 / EventBus / LevelSpace 空间树 /
+> InteractionSystem / RouteResolver / GoalGroup 整套新架构。按 AGENTS.md
+> 第 3 条「外部 AI 建议须甄别,不得直接照搬」与 2026-09-10 先例(六处
+> 硬伤备案),对照全仓实况完成甄别。结论:**不换架构;采信其"职责域
+> 分离、Manager 只协调"内核,映射到既有系统;新增施工仅"流转域收口"
+> 一项**(§十 1,已随 v0.38.2 落地)。
+
+### 9.1 采信 / 否决 / 映射表
+
+| 外部概念 | 项目对应物(实仓) | 判定 |
+|---|---|---|
+| CharacterDefinition | GeometryDef .tres(data/characters/ 五角色) | 已达标(M-4) |
+| Registry + Factory | CharacterManager:读表→建体入池→发 character_created | 已达标(R3 标准形) |
+| CharacterPool 生命周期 | 入池复用不销毁(ROADMAP §5 成文:对象池不做) | 已达标 |
+| CharacterState / RoguelikeState | RunState(RefCounted 钩子覆盖层,modifier_check 门禁) | 已达标;联机 per-player = M-6 待办另立项 |
+| ControlPoint / ControlManager | RosterController + body_key 契约 + InputSource 槽位 | 已达标,语义更细(双体) |
+| RelationshipManager | characters.md §5 双体契约(伍·界/边) | 已达标 |
+| FormManager 形态 | 五角色=五定义,无同体多形态问题域 | 不采纳 |
+| RouteResolver 条件路线 | 分层语义 v3:八层定值 + who 集合 = 编译期路线裁决;reach_check 数学门禁 | 已达标且更硬 |
+| InteractionSystem / InteractionEvent | 物理接触直接契约(承载/推挤/顶弹,characters.md §4) | 不采纳(两体交互规模,事件总线过度设计);entities→mechanisms 信号化另评估(§三.2-5) |
+| GoalSystem / GoalGroup(ALL/ANY/SEQUENCE) | ExitDoor 满员到站语义 | 现有关全为"全员到门",组合语义无问题域→储备,出现多终点关再立 |
+| LevelSpace 空间树 / SpaceManager | 单画布横版卷轴范式 + 层语义;肉鸽=片段关卡制 | 不采纳(房间制范式与本项目不符) |
+| SpaceTransition | portal_pair / 电梯 = 显式机制节点 | 已达标 |
+| EventBus 全局总线 | 场景预连接信号(R3 纪律);玩法层零 autoload | 不采纳(违依赖方向;Main 收窄才是既定路) |
+| 四通道模型(物理/逻辑/交互/可见) | 与分层语义 v3 同构:物理碰撞 / who 逻辑 / 接触交互 / 演出分层(LaneRenderer) | 概念映射记档,不新立系统 |
+| Collision Layer 重规划 | 现行层语义由 gridcheck / layer_check 看守 | 不动 |
+| Node=空间 / Resource=定义 / State=状态 / System=行为 / Manager=协调 | 与 AGENTS.md R0-R4 + 数据层叶节点法则同向 | 采信为命名对照(ARCHITECTURE.md「场景与资源约定」) |
+| GameManager 跨系统协调 | main.gd 状态机(扇入 28 收窄 = 既定 Phase 4) | 部分达标 → §十 1/2/3 收口 |
+
+### 9.2 与 2026-09-10 甄别先例的一致性
+
+两份新方案未重犯旧六硬伤中的规模错误,但依旧:①零双端验收内容(违
+AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 类已有
+对应物);③EventBus / LevelSpace 与已拍板的 R3 / 单画布范式相抵。处理
+与先例同构:内核采信、形制不搬。
+
+## 十、第三阶段排序(收口清单,2026-09-13 定稿)
+
+> Phase 0-3 已收官、Phase 4 大半已清(§五各 ✅);本节为第三阶段执行
+> 顺序,每项独立可回滚,门禁不变(五门禁 + 真机走查)。
+
+1. ✅(v0.38.2 本批)Main 流转域收口:GameFlow 承接关卡装载 / 幕流转 /
+   通关判定;Main 同名委托 + 属性转发,调用点零改动(名册域先例同构)。
+2. shot 钩子旗标与 `_parse_auto_shot` 分派下沉 shot_harness
+   (main 瘦身约 200 行;纯开发面,导出包不含)。
+3. net 联机面六回调归 NetSession 域(与 2 同批或随 N2 真机联测批)。
+4. 输入分派抽离 = 缓议(InputRouter 审计 2026-09-11 结论:不立第二路由层;
+   仅当净行数收益显著再议)。
+5. archive_panel 按五页签拆子构建器(P4-5;约 1275 行)。
+6. hud chips / 提示条域拆(P4-2 尾款)。
+7. M-5 待办:climb_units 接 modified 钩子后入 BAR_KEYS。
+8. M-6 待办:真机双端联测 / pair_trial 过 gridcheck 入库 / 肉鸽×联机
+   per-player RunState(另立项)/ UiRouter 页面栈(随页面增量)。
+9. Phase 5 剧情数据库 → Phase 6 关卡七维表 → Phase 7 清理(§五排序不变)。

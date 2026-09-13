@@ -16,6 +16,7 @@ geometric-construct/
 │   │                        #   既定装配顺序实例化下列子系统场景,顺序即行为)
 │   ├── core/                #   character_manager(角色建体入池发信号,R3)
 │   │                        #   / roster_controller(名册域)
+│   │                        #   / game_flow(流转域:关卡装载/幕流转/通关,v0.38.2)
 │   ├── world/               #   level_root(表现层宿主,预连接 character_created)
 │   │                        #   / backdrop / camera_rig
 │   ├── entities/            #   player(几何体实体;碰撞形按角色动态建,豁免)
@@ -37,9 +38,11 @@ geometric-construct/
 │   │   ├── main.gd          #   状态机:MENU/PLAYING/PAUSED/TRANSITION/WIN,
 │   │   │                    #   标准闯关与肉鸽局(rogue 分支)流转、
 │   │   │                    #   输入边沿检测、调试钩子分派(实现迁 scripts/dev/,
-│   │   │                    #   导出剥离;名册域委托 roster)
+│   │   │                    #   导出剥离;名册域委托 roster / 流转域委托 game_flow)
 │   │   ├── roster_controller.gd # 名册域:切换/召回/到站/记录点(v0.24.0;
 │   │   │                    #   Main 保留同名委托与数据 getter,调用点零改动)
+│   │   ├── game_flow.gd     #   流转域:关卡装载/幕流转/通关真身(v0.38.2;
+│   │   │                    #   Main 保留同名委托与属性转发,调用点零改动)
 │   │   ├── character_manager.gd # 角色管理器(R3/M-4):读 GeometryDef 资源 →
 │   │   │                    #   create_character 建体入池 → 发 character_created;
 │   │   │                    #   挂载由 level_root 预连接回调完成
