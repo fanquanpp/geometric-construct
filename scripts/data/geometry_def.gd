@@ -188,7 +188,7 @@ func stat_rows(modifier: Callable = Callable()) -> Array:
 			"value": inertia_reading(), "hint":
 			"动量保持程度(与重量同源耦合,解耦预留)"},
 		{"label": "摩擦系数", "bar": false, "absent": false,
-			"value": friction_reading(), "hint":
+			"value": hook.call("friction", friction_reading()), "hint":
 			"地面减速 a = μ·g(标准读数 2.0;滚动材质更低)"},
 		{"label": "形体", "text": "%.2f × %.2f 格(%d × %d px)"
 			% [bottom_units(), height_units(), int(size.x), int(size.y)]},

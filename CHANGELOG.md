@@ -19,6 +19,19 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.42.1(2026-09-14)
+
+> **散项清账:摩擦行钩子 + ROADMAP §5 核对 + UI 图册刷新**。
+
+### 变更
+- **stat_rows 摩擦系数行走词条钩子**(与攀墙行同款依赖注入):摩擦为 DEFAULTS 微调键,档案行此前直读基础值——局内有摩擦微调词条时实时反映。
+- **ROADMAP §5 三项核对结论**(台账勾销,零代码):Android 预设 `texture_format/etc2_astc=true` 已显式(P1 核对项完成);`hdr_2d` 无键=默认关 ✓;音频总线 **SFX/Music 已拆分**(default_bus_layout.tres + sfx/ambience 各走各总线 + 设置滑杆独立)——§5 音频总线项实际已完成。
+- **UI 图册刷新**(改完必须重截纪律):docs/ui/ 五屏换 v0.42 现役画面(菜单/设置/档案 geo·gallery·story,1280×720 基准),README 头注记。
+
+### 修复
+- data/characters/*.tres 五份补 Script ext_resource uid(v0.41.3 遗留;根治 check-only 单查 geometry_def 的缓存时序误报)。
+- version PATCH 1。
+
 ## v0.42.0(2026-09-14)
 
 > **UI 全量审计统一 + 真机迭代 + 发布批**(第三阶段后首个发布版)。
