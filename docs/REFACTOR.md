@@ -350,7 +350,10 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
    翻页/输入/版面适配),页内容委托 scripts/ui/archive/ 五构建器
    (geo 212 / codex 262 / keys 148 / gallery 135 / story 181);行为逐行
    平移,panelshot 13 镜目检零错。
-6. hud chips / 提示条域拆(P4-2 尾款)。
+6. ✅(v0.39.4)hud chips / 提示条域拆:壳 583→370 行,两域委托
+   scripts/ui/hud/(hud_chips 121 / hud_hints 115);refresh_roster
+   同名委托,roster_controller 调用点零改动;recalltest/dualtest/
+   laneshot 实测 + 真机 K60 冒烟(菜单/档案页/数值条)PASS。
 7. M-5 待办:climb_units 接 modified 钩子后入 BAR_KEYS。
 8. M-6 待办:真机双端联测 / pair_trial 过 gridcheck 入库 / 肉鸽×联机
    per-player RunState(另立项)/ UiRouter 页面栈(随页面增量)。

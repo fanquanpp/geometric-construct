@@ -11,8 +11,8 @@ signal chip_tapped(index: int)
 var _intro_tween: Tween
 var _complete_tween: Tween
 var _narr_tween: Tween
-var _chips := {}          # geo_index -> {panel, label, check}
-var _chip_roster: Array = []
+var chips := HudChips.new()   # 队伍 chips 域(v0.39.4 域拆,scripts/ui/hud/)
+var hints := HudHints.new()   # 按键提示条域(v0.39.4 域拆)
 
 @onready var _root: Control = $Root
 @onready var _roster: HBoxContainer = %Roster
@@ -157,17 +157,6 @@ func _touch_mode() -> bool:
 	return Adaptive.is_touch_mode()
 
 
-## 文案自适应:触屏设备把关卡提示里的键位词换成触屏说法。
-func _adapt_copy(text: String) -> String:
-	if not _touch_mode():
-		return text
-	return text.replace("空格跳跃", "点按屏幕跳跃") \
-		.replace("空中再按一次", "空中再点一次") \
-		.replace("贴墙攀爬", "长按屏幕贴墙攀爬") \
-		.replace("空格不再是跳跃", "点屏不再是跳跃") \
-		.replace("Tab 切换操控", "点按切换键,操控")
-
-
 ## 左下角坐标:实时显示受控几何体的世界坐标(单位:格,1 格 = 100 px)。
 func _process(delta: float) -> void:
 	if _intro.visible:
@@ -208,101 +197,6 @@ func _process(delta: float) -> void:
 		p.position.x / Geometries.UNIT_PX, p.position.y / Geometries.UNIT_PX, sig]
 
 
-## 按键提示条:按当前关卡的角色能力动态生成。
-## 触屏设备显示操作文字(轮盘 / 按键),桌面显示键位图标。
-func _rebuild_hints(def: LevelDef) -> void:
-	for c in _hint_row.get_children():
-		c.queue_free()
-	if _touch_mode():
-		_rebuild_touch_hints(def)
-		return
-	var can_jump := false
-	var can_swap := false
-	var can_sprint := false
-	for i in def.roster:
-		var cd: GeometryDef = Geometries.get_def(i)
-		can_jump = can_jump or cd.can_jump
-		can_swap = can_swap or cd.can_swap
-		can_sprint = can_sprint or (cd.can_sprint and cd.sprint_speed > cd.base_speed)
-
-	var add_key := func(key_name: String):
-		var ico := TextureRect.new()
-		ico.texture = Ui.icon("keys/%s-flat.svg" % key_name)
-		ico.custom_minimum_size = Vector2(26, 26)
-		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		ico.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		_hint_row.add_child(ico)
-	var add_text := func(s: String):
-		_hint_row.add_child(Ui.l(s, 13, Ui.BODY, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT))
-	var add_sep := func():
-		var c := Control.new()
-		c.custom_minimum_size = Vector2(6, 0)
-		_hint_row.add_child(c)
-
-	add_key.call("key-a")
-	add_text.call("/")
-	add_key.call("key-d")
-	add_text.call("移动")
-	add_sep.call()
-	if can_jump:
-		add_key.call("key-space")
-		add_text.call("跳跃 · 二段跳")
-		add_sep.call()
-	if can_swap:
-		add_key.call("key-space")
-		add_text.call("置换")
-		add_sep.call()
-	if can_sprint:
-		add_key.call("key-shift")
-		add_text.call("冲刺")
-		add_sep.call()
-	# 切换提示按"体数"判断(双子一位两具):纯双子阵容也必须给出切换键
-	if Geometries.roster_body_total(def.roster) > 1:
-		add_key.call("key-tab")
-		add_text.call("切换")
-		add_sep.call()
-	add_key.call("key-r")
-	add_text.call("召回")
-	add_sep.call()
-	add_key.call("key-esc")
-	add_text.call("暂停")
-
-
-## 触屏提示条:与虚拟按键一一对应的纯文字说明(无键位图标)。
-func _rebuild_touch_hints(def: LevelDef) -> void:
-	var can_jump := false
-	var can_swap := false
-	var can_sprint := false
-	for i in def.roster:
-		var cd: GeometryDef = Geometries.get_def(i)
-		can_jump = can_jump or cd.can_jump
-		can_swap = can_swap or cd.can_swap
-		can_sprint = can_sprint or (cd.can_sprint and cd.sprint_speed > cd.base_speed)
-	var add_text := func(s: String):
-		_hint_row.add_child(Ui.l(s, 13, Ui.BODY, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT))
-	var add_sep := func():
-		var c := Control.new()
-		c.custom_minimum_size = Vector2(10, 0)
-		_hint_row.add_child(c)
-	# 跳跃域文案随轮盘模式变化:固定 = 全屏点按;浮动 = 右半屏点按(左半屏归轮盘)
-	var m = Main.I
-	var mode: String = m.touch_controls.wheel_mode() \
-		if m != null and m.touch_controls != null else SettingsManager.wheel_mode
-	var jump_zone := "右半屏点按" if mode == SettingsManager.WHEEL_FLOAT else "点屏"
-	# 切换 / 重来 / 暂停都有实体按钮(左上 / 右上),提示条不再重复
-	add_text.call("轮盘 · 移动")
-	add_sep.call()
-	if can_jump:
-		add_text.call("%s · 跳跃 / 二段跳" % jump_zone)
-		add_sep.call()
-	if can_swap:
-		add_text.call("%s · 置换" % jump_zone)
-		add_sep.call()
-	if can_sprint:
-		add_text.call("轮盘拉满 · 自动加速")
-
-
 ## 右上章节徽章:官方关按"幕内场次 / 幕内总场"编号(序章 01–06,第一幕
 ## 01–06),肉鸽等自定义标签直接显示;不在任何幕的关卡退回全局序号。
 func set_level_info(def: LevelDef, num_label := "") -> void:
@@ -317,119 +211,13 @@ func set_level_info(def: LevelDef, num_label := "") -> void:
 			if act >= 0 else LevelData.LEVELS.size())
 		_level_total.visible = true
 	_level_name.text = def.name
-	_rebuild_hints(def)
+	hints.rebuild(def)
 
 
-## 队伍 chips(v0.17.3 重构):**只建一次、原地刷新状态**——
-## 切换时不再销毁重建控件树(重建会让连点落在被释放的控件上,产生延迟/丢点)。
-## 触控:gui_input 优先吃 InputEventScreenTouch(按下即发,零模拟延迟)并
-## accept_event() 吞掉,避免 emulate_mouse 双发;120ms 防抖合并同手势双事件。
-
-## 双人绑定点亮(binds = [{slot: 0/1, geo: 下标}]):各绑定色描边
-## (P1 纸白 / P2 橙),net.md §3「roster chips 双人高亮」。
-## 单机模式 binds 为空 = 原行为不变。
+## 队伍 chips 域委托(v0.39.4:真身 HudChips,roster_controller 调用点零改动)。
 func refresh_roster(roster: Array, active: int, exited_mask: int,
 		binds: Array = []) -> void:
-	if _chip_roster != roster or _chips.is_empty():
-		_chip_roster = roster.duplicate()
-		_rebuild_chips(roster)
-	var bind_of := {}    # geo_index -> bind 字典
-	for b in binds:
-		bind_of[int(b["geo"])] = b
-	for idx in _chips:
-		var c: Dictionary = _chips[idx]
-		var is_active: bool = idx == active
-		var exited: bool = (exited_mask & (1 << idx)) != 0
-		var panel: PanelContainer = c["panel"]
-		panel.modulate = Color(1, 1, 1, 0.5) if exited else Color.WHITE
-		var border_col: Color = Color(Palette.I.paper, 0.16)
-		var border_w := 1
-		var filled := is_active
-		var bind = bind_of.get(idx)
-		if bind != null:
-			border_col = Color(Palette.I.paper, 0.95) if int(bind["slot"]) == 0 \
-				else Palette.I.orange
-			border_w = 2
-			filled = true
-		if is_active:
-			border_col = Color(Palette.I.paper, 0.98)
-			border_w = 3 if bind != null else 2
-		panel.add_theme_stylebox_override("panel", Ui.sb(
-			Color(Palette.I.ink_2, 0.92 if filled else 0.7),
-			0, border_col, border_w, 14, 8))
-		var lab: Label = c["label"]
-		# 双体芯片文字随当前半体切换(v0.21.0):操控界显示"界"、操控边
-		# 显示"边",否则并示"界/边" —— 消除"切了半体 HUD 仍显示界"的错位
-		if c.get("paired", false):
-			lab.text = _pair_chip_text(idx)
-		lab.add_theme_font_override("font", Ui.HEAD if is_active else Ui.BODY)
-		lab.add_theme_color_override("font_color",
-			Color.WHITE if is_active else Color(Palette.I.paper, 0.75))
-		(c["check"] as TextureRect).visible = exited
-
-
-## 双体芯片文字:当前受控者是该 index 的某一半时显示该半代号。
-func _pair_chip_text(idx: int) -> String:
-	var m = Main.I
-	# 同屏双人:两半皆活,无名册单点高亮 —— 双体芯片恒并示"界 / 边"
-	if m != null and not m.dual_mode \
-			and m.view_slot() >= 0 and m.view_slot() < m.players.size():
-		var ap: Player = m.players[m.view_slot()]
-		if ap != null and ap.index == idx:
-			return ap.display_name()
-	var cd: GeometryDef = Geometries.ALL[idx]
-	return cd.name + " / " + cd.name_half
-
-
-func _rebuild_chips(roster: Array) -> void:
-	for c in _roster.get_children():
-		c.queue_free()
-	_chips.clear()
-	for i in roster:
-		var c: GeometryDef = Geometries.ALL[i]
-		var chip := PanelContainer.new()
-		chip.mouse_filter = Control.MOUSE_FILTER_STOP
-		var geo_index: int = i
-		var last_fire := [0]   # 单元素数组:闭包内可写的防抖时间戳
-		chip.gui_input.connect(func(ev: InputEvent) -> void:
-			var fire := false
-			if ev is InputEventScreenTouch:
-				fire = (ev as InputEventScreenTouch).pressed
-			elif ev is InputEventMouseButton \
-					and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
-				fire = (ev as InputEventMouseButton).pressed
-			if not fire:
-				return
-			chip.accept_event()   # 吞掉手势,防模拟鼠标双发
-			var now := Time.get_ticks_msec()
-			if now - last_fire[0] < 120:
-				return
-			last_fire[0] = now
-			chip_tapped.emit(geo_index))
-
-		var hb := HBoxContainer.new()
-		hb.add_theme_constant_override("separation", 8)
-		var block := ColorRect.new()
-		block.color = c.color
-		block.custom_minimum_size = Vector2(20, 20)
-		block.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		hb.add_child(block)
-		var lab := Ui.l(
-			c.name + " / " + c.name_half if c.paired else c.name, 20,
-			Ui.BODY, Color(Palette.I.paper, 0.75), HORIZONTAL_ALIGNMENT_LEFT)
-		hb.add_child(lab)
-		var check := TextureRect.new()
-		check.texture = Ui.icon("icons/check-flat.svg")
-		check.custom_minimum_size = Vector2(18, 18)
-		check.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		check.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		check.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		check.visible = false
-		hb.add_child(check)
-		chip.add_child(hb)
-		_roster.add_child(chip)
-		_chips[i] = {"panel": chip, "label": lab, "check": check,
-			"paired": c.paired}
+	chips.refresh_roster(roster, active, exited_mask, binds)
 
 
 func narration(text: String, color: Color, dur := 3.2) -> void:
@@ -449,7 +237,7 @@ func narration(text: String, color: Color, dur := 3.2) -> void:
 func show_intro(kicker: String, def: LevelDef) -> void:
 	_intro_num.text = kicker
 	_intro_title_label.text = def.name
-	_intro_text.text = _adapt_copy(def.intro)
+	_intro_text.text = hints.adapt_copy(def.intro)
 	# 正文宽度上限:可见区 72% 且不超过 860px,超长自动折行 —— 杜绝溢出边框
 	var vis := Adaptive.visible_size(get_viewport())
 	_intro_text.custom_minimum_size = Vector2(minf(vis.x * 0.72, 860.0), 0)

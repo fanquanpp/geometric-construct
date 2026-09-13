@@ -85,8 +85,11 @@ geometric-construct/
 │   ├── ui/                  # 全部 UI(CanvasLayer)
 │   │   ├── ui.gd            #   主题工厂:调色板/字体/StyleBox/Theme/文字组件
 │   │   ├── adaptive.gd      #   移动端自适应:设计稿缩放居中 / 安全区避让
-│   │   ├── hud.gd           #   游戏 HUD(队伍 chips/章节徽章/按键提示/开场/结算;
-│   │   │                    #   结构骨架在 scenes/ui/hud.tscn,v0.32.0)
+│   │   ├── hud.gd           #   游戏 HUD 壳(章节徽章/坐标读数/开场/结算/转场桥接/
+│   │   │                    #   锚闪;结构骨架在 scenes/ui/hud.tscn,v0.32.0)
+│   │   ├── hud/             #   HUD 域构建器(v0.39.4):hud_chips(队伍 chips,
+│   │   │                    #   只建一次原地刷新+触屏防抖+双人描边)/
+│   │   │                    #   hud_hints(按键提示条,双端文案自适应)
 │   │   ├── edge_indicator.gd#   双人超距方向指示(scenes/ui/edge_indicator.tscn)
 │   │   ├── net_room_layer.gd#   N2 房间流程页(带 30:选择/创建/加入/等待;Flow 型)
 │   │   ├── menu_layer.gd    #   标题菜单(动态标题 TitleMark + 分层入场演出)

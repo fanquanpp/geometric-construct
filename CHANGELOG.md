@@ -19,6 +19,19 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.39.4(2026-09-14)
+
+> **第三阶段续批:hud chips / 提示条域拆 + 真机 K60 冒烟**(REFACTOR §十 6 / P4-2 尾款勾销;M-6 真机单机链路完成)。
+
+### 变更
+- hud.gd **583 → 370 行**:壳留章节徽章 / 坐标读数 / 开场·结算演出 / 转场桥接 / 置换锚闪;两域委托 **scripts/ui/hud/** —— HudChips(121:队伍 chips,只建一次原地刷新 + 触屏 gui_input 防抖 + 双人绑定描边;点按经 hud.chip_tapped 上行)/ HudHints(115:按键提示条双端生成 + 文案自适应);`refresh_roster` 同名委托,roster_controller 调用点零改动。
+
+### 真机(K60 Ultra · a5c4e730,M-6 单机链路)
+- debug apk(63.9MB)安装启动:标题菜单完整(v0.39.3 角标/构成外框/三行按钮组/8/8 解锁)、档案几何五页签 + 加成数值条真机渲染无损、**攀墙「状态-1」真机可见**(M-5 absent 感知生效);logcat 零引擎错误(仅导出剥离 shot_harness 的预期软守卫提示)。双端联机对战联测仍待(需双设备)。
+
+### 门禁
+- check-only 三文件全绿 / recalltest(chips 刷新链)/ dualtest(binds 描边链)/ nettest ALL PASS / laneshot 7 镜目检(HUD 徽章 + 坐标读数含层签名)。
+
 ## v0.39.3(2026-09-14)
 
 > **第三阶段续批:archive_panel 五页签拆子构建器**(REFACTOR §十 5 / P4-5 勾销;上批避让的并行全屏化批已稳定)。
