@@ -306,85 +306,41 @@ func start_level_dual() -> void:
 	_refresh_roster()   # 补一次名册刷新:chips 走 binds 双人高亮(单机高亮已被 start_level 刷过)
 
 
-# ———————————————— 联机(N2 同网直连,net.md §4/§7) ————————————
+# ———————————————— 联机委托(真身 GameFlow 联机流转区,v0.39.2) ————————————
 
 ## 菜单「双人试炼 → 跨设备双人」入口:进入房间流程页(创建 / 加入)。
 func open_net_room() -> void:
-	if _state != State.MENU:
-		return
-	_state = State.ROOM
-	_menu.visible = false
-	net_room_layer.open()
+	game_flow.open_net_room()
 
 
-## 两端 start_level 装配完成后的联机收尾(NetSession.on_level_built 调用):
-## 主机点亮自己绑定集的首具操控体;客机镜像上传槽为取景 / 名牌语义槽。
+## 两端 start_level 装配完成后的联机收尾(NetSession.on_level_built 调用)。
 func net_post_setup() -> void:
-	touch_controls.set_switch_available(true)   # 绑定集 > 1 体,集合内可切
-	if NetSession.I.is_host():
-		var own: Array = NetSession.I.own_slots_arr()
-		if not own.is_empty():
-			roster.switch_to(own[0], true)
-	else:
-		roster.active_slot = NetSession.I.active_slot()
-		for i in players.size():
-			players[i].is_active = i == roster.active_slot
-	_refresh_roster()
+	game_flow.net_post_setup()
 
 
 ## 客机召回执行(主机侧,NetSession._do_recall 调用):传送 + 快照回传。
 func net_recall(slot: int) -> void:
-	if slot < 0 or slot >= players.size():
-		return
-	var p: Player = players[slot]
-	if p == null or p.in_exit or p.dying or p.arrived:
-		return
-	p.recall_to(roster.checkpoints.get(p.body_key(), p.spawn_pos))
-	Sfx.play("switch")
+	game_flow.net_recall(slot)
 
 
 ## 客机结算画面复现(主机经 EV_COMPLETE 触发;流转由主机驱动)。
 func net_show_complete() -> void:
-	_state = State.TRANSITION
-	Sfx.play("complete")
-	_hud.show_complete("通过。")
+	game_flow.net_show_complete()
 
 
 ## 两端回房间(联机通关流转终点:不开下一关,主机可再开演)。
 func net_back_to_room() -> void:
-	get_tree().paused = false
-	_clear_level()
-	_state = State.ROOM
-	_hud.visible = false
-	touch_controls.set_in_game(false)
-	_hud.set_net_badge("")
-	NetSession.I.back_to_lobby()
-	net_room_layer.reopen_after_game()
+	game_flow.net_back_to_room()
 
 
 ## 主机侧:客机掉线(§11 待议项的临时拍板 = 整队弹回房间,可再开演)。
 func net_peer_lost() -> void:
-	if _state == State.PLAYING or _state == State.PAUSED or _state == State.TRANSITION:
-		get_tree().paused = false
-		_pause.close()
-		net_back_to_room()
-		net_room_layer.toast_line("对手掉线,已返回房间")
-	else:
-		net_room_layer.toast_line("对手掉线")
+	game_flow.net_peer_lost()
 
 
 ## 客机侧:主机掉线 —— 弹回标题菜单 + 明确提示(net.md §5)。
 func net_host_lost(was_in_game: bool) -> void:
-	get_tree().paused = false
-	_pause.close()
-	_clear_level()
-	_hud.visible = false
-	touch_controls.set_in_game(false)
-	_hud.set_net_badge("")
-	_state = State.MENU
-	_menu.visible = true
-	_menu.set_unlocked(_unlocked)
-	_menu.toast("主机已离开房间" if was_in_game else "与主机的连接已断开")
+	game_flow.net_host_lost(was_in_game)
 
 
 ## N1 退出双人不切换——切靠除役(双活模型,无"另一个受控")。

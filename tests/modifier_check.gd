@@ -100,6 +100,11 @@ func _check_bonus_ops() -> void:
 			{"key": "jump_units", "op": "bonus", "val": 3}]})
 	_eq(RunState.modified(roll, "carry"), 0.0, "bonus.absent_carry")
 	_eq(RunState.modified(roll, "jump_units"), 0.0, "bonus.absent_jump")
+	# climb_units 入列(M-5):可爬者(疾)基准 1.0 档位换算;不可爬者状态-1
+	rs2.add_mod({"id": "t_climb",
+		"effects": [{"key": "climb_units", "op": "bonus", "val": 2}]})
+	_eq(RunState.modified(def, "climb_units"), 1.5, "climb.amp2")
+	_eq(RunState.modified(roll, "climb_units"), 0.0, "climb.absent")
 	_eq(RunState.jump_v(roll), 0.0, "bonus.absent_jump_v")
 	RunState.active = saved
 	# 锁定跳:可跳几何体锁定 jump_units → 起跳速度 0(独立一局,免被 +3 对冲)

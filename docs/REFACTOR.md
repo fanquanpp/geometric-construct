@@ -247,15 +247,18 @@ Foreshadow / Symbol(模板入 levels.md §0;测试道免登记)。
   (data/characters/*.tres 五份)+ CharacterManager(读表建体入池,
   发 `character_created`)+ LevelRoot 表现层预连接挂载——兑现 Phase 4
   「角色只交参数表」,R3 标准形首个实装样板完成。
-- **M-5 · 加成数值条 ✅(v0.37.0)**:`StatBonus`(`scripts/data/stat_bonus.gd`,
+- **M-5 · 加成数值条 ✅(v0.37.0;M-5 尾款 climb_units ✅ v0.39.2)**:
+  `StatBonus`(`scripts/data/stat_bonus.gd`,
   档位模型:0 = 无加成 / +1..+4 = 基础 × (1 + 0.25×档) / −1 = 锁定 /
   状态−1 = 基础不具备)+ `RunState` 两层解算(档位 → 微调 add/mul →
   钳 [0, 4])+ 档案页条形重绘(档位格 / 锁定红块 / 状态−1 留白)+
   词条表加成语言化(glass_dash/tailwind/high_freq/glass_spring 转 bonus
   op,新增「钝化涂层」锁定词条)+ `modifier_check` 重写(六组断言含
-  内容纪律:禁锁重量)。glossary §4 v3 为口径权威。待办:攀墙
-  (climb_units)接 `modified` 钩子后入 BAR_KEYS(现 player 直读
-  MovementTuning,不卖假档位)。
+  内容纪律:禁锁重量)。glossary §4 v3 为口径权威。
+  **尾款(v0.39.2)**:climb_units 接 `RunState.modified` 钩子入 BAR_KEYS
+  (DEFAULTS 倍率基准 1.0;base_of 按 can_climb 感知 absent,不卖假档位;
+  player 两处爬墙预算改走钩子;modifier_check 增 climb.amp2/absent 断言);
+  档案页「攀墙」展示行为内容侧后续项。
 - **M-6 · 联机选图选角编排 ✅(v0.37.0)**:MAP 选图页(LevelData 注册表
   主机选关)+ ROLE 选角页(claim 认领制:每人 1–3 位、主机权威仲裁、
   名册位全覆盖开演)+ `split_roster` 双层嵌套修复(v0.22.0 起「只有主机
@@ -337,7 +340,10 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
 2. ✅(v0.39.1)shot 钩子旗标与 `_parse_auto_shot` 分派下沉 shot_harness
    boot();main 946→791 行,游戏侧旋钮(--debug-grid/--zoom/--leveljson)
    留守 Main。
-3. net 联机面六回调归 NetSession 域(与 2 同批或随 N2 真机联测批)。
+3. ✅(v0.39.2)net 联机面七回调归位——**执行裁定:归流转域(GameFlow
+   联机流转区)而非 NetSession**:会话层保持传输纯净(R3,不摸 HUD/菜单),
+   联机流转是流转的联机分支;Main 同名委托,NetSession/menu/net_room
+   调用点零改动。
 4. 输入分派抽离 = 缓议(InputRouter 审计 2026-09-11 结论:不立第二路由层;
    仅当净行数收益显著再议)。
 5. archive_panel 按五页签拆子构建器(P4-5;约 1275 行)。

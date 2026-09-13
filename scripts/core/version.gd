@@ -5,7 +5,7 @@ class_name Version
 
 const MAJOR := 0
 const MINOR := 39
-const PATCH := 1
+const PATCH := 2
 ## 渠道后缀:正式发布为空串,开发期可用 "-dev"、"-wip"。
 const CHANNEL := ""
 

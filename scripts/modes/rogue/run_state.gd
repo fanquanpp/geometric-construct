@@ -28,6 +28,7 @@ const DEFAULTS := {
 	"gate_mult": 1.0,         # 加速门效果倍率
 	"gravity_fall_mult": 1.24,  # 三段重力:下落加重(跳-落曲线不对称,更利落)
 	"gravity_apex_mult": 0.86,  # 三段重力:抛物线顶点轻微悬停(目标感)
+	"climb_units": 1.0,       # 爬墙预算倍率(×MovementTuning.climb_units;M-5)
 }
 
 const MAX_TICKS := 5         # 一局携带的红色刻度(重拼次数)
@@ -60,6 +61,8 @@ static func base_of(def: GeometryDef, key: String) -> float:
 	match key:
 		"jump_units":
 			return def.jump_units if def.can_jump else 0.0
+		"climb_units":
+			return 1.0 if def.can_climb else 0.0
 		_:
 			if DEFAULTS.has(key):
 				return float(DEFAULTS[key])

@@ -230,3 +230,85 @@ func after_complete() -> void:
 			main.show_story("epilogue")
 	else:
 		main._hud.transition_sweep(0.55, func() -> void: start_level(current + 1))
+
+
+# ———————————————— 联机流转(N2 同网直连,net.md §4/§7;v0.39.2 自 Main 收编) ————————
+
+## 菜单「双人试炼 → 跨设备双人」入口:进入房间流程页(创建 / 加入)。
+func open_net_room() -> void:
+	if main._state != Main.State.MENU:
+		return
+	main._state = Main.State.ROOM
+	main._menu.visible = false
+	main.net_room_layer.open()
+
+
+## 两端 start_level 装配完成后的联机收尾(NetSession.on_level_built 调用):
+## 主机点亮自己绑定集的首具操控体;客机镜像上传槽为取景 / 名牌语义槽。
+func net_post_setup() -> void:
+	main.touch_controls.set_switch_available(true)   # 绑定集 > 1 体,集合内可切
+	if NetSession.I.is_host():
+		var own: Array = NetSession.I.own_slots_arr()
+		if not own.is_empty():
+			main.roster.switch_to(own[0], true)
+	else:
+		main.roster.active_slot = NetSession.I.active_slot()
+		for i in main.players.size():
+			main.players[i].is_active = i == main.roster.active_slot
+	main._refresh_roster()
+
+
+## 客机召回执行(主机侧,NetSession._do_recall 调用):传送 + 快照回传。
+func net_recall(slot: int) -> void:
+	if slot < 0 or slot >= main.players.size():
+		return
+	var p: Player = main.players[slot]
+	if p == null or p.in_exit or p.dying or p.arrived:
+		return
+	p.recall_to(main.roster.checkpoints.get(p.body_key(), p.spawn_pos))
+	Sfx.play("switch")
+
+
+## 客机结算画面复现(主机经 EV_COMPLETE 触发;流转由主机驱动)。
+func net_show_complete() -> void:
+	main._state = Main.State.TRANSITION
+	Sfx.play("complete")
+	main._hud.show_complete("通过。")
+
+
+## 两端回房间(联机通关流转终点:不开下一关,主机可再开演)。
+func net_back_to_room() -> void:
+	main.get_tree().paused = false
+	clear_level()
+	main._state = Main.State.ROOM
+	main._hud.visible = false
+	main.touch_controls.set_in_game(false)
+	main._hud.set_net_badge("")
+	NetSession.I.back_to_lobby()
+	main.net_room_layer.reopen_after_game()
+
+
+## 主机侧:客机掉线(§11 待议项的临时拍板 = 整队弹回房间,可再开演)。
+func net_peer_lost() -> void:
+	if main._state == Main.State.PLAYING or main._state == Main.State.PAUSED \
+			or main._state == Main.State.TRANSITION:
+		main.get_tree().paused = false
+		main._pause.close()
+		net_back_to_room()
+		main.net_room_layer.toast_line("对手掉线,已返回房间")
+	else:
+		main.net_room_layer.toast_line("对手掉线")
+
+
+## 客机侧:主机掉线 —— 弹回标题菜单 + 明确提示(net.md §5)。
+func net_host_lost(was_in_game: bool) -> void:
+	main.get_tree().paused = false
+	main._pause.close()
+	clear_level()
+	main._hud.visible = false
+	main.touch_controls.set_in_game(false)
+	main._hud.set_net_badge("")
+	main._state = Main.State.MENU
+	main._menu.visible = true
+	main._menu.set_unlocked(main._unlocked)
+	main._menu.toast("主机已离开房间" if was_in_game else "与主机的连接已断开")

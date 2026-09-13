@@ -19,6 +19,17 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.39.2(2026-09-14)
+
+> **第三阶段续批:net 面归位流转域 + M-5 尾款 climb_units 入词条体系**。
+
+### 变更
+- **net 联机面归位(REFACTOR §十 3)**:open_net_room / net_post_setup / net_recall / net_show_complete / net_back_to_room / net_peer_lost / net_host_lost 七函数自 main 迁 **GameFlow「联机流转」区**——执行裁定归流转域而非台账原拟的 NetSession:会话层保持传输纯净(R3,不摸 HUD/菜单),联机流转是流转的联机分支;Main 同名一行委托,NetSession / menu_layer / net_room_layer 调用点零改动。main 791 → 723 行。
+- **M-5 尾款**:climb_units 接 `RunState.modified` 钩子并入 BAR_KEYS——DEFAULTS 增倍率基准 1.0;base_of 按 `can_climb` 感知 absent(不可爬者状态−1,不卖假档位);player 两处爬墙预算改走钩子;modifier_check 增 climb.amp2 / climb.absent 断言。词条内容侧(攀墙词条)与档案页「攀墙」展示行为后续内容项。
+
+### 门禁
+- check-only 七文件全绿 / MODCHECK PASS(含新 climb 断言)/ TRAIT ALL PASS / nettest / recalltest / dualtest ALL PASS。
+
 ## v0.39.1(2026-09-14)
 
 > **门禁全量盘点 + 修复 + Main dev 面下沉**(洞察驱动:门禁不跑即负债)。

@@ -111,7 +111,7 @@ func _ready() -> void:
 		collision_mask |= TerrainKit.BOUNDARY_BIT
 	up_direction = Vector2(0, -gravity_dir)
 	z_index = 5
-	_climb_budget = MovementTuning.I.climb_units * Geometries.UNIT_PX
+	_climb_budget = RunState.modified(def, "climb_units") * MovementTuning.I.climb_units * Geometries.UNIT_PX
 	# 曲面跳跃板:圆球需要贴住更陡的坡面并在末端切线飞出
 	if def.shape == GeometryDef.Shape.BALL:
 		floor_max_angle = deg_to_rad(60.0)
@@ -270,7 +270,7 @@ func _physics_process(delta: float) -> void:
 	if on_ground:
 		_coyote = RunState.modified(def, "coyote")
 		_jump_cut = false
-		_climb_budget = MovementTuning.I.climb_units * Geometries.UNIT_PX
+		_climb_budget = RunState.modified(def, "climb_units") * MovementTuning.I.climb_units * Geometries.UNIT_PX
 
 	# ———— 疾 · 爬墙:离地贴住世界墙面(非同伴)且朝墙压方向 → 吸附;
 	# 只按方向 = 缓降滑壁,按住跳跃键 = 沿墙向上爬(受单次 2.0 格预算限制)。

@@ -15,10 +15,8 @@ class_name StatBonus
 ## (读数 5.0,与既有"正常模式硬顶 5.0"一致)。
 
 ## 加成档位作用的能力键(物理消费点全部经 RunState.modified 钩子)。
-## climb_units(攀墙)暂不入列:player.gd 爬墙预算直读 MovementTuning,
-## 钩子未接,先不卖假档位(接钩子时一并入列,见 REFACTOR §八 M-5)。
 const BAR_KEYS := ["base_speed", "bounce", "jump_units", "weight", "carry",
-	"buff_sprint_speed"]
+	"buff_sprint_speed", "climb_units"]
 
 const MIN_LEVEL := -1   # 锁定档
 const MAX_LEVEL := 4    # 满档(基础 2.0 → 有效 4.0 = 读数 5.0 硬顶)
