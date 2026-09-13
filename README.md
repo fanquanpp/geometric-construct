@@ -12,7 +12,7 @@
 + **第一幕「各自的路上」六场**(疾速 / 弹阶 / 对面 / 坡道 / 双生阶 / 合演)
 + **肉鸽模式「重跑 RE-RUN」**(四位主角各一条三章节目链)。
 
-当前版本 **v0.41.3**(唯一来源 `scripts/core/version.gd`,变更明细见 [CHANGELOG.md](CHANGELOG.md))。
+当前版本 **v0.42.0**(唯一来源 `scripts/core/version.gd`,变更明细见 [CHANGELOG.md](CHANGELOG.md))。
 
 ## 预览
 
