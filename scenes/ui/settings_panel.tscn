@@ -18,36 +18,37 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="Center" type="CenterContainer" parent="Root"]
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="Content" type="Control" parent="Root"]
+unique_name_in_owner = true
 mouse_filter = 2
 
-[node name="Card" type="PanelContainer" parent="Root/Center"]
+[node name="Frame" type="Control" parent="Root/Content"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(560, 0)
+mouse_filter = 2
 
-[node name="VB" type="VBoxContainer" parent="Root/Center/Card"]
-theme_override_constants/separation = 8
-
-[node name="TitleBar" type="PanelContainer" parent="Root/Center/Card/VB"]
-unique_name_in_owner = true
-
-[node name="TitleVB" type="VBoxContainer" parent="Root/Center/Card/VB/TitleBar"]
-
-[node name="TitleLabel" type="Label" parent="Root/Center/Card/VB/TitleBar/TitleVB"]
+[node name="TitleLabel" type="Label" parent="Root/Content"]
 unique_name_in_owner = true
 text = "设 置"
-horizontal_alignment = 1
 
-[node name="SubLabel" type="Label" parent="Root/Center/Card/VB/TitleBar/TitleVB"]
+[node name="TitleSub" type="Label" parent="Root/Content"]
 unique_name_in_owner = true
-text = "SETTINGS"
-horizontal_alignment = 1
+text = "SETTINGS · 改完立即生效"
 
-[node name="BodyWrap" type="PanelContainer" parent="Root/Center/Card/VB"]
+[node name="TitleRule" type="ColorRect" parent="Root/Content"]
 unique_name_in_owner = true
 
-[node name="Body" type="VBoxContainer" parent="Root/Center/Card/VB/BodyWrap"]
+[node name="ScrollWrap" type="PanelContainer" parent="Root/Content"]
 unique_name_in_owner = true
+
+[node name="Scroll" type="ScrollContainer" parent="Root/Content/ScrollWrap"]
+unique_name_in_owner = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="Root/Content/ScrollWrap/Scroll"]
+unique_name_in_owner = true
+size_flags_horizontal = 3
 theme_override_constants/separation = 10
+
+[node name="Foot" type="HBoxContainer" parent="Root/Content"]
+unique_name_in_owner = true

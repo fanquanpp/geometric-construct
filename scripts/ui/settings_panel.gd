@@ -17,7 +17,10 @@ var _tween: Tween
 
 @onready var _root: Control = %Root
 @onready var _shade: ColorRect = %Shade
-@onready var _card: PanelContainer = %Card
+@onready var _content: Control = %Content
+@onready var _frame: Control = %Frame
+@onready var _scroll: ScrollContainer = %Scroll
+@onready var _foot: HBoxContainer = %Foot
 var _wheel_fixed_btn: Button
 var _wheel_float_btn: Button
 var _vib_btn: Button
@@ -27,6 +30,7 @@ var _amb_slider: HSlider
 var _amb_value: Label
 var _res_btns: Array = []
 var _fs_btn: CheckButton
+var _adaptive_btn: Button
 
 
 func _ready() -> void:
@@ -68,6 +72,9 @@ func _ready() -> void:
 			_res_btns.append(btn)
 			res_row.add_child(btn)
 		body.add_child(_row("窗口分辨率", res_row))
+		_adaptive_btn = _mode_btn("自适应缩放")
+		_adaptive_btn.pressed.connect(func() -> void: _set_adaptive())
+		body.add_child(_row("自由拉伸", _adaptive_btn))
 		_fs_btn = _toggle_btn()
 		_fs_btn.toggled.connect(func(on: bool) -> void:
 			Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
@@ -137,7 +144,7 @@ func _ready() -> void:
 	Ui.wire_button(close_btn)
 	close_btn.pressed.connect(func() -> void: close())
 	foot.add_child(close_btn)
-	body.add_child(foot)
+	_foot.add_child(foot)
 
 
 ## 场景骨架的样式施加(颜色经 Palette、文字经 Ui;场景文件零色值)。
@@ -145,25 +152,57 @@ func _apply_styles() -> void:
 	_root.theme = Ui.make_theme()
 	_shade.color = Palette.I.ink
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
-	_card.draw.connect(func() -> void:
-		var r := Rect2(Vector2.ZERO, _card.size)
-		# 顶缘亮线 + 四角红色刻度(与几何档案外框同语言)
-		_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
-		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
-				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
+	# 全屏页(档案几何同语言):细线外框 + 四角红刻 + 左置大标题 + 规线
+	_frame.draw.connect(func() -> void:
+		_frame.draw_rect(Rect2(Vector2.ZERO, _frame.size),
+			Color(Palette.I.paper, 0.16), false, 1.0)
+		for corner: Vector2 in [Vector2(0, 0), Vector2(_frame.size.x, 0),
+				Vector2(0, _frame.size.y), Vector2(_frame.size.x, _frame.size.y)]:
 			var sx := -1.0 if corner.x == 0.0 else 1.0
 			var sy := -1.0 if corner.y == 0.0 else 1.0
-			_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
-			_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
-	Adaptive.register_card(_card)
-	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",
-		Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
-	Ui.style(%TitleLabel, 34, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-	Ui.style(%SubLabel, 13, Ui.LIGHT, Color(1, 1, 1, 0.7), HORIZONTAL_ALIGNMENT_CENTER)
-	(%BodyWrap as PanelContainer).add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, null, 0, 24, 20))
+			_frame.draw_line(corner, corner + Vector2(-sx * 18.0, 0),
+				Palette.I.red, 3.0)
+			_frame.draw_line(corner, corner + Vector2(0, -sy * 18.0),
+				Palette.I.red, 3.0))
+	(%TitleLabel as Label).text = "设 置"
+	Ui.style(%TitleLabel, 40, Ui.TITLE, Palette.I.paper,
+		HORIZONTAL_ALIGNMENT_LEFT)
+	Ui.style(%TitleSub, 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT)
+	(%TitleRule as ColorRect).color = Palette.I.red
+	(%ScrollWrap as PanelContainer).add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.14), 1, 6, 6))
+	(%Scroll as ScrollContainer).get_h_scroll_bar().visible = false
+	_root.resized.connect(_fit_content)
+	_fit_content()
+
+
+## 全屏页适配(档案几何同款):内容固定 1280×720 设计稿,整体等比缩放居中,
+## 安全区内缩(刘海屏避让);窗口 / 分辨率变化经 Root.resized 重算。
+func _fit_content() -> void:
+	var vp := _content.get_viewport()
+	if vp == null:
+		return
+	var vis := Adaptive.visible_size(vp)
+	var ins := Adaptive.safe_insets(vp)
+	var avail := Vector2(maxf(vis.x - ins.x - ins.z, 200.0),
+		maxf(vis.y - ins.y - ins.w, 200.0))
+	var sc := minf(avail.x / Adaptive.DESIGN.x, avail.y / Adaptive.DESIGN.y)
+	_content.size = Adaptive.DESIGN
+	_content.pivot_offset = Adaptive.DESIGN * 0.5
+	_content.scale = Vector2(sc, sc)
+	_content.position = Vector2(ins.x, ins.y) + (avail - Adaptive.DESIGN * sc) * 0.5
+	# 页内布局:标题区 40..104,内容 118..foot,foot 贴底
+	%TitleLabel.position = Vector2(64, 40)
+	%TitleSub.position = Vector2(66, 92)
+	%TitleRule.position = Vector2(64, 116)
+	%TitleRule.size = Vector2(Adaptive.DESIGN.x - 128, 3)
+	%ScrollWrap.position = Vector2(64, 132)
+	%ScrollWrap.size = Vector2(Adaptive.DESIGN.x - 128, Adaptive.DESIGN.y - 132 - 96)
+	_frame.size = Adaptive.DESIGN
+	_frame.position = Vector2(16, 16)
+	_frame.size = Adaptive.DESIGN - Vector2(32, 32)
+	_foot.position = Vector2(64, Adaptive.DESIGN.y - 76)
+	_foot.size = Vector2(Adaptive.DESIGN.x - 128, 46)
 
 
 # ———— 行 / 控件工厂 ————
@@ -251,6 +290,7 @@ func _volume_slider() -> HSlider:
 # ———— 打开 / 关闭 ————
 
 func open() -> void:
+	_refresh_res()
 	if is_open:
 		return
 	is_open = true
@@ -260,11 +300,11 @@ func open() -> void:
 	if _tween != null:
 		_tween.kill()
 	_shade.modulate.a = 0.0
-	_card.modulate.a = 0.0
+	_content.modulate.a = 0.0
 	_tween = create_tween()
 	_tween.set_parallel(true)
 	_tween.tween_property(_shade, "modulate:a", 1.0, 0.20)
-	_tween.tween_property(_card, "modulate:a", 1.0, 0.24).set_delay(0.04)
+	_tween.tween_property(_content, "modulate:a", 1.0, 0.24).set_delay(0.04)
 
 
 func close() -> void:
@@ -297,9 +337,22 @@ func _sync_from_settings() -> void:
 
 func _set_resolution(v: Vector2i) -> void:
 	SettingsManager.set_resolution(v)
+	_refresh_res()
+
+
+func _set_adaptive() -> void:
+	Sfx.play("ui_click")
+	SettingsManager.set_adaptive(not SettingsManager.adaptive)
+	_refresh_res()
+
+
+func _refresh_res() -> void:
 	for i in _res_btns.size():
 		var r: Vector2i = SettingsManager.RESOLUTIONS[i]
-		(_res_btns[i] as Button).set_pressed_no_signal(r == v)
+		(_res_btns[i] as Button).set_pressed_no_signal(
+			r == SettingsManager.resolution and not SettingsManager.adaptive)
+	if _adaptive_btn != null:
+		_adaptive_btn.set_pressed_no_signal(SettingsManager.adaptive)
 
 
 func _set_wheel(mode: String) -> void:

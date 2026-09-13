@@ -22,6 +22,9 @@ const RESOLUTIONS: Array[Vector2i] = [Vector2i(1280, 720), Vector2i(1600, 900),
 	Vector2i(1920, 1080)]
 static var resolution := Vector2i(1280, 720)
 static var fullscreen := false
+## 自适应窗口(v0.38.1):窗口可自由拉伸,视口 canvas_items+expand 随动,
+## 不再锁定固定尺寸;与固定分辨率 / 全屏互斥(自适应优先)。
+static var adaptive := false
 
 
 static func load_settings() -> void:
@@ -35,6 +38,7 @@ static func load_settings() -> void:
 	reduced_motion = bool(cfg.get_value("accessibility", "reduced_motion", false))
 	sfx_volume = clampf(float(cfg.get_value("audio", "sfx", 1.0)), 0.0, 1.0)
 	ambience_volume = clampf(float(cfg.get_value("audio", "ambience", 1.0)), 0.0, 1.0)
+	adaptive = bool(cfg.get_value("video", "adaptive", false))
 	var res_str := str(cfg.get_value("video", "resolution", "1280x720"))
 	for r: Vector2i in RESOLUTIONS:
 		if res_str == "%dx%d" % [r.x, r.y]:
@@ -50,6 +54,7 @@ static func write_settings() -> void:
 	cfg.set_value("audio", "sfx", sfx_volume)
 	cfg.set_value("audio", "ambience", ambience_volume)
 	cfg.set_value("video", "resolution", "%dx%d" % [resolution.x, resolution.y])
+	cfg.set_value("video", "adaptive", adaptive)
 	cfg.set_value("video", "fullscreen", fullscreen)
 	cfg.save(SETTINGS_PATH)
 
@@ -93,12 +98,21 @@ static func set_ambience_volume(v: float) -> void:
 
 static func set_resolution(v: Vector2i) -> void:
 	resolution = v
+	adaptive = false   # 选固定分辨率即退出自适应
+	write_settings()
+	apply_video()
+
+
+static func set_adaptive(on: bool) -> void:
+	adaptive = on
 	write_settings()
 	apply_video()
 
 
 static func set_fullscreen(on: bool) -> void:
 	fullscreen = on
+	if on:
+		adaptive = false   # 全屏与自适应互斥
 	write_settings()
 	apply_video()
 
@@ -112,11 +126,14 @@ static func apply_video() -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
 		return
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-	DisplayServer.window_set_size(resolution)
-	var screen := DisplayServer.screen_get_usable_rect(
-		DisplayServer.window_get_current_screen())
-	DisplayServer.window_set_position(
-		screen.position + (screen.size - resolution) / 2)
+	# 自适应:只切窗口态,不锁尺寸(用户随手拉伸,视口 stretch 随动);
+	# 固定档:设尺寸并居中。
+	if not adaptive:
+		DisplayServer.window_set_size(resolution)
+		var screen := DisplayServer.screen_get_usable_rect(
+			DisplayServer.window_get_current_screen())
+		DisplayServer.window_set_position(
+			screen.position + (screen.size - resolution) / 2)
 
 
 ## 启动应用:命令行给了 --resolution(截图钩子/调试)则存档值让位。

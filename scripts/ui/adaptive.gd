@@ -77,4 +77,13 @@ static func register_card(card: Control, margin := Vector2(56, 40)) -> void:
 	if card.get_parent() != null:
 		card.get_parent().resized.connect(update)
 	card.get_viewport().size_changed.connect(update)
-	update.call_deferred()
+	# 布局时序兜底(真机 / 内容装配竞态):首帧常在 CenterContainer 定稿前
+	# (scale 恒 1 致卡片溢出屏幕)——除三帧复算外,常驻逐帧守卫:只要
+	# 收缩比偏离目标 >0.5% 就校正(容器每帧重置 size,仅靠信号会漏)。
+	for i in 3:
+		update.call_deferred()
+	var guard := Timer.new()
+	guard.wait_time = 0.05
+	guard.timeout.connect(update)
+	card.get_viewport().call_deferred("add_child", guard)
+	guard.call_deferred("start")
