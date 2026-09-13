@@ -12,7 +12,6 @@
  "roster": [
   1
  ],
- "art": "res://assets/levels/rogue/spring_c2_steady.png",
  "platforms": [
   {
    "rect": {

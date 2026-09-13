@@ -8,27 +8,25 @@
 
 ## 0. 关卡数据规范
 
-- **v0.38.0 分层系统盘点(用户问询定案)**:项目先后有三套地图分层
-  开发系统——① **LaneRenderer 程序化语义渲染**(world/render,八层定值
-  + who 集合 + 高亮三档 + 前景遮挡,全 `_draw`);② **MapSkin 地图皮**
-  (v0.27,`def.art` 非空时 aseprite 整图接管外观、LaneRenderer 让位,
-  碰撞照走组件,art-style §6.2 例外条款);③ **tiles_v2 七层栈瓦片**
-  (33 源,shadow/body/panel/edge/accent/guide 配方,仅服务档案图鉴,
-  不进运行时)。**现状 = ② 为现行主体**(v0.38 起 30 关全部带地图皮),
-  ① 降级为无 art 关卡的兜底 + 动态高亮描边(TerrainKit.draw_focus),
-  ③ 维持图鉴专用。**分层存在必要性结论**:作者侧分层(map/map_ent 语义
-  层 + 视觉六层)必要——语义层是碰撞 SSOT(ase2level 输入),视觉分层
-  让地形 / 亮缘 / 强调 / 远景各自独立改不互相踩;运行时压平为单 PNG,
-  层次感由引擎侧承担(Parallax2D 背景 / DirectionalLight2D 光影 /
-  MapSkinFX 动效),分层渲染无必要。
-- **v0.38.0 管线全量接线**:全部关卡(含肉鸽片段 28 枚与 pair_trial)均有
-  aseprite SSOT 源(`assets/art/levels/rogue/*.aseprite`,图层结构与
-  trial_v5 对齐:bg_deep/bg_towers/bg_mid/terrain/edge/accent/fx/guide +
-  隐藏语义层 map/map_ent)。地图皮 = `assets/levels/rogue/*.png`,
-  语义层 = `*_map.png` / `*_ent.png`,参数与文案 = `levels/rogue/*.meta.json`
-  (含路线卡 `_title` / `_note`),经 `tools/ase2level.py` 编译成关卡 JSON;
-  `tools/level_ase_build.py` 为逆向构建器(手排 JSON → 图层 → 编译回写,
-  内置 parity 逐项校验)。手工排布 JSON 不再直接入库。
+- **v0.39.0 分层系统定案(R0 引擎自带优先收口)**:项目先后出现过的三套地图分层
+  开发系统**整体退役**——① LaneRenderer 程序化语义渲染
+  (v0.14–v0.38,全 `_draw`);② MapSkin 地图皮
+  (v0.27–v0.38,`def.art` 非空时 aseprite 整图接管外观 + MapSkinFX 动效);
+  ③ tiles_v2 七层栈瓦片(33 源,仅图鉴绘制源)。
+  **现行唯一管线 = LayerVisual 引擎内置节点分层**(world/render/
+  layer_visual.gd):每层一个 LayerVisual 容器(z_index = Comp.LAYER_Z,
+  层间树序即画序),层内每件组件一个 Node2D —— 面板 / 亮肩 / 缘线 /
+  刻度 / 裙角全部 Polygon2D,专属高亮描边 Line2D 逐帧呼吸,档位透明度
+  走容器 modulate.a,零自定义绘制;八层定值×who 集合的层语义(§7.10)
+  与高亮三档不变。**分层存在必要性结论改判**:作者侧分层不再必要 ——
+  语义层 PNG 曾是 ase2level 的碰撞 SSOT 输入,JSON 直出后层级表达完全
+  由引擎节点承载(R0 反例存档兑现:压平地图皮 → 节点分层 + z_index)。
+- **SSOT = levels/*.json(v0.39.0 起)**:地图皮 30 张、语义层 PNG 60 张、
+  aseprite 源(art/levels 30 + art/tiles_v2 33 + png 产物 38)与
+  tools/level_ase_build.py 逆向构建器全部清退;JSON 手编 / 工具直出,
+  SCHEMA_VERSION 契约不变。tools/ase2level.py 保留(历史编译器,输入
+  = 已退役的语义层 PNG);图鉴运行时资产 assets/archive/ 43 PNG 不变;
+  机关精灵 assets/art/mech/ 与 ui 卡框 ase 源保留(R1 素材化纪律)。
 
 - **1 格 = 100 px**;一切坐标、尺寸、缺口、高差按格心算,再 ×100 落数据。
 - 关卡边界由 CameraRig 四锁(`limit_left/top/right/bottom`)= `LevelDef.size` 推导,
@@ -317,7 +315,7 @@
   (far2=-2 / far1=-1 / back=0 / mid=1 / front=2),远景两档沉到定位网格
   之下;`_rests_on` 投影裙角逻辑只认**同档且可见**的承接块(承接块沉入
   远景后,立块投影自动还原为落地态)。渲染唯一管线为
-  LaneRenderer `_draw()`(art-style.md §6)。
+  LayerVisual 节点分层(v0.39.0,引擎内置 Polygon2D/Line2D)。
 - **兼容性**:默认值 `lane=mid / faces=full / who=全员 / lanes={} / far=-1`
   与现状行为一致,序章 + 第一幕 10 关**零迁移**(官方关尚无 `who` 数据,
   自动沉降暂只在图层实验室生效)。

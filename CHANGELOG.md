@@ -19,6 +19,24 @@
 ### 门禁
 - 改动脚本 check-only 全绿(main / game_flow)/ gridcheck PASS 无新违例 / reach_check 36 关 ALL PASS / recalltest / dualtest / nettest / autotest 全 PASS(明细见提交说明)。
 
+## v0.39.0(2026-09-14)
+
+> **地图分层系统全退役:三套自研系统清退,渲染唯一管线 = Godot 内置节点分层(R0 收口)**。用户拍板「彻底删除之前设计的几种地图分层系统设计以及对应内容,全部改用 Godot 自带场景与节点」。
+
+### 移除
+- **LaneRenderer**(scripts/world/render/lane_renderer.gd,205 行,八层全 `_draw` 程序化渲染器)——由新 **LayerVisual**(scripts/world/render/layer_visual.gd)替代:每层一个容器节点(z_index = Comp.LAYER_Z,层间树序即画序,官方多 TileMapLayer/兄弟层实践),层内每件组件一个 Node2D,面板/亮肩/缘线/刻度/裙角全部 **Polygon2D**、专属高亮描边 **Line2D** 逐帧呼吸(TerrainKit.draw_focus 同相位),档位透明度走容器 modulate.a——零自定义绘制;八层定值×who 集合层语义、高亮三档、切换波次交叉淡化逐参平移(GHOST 0.35/DIM_FRONT 0.55/STAGGER/TRANS_K/深度梯度 modulate)。
+- **MapSkin 地图皮管线**:MapSkinFX 动效层(108 行)与 def.art 字段 / from_json_text 解析 / LevelDef.art 整链退役;72 个关卡 JSON 的 art 键清除(逐文件 json 校验全过;顺带治愈 a1_finale 等 6 处断链 art 的「皮加载失败且 LaneRenderer 被 art 短路」双输隐患)。AmbientParticles 改为全关无条件装配,滴水通道(绑死 trial_v5 皮坐标)退役。
+- **tiles_v2**(33 ase 源 + png 产物 38)与 **assets/art/levels/**(30 ase 源)与 **assets/levels/**(30 皮 + 60 语义层 PNG):三套系统对应资产 361 项 git rm;SSOT 收敛为 levels/*.json 手编/工具直出(tools/level_ase_build.py 逆向构建器同退;tools/ase2level.py 保留为历史编译器);档案图鉴运行时资产 assets/archive/ 43 PNG 与机关精灵 assets/art/mech/、ui 卡框 ase 源保留(R1 素材化纪律)。
+
+### 变更
+- layer_check.gd:LaneRenderer 在树断言改 LayerVisual(字段同名零语义漂移);顺手治愈 v0.31.0 起 headless 带伤(headless 裸 SceneTree 补亮 CharacterManager.I,LevelRoot._init 依赖其 clear_pool)。
+- level_builder 装配序:环境粒子(尘埃/雪屑)不再依赖皮,无条件挂载;碰撞签名编译 / 机关 z_index(Comp.LAYER_Z)/ 引擎光影 rig 不变。
+- 文档:levels.md §0 重写(三系统退役定案 + SSOT=JSON)/§7.6 管线句;art-style §6 头部退役横幅(§6.2 存档化)+ 检查单两轨改一轨;ARCHITECTURE(render 树 + assets 树);ASSETS(ase 源 79→15,皮/语义层条目划线存档);glossary 建筑物行;REFACTOR §九 表格。
+
+### 门禁
+- 改动脚本 check-only 全绿(8 文件)/ gridcheck PASS 36 关 warns=17 同基线 / reach_check ALL PASS 36 关 / **layer_check PASS 复活**(players=3, probes=5, bridge_states=4;含八层视觉层 z 断言)/ recalltest 四链路 / dualtest / nettest ALL PASS / laneshot 窗口 6 分镜目检(专属高亮描边·石板亮肩缘线裙角·L8 前景遮挡·深度梯度全数由内置节点呈现,shotdir=项目根 .shots)。
+- 联网核对:官方 TileMapLayer 分层实践(每逻辑层一节点/层间 z_index/层内 y_sort)与 godot-prompter 2d-essentials 域技能;本关几何为程序矩形/坡道,对应形态 = Node2D 兄弟层 + Polygon2D/Line2D(非瓦片网格,不强行 TileMapLayer)。
+
 ## v0.38.0(2026-09-13)
 
 > **重跑回归(RE-RUN)+ 关卡幕结构重置 + 地图全量 aseprite 化**三主项。

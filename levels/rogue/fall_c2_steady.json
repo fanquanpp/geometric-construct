@@ -12,7 +12,6 @@
  "roster": [
   2
  ],
- "art": "res://assets/levels/rogue/fall_c2_steady.png",
  "platforms": [
   {
    "rect": {

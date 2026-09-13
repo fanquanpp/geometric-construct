@@ -46,9 +46,6 @@ var hints: Array = []
 ##   Array[{rect: Rect2(整格吸附), name: String 关内唯一, layer: int 缺省4}]
 ##   分区名标注在网格分区左上格点;HUD 读数与 tours/hints 引用分区名。
 var zones: Array = []
-## 测试关美术层(v0.27,aseprite 地图):res:// 路径;非空时美术接管
-## 地形外观(LaneRenderer 让位),碰撞照走平台组件(art-style 例外条款)。
-var art: String = ""
 ## 推箱(推箱子,structures.md §7):Array[{cell: Vector2 格心}] 100px 整格滑动。
 var push_boxes: Array = []
 ## 滑雪带: Array[Rect2] 覆盖地板的低摩擦区(踩入即滑雪态)。

@@ -315,7 +315,7 @@ Foreshadow / Symbol(模板入 levels.md §0;测试道免登记)。
 | LevelSpace 空间树 / SpaceManager | 单画布横版卷轴范式 + 层语义;肉鸽=片段关卡制 | 不采纳(房间制范式与本项目不符) |
 | SpaceTransition | portal_pair / 电梯 = 显式机制节点 | 已达标 |
 | EventBus 全局总线 | 场景预连接信号(R3 纪律);玩法层零 autoload | 不采纳(违依赖方向;Main 收窄才是既定路) |
-| 四通道模型(物理/逻辑/交互/可见) | 与分层语义 v3 同构:物理碰撞 / who 逻辑 / 接触交互 / 演出分层(LaneRenderer) | 概念映射记档,不新立系统 |
+| 四通道模型(物理/逻辑/交互/可见) | 与分层语义 v3 同构:物理碰撞 / who 逻辑 / 接触交互 / 演出分层(LayerVisual 节点分层,v0.39.0 起) | 概念映射记档,不新立系统 |
 | Collision Layer 重规划 | 现行层语义由 gridcheck / layer_check 看守 | 不动 |
 | Node=空间 / Resource=定义 / State=状态 / System=行为 / Manager=协调 | 与 AGENTS.md R0-R4 + 数据层叶节点法则同向 | 采信为命名对照(ARCHITECTURE.md「场景与资源约定」) |
 | GameManager 跨系统协调 | main.gd 状态机(扇入 28 收窄 = 既定 Phase 4) | 部分达标 → §十 1/2/3 收口 |

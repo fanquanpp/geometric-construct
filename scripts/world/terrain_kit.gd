@@ -9,7 +9,8 @@ const BOUNDARY_BIT := 1 << 30
 
 
 ## 专属高亮描边(高亮三档,levels.md §7.10):几何体专属色 2px 外框 +
-## 呼吸脉冲;col.a = 0 时不画(LaneRenderer 与机关物 _draw 共用)。
+## 呼吸脉冲;col.a = 0 时不画(机关物 _draw 共用;平台侧 v0.39.0 起
+## 由 LayerVisual 的 Line2D 逐帧呼吸承载,不再走本函数)。
 static func draw_focus(c: CanvasItem, r: Rect2, col: Color) -> void:
 	if col.a <= 0.0:
 		return

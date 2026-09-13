@@ -5,7 +5,6 @@
  "size": {"x": 6400, "y": 1080},
  "kill_y": 1400.0,
  "roster": [0, 1, 2, 3, 4],
- "art": "res://assets/levels/trial_v5.png",
  "piano_notes": ["C4", "E4", "G4", "C5"],
  "ramps": [
   {"pts": [{"x": 4900, "y": 880}, {"x": 5300, "y": 640}, {"x": 5700, "y": 880}],

@@ -32,6 +32,9 @@ var _t_gate := 0.0
 
 
 func _initialize() -> void:
+	# headless 裸 SceneTree 无 Main:R3 单例手动点亮(v0.31.0 起该门禁
+	# 因 LevelRoot._init 依赖 CharacterManager.I 而带伤,此处补亮复活)
+	CharacterManager.I = CharacterManager.new()
 	_def = _v3_def()
 	_combos = LevelBuilder._compile_combos(_def, Geometries.ALL.size())
 	_level = LevelBuilder.build(_def)
@@ -265,21 +268,21 @@ func _check_semantics() -> bool:
 	var ids_l4: Array = []
 	var ids_l5: Array = []
 	for nn in _level.get_children():
-		if nn is LaneRenderer and (nn as LaneRenderer).layer == 4:
-			for it in (nn as LaneRenderer).items:
+		if nn is LayerVisual and (nn as LayerVisual).layer == 4:
+			for it in (nn as LayerVisual).items:
 				ids_l4.append(Comp.id_of(it))
-		if nn is LaneRenderer and (nn as LaneRenderer).layer == 5:
-			for it in (nn as LaneRenderer).items:
+		if nn is LayerVisual and (nn as LayerVisual).layer == 5:
+			for it in (nn as LayerVisual).items:
 				ids_l5.append(Comp.id_of(it))
 	if not ids_l4.has(401):
 		_fail("自动编号未按层分段(缺 401)")
 	if not ids_l5.has(501) or not ids_l5.has(502):
 		_fail("显式编号 501/502 未保留")
-	# —— 八层渲染器在树(z -2,-1,0,1,2,3,4,6)——
+	# —— 八层视觉层在树(z -2,-1,0,1,2,3,4,6)——
 	var zs := {}
 	var focus_found := false
 	for nn in _level.get_children():
-		if nn is LaneRenderer:
+		if nn is LayerVisual:
 			zs[(nn as Node2D).z_index] = true
 		if nn is FocusDriver:
 			focus_found = true

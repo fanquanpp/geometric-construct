@@ -28,7 +28,8 @@ const LIGHT_SUN_ROTATION := -0.70   # rad ≈ -40°
 ##   (layer, who) 签名编译为 Godot 碰撞位(位 1 弃用,位 2 = 玩家几何体,
 ##   签名位 3..29 按出场顺序分配);玩家 collision_mask = 适用签名位并集,
 ##   出生算定一次。faces 用 one-way 碰撞实现(top 顶面可站 / bottom 底面
-##   可站,逆向天花板)。渲染每层一个 LaneRenderer,实体层组件按高亮
+##   可站,逆向天花板)。渲染每层一个 LayerVisual(引擎内置节点分层:
+##   Polygon2D 面 / Line2D 描边,层间树序即画序),实体层组件按高亮
 ##   三档呈现(专属亮 / 共享常 / 无关暗);机关物由 FocusDriver 驱动同款
 ##   三档呈现,切换受控几何体时按距离波次交叉淡化。
 
@@ -44,23 +45,9 @@ static func build(def: LevelDef) -> Node2D:
 	# 下方建体流程发出的实体经信号回调挂进本节点(R3 数据驱动画面)。
 	var root: LevelRoot = LEVEL_ROOT_SCENE.instantiate()
 
-	# —— 测试关美术层(MapSkin,契约 art-style.md §6.2):aseprite 地图接管
-	#    地形外观 —— 碰撞照走平台组件;LaneRenderer 让位(机关物 / 玩家照常
-	#    引擎绘制);z=-1 沉到网格之下(网格线仍覆在美术上,与 HUD 读数对齐)
-	if not def.art.is_empty():
-		var tex: Texture2D = load(def.art)
-		if tex != null:
-			var skin := Sprite2D.new()
-			skin.texture = tex
-			skin.centered = false
-			skin.scale = Vector2(1, 1)   # 契约:PNG = 全分辨率(1 像素 = 1 引擎像素,v0.29.1 细化)
-			skin.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # 像素纪律:禁柔化
-			skin.z_index = -1
-			root.add_child(skin)
-			# —— 地图皮动效层(信标呼吸/圣环脉冲/光柱气流)+ 环境粒子
-			#    (尘埃/雪屑/滴水,presentation/00 卷八登记)——
-			root.add_child(MapSkinFX.new())
-			root.add_child(AmbientParticles.for_level(def))
+	# —— 环境粒子(尘埃/雪屑,世界域氛围):与关卡美术无关,无条件装配
+	#    (雪屑按 def.ski_patches 数据驱动;地图皮已随 v0.39.0 退役)——
+	root.add_child(AmbientParticles.for_level(def))
 
 	# —— 引擎光影 rig(v0.19 art-style §8):环境冷档 + 定向平行光,
 	#    遮挡体处实算硬边投影(方向恒定,沿用旧硬投影的右下约定) ——
@@ -120,17 +107,16 @@ static func build(def: LevelDef) -> Node2D:
 		bodies[ckey].add_child(_rect_shape(it["rect"], it["faces"]))
 	for w in walls:
 		bodies["walls"].add_child(_rect_shape(w, Comp.FACES_FULL))
-	# 每层一个渲染器,只画自己层的组件 —— 实体层按高亮三档呈现
-	# (专属亮 / 共享常 / 无关暗),档间转移走交叉淡化(§7.10)
+	# 每层一个 LayerVisual(引擎内置节点:Polygon2D 面 / Line2D 描边),
+	# 只装自己层的组件 —— 实体层按高亮三档呈现(专属亮 / 共享常 / 无关暗),
+	# 档间转移走交叉淡化(§7.10);层间画序 = 树序 + Comp.LAYER_Z
 	for layer in [1, 2, 3, 4, 5, 6, 7, 8]:
-		if not def.art.is_empty():
-			continue   # 美术层接管地形外观(碰撞不变)
-		var renderer := LaneRenderer.new()
-		renderer.layer = layer
-		renderer.items = items.filter(func(it: Dictionary) -> bool:
+		var visual := LayerVisual.new()
+		visual.layer = layer
+		visual.items = items.filter(func(it: Dictionary) -> bool:
 			return it["layer"] == layer)
-		renderer.z_index = Comp.LAYER_Z[layer]
-		root.add_child(renderer)
+		visual.z_index = Comp.LAYER_Z[layer]
+		root.add_child(visual)
 
 	# —— 机关物的高亮三档呈现由 FocusDriver 统一驱动(§7.10) ——
 	var focus_entries: Array = []

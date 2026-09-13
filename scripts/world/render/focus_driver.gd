@@ -2,7 +2,7 @@ class_name FocusDriver
 extends Node2D
 
 ## 高亮三档驱动(§7.10):机关物(Ramp / Mover / PianoTile / LeverGate /
-## TimedBridge)不走 LaneRenderer —— 本节点逐帧按 (layer, who) × 受控
+## TimedBridge)与平台侧 LayerVisual 同语言 —— 本节点逐帧按 (layer, who) × 受控
 ## 几何体计算 modulate 透明度与专属高亮色,写回各机关的 hl_color 并触发
 ## 重绘;碰撞归属仍由构建期签名位决定,这里只管呈现。景观层机关走
 ## Comp.LAYER_BASE_ALPHA 基础透明度。

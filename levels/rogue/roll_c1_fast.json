@@ -12,7 +12,6 @@
  "roster": [
   3
  ],
- "art": "res://assets/levels/rogue/roll_c1_fast.png",
  "platforms": [
   {
    "rect": {

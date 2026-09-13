@@ -52,12 +52,10 @@ static func _static_init() -> void:
 		"levels": [2, 3, 4, 5, 6, 7],
 	})
 
-	#   SSOT = aseprite 语义层(v0.30.0 地图管线):像素承载几何与锚点,
-	#   JSON 承载参数与文案;本文件不再硬编码任何关卡数据。
-	#   编辑流程:改 aseprite → aseprite CLI 导出 map/ent PNG → 跑编译器。
-	#   例外:levels/pair_trial.json 为纯 JSON 手写关(无 aseprite 源、
-	#   无 art 皮,LaneRenderer 出图);v0.38.0 起修复五项 gridcheck 违规
-	#   并入编幕 0 第 2 场。
+	#   SSOT = levels/*.json(v0.39.0 起地图皮与语义层管线整体退役,
+	#   JSON 即唯一事实源,直接手编 / 工具直出;本文件不再硬编码任何关卡数据)。
+	#   levels/pair_trial.json 为纯 JSON 手写关;v0.38.0 起修复五项
+	#   gridcheck 违规并入编幕 0 第 2 场。
 	var files := [
 		"res://levels/trial_v5.json", "res://levels/pair_trial.json",
 		"res://levels/act1/a1_dash.json", "res://levels/act1/a1_spring.json",
@@ -117,8 +115,6 @@ static func from_json_text(text: String) -> LevelDef:
 			"off_time": float(tb.get("off_time", 2.0)),
 			"phase": float(tb.get("phase", 0.0)),
 			"sync_beat": bool(tb.get("sync_beat", false))})
-	if d.has("art"):
-		def.art = str(d["art"])
 	for m in d.get("movers", []):
 		var md: Dictionary = _json_comp(m)
 		md["offset"] = _json_vec2(m.get("offset", {"x": 0, "y": -100}))

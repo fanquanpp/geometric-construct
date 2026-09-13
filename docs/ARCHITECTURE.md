@@ -73,8 +73,8 @@ geometric-construct/
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)
 │   ├── world/               # 关卡装配与环境
 │   │   ├── level_builder.gd #   LevelDef → 节点树装配编排 + 碰撞签名编译(§7.10);
-│   │   │                    #   渲染唯一管线 = LaneRenderer _draw 程序化绘制(art-style.md §6)
-│   │   ├── render/          #   渲染层:lane_renderer(八层渲染)/ focus_driver(高亮三档)
+│   │   │                    #   渲染唯一管线 = LayerVisual 引擎内置节点分层(v0.39.0,R0)
+│   │   ├── render/          #   渲染层:layer_visual(八层节点分层)/ focus_driver(高亮三档)
 │   │   │                    #   / grid_layer(定位网格 LOD)/ debug_grid_overlay(--debug-grid)
 │   │   ├── mechanisms/      #   机关物:ramp / mover(+slab·track) / timed_bridge
 │   │   │                    #   / lever_gate / piano_tile / mag_boundary
@@ -119,8 +119,8 @@ geometric-construct/
 │   └── epilogue.ks          #   尾声(通关画面播放)
 ├── assets/
 │   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入)
-│   ├── archive/             # 档案几何示例图(aseprite 导出的 200×200 PNG,
-│   │                        #   唯一入引擎的 aseprite 衍生素材;源在 art/tiles_v2)
+│   ├── archive/             # 档案几何示例图(200×200 PNG,图鉴唯一运行时
+│   │                        #   素材;绘制源 tiles_v2 已随 v0.39.0 清退)
 │   ├── fonts/               # NotoSansSC 可变字体
 │   └── svg/                 # 全部图标(仅 flat 单样式,见 docs/DESIGN.md)
 │       ├── characters/      #   角色徽标(与 slug 对应)
