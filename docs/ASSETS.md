@@ -47,7 +47,7 @@
 
 ## 2. 建筑物图鉴(地形、景观与 Kit 构件 · 15)
 
-来源 `archive_data.gd` BUILDINGS;`bld_*` 对应 tiles_v2 重绘。
+来源 `archive_data.gd` BUILDINGS;`bld_*` 对应 tiles_v2 重绘(源已清退 v0.39.0,PNG 为孤本)。
 
 | id | 中文名 | 英文副题 | 分类 | 一句话 |
 |---|---|---|---|---|
@@ -69,7 +69,7 @@
 
 ## 3. 机关物图鉴(可交互构件 · 13)
 
-来源 `archive_data.gd` MECHS;`mech_*` 对应 tiles_v2 重绘,双帧 = 两态静帧。
+来源 `archive_data.gd` MECHS;`mech_*` 对应 tiles_v2 重绘(源已清退 v0.39.0),双帧 = 两态静帧。
 规划名 ⇄ 现行名对照总表见 `glossary.md` §2;构件规格见 `structures.md`。
 
 | id | 中文名 | 英文副题 | 分类 | 形态帧 | 状态 |

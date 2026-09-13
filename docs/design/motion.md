@@ -135,7 +135,7 @@ complete/fanfare/start/restart/pause/resume + ui_* 系列 + story_next
 - **v0.38(2026-09-13)**:§2.3 幕间折线幕帘实装(TransitionFX 第五式
   CURTAIN:六竖幅 45° 齿缘 + 构成红缘线,覆盖后继续下坠离场 = 幕落语义;
   回菜单三处接线);§3 动态构件——BEAT EVENT 首批落地(presentation
-  卷十一:Ambience 四通道信号 MAIN/HALF/MELODY/SPECIAL,订阅者 = 地图皮
+  卷十一:Ambience 四通道信号 MAIN/HALF/MELODY/SPECIAL,首批订阅者地图皮信标已随 v0.39.0 退役(信号通道保留,待新订阅者);
   信标主拍强闪 + 记录点信标对拍呼吸);§7 镜头 Freeze hitstop 实装
   (CameraRig.freeze:time_scale 0.05 真实秒恢复,消费点 = 终点门封印,
   减动效门控);M-8 音效规格 .tres 化(28 表,SSOT 见 REFACTOR 台账)。
