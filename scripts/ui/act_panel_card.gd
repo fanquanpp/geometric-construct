@@ -45,6 +45,9 @@ func _ready() -> void:
 	_card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # 像素纪律:禁柔化
 	_card.resized.connect(func() -> void:
 		_card.pivot_offset = _card.size / 2.0)
+	get_viewport().size_changed.connect(func() -> void:
+		if _open:
+			_reanchor_full.call_deferred())
 	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",
 		Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
 	Ui.style(_title_label, 32, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
@@ -66,7 +69,10 @@ func open_act(idx: int, unlocked: int) -> void:
 	_keys_hint.text = "1-%d 直达 · Esc 返回" % act["levels"].size()
 	_populate_rows(idx)
 	_open = true
-	Sfx.play("ui_open")
+	# 真机修复:开卡瞬间视口可能仍是布局一瞬间的旧矩形(竖屏残留 /
+	# 首帧未展开),锚点已对但容器被旧矩形压扁 → 卡片偏左、遮罩半屏。
+	# 每次展开与视口变化都强制重锚全矩形并延迟二次确认(布局时序无关)。
+	_reanchor_full.call_deferred()
 	visible = true
 	if _tween != null:
 		_tween.kill()
@@ -78,6 +84,18 @@ func open_act(idx: int, unlocked: int) -> void:
 	_tween.tween_property(_card, "modulate:a", 1.0, 0.18)
 	_tween.tween_property(_card, "scale", Vector2.ONE, 0.26) \
 		.from(Vector2(0.95, 0.95)).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## 强制 Shade / Center 铺满当前视口(布局时序无关;视口变化重挂)。
+func _reanchor_full() -> void:
+	await get_tree().process_frame
+	var vis := get_viewport().get_visible_rect().size
+	for c: Control in [%Shade, %Center]:
+		c.set_anchors_preset(Control.PRESET_FULL_RECT)
+		c.size = vis
+		c.position = Vector2.ZERO
+	if _open and _card.size != _card.get_combined_minimum_size():
+		$Center.queue_sort()
 
 
 func close_panel() -> void:

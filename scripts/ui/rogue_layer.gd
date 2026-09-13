@@ -88,6 +88,9 @@ func _open_overlay() -> VBoxContainer:
 	for c in center.get_children():
 		c.queue_free()
 	_overlay.visible = true
+	# 真机修复:开卡瞬间视口可能为旧矩形,强制铺满当前视口
+	_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_overlay.size = get_viewport().get_visible_rect().size
 	var card := PanelContainer.new()
 	# 卡片框线 = aseprite 素材(assets/art/ui/card_frame.aseprite → PNG,
 	# 九宫格:墨面板 + 纸白顶规线 + 红角刻;代码侧零 _draw 装饰)
