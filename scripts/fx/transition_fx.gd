@@ -14,7 +14,7 @@ extends CanvasLayer
 
 signal covered
 
-enum Style { FADE, SWEEP, BLOCKS_RED, CORNERS }
+enum Style { FADE, SWEEP, BLOCKS_RED, CORNERS, CURTAIN }
 
 const SWEEP_SHADER := preload("res://assets/fx/sweep_diagonal.gdshader")
 const BLOCKS_SHADER := preload("res://assets/fx/block_dissolve.gdshader")
@@ -22,6 +22,7 @@ const BLOCKS_SHADER := preload("res://assets/fx/block_dissolve.gdshader")
 var _veil: ColorRect
 var _mat: ShaderMaterial
 var _corners: Array[ColorRect] = []
+var _curtain: CurtainDraw
 var _busy := false
 var _seq := 0
 
@@ -48,6 +49,11 @@ func _ready() -> void:
 		edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		q.add_child(edge)
 		_corners.append(q)
+	_curtain = CurtainDraw.new()
+	_curtain.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_curtain.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_curtain.visible = false
+	add_child(_curtain)
 	visible = false
 
 
@@ -65,7 +71,7 @@ func transition(style: int, dur: float, on_covered: Callable) -> bool:
 	var my := _seq
 	if SettingsManager.reduced_motion:
 		# 减动效:硬切——覆盖一帧切内容,随即揭开(保留硬切,§4.4)
-		_set_covered_look(style, 1.0)
+		_set_covered_look(style)
 		visible = true
 		on_covered.call()
 		covered.emit()
@@ -79,6 +85,8 @@ func transition(style: int, dur: float, on_covered: Callable) -> bool:
 			_run_shader(BLOCKS_SHADER, dur, my, on_covered)
 		Style.CORNERS:
 			_run_corners(dur, my, on_covered)
+		Style.CURTAIN:
+			_run_curtain(dur, my, on_covered)
 		_:
 			_run_fade(dur, my, on_covered)
 	return true
@@ -117,12 +125,16 @@ func _finish(my: int) -> void:
 	_busy = false
 
 
-func _set_covered_look(style: int, _phase: float) -> void:
+func _set_covered_look(style: int) -> void:
 	visible = true
-	if style == Style.CORNERS:
-		_corners_cover_instant()
-	else:
-		_veil.color = Color(0, 0, 0, 1)
+	match style:
+		Style.CORNERS:
+			_corners_cover_instant()
+		Style.CURTAIN:
+			_curtain.phase = 1.0
+			_curtain.visible = true
+		_:
+			_veil.color = Color(0, 0, 0, 1)
 
 
 ## shader 族(斜向扫掠 / 阶跃溶解):progress 0→1 覆盖,1→2 同向揭开。
@@ -200,6 +212,27 @@ func _run_corners(dur: float, my: int, on_covered: Callable) -> void:
 		_finish(my))
 
 
+## 折线幕帘(motion.md §2.3 三类大流转之三:幕间换幕):六条竖幅带
+## 45° 折线齿底缘依次落下,覆盖 → 继续下坠离场(幕落语言,非回卷);
+## 带缝与齿缘一道构成红细线。phase 1 = 满幅,2 = 完全坠出。
+func _run_curtain(dur: float, my: int, on_covered: Callable) -> void:
+	_veil.material = null
+	_veil.color = Color(0, 0, 0, 0)
+	visible = true
+	_curtain.visible = true
+	var tw := create_tween()
+	tw.tween_method(func(v: float) -> void: _curtain.phase = v, 0.0, 1.0, dur)
+	tw.tween_callback(func() -> void:
+		if my == _seq:
+			on_covered.call()
+			covered.emit())
+	tw.tween_method(func(v: float) -> void: _curtain.phase = v, 1.0, 2.0,
+		dur * 1.15)
+	tw.tween_callback(func() -> void:
+		_curtain.visible = false
+		_finish(my))
+
+
 func _open_corners(dur: float, my: int) -> void:
 	var tw := create_tween()
 	tw.tween_method(_corners_slide, 1.0, 0.0, dur)
@@ -207,3 +240,37 @@ func _open_corners(dur: float, my: int) -> void:
 		for q in _corners:
 			q.visible = false
 		_finish(my))
+
+
+## 折线幕帘画布:六竖幅,45° 齿底缘,奇偶相位差 = 折叠节奏;
+## phase 0→2 对应 未入屏 → 满幅 → 坠出屏底(§2.3 幕落语义)。
+class CurtainDraw extends Control:
+	var phase := 0.0:
+		set(v):
+			phase = v
+			queue_redraw()
+
+	func _draw() -> void:
+		var w := size.x
+		var h := size.y
+		var z := 44.0            # 齿深(45° 折线)
+		var bands := 6
+		var bw := w / bands
+		for i in bands:
+			var bottom: float = phase * (h + 2.0 * z) - z 				+ (z if i % 2 == 1 else 0.0)
+			var top: float = bottom - (h + 2.0 * z)
+			var pts := PackedVector2Array([
+				Vector2(i * bw, top), Vector2((i + 1) * bw, top)])
+			var teeth := 4
+			var tw: float = bw / teeth
+			# 底缘自右向左走(简单多边形,防蝴蝶结自交)
+			for k in range(teeth, -1, -1):
+				var x: float = i * bw + k * tw
+				var y: float = bottom - (z if k % 2 == 1 else 0.0)
+				pts.append(Vector2(x, y))
+			draw_colored_polygon(pts, Color("101216"))
+			# 齿缘构成红细线(幕帘的金线语言)
+			var line := PackedVector2Array()
+			for k in pts.size() - 2:
+				line.append(pts[pts.size() - 1 - k])
+			draw_polyline(line, Color(Palette.I.red, 0.55), 2.0)

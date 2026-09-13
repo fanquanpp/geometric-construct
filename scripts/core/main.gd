@@ -581,9 +581,16 @@ func _physics_process(_delta: float) -> void:
 	elif _state == State.MENU:
 		if debug_solo:
 			return
+		# 重跑选体弹层开着时:Esc 收回弹层留在标题,其余按键不穿透
+		# (选路 / 词条弹层在 PLAYING 态,不在此分支)
+		if rogue_layer.is_overlay_open():
+			if Input.is_action_just_pressed("ui_cancel"):
+				Sfx.play("ui_back")
+				rogue_layer.cancel_overlay()
+			return
 		# 数字键:二级菜单开着时直达该_choose剧目内的场次;否则快速选剧目
 		# (1=序章开演 → 进二级菜单,2-4 未上演幕同样给出 toast 反馈);
-		# C 打开档案几何;S 打开设置;Esc 关二级菜单 / 退出游戏
+		# R 重跑 · C 打开档案几何;S 打开设置;Esc 关二级菜单 / 退出游戏
 		if _menu.is_dual_pick_open():
 			if Input.is_action_just_pressed("ui_cancel"):
 				_menu.close_dual_pick()
@@ -598,6 +605,8 @@ func _physics_process(_delta: float) -> void:
 		for i in LevelData.ACTS.size():
 			if _key_pressed(KEY_1 + i):
 				_menu.try_open_act(i)
+		if _key_pressed(KEY_R):
+			start_rogue_run()
 		if _key_pressed(KEY_C):
 			open_archive()
 		if _key_pressed(KEY_S):
@@ -610,7 +619,7 @@ func _physics_process(_delta: float) -> void:
 		if Input.is_action_just_pressed("recall"):
 			start_level(0)
 		if Input.is_action_just_pressed("pause"):
-			_show_menu()
+			_return_to_menu()
 
 
 func _check_deaths() -> void:
@@ -688,7 +697,7 @@ func quit_to_menu() -> void:
 	if NetSession.I != null and NetSession.I.is_net():
 		NetSession.I.leave("")
 		_hud.set_net_badge("")
-	_show_menu()
+	_return_to_menu()
 
 
 # ———————————————— 剧情文字(konado) ————————————————
@@ -755,12 +764,20 @@ func _begin_rogue_run() -> void:
 	_pending_rogue_focus = -1
 
 
+## 幕落回菜单(motion.md §2.3 三类大流转之三:折线幕帘)——
+## 覆盖后换内容,幕继续坠出;在飞/减动效由 TransitionFX 兜底。
+func _return_to_menu() -> void:
+	if _hud == null or _hud.transition_curtain(0.4, func() -> void: _show_menu()):
+		return
+	_show_menu()
+
+
 ## 肉鸽落幕结算完成,回到标题菜单。
 func finish_rogue_run() -> void:
 	get_tree().paused = false
 	_rogue = false
 	rogue_dir.exit_run()
-	_show_menu()
+	_return_to_menu()
 
 
 # ———————————————— BGM motif ————————————————

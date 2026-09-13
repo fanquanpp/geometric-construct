@@ -20,7 +20,8 @@ func _run() -> void:
 
 	# ① 四式:covered 恰好一次,结束后隐藏且不忙
 	for style in [TransitionFX.Style.FADE, TransitionFX.Style.SWEEP,
-			TransitionFX.Style.BLOCKS_RED, TransitionFX.Style.CORNERS]:
+			TransitionFX.Style.BLOCKS_RED, TransitionFX.Style.CORNERS,
+			TransitionFX.Style.CURTAIN]:
 		var hits := [0]
 		var ok: bool = fx.transition(style, 0.05, func() -> void:
 			hits[0] += 1)

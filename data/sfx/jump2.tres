@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_b6fhb"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_4a6hv"]
+
+[sub_resource type="Resource" id="Resource_ooela"]
+script = ExtResource("1_b6fhb")
+duty = 0.3
+note = "E4"
+f1 = 659.26
+dur = 0.11
+vol = 0.7
+dec = 15.0
+
+[sub_resource type="Resource" id="Resource_bp1kl"]
+script = ExtResource("1_b6fhb")
+wave = "noise"
+dur = 0.04
+vol = 0.18
+dec = 40.0
+
+[resource]
+script = ExtResource("2_4a6hv")
+id = "jump2"
+base_db = -6.0
+jitter = 0.04
+layers = Array[ExtResource("1_b6fhb")]([SubResource("Resource_ooela"), SubResource("Resource_bp1kl")])

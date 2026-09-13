@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_vbc0i"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_3qdlx"]
+
+[sub_resource type="Resource" id="Resource_537ne"]
+script = ExtResource("1_vbc0i")
+wave = "saw"
+note = "F3"
+f1 = 698.46
+dur = 0.3
+vol = 0.3
+dec = 7.0
+
+[sub_resource type="Resource" id="Resource_vu0o1"]
+script = ExtResource("1_vbc0i")
+duty = 0.4
+note = "C5"
+f1 = 1046.5
+t0 = 0.16
+dur = 0.16
+vol = 0.35
+
+[resource]
+script = ExtResource("2_3qdlx")
+id = "start"
+base_db = -10.0
+layers = Array[ExtResource("1_vbc0i")]([SubResource("Resource_537ne"), SubResource("Resource_vu0o1")])

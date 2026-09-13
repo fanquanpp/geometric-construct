@@ -10,6 +10,7 @@ var _kick := 0.0
 var _snapped := false
 
 func _ready() -> void:
+	add_to_group("camera_rig")   # Freeze 消费点经组寻址(门封印等)
 	make_current()
 	position_smoothing_enabled = false
 	if Main.I != null:
@@ -20,6 +21,17 @@ func on_switch() -> void:
 	_pulse = 0.4
 
 ## 冲击瞬间的镜头微震(死亡 / 重落地),连续冲击可叠加,快速衰减。
+## 镜头 Freeze(presentation 卷九 镜头九式):重大事件世界骤停一瞬 ——
+## hitstop 实现:time_scale 压到 0.05,dur 为真实秒后恢复;
+## 减动效门控(§4.4),重入保护(已在慢放中不叠加)。
+func freeze(dur := 0.12) -> void:
+	if SettingsManager.reduced_motion or Engine.time_scale < 1.0:
+		return
+	Engine.time_scale = 0.05
+	var t := get_tree().create_timer(dur, true, false, true)
+	t.timeout.connect(func() -> void: Engine.time_scale = 1.0)
+
+
 func kick(strength := 6.0) -> void:
 	if SettingsManager.reduced_motion:
 		return   # 减动效:关闭语义化震动(fx-light §4.4)

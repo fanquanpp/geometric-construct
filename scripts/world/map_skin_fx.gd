@@ -28,12 +28,25 @@ const DRIP_POINTS: Array[Vector2] = [Vector2(3520, 228), Vector2(4960, 228)]
 var _started_msec := 0
 
 
+var _downbeat := 10.0   # 距上次主拍的秒数(BEAT EVENT 订阅,始值 = 无闪)
+
+
 func _ready() -> void:
 	z_index = -1
 	_started_msec = Time.get_ticks_msec()
+	# BEAT EVENT 首批订阅者(卷十一):信标本来就是「远城的节拍器」——
+	# 主拍(每小节第一拍)强闪一瞬;减动效门控(§4.4)
+	if Ambience.I != null and not SettingsManager.reduced_motion:
+		Ambience.I.beat.connect(_on_beat)
 
 
-func _process(_delta: float) -> void:
+func _on_beat(kind: int, index: int) -> void:
+	if kind == Ambience.BeatKind.MAIN and index % 4 == 0:
+		_downbeat = 0.0
+
+
+func _process(delta: float) -> void:
+	_downbeat += delta
 	queue_redraw()
 
 
@@ -46,8 +59,10 @@ func _draw() -> void:
 
 ## 塔顶信标:方点明暗呼吸(周期 2.0s,相位错开 —— 像远城的声呐)
 func _draw_beacons(t: float) -> void:
+	var flash: float = clampf(1.0 - _downbeat / 0.16, 0.0, 1.0)
 	for i in BEACONS.size():
 		var a := 0.5 + 0.5 * sin(TAU * t / 2.0 + float(i) * 1.7)
+		a = minf(a + flash * 0.4, 1.0)   # 主拍强闪(节拍器语义)
 		draw_rect(Rect2(BEACONS[i], Vector2(4, 4)),
 			Color(Palette.I.paper, 0.25 + 0.55 * a))
 	# 信标底下重绘桅杆顶暗块,保证呼吸方点不悬浮在纯背景上

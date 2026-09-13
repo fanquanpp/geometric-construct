@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_1vmcd"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_nubxp"]
+
+[sub_resource type="Resource" id="Resource_41fk1"]
+script = ExtResource("1_1vmcd")
+wave = "tri"
+note = "E5"
+dur = 0.09
+vol = 0.6
+dec = 16.0
+
+[sub_resource type="Resource" id="Resource_wwc0m"]
+script = ExtResource("1_1vmcd")
+wave = "tri"
+note = "A5"
+t0 = 0.08
+dur = 0.2
+vol = 0.65
+dec = 9.0
+
+[sub_resource type="Resource" id="Resource_6kc5m"]
+script = ExtResource("1_1vmcd")
+wave = "sine"
+note = "A6"
+t0 = 0.08
+dur = 0.18
+vol = 0.12
+dec = 8.0
+
+[resource]
+script = ExtResource("2_nubxp")
+id = "arrive"
+base_db = -7.0
+layers = Array[ExtResource("1_1vmcd")]([SubResource("Resource_41fk1"), SubResource("Resource_wwc0m"), SubResource("Resource_6kc5m")])

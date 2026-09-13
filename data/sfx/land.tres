@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_krmid"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_ngyoh"]
+
+[sub_resource type="Resource" id="Resource_xr0vx"]
+script = ExtResource("1_krmid")
+wave = "noise"
+dur = 0.07
+vol = 0.3
+dec = 26.0
+
+[sub_resource type="Resource" id="Resource_m7byt"]
+script = ExtResource("1_krmid")
+wave = "sine"
+note = "C3"
+f1 = 65.41
+dur = 0.08
+vol = 0.5
+dec = 22.0
+
+[resource]
+script = ExtResource("2_ngyoh")
+id = "land"
+base_db = -9.0
+jitter = 0.06
+layers = Array[ExtResource("1_krmid")]([SubResource("Resource_xr0vx"), SubResource("Resource_m7byt")])

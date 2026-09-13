@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_3lfwk"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_ooumk"]
+
+[sub_resource type="Resource" id="Resource_cku0f"]
+script = ExtResource("1_3lfwk")
+duty = 0.22
+note = "D3"
+dur = 0.14
+vol = 0.6
+
+[sub_resource type="Resource" id="Resource_n7x20"]
+script = ExtResource("1_3lfwk")
+duty = 0.22
+note = "A2"
+dur = 0.14
+vol = 0.45
+
+[resource]
+script = ExtResource("2_ooumk")
+id = "ui_error"
+layers = Array[ExtResource("1_3lfwk")]([SubResource("Resource_cku0f"), SubResource("Resource_n7x20")])

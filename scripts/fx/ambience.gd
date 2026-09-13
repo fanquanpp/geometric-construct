@@ -63,7 +63,15 @@ static func _motif_view(res: AmbienceMotif) -> Dictionary:
 		"drone": res.drone, "steps": steps, "pads": pads}
 
 
+## BEAT EVENT(卷十一):节拍驱动表现的统一事件总线。
+## 通道四分(防全屏抽搐):MAIN 主拍 / HALF 半拍 / MELODY 旋律事件 /
+## SPECIAL 循环边界(小节线)。BPM 与拍点由本节拍器正典供出;
+## 订阅方 = UI / Mechanism / Light / Particle(首批:地图皮信标 + 记录点信标)。
+signal beat(kind: int, index: int)
+enum BeatKind { MAIN, HALF, MELODY, SPECIAL }
+
 static var _instance: Ambience = null
+static var I: Ambience            # 订阅入口(beat 事件总线)
 static var _volume_scale := 1.0
 
 var _player: AudioStreamPlayer
@@ -75,6 +83,9 @@ var _motif_name := "prologue"
 var _step_idx := 0
 var _pad_idx := 0
 var _swell := 0.0            # 循环边界风涌包络(逐样乘衰减)
+var _last_beat := -1         # 主拍跨越追踪(BEAT EVENT)
+var _last_half := -1         # 半拍跨越追踪
+var _cycle_count := 0        # 小节计数(SPECIAL 通道)
 var _swell_mul := 1.0
 var _wind_lp := 0.0          # 风噪一阶低通状态
 var _lfo_phase := 0.0        # 共享慢 LFO(呼吸 / 颤音)
@@ -121,6 +132,7 @@ static func _apply_db(p: AudioStreamPlayer) -> void:
 
 func _ready() -> void:
 	_instance = self
+	I = self
 	var gen := AudioStreamGenerator.new()
 	gen.mix_rate = RATE
 	gen.buffer_length = 0.5
@@ -138,6 +150,8 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if _instance == self:
 		_instance = null
+	if I == self:
+		I = null
 	Sfx.beat_clock_stop()
 
 
@@ -261,7 +275,18 @@ func _fill(buf: PackedVector2Array) -> void:
 		# —— 循环边界风涌(原 hat 声明的实装形态:深空风而非打击)——
 		if wrapped:
 			_swell = 1.0
+			_cycle_count += 1
+			beat.emit(BeatKind.SPECIAL, _cycle_count)
 		_swell *= _swell_mul
+		# —— BEAT EVENT:主拍 / 半拍跨越(逐样检跨,发信号)——
+		var bi := int(_beat_pos)
+		if bi != _last_beat:
+			_last_beat = bi
+			beat.emit(BeatKind.MAIN, bi)
+		var hi := int(_beat_pos * 2.0)
+		if hi != _last_half:
+			_last_half = hi
+			beat.emit(BeatKind.HALF, hi)
 		# —— 激活到达拍位的 motif 短句 ——
 		while _step_idx < steps.size() and steps[_step_idx][0] <= _beat_pos:
 			var st: Array = steps[_step_idx]
@@ -279,6 +304,7 @@ func _fill(buf: PackedVector2Array) -> void:
 				send = 0.55   # 铃音重发送:回声即"另一面的余响"
 			_spawn(Sfx.note_freq(str(st[1])), wcode, dur_s, float(st[4]),
 				dec, 0.012, send, 0.0)
+			beat.emit(BeatKind.MELODY, _step_idx)
 			_step_idx += 1
 		# —— 激活到达拍位的和声垫(每音双振荡器失谐 = 合唱)——
 		while _pad_idx < pads.size() and pads[_pad_idx][0] <= _beat_pos:

@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_jt3pr"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_y43kr"]
+
+[sub_resource type="Resource" id="Resource_d2442"]
+script = ExtResource("1_jt3pr")
+duty = 0.4
+note = "G4"
+dur = 0.08
+vol = 0.5
+
+[sub_resource type="Resource" id="Resource_5augf"]
+script = ExtResource("1_jt3pr")
+duty = 0.4
+note = "C5"
+t0 = 0.09
+dur = 0.08
+vol = 0.5
+
+[sub_resource type="Resource" id="Resource_yej8h"]
+script = ExtResource("1_jt3pr")
+duty = 0.4
+note = "E5"
+t0 = 0.18
+dur = 0.08
+vol = 0.5
+
+[sub_resource type="Resource" id="Resource_figy5"]
+script = ExtResource("1_jt3pr")
+duty = 0.4
+note = "G5"
+t0 = 0.27
+vol = 0.55
+dec = 9.0
+
+[sub_resource type="Resource" id="Resource_5dvnn"]
+script = ExtResource("1_jt3pr")
+note = "C6"
+t0 = 0.38
+dur = 0.55
+vol = 0.55
+dec = 3.6
+harm = Array[Vector2]([Vector2(2, 0.1)])
+
+[sub_resource type="Resource" id="Resource_2naqo"]
+script = ExtResource("1_jt3pr")
+note = "G6"
+t0 = 0.5
+dur = 0.55
+vol = 0.4
+dec = 3.6
+
+[sub_resource type="Resource" id="Resource_3h2l3"]
+script = ExtResource("1_jt3pr")
+wave = "tri"
+note = "C5"
+t0 = 0.38
+dur = 0.6
+vol = 0.28
+dec = 3.4
+
+[resource]
+script = ExtResource("2_y43kr")
+id = "fanfare"
+base_db = -4.0
+layers = Array[ExtResource("1_jt3pr")]([SubResource("Resource_d2442"), SubResource("Resource_5augf"), SubResource("Resource_yej8h"), SubResource("Resource_figy5"), SubResource("Resource_5dvnn"), SubResource("Resource_2naqo"), SubResource("Resource_3h2l3")])

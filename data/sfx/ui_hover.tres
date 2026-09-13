@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_s88vg"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_w1otw"]
+
+[sub_resource type="Resource" id="Resource_4otsh"]
+script = ExtResource("1_s88vg")
+wave = "tri"
+note = "F5"
+f1 = 784.0
+dur = 0.03
+vol = 0.22
+dec = 36.0
+
+[resource]
+script = ExtResource("2_w1otw")
+id = "ui_hover"
+base_db = -14.0
+layers = Array[ExtResource("1_s88vg")]([SubResource("Resource_4otsh")])

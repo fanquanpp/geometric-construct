@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_rui64"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_6pbi0"]
+
+[sub_resource type="Resource" id="Resource_ouc4v"]
+script = ExtResource("1_rui64")
+wave = "noise"
+dur = 0.22
+vol = 0.35
+dec = 12.0
+
+[sub_resource type="Resource" id="Resource_3k2o1"]
+script = ExtResource("1_rui64")
+wave = "tri"
+note = "A4"
+f1 = 110.0
+dur = 0.22
+vol = 0.4
+
+[resource]
+script = ExtResource("2_6pbi0")
+id = "restart"
+base_db = -9.0
+layers = Array[ExtResource("1_rui64")]([SubResource("Resource_ouc4v"), SubResource("Resource_3k2o1")])

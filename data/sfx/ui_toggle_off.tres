@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_tjonh"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_syvjj"]
+
+[sub_resource type="Resource" id="Resource_xo8pv"]
+script = ExtResource("1_tjonh")
+duty = 0.4
+note = "E4"
+dur = 0.04
+vol = 0.4
+dec = 26.0
+
+[sub_resource type="Resource" id="Resource_fgks6"]
+script = ExtResource("1_tjonh")
+duty = 0.4
+note = "C4"
+t0 = 0.04
+dur = 0.06
+vol = 0.45
+dec = 20.0
+
+[resource]
+script = ExtResource("2_syvjj")
+id = "ui_toggle_off"
+base_db = -11.0
+layers = Array[ExtResource("1_tjonh")]([SubResource("Resource_xo8pv"), SubResource("Resource_fgks6")])

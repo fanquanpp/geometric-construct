@@ -271,4 +271,13 @@ Foreshadow / Symbol(模板入 levels.md §0;测试道免登记)。
   SFX 合成层规格(28 条 _reg 参数)**裁定暂不资源化**:其为合成引擎
   实现细节而非调参面板数值(先例:run_modifiers 拍板保持 .gd),
   若未来需要音效微调面板再立 M 项。
+
+- **M-8 · 音效规格 .tres 化 ✅(v0.38.0)**:28 条音效全部出代码 ——
+  `SfxSpec` / `SfxLayer`(`scripts/data/sfx_spec.gd` / `sfx_layer.gd`,
+  全 `@export`)+ `data/sfx/*.tres` 28 表(base_db / jitter / 合成层组,
+  Inspector 直调);迁移三步:28 条内联 `_reg` 平.lift 为纯数据 SPECS 表
+  (行为逐位一致)→ ResourceSaver 生成 + 回读逐字段平价断言(28/28
+  PASS)→ sfx.gd 改键名→路径拓扑表 + `_reg_spec` 装配(合成内核
+  `_render/_layer` 零改动);一次性生成器退役。R2 收口:音频域数值
+  (BGM motif + 音效规格)全部进 Inspector。
   随下一批页面增量抽取)。

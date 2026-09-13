@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_1e8qo"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_dcdwd"]
+
+[sub_resource type="Resource" id="Resource_yx1i6"]
+script = ExtResource("1_1e8qo")
+wave = "sine"
+note = "E5"
+f1 = 987.77
+dur = 0.3
+vol = 0.7
+dec = 6.0
+
+[sub_resource type="Resource" id="Resource_snxir"]
+script = ExtResource("1_1e8qo")
+note = "E6"
+f1 = 1975.53
+t0 = 0.04
+dur = 0.22
+vol = 0.18
+dec = 8.0
+
+[resource]
+script = ExtResource("2_dcdwd")
+id = "enter"
+base_db = -5.0
+jitter = 0.02
+layers = Array[ExtResource("1_1e8qo")]([SubResource("Resource_yx1i6"), SubResource("Resource_snxir")])

@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_8n8e5"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_fv6ki"]
+
+[sub_resource type="Resource" id="Resource_mggti"]
+script = ExtResource("1_8n8e5")
+duty = 0.4
+note = "C5"
+vol = 0.55
+dec = 8.0
+
+[sub_resource type="Resource" id="Resource_btfqd"]
+script = ExtResource("1_8n8e5")
+duty = 0.4
+note = "E5"
+t0 = 0.11
+vol = 0.55
+dec = 8.0
+
+[sub_resource type="Resource" id="Resource_3bjus"]
+script = ExtResource("1_8n8e5")
+duty = 0.4
+note = "G5"
+t0 = 0.22
+vol = 0.55
+dec = 8.0
+
+[sub_resource type="Resource" id="Resource_erxei"]
+script = ExtResource("1_8n8e5")
+note = "C6"
+t0 = 0.33
+dur = 0.62
+vol = 0.6
+dec = 3.2
+harm = Array[Vector2]([Vector2(2, 0.12)])
+
+[sub_resource type="Resource" id="Resource_uu613"]
+script = ExtResource("1_8n8e5")
+wave = "tri"
+note = "C5"
+t0 = 0.33
+dur = 0.62
+vol = 0.3
+dec = 3.0
+
+[sub_resource type="Resource" id="Resource_hmg2i"]
+script = ExtResource("1_8n8e5")
+wave = "noise"
+t0 = 0.33
+dur = 0.12
+vol = 0.1
+dec = 20.0
+
+[resource]
+script = ExtResource("2_fv6ki")
+id = "complete"
+base_db = -5.0
+layers = Array[ExtResource("1_8n8e5")]([SubResource("Resource_mggti"), SubResource("Resource_btfqd"), SubResource("Resource_3bjus"), SubResource("Resource_erxei"), SubResource("Resource_uu613"), SubResource("Resource_hmg2i")])

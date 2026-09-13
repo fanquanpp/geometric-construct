@@ -523,6 +523,11 @@ func transition_blocks(dur: float, on_covered: Callable) -> void:
 	_fx.transition(TransitionFX.Style.BLOCKS_RED, dur, on_covered)
 
 
+## 折线幕帘:幕落回菜单(motion.md §2.3「幕间换幕」)。
+func transition_curtain(dur: float, on_covered: Callable) -> bool:
+	return _fx.transition(TransitionFX.Style.CURTAIN, dur, on_covered)
+
+
 ## 取景框四角收拢后揭开:进关卡(motion.md §2.3「取景框四角收拢」)。
 func transition_corners(dur: float, on_covered: Callable) -> void:
 	_fx.transition(TransitionFX.Style.CORNERS, dur, on_covered)

@@ -10,13 +10,48 @@ var center: Vector2
 var size := Vector2(64, 92)
 
 ## 终点激活后的封印:到站状态不可撤销,等待统一吸入。
-var sealed := false
+var sealed := false:
+	set(v):
+		if sealed == v:
+			return
+		sealed = v
+		queue_redraw()
+		if v:
+			# 镜头 Freeze(presentation 卷九):封印 = 「幕落」级事件,
+			# 世界骤停一瞬让全员到齐被读到(减动效门控在 freeze 内)
+			var cam := get_tree().get_first_node_in_group("camera_rig")
+			if cam != null:
+				cam.freeze(0.14)
 
 var _filled := false
 var _arrived_set := {}   # Player -> true(双体门:两半都到站才算满,characters.md §5)
 var _t := 0.0
 var _color: Color
 var _burst: CPUParticles2D
+var _light: PointLight2D
+static var _light_tex: ImageTexture   # 阶跃贴图全门共享(生成一次)
+
+
+## 阶跃硬边光贴图:3 档环形带(1.0 / 0.55 / 0.3),构成主义禁渐变 ——
+## 刻意与社区「平滑衰减」建议反向(fx-light §2.2:光斑用阶跃贴图)
+static func _stepped_light_texture() -> ImageTexture:
+	if _light_tex != null:
+		return _light_tex
+	var img := Image.create(256, 256, false, Image.FORMAT_L8)
+	var c := 128.0
+	for y in 256:
+		for x in 256:
+			var d := Vector2(x - c, y - c).length() / c
+			var v := 0.0
+			if d < 0.34:
+				v = 1.0
+			elif d < 0.62:
+				v = 0.55
+			elif d < 0.85:
+				v = 0.3
+			img.set_pixel(x, y, Color(v, v, v))
+	_light_tex = ImageTexture.create_from_image(img)
+	return _light_tex
 var _icon: Sprite2D
 var _check: Sprite2D
 
@@ -51,6 +86,16 @@ func _ready() -> void:
 	_burst.color = _color
 	add_child(_burst)
 
+	# —— 归门三档光(fx-light §2.1 P0:空/半/满逐档抬亮 =「这扇门还差谁」)——
+	# 阶跃硬边贴图(3 档环形带,禁渐变);空档熄灯不占动态光预算(≤4 守恒);
+	# 语义光不投影(§2.2:遮挡仍由平台 Occluder 承担)
+	_light = PointLight2D.new()
+	_light.texture = _stepped_light_texture()
+	_light.color = _color
+	_light.energy = 0.0
+	_light.shadow_enabled = false
+	add_child(_light)
+
 	# 门上悬浮的几何体徽标 / 到站勾
 	_icon = Sprite2D.new()
 	_icon.texture = Ui.icon("characters/%s-flat.svg" % Geometries.ALL[geo_index].slug)
@@ -78,7 +123,11 @@ func _pair_total() -> int:
 ## 到站满员态统一刷新(双体契约:两半都到站才满,characters.md §5)。
 ## 只在满员状态翻转时切换演出,避免逐帧重放粒子。
 func _refresh_fill() -> void:
-	var full := _arrived_set.size() >= _pair_total()
+	var arrived := _arrived_set.size()
+	var total := _pair_total()
+	# 三档光强档位跳变(禁连续渐亮):0 = 熄 / 0.5 = 半 / 0.85 = 满
+	_light.energy = 0.0 if arrived == 0 else (0.85 if arrived >= total else 0.5)
+	var full := arrived >= total
 	if full == _filled:
 		return
 	_filled = full

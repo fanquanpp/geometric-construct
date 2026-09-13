@@ -342,13 +342,15 @@ func run_transition_shot() -> void:
 	if m._shot_dir.is_empty():
 		m._shot_dir = ".shots_v37"
 	var fxd: TransitionFX = m._hud._fx
-	for style_name in ["sweep", "blocks", "corners"]:
+	for style_name in ["sweep", "blocks", "corners", "curtain"]:
 		var style := TransitionFX.Style.SWEEP
 		match style_name:
 			"blocks":
 				style = TransitionFX.Style.BLOCKS_RED
 			"corners":
 				style = TransitionFX.Style.CORNERS
+			"curtain":
+				style = TransitionFX.Style.CURTAIN
 		fxd.transition(style, 0.3, func() -> void: pass)
 		await m.get_tree().create_timer(0.26).timeout
 		await _shot("transition_%s_cover" % style_name)

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_aampe"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_3ah76"]
+
+[sub_resource type="Resource" id="Resource_xte13"]
+script = ExtResource("1_aampe")
+wave = "noise"
+dur = 0.06
+vol = 0.3
+dec = 26.0
+
+[sub_resource type="Resource" id="Resource_fcqma"]
+script = ExtResource("1_aampe")
+wave = "tri"
+note = "D4"
+f1 = 392.0
+t0 = 0.01
+dur = 0.05
+vol = 0.35
+dec = 24.0
+
+[resource]
+script = ExtResource("2_3ah76")
+id = "ui_page"
+base_db = -12.0
+layers = Array[ExtResource("1_aampe")]([SubResource("Resource_xte13"), SubResource("Resource_fcqma")])

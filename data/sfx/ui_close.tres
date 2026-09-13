@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_7ta0b"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_calqv"]
+
+[sub_resource type="Resource" id="Resource_m321u"]
+script = ExtResource("1_7ta0b")
+duty = 0.4
+note = "G4"
+dur = 0.05
+vol = 0.45
+dec = 22.0
+
+[sub_resource type="Resource" id="Resource_envjy"]
+script = ExtResource("1_7ta0b")
+duty = 0.4
+note = "C4"
+t0 = 0.05
+dur = 0.08
+vol = 0.45
+dec = 18.0
+
+[resource]
+script = ExtResource("2_calqv")
+id = "ui_close"
+base_db = -10.0
+layers = Array[ExtResource("1_7ta0b")]([SubResource("Resource_m321u"), SubResource("Resource_envjy")])

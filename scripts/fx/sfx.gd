@@ -106,156 +106,61 @@ static func beat_time() -> float:
 	return (Time.get_ticks_msec() - _beat_origin) / 1000.0
 
 
-static func init(parent: Node) -> void:
-	# ———— 玩法音(音高按 audio.md §2 迁入 C 大调:上行=获得,下行=失去) ————
-	_reg(parent, "jump", [
-		{"w": "tri", "note": "C4", "f1": 523.25, "dur": 0.13,
-			"vol": 0.65, "dec": 12.0, "harm": [[2.0, 0.12]]},
-	], -6.0, 0.04)
-	_reg(parent, "jump2", [
-		{"w": "square", "duty": 0.30, "note": "E4", "f1": 659.26, "dur": 0.11,
-			"vol": 0.7, "dec": 15.0},
-		{"w": "noise", "dur": 0.04, "vol": 0.18, "dec": 40.0},
-	], -6.0, 0.04)
-	_reg(parent, "bounce", [
-		{"w": "tri", "note": "G3", "f1": 130.81, "dur": 0.18, "vol": 0.95, "dec": 11.0},
-		{"w": "noise", "dur": 0.05, "vol": 0.22, "dec": 34.0},
-	], -7.0, 0.04)
-	_reg(parent, "land", [
-		{"w": "noise", "dur": 0.07, "vol": 0.30, "dec": 26.0},
-		{"w": "sine", "note": "C3", "f1": 65.41, "dur": 0.08, "vol": 0.5, "dec": 22.0},
-	], -9.0, 0.06)
-	_reg(parent, "climb", [
-		{"w": "tri", "note": "F5", "dur": 0.035, "vol": 0.3, "dec": 26.0},
-	], -10.0, 0.08)
-	_reg(parent, "swap", [
-		{"w": "tri", "note": "G4", "f1": 261.63, "dur": 0.17,
-			"vol": 0.7, "dec": 9.0},
-		{"w": "tri", "note": "G5", "f1": 523.25, "dur": 0.17, "vol": 0.35, "dec": 9.0},
-	], -6.0, 0.03)
-	# 强化 = 上行三度跳进(G4-C5-E5)+ E6 上滑(既有合规音级,登记保留)
-	_reg(parent, "buff", [
-		{"w": "tri", "note": "G4", "dur": 0.09, "vol": 0.5, "dec": 16.0},
-		{"w": "tri", "note": "C5", "dur": 0.09, "vol": 0.5, "dec": 16.0,
-			"t0": 0.055},
-		{"w": "tri", "note": "E5", "dur": 0.12, "vol": 0.55, "dec": 13.0,
-			"t0": 0.11},
-		{"w": "sine", "note": "E6", "f1": 1760.0, "dur": 0.18, "vol": 0.18, "dec": 10.0,
-			"t0": 0.13},
-	], -7.0, 0.0)
-	_reg(parent, "die", [
-		{"w": "saw", "note": "G3", "f1": 65.41, "dur": 0.4, "vol": 0.85, "dec": 6.0,
-			"harm": [[0.5, 0.3]]},
-		{"w": "noise", "dur": 0.22, "vol": 0.4, "dec": 14.0},
-	], -4.0, 0.02)
-	_reg(parent, "enter", [
-		{"w": "sine", "note": "E5", "f1": 987.77, "dur": 0.3, "vol": 0.7, "dec": 6.0},
-		{"w": "square", "duty": 0.5, "note": "E6", "f1": 1975.53, "dur": 0.22,
-			"vol": 0.18, "dec": 8.0, "t0": 0.04},
-	], -5.0, 0.02)
-	# 到站:E5-A5-A6(Am 色彩,既有合规)
-	_reg(parent, "arrive", [
-		{"w": "tri", "note": "E5", "dur": 0.09, "vol": 0.6, "dec": 16.0},
-		{"w": "tri", "note": "A5", "dur": 0.2, "vol": 0.65, "dec": 9.0, "t0": 0.08},
-		{"w": "sine", "note": "A6", "dur": 0.18, "vol": 0.12, "dec": 8.0, "t0": 0.08},
-	], -7.0, 0.0)
-	_reg(parent, "switch", [
-		{"w": "square", "duty": 0.45, "note": "E5", "f1": 880.0, "dur": 0.07,
-			"vol": 0.55, "dec": 18.0},
-	], -8.0, 0.03)
-	# 过关 motif:C5-E5-G5-C6 上行琶音收长音(既有合规,登记为过关 motif)
-	_reg(parent, "complete", [
-		{"w": "square", "duty": 0.4, "note": "C5", "dur": 0.1, "vol": 0.55, "dec": 8.0},
-		{"w": "square", "duty": 0.4, "note": "E5", "dur": 0.1, "vol": 0.55, "dec": 8.0,
-			"t0": 0.11},
-		{"w": "square", "duty": 0.4, "note": "G5", "dur": 0.1, "vol": 0.55, "dec": 8.0,
-			"t0": 0.22},
-		{"w": "square", "duty": 0.5, "note": "C6", "dur": 0.62, "vol": 0.6, "dec": 3.2,
-			"t0": 0.33, "harm": [[2.0, 0.12]]},
-		{"w": "tri", "note": "C5", "dur": 0.62, "vol": 0.3, "dec": 3.0, "t0": 0.33},
-		{"w": "noise", "dur": 0.12, "vol": 0.1, "dec": 20.0, "t0": 0.33},
-	], -5.0, 0.0)
-	# 通关大号角(终幕 WIN):G4-C5-E5-G5 和弦铺开(既有合规)
-	_reg(parent, "fanfare", [
-		{"w": "square", "duty": 0.4, "note": "G4", "dur": 0.08, "vol": 0.5, "dec": 10.0},
-		{"w": "square", "duty": 0.4, "note": "C5", "dur": 0.08, "vol": 0.5, "dec": 10.0,
-			"t0": 0.09},
-		{"w": "square", "duty": 0.4, "note": "E5", "dur": 0.08, "vol": 0.5, "dec": 10.0,
-			"t0": 0.18},
-		{"w": "square", "duty": 0.4, "note": "G5", "dur": 0.1, "vol": 0.55, "dec": 9.0,
-			"t0": 0.27},
-		{"w": "square", "duty": 0.5, "note": "C6", "dur": 0.55, "vol": 0.55, "dec": 3.6,
-			"t0": 0.38, "harm": [[2.0, 0.1]]},
-		{"w": "square", "duty": 0.5, "note": "G6", "dur": 0.55, "vol": 0.4, "dec": 3.6,
-			"t0": 0.5},
-		{"w": "tri", "note": "C5", "dur": 0.6, "vol": 0.28, "dec": 3.4, "t0": 0.38},
-	], -4.0, 0.0)
+## 音效规格数据源(M-8 数值资源化 v0.38,场景资源强制约束):
+## 数值全部在 data/sfx/*.tres(SfxSpec/SfxLayer,@export,Inspector 直调);
+## 本表 = 键名→路径拓扑(R2 允许的结构性常量),新增音效 = 复制 .tres +
+## 登记一行;烘焙仍在 init 首帧前一次性完成,运行时零合成。
+const SPECS := {
+	"jump": "res://data/sfx/jump.tres",
+	"jump2": "res://data/sfx/jump2.tres",
+	"bounce": "res://data/sfx/bounce.tres",
+	"land": "res://data/sfx/land.tres",
+	"climb": "res://data/sfx/climb.tres",
+	"swap": "res://data/sfx/swap.tres",
+	"buff": "res://data/sfx/buff.tres",
+	"die": "res://data/sfx/die.tres",
+	"enter": "res://data/sfx/enter.tres",
+	"arrive": "res://data/sfx/arrive.tres",
+	"switch": "res://data/sfx/switch.tres",
+	"complete": "res://data/sfx/complete.tres",
+	"fanfare": "res://data/sfx/fanfare.tres",
+	"ui_click": "res://data/sfx/ui_click.tres",
+	"ui_hover": "res://data/sfx/ui_hover.tres",
+	"ui_open": "res://data/sfx/ui_open.tres",
+	"ui_close": "res://data/sfx/ui_close.tres",
+	"ui_page": "res://data/sfx/ui_page.tres",
+	"ui_error": "res://data/sfx/ui_error.tres",
+	"pause": "res://data/sfx/pause.tres",
+	"resume": "res://data/sfx/resume.tres",
+	"start": "res://data/sfx/start.tres",
+	"restart": "res://data/sfx/restart.tres",
+	"story_next": "res://data/sfx/story_next.tres",
+	"ui_back": "res://data/sfx/ui_back.tres",
+	"ui_toggle_on": "res://data/sfx/ui_toggle_on.tres",
+	"ui_toggle_off": "res://data/sfx/ui_toggle_off.tres",
+	"ui_slider": "res://data/sfx/ui_slider.tres",
+}
+static var _spec_cache := {}
 
-	# ———— UI / 流程音(UI 音不做 jitter;音级语义:五度=确认/开启,下行=关闭) ————
-	_reg(parent, "ui_click", [
-		{"w": "square", "duty": 0.4, "note": "C5", "f1": 659.26, "dur": 0.045,
-			"vol": 0.5, "dec": 30.0},
-	], -10.0, 0.0)
-	_reg(parent, "ui_hover", [
-		{"w": "tri", "note": "F5", "f1": 784.0, "dur": 0.03, "vol": 0.22, "dec": 36.0},
-	], -14.0, 0.0)
-	_reg(parent, "ui_open", [
-		{"w": "square", "duty": 0.4, "note": "C4", "dur": 0.05, "vol": 0.45, "dec": 22.0},
-		{"w": "square", "duty": 0.4, "note": "G4", "dur": 0.08, "vol": 0.5, "dec": 18.0,
-			"t0": 0.05},
-	], -10.0, 0.0)
-	_reg(parent, "ui_close", [
-		{"w": "square", "duty": 0.4, "note": "G4", "dur": 0.05, "vol": 0.45, "dec": 22.0},
-		{"w": "square", "duty": 0.4, "note": "C4", "dur": 0.08, "vol": 0.45, "dec": 18.0,
-			"t0": 0.05},
-	], -10.0, 0.0)
-	_reg(parent, "ui_page", [
-		{"w": "noise", "dur": 0.06, "vol": 0.3, "dec": 26.0},
-		{"w": "tri", "note": "D4", "f1": 392.0, "dur": 0.05, "vol": 0.35, "dec": 24.0,
-			"t0": 0.01},
-	], -12.0, 0.0)
-	_reg(parent, "ui_error", [
-		{"w": "square", "duty": 0.22, "note": "D3", "dur": 0.14, "vol": 0.6, "dec": 10.0},
-		{"w": "square", "duty": 0.22, "note": "A2", "dur": 0.14, "vol": 0.45, "dec": 10.0},
-	], -8.0, 0.0)
-	_reg(parent, "pause", [
-		{"w": "tri", "note": "C5", "f1": 392.0, "dur": 0.1, "vol": 0.5, "dec": 14.0},
-	], -10.0, 0.0)
-	_reg(parent, "resume", [
-		{"w": "tri", "note": "G4", "f1": 523.25, "dur": 0.1, "vol": 0.5, "dec": 14.0},
-	], -10.0, 0.0)
-	_reg(parent, "start", [
-		{"w": "saw", "note": "F3", "f1": 698.46, "dur": 0.3, "vol": 0.3, "dec": 7.0},
-		{"w": "square", "duty": 0.4, "note": "C5", "f1": 1046.5, "dur": 0.16,
-			"vol": 0.35, "dec": 10.0, "t0": 0.16},
-	], -10.0, 0.0)
-	_reg(parent, "restart", [
-		{"w": "noise", "dur": 0.22, "vol": 0.35, "dec": 12.0},
-		{"w": "tri", "note": "A4", "f1": 110.0, "dur": 0.22, "vol": 0.4, "dec": 10.0},
-	], -9.0, 0.0)
-	_reg(parent, "story_next", [
-		{"w": "tri", "note": "C5", "dur": 0.03, "vol": 0.22, "dec": 44.0},
-	], -16.0, 0.0)
-	# 返回:下行四度(F4→C4),与 ui_close 的"收束"区分——back 是轻导航,close 是关面板
-	_reg(parent, "ui_back", [
-		{"w": "tri", "note": "F4", "f1": 261.63, "dur": 0.08,
-			"vol": 0.4, "dec": 22.0},
-	], -12.0, 0.0)
-	# 开关语义音:开 = 上行三度(C4→E4),关 = 下行三度(E4→C4)——状态可"听"出来
-	_reg(parent, "ui_toggle_on", [
-		{"w": "square", "duty": 0.4, "note": "C4", "dur": 0.04, "vol": 0.4, "dec": 26.0},
-		{"w": "square", "duty": 0.4, "note": "E4", "dur": 0.06, "vol": 0.45, "dec": 20.0,
-			"t0": 0.04},
-	], -11.0, 0.0)
-	_reg(parent, "ui_toggle_off", [
-		{"w": "square", "duty": 0.4, "note": "E4", "dur": 0.04, "vol": 0.4, "dec": 26.0},
-		{"w": "square", "duty": 0.4, "note": "C4", "dur": 0.06, "vol": 0.45, "dec": 20.0,
-			"t0": 0.04},
-	], -11.0, 0.0)
-	# 滑杆刻度:极短高频棘轮咔哒(HSlider 按步进拖动时逐格触发)
-	_reg(parent, "ui_slider", [
-		{"w": "tri", "note": "F6", "dur": 0.018, "vol": 0.3, "dec": 70.0},
-	], -16.0, 0.0)
+
+static func _load_spec(id: String) -> SfxSpec:
+	if _spec_cache.has(id):
+		return _spec_cache[id]
+	if not SPECS.has(id):
+		return null
+	var res: SfxSpec = load(SPECS[id])
+	_spec_cache[id] = res
+	return res
+
+
+static func init(parent: Node) -> void:
+	# ———— 规格装载:.tres 烘焙(数值 SSOT = data/sfx,M-8)————
+	for id: String in SPECS:
+		var spec := _load_spec(id)
+		if spec == null:
+			push_warning("Sfx: 规格缺失 %s" % id)
+			continue
+		_reg_spec(parent, spec)
 
 	# ———— 音符播放池:首帧前预烘焙核心 14 条(7 音 × 短/长档,audio.md §6) ————
 	for octave in [4, 5]:
@@ -264,18 +169,35 @@ static func init(parent: Node) -> void:
 			_note_stream("%s%d" % [letter, octave], true)
 
 
-## 注册一条音效:layers 按 _layer 规格叠加烘焙,base_db 为播放音量,jitter 为音高随机幅度。
-static func _reg(parent: Node, sfx_name: String, layers: Array, base_db: float,
-		jitter := 0.0) -> void:
+## 注册一条音效(SfxSpec → 层规格字典 → 烘焙):数值 SSOT 在 .tres,
+## 字典只是合成内核的消费形态;音级纪律见 audio.md §1。
+static func _reg_spec(parent: Node, spec: SfxSpec) -> void:
+	var layers: Array = []
+	for ly in spec.layers:
+		var d := {"w": ly.wave, "duty": ly.duty, "dur": ly.dur,
+			"vol": ly.vol, "a": ly.atk, "dec": ly.dec}
+		if ly.note != "":
+			d["note"] = ly.note
+		else:
+			d["f0"] = ly.f0
+		if ly.f1 > 0.0:
+			d["f1"] = ly.f1
+		if ly.t0 > 0.0:
+			d["t0"] = ly.t0
+		if not ly.harm.is_empty():
+			d["harm"] = ly.harm
+		if ly.vib.size() == 2:
+			d["vib"] = ly.vib
+		layers.append(d)
 	var p := AudioStreamPlayer.new()
 	p.stream = _render(layers)
-	p.volume_db = base_db
+	p.volume_db = spec.base_db
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
 	p.bus = _bus_name("SFX")
 	parent.add_child(p)
-	_players[sfx_name] = p
-	_vols[sfx_name] = base_db
-	_jitters[sfx_name] = jitter
+	_players[spec.id] = p
+	_vols[spec.id] = spec.base_db
+	_jitters[spec.id] = spec.jitter
 
 
 ## 总线名(总线布局缺失时回落 Master,保证 headless / 裸配置可跑)。

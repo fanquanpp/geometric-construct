@@ -74,8 +74,9 @@ func _draw() -> void:
 	if _on:
 		draw_rect(head, Palette.I.red)
 		draw_rect(head, Color(Palette.I.paper, 0.55), false, 1.5)
-		# 亮灯呼吸:顶方块上方细亮条(构成主义直角语言,禁渐变)
-		var pulse := 0.35 + 0.25 * sin(Time.get_ticks_msec() / 400.0)
+		# 亮灯呼吸对拍(卷十一):节拍时钟在跑则随拍点脉动,否则退回时间基
+		var ph := Sfx.beat_time() if Sfx.beat_period() > 0.0 			else Time.get_ticks_msec() / 1000.0
+		var pulse := 0.35 + 0.25 * sin(ph * TAU)
 		draw_rect(Rect2(-14, -94, 28, 3), Color(Palette.I.red, pulse))
 	else:
 		draw_rect(head, Color(Palette.I.paper, 0.30), false, 1.5)

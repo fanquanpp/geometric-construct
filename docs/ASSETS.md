@@ -23,6 +23,7 @@
 | 关卡(历史文件未接线) | 1(伍试水 · 界与边)| `levels/pair_trial.json` |
 | 图鉴插图(入引擎) | 43 张 png | `assets/archive/` |
 | aseprite 源 | 47 个(tiles_v2 33 + icon_construct + levels/trial_v5 + mech 精灵 12)| `assets/art/`、`assets/art/levels/`、`assets/art/mech/` |
+| 音频数据 .tres | 34(data/music 6 + data/sfx 28)| `data/music/`、`data/sfx/` | M-7/M-8 数值资源化(v0.38):BGM motif 与音效规格全 @export,Inspector 直调 |
 | svg 图标 | 69 个(7 类)| `assets/svg/` |
 | 字体 | 1(NotoSansSC-VF)| `assets/fonts/` |
 

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_funbt"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_d474b"]
+
+[sub_resource type="Resource" id="Resource_osd07"]
+script = ExtResource("1_funbt")
+duty = 0.4
+note = "C5"
+f1 = 659.26
+dur = 0.045
+vol = 0.5
+dec = 30.0
+
+[resource]
+script = ExtResource("2_d474b")
+id = "ui_click"
+base_db = -10.0
+layers = Array[ExtResource("1_funbt")]([SubResource("Resource_osd07")])

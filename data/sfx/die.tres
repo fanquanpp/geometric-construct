@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="SfxSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/sfx_layer.gd" id="1_tr6ja"]
+[ext_resource type="Script" path="res://scripts/data/sfx_spec.gd" id="2_cfm5c"]
+
+[sub_resource type="Resource" id="Resource_bbkgh"]
+script = ExtResource("1_tr6ja")
+wave = "saw"
+note = "G3"
+f1 = 65.41
+dur = 0.4
+vol = 0.85
+dec = 6.0
+harm = Array[Vector2]([Vector2(0.5, 0.3)])
+
+[sub_resource type="Resource" id="Resource_l2bhn"]
+script = ExtResource("1_tr6ja")
+wave = "noise"
+dur = 0.22
+vol = 0.4
+dec = 14.0
+
+[resource]
+script = ExtResource("2_cfm5c")
+id = "die"
+base_db = -4.0
+jitter = 0.02
+layers = Array[ExtResource("1_tr6ja")]([SubResource("Resource_bbkgh"), SubResource("Resource_l2bhn")])
