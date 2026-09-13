@@ -15,6 +15,10 @@ var _unlocked := 0
 var _open := false
 var _tween: Tween
 
+## 卡片框线素材(aseprite 源 assets/art/ui/card_frame.aseprite;_draw 弃用):
+## 九宫格:墨面板 + 纸白顶规线 + 红角刻。
+var _card_frame: Texture2D = load("res://assets/ui/card_frame.png")
+
 @onready var _shade: ColorRect = %Shade
 @onready var _card: PanelContainer = %Card
 @onready var _title_label: Label = %TitleLabel
@@ -32,17 +36,13 @@ func _ready() -> void:
 	_shade.color = Color(Palette.I.ink, 0.92)
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	%Center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
-	_card.draw.connect(func() -> void:
-		var r := Rect2(Vector2.ZERO, _card.size)
-		_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
-		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
-				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
-			var sx := -1.0 if corner.x == 0.0 else 1.0
-			var sy := -1.0 if corner.y == 0.0 else 1.0
-			_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
-			_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
+	var frame := StyleBoxTexture.new()
+	frame.texture = _card_frame
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		frame.set_texture_margin(side, 20.0)
+		frame.set_content_margin(side, 0.0)
+	_card.add_theme_stylebox_override("panel", frame)
+	_card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # 像素纪律:禁柔化
 	_card.resized.connect(func() -> void:
 		_card.pivot_offset = _card.size / 2.0)
 	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",

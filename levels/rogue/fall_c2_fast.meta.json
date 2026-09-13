@@ -1,0 +1,72 @@
+{
+ "name": "重跑 · 钟摆井(快)",
+ "focus": 2,
+ "intro": "井壁两侧轮番伸闸:天、地、天、地、天。逆把自己荡成一只钟摆。",
+ "size": {
+  "x": 3200,
+  "y": 1080
+ },
+ "kill_y": 1400,
+ "top_kill_y": -420,
+ "roster": [
+  2
+ ],
+ "art": "res://assets/levels/rogue/fall_c2_fast.png",
+ "piano_notes": [],
+ "ramps": [],
+ "movers": [],
+ "hints": [
+  {
+   "pos": {
+    "x": 300,
+    "y": 700
+   },
+   "text": "置换:按跳跃键在天与地之间翻转",
+   "touch": "点按跳跃键:在天与地之间翻转"
+  },
+  {
+   "pos": {
+    "x": 1400,
+    "y": 650
+   },
+   "text": "五道闸:像钟摆一样连着翻",
+   "touch": "五道闸:连着翻转穿过"
+  }
+ ],
+ "zones": [
+  {
+   "rect": {
+    "x": 0,
+    "y": 0,
+    "w": 700,
+    "h": 1080
+   },
+   "name": "Z0 出生"
+  },
+  {
+   "rect": {
+    "x": 700,
+    "y": 0,
+    "w": 2000,
+    "h": 1080
+   },
+   "name": "Z1 钟摆井"
+  },
+  {
+   "rect": {
+    "x": 2700,
+    "y": 0,
+    "w": 500,
+    "h": 1080
+   },
+   "name": "Z2 归门"
+  }
+ ],
+ "portals": [],
+ "launch_pads": [],
+ "lever_gates": [],
+ "timed_bridges": [],
+ "push_boxes": [],
+ "_title": "",
+ "_note": ""
+}

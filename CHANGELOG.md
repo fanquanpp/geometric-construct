@@ -3,6 +3,105 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.38.0(2026-09-13)
+
+> **重跑回归(RE-RUN)+ 关卡幕结构重置 + 地图全量 aseprite 化**三主项。
+> 肉鸽:v0.17 起休眠的入口重新点亮,片段库 v1 重开——疾/跃/逆/圆各
+> 3 章 × 快稳二选一 + 章末精英考共 28 枚手工片段(选路 = 难度旋钮,
+> 章节沿「引入 → 发展 → 转折」递进,精英考 = 组合大考),静态纪律
+> (gridcheck 扩容)与实跑走查(rogue_check 机器人)双门禁看护。
+> 关卡:幕 0 扩为两场(试炼场 + 双子试水关 pair_trial 修复入库),
+> 幕结构按 `total` 预留排练位。地图:全部 30 关接通 aseprite SSOT 管线
+> (源 → map/map_ent 语义层 → ase2level 编译),UI 卡片框线弃用 `_draw`
+> 改用 aseprite 素材。门禁:check-only 全绿 / gridcheck PASS warns 同基线 /
+> rogue_check 28 片段 ALL PASS / trait / nettest / dualtest / recalltest 全绿。
+
+### 新增
+- **肉鸽片段库 v1**(`levels/rogue/` 28 枚 + `scripts/data/rogue_fragments.gd`
+  重写为「拓扑清单 + JSON 装载器」):每枚片段单一母题、接口对齐
+  (左端出生带 / 尾部归门),快稳两排法 = 同一母题的手工参数变体;
+  卡面文案(`_title` / `_note`)住 `.meta.json` 创作侧,关卡 JSON 保持
+  编译产物纯净。章节母题:疾 = 疾风断桥 / 断崖长跳 / 登天窄台 → 天隙试炼;
+  跃 = 弹跃梯田 / 反弹深井 / 折叠坠落 → 无桥天空;逆 = 双面走廊 /
+  钟摆井 / 镜廊 → 深渊回廊;圆 = 惯性滑道 / 过山车 / 门链 → 终末过山车。
+- **可达性分析器 `tests/reach_check.gd`(可玩性主门禁)+ 裕度 .tres**:
+  运动路径 + 落点数学(联网核对 PCG 共识:解析式可达图与模拟实跑互补,
+  前者数据明确毫秒级)——按闭式解把每关建成「可站立面图」(跳跃弧
+  v0=√(2gh) / 水平射程 R=vt / 落差抛物线 / 弹射板含终端速度积分 /
+  贴邻台阶上下行 / 置换天地互换 / 闸门遮断),BFS 判出生→归门可达,
+  逐边输出裕度(「缝350 射程465 裕度+115」);物理常量直读
+  MovementTuning + characters/*.tres(SSOT 零重复),裕度调参 =
+  data/tuning/reach_margins.tres(ReachMargins,@export,.tres 纪律)。
+  30 关 ALL PASS;`rogue_check` 机器人降级为物理烟测。
+- **走查机器人 `tests/rogue_check.gd`**:headless 逐片段真建关卡真跑物理,
+  按主角策略(疾恒冲刺+缺口/墙起跳、跃贴墙停滞消费二段跳、逆被拦即翻转、
+  圆只推右交惯机关)实走到专属归门判 PASS;坠坑 / 卡死 / 50s 超时判 FAIL;
+  `--focus=N` 单链、`--trace` 逐帧诊断。28/28 ALL PASS。
+- **gridcheck 扩容**:`tests/grid_check.gd` 把 RogueFragments 全库纳入
+  静态纪律(吸附 / 净空 / 行程 / 越界 / 伍门 / 接缝六则),片段库缺文件
+  直接 FAIL;`--levels-only` 可跳过。30 关全查 warns=13 与基线持平。
+- **菜单 R 键**:标题菜单 `R` 直入重跑(键位提示条同步);重跑选体弹层
+  开启时 Esc 收回,数字键不穿透。
+
+### 变更
+- **肉鸽入口回归**(`scenes/ui/menu_layer.tscn`):右下按钮组重排为
+  「开始(通栏红实心)→ 重跑(红描边)/ 双人试炼(橙描边)→ 档案 / 设置」,
+  红系 = 单人语言、橙 = 双人语言;入场分层浮现把重跑钮纳入。
+- **肉鸽弹层键盘 / 手柄可用**(`scripts/ui/rogue_layer.gd`):选体 / 选路 /
+  词条 / 结算卡开启焦点态(红描边 = 焦点),延迟落焦第一张卡;
+  选体阶段开放 Esc 取消,选路 / 词条必须选完(肉鸽纪律)。
+- **幕结构重置**(`scripts/data/level_data.gd`):幕 0「机制试炼场 · 功能测试」
+  扩为两场(0 机关全览 + 1 伍试水),hint 改「机关全览 · 双子试水——一切
+  机制的可玩目录」;幕 1「关卡设计」占位幕保持未上演(机制优先决策不变)。
+- **地图全量 aseprite 化**:`tools/level_ase_build.py` 逆向构建器上线——
+  手排 JSON → 10 图层 PNG(trial_v5 同构:视觉 6 层 + 语义 map/map_ent)
+  → Aseprite CLI 组装 `.aseprite` 源 → 导出地图皮与语义层 → 官方
+  ase2level.py 编译回写关卡 JSON,内置 parity 逐项校验。30 关全部带
+  `art` 地图皮,LaneRenderer 让位(碰撞照走平台组件,art-style §6.2 例外条款)。
+- **UI 卡片框线弃用 `_draw`**:新增 `assets/art/ui/card_frame.aseprite`
+  (墨面板 + 纸白顶规线 + 红角刻,九宫格)与 `poster_frame.aseprite`
+  (海报外框空心线框);rogue 弹层卡 / 剧目二级菜单卡改 `StyleBoxTexture`,
+  标题菜单外框改场景内 `NinePatchRect`(R1:装饰进场景与素材,代码零绘制)。
+
+### 修复
+- **【严重】进关卡后世界永久黑幕(v0.37 转场迁移引入)**:hud.tscn 的
+  `%Fade` 占位节点自带不透明全屏黑(v0.32 场景化起),旧 `fade_from_black`
+  每次进关卡手动淡出;2ca94ce 转场迁 `TransitionFX` 后注释「保留为兼容
+  占位」再无人清除它 → 黑幕(HUD 层 10)恒盖世界画布(0)与背景(-10),
+  菜单 / 肉鸽层在其上故只有局内全黑。修复 = HUD 就绪时 `_fade.visible =
+  false`(黑场与大流转全部由 TransitionFX 承担)。诊断路径:像素二分
+  (db00192 亮 / 2ca94ce 黑)→ 换 hud 探针定罪 → DIAG 状态打印排除
+  TransitionFX 本体 → 读场景定案。附带发现:后台 / 被遮挡窗口的 Tween
+  冻结会让转场黑幕卡住——分镜 / 自动化钩子统一减动效硬切
+  (`--transitionshot` 例外),`on_covered` 照常触发。
+- **滑雪带加载失效(v0.30 起潜伏)**:`level_data.gd` 读
+  `ski_patches` 未解 `{rect}` 包裹,trial_v5 滑雪带一直装载为空矩形
+  (摩擦区消失);兼容 `{rect}` 与裸 `{x,y,w,h}` 两式。
+- **肉鸽片段 spawns 按几何体下标索引**:28 枚片段初次排布误按名册位,
+  走查机器人捕获后全部重排(`spawns[focus]`)。
+- **两处「数学可达但走查紧跃距」片段修正**:跃 c3快 高架走道
+  640→700(弱回弹顶点恰可落上,按住跳为加速捷径——对不按跳的玩家
+  也宽容)+ 弹毯左扩(1100-1900);圆 c3快 弹射矢量加深(500,-900 →
+  700,-1200,两种发射语义下落点均过渊)。机器人跃策略维持「贴墙
+  停滞消费二段跳」——试过的「回弹按住」策略在窄塔段过弹坠亡,弃用
+  (弹毯折返关的可通过性由 reach_check 数学门禁 + 关卡几何保证)。
+- **pair_trial 五项 gridcheck 违规 + 双子路径重构**(2026-09-13 登记
+  5 项:摆渡扫掠 / 伍门可达 / 共面接缝等):纯 JSON 手写关(无 aseprite
+  源先例)平层重构——界走天花跳阶下潜、边走地面台阶登塔、逆翻转穿界,
+  伍门 ±50 区双落点齐备;`spawns` 补 `{a,b}` 字典契约;入库幕 0 第 2 场。
+- **robgeshot 走查前置缺陷**:probe 阶段发现裸 SceneTree 下 LevelRoot
+  信号重连抢挂实体、jump_cut 空中松键截断射程两类机器人侧问题,均在
+  `rogue_check.gd` 内收口(立即 free 旧关 / 落地前不松跳跃)。
+
+### 文档
+- **AGENTS.md 强制条款**:R1 升格「不允许只有一个 Main 场景」为硬性
+  验收项(Godot 官方场景组织最佳实践背书:场景自包含 / 依赖最小化 /
+  组合优于继承)+ UI 装饰禁 `_draw` 一律素材化条款 + 已知坑速查补
+  「GDScript 无列表推导式」与「全屏遮罩占位节点转场接管后须显式退役」。
+- roguelike.md 状态行改「现行(v0.38.0 重跑回归)」+ 片段库 v1 记录;
+  levels.md §0 补 aseprite 管线全量接线注记;ASSETS.md 素材统计
+  (aseprite 源 47 → 79,关卡美术层 1 → 30);README 版本行与内容概述。
+
 ## v0.37.0(2026-09-13)
 
 > **加成数值条(标尺 v2 → v3)+ 联机选图选角编排**双主项。数值系统:
@@ -123,6 +222,20 @@
 > 拓扑;迁移经 ResourceSaver 生成 + 回读逐字段平价断言(AMBCHECK
 > 6 motif 峰值/RMS 逐位一致);SFX 合成层规格裁定暂不资源化(合成
 > 引擎实现细节,先例 run_modifiers)——台账 REFACTOR §八 M-7 ✅。
+
+> ——
+> **同版第六主项 · 表现收口批次(M-8 + P0 尾款 + 三大规划件)**:
+> ①M-8 音效规格 .tres 化(28 表,SfxSpec/SfxLayer @export,三步迁移
+> 平价断言,合成内核零改动)——音频域数值全部进 Inspector;②归门
+> 三档光(P0 尾款清偿:ExitDoor PointLight2D + 3 档阶跃环形贴图,
+> 空档熄灯守同屏 ≤4 预算);③幕间折线幕帘(TransitionFX 第五式
+> CURTAIN:六竖幅 45° 齿缘幕落,回菜单三处接线);④BEAT EVENT 首批
+> (Ambience 四通道信号,订阅者 = 地图皮信标主拍强闪 + 记录点信标
+> 对拍呼吸);⑤镜头 Freeze hitstop(CameraRig.freeze,消费点 = 封印,
+> 减动效门控)。门禁:transition_check 五式 ALL PASS / AMBCHECK ALL
+> PASS / recalltest 4 PASS / dualtest ALL PASS / trait_check ALL PASS /
+> transitionshot 幕帘分镜走查通过(修复两笔:层可见性遗漏、多边形
+> 蝴蝶结自交)。
 
 ## v0.36.0(2026-09-13)
 

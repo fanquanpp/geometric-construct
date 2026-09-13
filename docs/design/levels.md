@@ -8,6 +8,28 @@
 
 ## 0. 关卡数据规范
 
+- **v0.38.0 分层系统盘点(用户问询定案)**:项目先后有三套地图分层
+  开发系统——① **LaneRenderer 程序化语义渲染**(world/render,八层定值
+  + who 集合 + 高亮三档 + 前景遮挡,全 `_draw`);② **MapSkin 地图皮**
+  (v0.27,`def.art` 非空时 aseprite 整图接管外观、LaneRenderer 让位,
+  碰撞照走组件,art-style §6.2 例外条款);③ **tiles_v2 七层栈瓦片**
+  (33 源,shadow/body/panel/edge/accent/guide 配方,仅服务档案图鉴,
+  不进运行时)。**现状 = ② 为现行主体**(v0.38 起 30 关全部带地图皮),
+  ① 降级为无 art 关卡的兜底 + 动态高亮描边(TerrainKit.draw_focus),
+  ③ 维持图鉴专用。**分层存在必要性结论**:作者侧分层(map/map_ent 语义
+  层 + 视觉六层)必要——语义层是碰撞 SSOT(ase2level 输入),视觉分层
+  让地形 / 亮缘 / 强调 / 远景各自独立改不互相踩;运行时压平为单 PNG,
+  层次感由引擎侧承担(Parallax2D 背景 / DirectionalLight2D 光影 /
+  MapSkinFX 动效),分层渲染无必要。
+- **v0.38.0 管线全量接线**:全部关卡(含肉鸽片段 28 枚与 pair_trial)均有
+  aseprite SSOT 源(`assets/art/levels/rogue/*.aseprite`,图层结构与
+  trial_v5 对齐:bg_deep/bg_towers/bg_mid/terrain/edge/accent/fx/guide +
+  隐藏语义层 map/map_ent)。地图皮 = `assets/levels/rogue/*.png`,
+  语义层 = `*_map.png` / `*_ent.png`,参数与文案 = `levels/rogue/*.meta.json`
+  (含路线卡 `_title` / `_note`),经 `tools/ase2level.py` 编译成关卡 JSON;
+  `tools/level_ase_build.py` 为逆向构建器(手排 JSON → 图层 → 编译回写,
+  内置 parity 逐项校验)。手工排布 JSON 不再直接入库。
+
 - **1 格 = 100 px**;一切坐标、尺寸、缺口、高差按格心算,再 ×100 落数据。
 - 关卡边界由 CameraRig 四锁(`limit_left/top/right/bottom`)= `LevelDef.size` 推导,
   与 TWA 的"相机四锁即世界"一致;平台摆出界没有意义。

@@ -1,0 +1,72 @@
+{
+ "name": "重跑 · 反弹深井(快)",
+ "focus": 1,
+ "intro": "塔台尽头没有桥,只有一口深井。跃把坠落折叠成上升:跳下去,弹回来。",
+ "size": {
+  "x": 3200,
+  "y": 1080
+ },
+ "kill_y": 1400,
+ "top_kill_y": -420,
+ "roster": [
+  1
+ ],
+ "art": "res://assets/levels/rogue/spring_c2_fast.png",
+ "piano_notes": [],
+ "ramps": [],
+ "movers": [],
+ "hints": [
+  {
+   "pos": {
+    "x": 300,
+    "y": 700
+   },
+   "text": "塔台:窄台逐级而上",
+   "touch": "塔台:窄台逐级而上"
+  },
+  {
+   "pos": {
+    "x": 1700,
+    "y": 300
+   },
+   "text": "深井:跳下去,井底会把你弹回来",
+   "touch": "深井:跳下去,弹回来"
+  }
+ ],
+ "zones": [
+  {
+   "rect": {
+    "x": 0,
+    "y": 0,
+    "w": 900,
+    "h": 1080
+   },
+   "name": "Z0 出生"
+  },
+  {
+   "rect": {
+    "x": 900,
+    "y": 0,
+    "w": 1400,
+    "h": 1080
+   },
+   "name": "Z1 塔台深井"
+  },
+  {
+   "rect": {
+    "x": 2400,
+    "y": 0,
+    "w": 800,
+    "h": 1080
+   },
+   "name": "Z2 归门"
+  }
+ ],
+ "portals": [],
+ "launch_pads": [],
+ "lever_gates": [],
+ "timed_bridges": [],
+ "push_boxes": [],
+ "_title": "",
+ "_note": ""
+}

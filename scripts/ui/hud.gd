@@ -46,6 +46,11 @@ var _anchor_flash := {                   # 置换锚闪(刻度带色序互换,�
 func _ready() -> void:
 	var touch := _touch_mode()
 	_apply_styles()
+	# —— %Fade 退役(v0.38 修复):场景占位节点自带不透明全屏黑(v0.32 起),
+	# 旧 fade_from_black 每次进关卡手动淡出;转场迁 TransitionFX 后无人
+	# 再清它 → 永久黑幕盖住世界画布(层 10 > 世界 0 > 背景 -10),
+	# 菜单 / 肉鸽层在其上所以只有局内黑。黑场 / 大流转全部由 _fx 承担。
+	_fade.visible = false
 	# —— 构成主义转场层(motion.md §2.3 实装,黑场之外的三类大流转)——
 	_fx = TransitionFX.new()
 	add_child(_fx)

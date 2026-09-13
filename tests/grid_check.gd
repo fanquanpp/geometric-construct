@@ -1,6 +1,7 @@
 extends SceneTree
 ## --gridcheck headless 校验器(levels.md §8.4,坐标化辅助设计):
-## 装载 LevelData.LEVELS 逐关检查数据纪律:
+## 装载 LevelData.LEVELS + 肉鸽片段库(RogueFragments,v0.38.0 起)逐关检查
+## 数据纪律:
 ##   1. 吸附:全部数值必须为整数像素(硬性 FAIL);对齐 0.1 格(10px)
 ##      为建议(FAIL 不计,仅 WARN 计数)
 ##   2. 净空:可行走面(faces=full/top 顶面 + faces=bottom 底面)沿
@@ -13,7 +14,7 @@ extends SceneTree
 ##   6. 共面接缝:墙状竖直件(宽 ≤2.6 格、高 ≥1.2 格)底缘与可行走面
 ##      齐平或嵌入不足 0.5 格 = 违规(防高速贴地转角穿模)
 ## 运行:godot --headless --path . --script res://tests/grid_check.gd
-##       (可加 -- --level=N 只查单关)
+##       (可加 -- --level=N 只查单关;--levels-only 跳过肉鸽片段)
 ## 全部通过输出 GRIDCHECK PASS(退出码 0);任何 FAIL 退出码 1。
 
 var _fails: Array = []
@@ -23,9 +24,12 @@ var _warns := 0
 func _initialize() -> void:
 	var levels := LevelData.LEVELS
 	var only := -1
+	var levels_only := false
 	for raw in OS.get_cmdline_user_args():
 		if raw.begins_with("--level="):
 			only = int(raw.substr(8))
+		elif raw == "--levels-only":
+			levels_only = true
 	if levels.is_empty():
 		print("GRIDCHECK FAILED: LevelData.LEVELS 为空")
 		quit(1)
@@ -36,6 +40,11 @@ func _initialize() -> void:
 			continue
 		_check_level(li, levels[li])
 		checked += 1
+	# —— 肉鸽片段库(静态纪律同关卡;缺文件在装载期即报错)——
+	if not levels_only and only < 0:
+		for it in RogueFragments.all_defs():
+			_check_level(it["label"], it["def"])
+			checked += 1
 	if _fails.is_empty():
 		print("GRIDCHECK PASS (levels=%d, warns=%d)" % [checked, _warns])
 		quit(0)
@@ -54,11 +63,11 @@ func _warn(msg: String) -> void:
 	print("GRIDCHECK WARN: ", msg)
 
 
-func _snap_check(li: int, id: String, v: float) -> void:
+func _snap_check(li: Variant, id: String, v: float) -> void:
 	if v != floorf(v):
-		_fail("L%d %s 吸附:非整数像素 %.2f" % [li, id, v])
+		_fail("[%s] %s 吸附:非整数像素 %.2f" % [li, id, v])
 	elif int(v) % 10 != 0:
-		_warn("L%d %s 建议对齐 0.1 格:%.0f" % [li, id, v])
+		_warn("[%s] %s 建议对齐 0.1 格:%.0f" % [li, id, v])
 
 
 func _body_need(who: Array, inverted: bool) -> float:
@@ -73,7 +82,7 @@ func _body_need(who: Array, inverted: bool) -> float:
 	return (need + 20.0) if need > 0.0 else 0.0
 
 
-func _check_level(li: int, def: LevelDef) -> void:
+func _check_level(li: Variant, def: LevelDef) -> void:
 	# —— 收集实体件(净空/接缝检查对象)与运动件包围盒 ——
 	var solids: Array = []
 	for p0 in def.platforms:
@@ -111,7 +120,7 @@ func _check_level(li: int, def: LevelDef) -> void:
 		for v in [r.position.x, r.position.y, r.end.x, r.end.y]:
 			_snap_check(li, id, v)
 		if not bounds.encloses(r):
-			_fail("L%d %s 越界:%s 出关卡边界 %s" % [li, id, r, bounds])
+			_fail("[%s] %s 越界:%s 出关卡边界 %s" % [li, id, r, bounds])
 
 	for i in def.platforms.size():
 		var r := Comp.rect_of(def.platforms[i])
@@ -122,7 +131,7 @@ func _check_level(li: int, def: LevelDef) -> void:
 			_snap_check(li, "曲面折点#%d.%d" % [0, i], pnt.x)
 			_snap_check(li, "曲面折点#%d.%d" % [0, i], pnt.y)
 			if not bounds.has_point(pnt):
-				_fail("L%d 曲面折点越界:%s" % [li, pnt])
+				_fail("[%s] 曲面折点越界:%s" % [li, pnt])
 			i += 1
 	for i in def.movers.size():
 		var r: Rect2 = def.movers[i]["rect"]
@@ -137,7 +146,7 @@ func _check_level(li: int, def: LevelDef) -> void:
 			_snap_check(li, "出生点#%d" % i, pnt.x)
 			_snap_check(li, "出生点#%d" % i, pnt.y)
 			if not bounds.has_point(pnt):
-				_fail("L%d 出生点#%d 越界:%s" % [li, i, pnt])
+				_fail("[%s] 出生点#%d 越界:%s" % [li, i, pnt])
 	for e in def.exits:
 		_snap_check(li, "门#%d" % e[0], e[1].x)
 		_snap_check(li, "门#%d" % e[0], e[1].y)
@@ -146,7 +155,7 @@ func _check_level(li: int, def: LevelDef) -> void:
 		_snap_check(li, "信标#%d" % i, cp.x)
 		_snap_check(li, "信标#%d" % i, cp.y)
 		if not bounds.has_point(cp):
-			_fail("L%d 信标#%d 越界:%s" % [li, i, cp])
+			_fail("[%s] 信标#%d 越界:%s" % [li, i, cp])
 	for z in def.zones:
 		snap_rect.call("分区 %s" % z.get("name", "?"), z["rect"])
 
@@ -177,7 +186,7 @@ func _check_level(li: int, def: LevelDef) -> void:
 				if absf(edge - face_y) <= 2.0:
 					continue    # 贴合叠放(承台 / 吊挂),非侵入
 				if edge > band_lo and edge < band_hi:
-					_fail("L%d 净空不足:组件 %d(%s)顶/底面 y%.0f 被 %d 侵入(需 %.0f)"
+					_fail("[%s] 净空不足:组件 %d(%s)顶/底面 y%.0f 被 %d 侵入(需 %.0f)"
 						% [li, Comp.id_of(c), faces, face_y, Comp.id_of(d), need])
 
 	# —— 3. 行程:mover 扫掠包围盒 vs 实体 ——
@@ -186,7 +195,7 @@ func _check_level(li: int, def: LevelDef) -> void:
 		for s in solids:
 			var inter: Rect2 = (box as Rect2).intersection(s["rect"])
 			if inter.size.x > 2.0 and inter.size.y > 2.0:
-				_fail("L%d 摆渡#%d 行程扫掠与实体 %d 相交:%s"
+				_fail("[%s] 摆渡#%d 行程扫掠与实体 %d 相交:%s"
 					% [li, mi, Comp.id_of(s), inter])
 
 	# —— 5. 伍门可达:双体门 ±50 区内边(顶面)与界(底面)双落点 ——
@@ -211,7 +220,7 @@ func _check_level(li: int, def: LevelDef) -> void:
 					and absf(sr.end.y + 15.0 - center.y) <= 50.0:
 				has_ceiling = true
 		if not (has_ground and has_ceiling):
-			_fail("L%d 伍门(%s)不可达:门区内边落点=%s / 界落点=%s"
+			_fail("[%s] 伍门(%s)不可达:门区内边落点=%s / 界落点=%s"
 				% [li, center, has_ground, has_ceiling])
 
 	# —— 6. 共面接缝:墙状竖直件底缘嵌入不足 0.5 格 ——
@@ -230,5 +239,5 @@ func _check_level(li: int, def: LevelDef) -> void:
 				continue
 			var sink: float = wr.end.y - sr.position.y
 			if sink >= 0.0 and sink < 50.0:
-				_fail("L%d 共面接缝:竖直件 %d 底缘嵌入仅 %.0fpx(需 ≥50,levels.md §8.4)"
+				_fail("[%s] 共面接缝:竖直件 %d 底缘嵌入仅 %.0fpx(需 ≥50,levels.md §8.4)"
 					% [li, Comp.id_of(w), sink])

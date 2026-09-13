@@ -47,9 +47,8 @@ func _ready() -> void:
 	var root := _root
 	root.theme = Ui.make_theme()
 
-	# —— 海报外框 + 角部刻度(色值运行时施加) ——
-	_frame.draw.connect(func() -> void:
-		_frame.draw_rect(Rect2(Vector2.ZERO, _frame.size), Color(Palette.I.paper, 0.16), false, 1.0))
+	# —— 海报外框(scenes 侧 NinePatchRect + poster_frame.png,aseprite 素材;
+	# 角部红块为场景内 ColorRect,运行时只施色) ——
 	for c: ColorRect in [%CornerTL, %CornerTR, %CornerBL, %CornerBR]:
 		c.color = Palette.I.red
 
@@ -64,7 +63,7 @@ func _ready() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, false, 8)
 	_intro.text = "四个几何体,被丢进一个不存在的地方。\n形状即性格,属性即命运——\n速度、弹性、置换与惯性,\n唯有互相依靠,才能找到各自的出口。"
 	# 左下:操作提示(触屏设备无键盘,改为触摸指引)
-	_keys.text = "1–4 选择剧目    C 档案几何    Esc 退出" \
+	_keys.text = "1–4 选择剧目    R 重跑    C 档案几何    S 设置    Esc 退出" \
 		if not DisplayServer.is_touchscreen_available() \
 		else "点按剧目进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
 	Ui.style(_keys, 13, Ui.LIGHT, Color(Palette.I.dim, 0.9))
@@ -107,7 +106,8 @@ func _ready() -> void:
 	Ui.wire_button(_start_btn)
 	_start_btn.pressed.connect(func() -> void: m.start_game())
 
-	# 肉鸽(重跑)入口移除 —— 机制完善期之后随关卡设计一起回归(v0.17.3)
+	# 肉鸽(重跑)入口 v0.38.0 回归:红描边 = 单人重跑语言,与红色实心的
+	# 开始/继续同族;双人试炼保持橙色(P2 侧语言)。
 	_rogue_btn.add_theme_font_size_override("font_size", 18)
 	_rogue_btn.add_theme_font_override("font", Ui.HEAD)
 	_rogue_btn.add_theme_color_override("font_color", Palette.I.red)
@@ -188,8 +188,8 @@ func _play_entrance() -> void:
 	tw.set_parallel(true)
 	tw.tween_property(_kicker, "modulate:a", 1.0, 0.30).set_delay(0.10)
 	tw.tween_property(_intro, "modulate:a", 1.0, 0.35).set_delay(0.72)
-	for item: Control in [_sec, _chapter_hint, _start_btn, _dual_btn, _panel_btn,
-			_settings_btn]:
+	for item: Control in [_sec, _chapter_hint, _start_btn, _rogue_btn, _dual_btn,
+			_panel_btn, _settings_btn]:
 		item.modulate.a = 0.0
 		tw.tween_property(item, "modulate:a", 1.0, 0.22).set_delay(0.55)
 	# 剧目行逐项浮现(M7:自上而下 stagger 0.06s)

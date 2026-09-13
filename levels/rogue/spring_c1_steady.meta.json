@@ -1,0 +1,72 @@
+{
+ "name": "重跑 · 弹跃梯田(稳)",
+ "focus": 1,
+ "intro": "梯田的缓坡。高差收敛到一格二,弹跳的节奏可以慢慢找。",
+ "size": {
+  "x": 3200,
+  "y": 1080
+ },
+ "kill_y": 1400,
+ "top_kill_y": -420,
+ "roster": [
+  1
+ ],
+ "art": "res://assets/levels/rogue/spring_c1_steady.png",
+ "piano_notes": [],
+ "ramps": [],
+ "movers": [],
+ "hints": [
+  {
+   "pos": {
+    "x": 300,
+    "y": 700
+   },
+   "text": "缓梯:满跳上一级,高差 1.2 格",
+   "touch": "缓梯:满跳上一级"
+  },
+  {
+   "pos": {
+    "x": 1700,
+    "y": 500
+   },
+   "text": "弹性 100%:坠落会原样弹回",
+   "touch": "弹性 100%:坠落会原样弹回"
+  }
+ ],
+ "zones": [
+  {
+   "rect": {
+    "x": 0,
+    "y": 0,
+    "w": 800,
+    "h": 1080
+   },
+   "name": "Z0 出生"
+  },
+  {
+   "rect": {
+    "x": 800,
+    "y": 0,
+    "w": 1800,
+    "h": 1080
+   },
+   "name": "Z1 缓梯"
+  },
+  {
+   "rect": {
+    "x": 2600,
+    "y": 0,
+    "w": 600,
+    "h": 1080
+   },
+   "name": "Z2 归门"
+  }
+ ],
+ "portals": [],
+ "launch_pads": [],
+ "lever_gates": [],
+ "timed_bridges": [],
+ "push_boxes": [],
+ "_title": "",
+ "_note": ""
+}

@@ -1009,6 +1009,12 @@ func _parse_auto_shot() -> void:
 	# 分派给开发钩子执行器(scripts/dev/,导出剥离;缺失 = 钩子关闭)
 	var h := _dev_harness()
 	if h != null:
+		# 分镜 / 自动化钩子统一减动效硬切(reveal/transition 走硬切分支,
+		# on_covered 照常触发):后台 / 被遮挡窗口的 Tween 冻结会把全屏黑幕
+		# 卡在 TransitionFX 层致截图全灭(v0.38 诊断定案);
+		# --transitionshot 例外——它验的就是转场动画本身。
+		if not _transition_shot:
+			SettingsManager.reduced_motion = true
 		if _auto_shot and args.has("--menushot"):
 			h.run_menu_shot()
 		# --introshot / --storyshot 自带开局流程,跳过通用 autoshot 以免抢关卡

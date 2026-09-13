@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/menu_layer.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/act_panel_card.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/ui/dual_pick_card.tscn" id="4"]
+[ext_resource type="Texture2D" path="res://assets/ui/poster_frame.png" id="poster_frame_png"]
 
 [node name="MenuLayer" type="CanvasLayer"]
 layer = 20
@@ -20,13 +21,19 @@ offset_right = 1280.0
 offset_bottom = 720.0
 mouse_filter = 2
 
-[node name="FrameOutline" type="Control" parent="Root/Content"]
+[node name="FrameOutline" type="NinePatchRect" parent="Root/Content"]
 unique_name_in_owner = true
+texture_filter = 1
 offset_left = 16.0
 offset_top = 16.0
 offset_right = 1264.0
 offset_bottom = 704.0
 mouse_filter = 2
+texture = ExtResource("poster_frame_png")
+patch_margin_left = 24
+patch_margin_top = 24
+patch_margin_right = 24
+patch_margin_bottom = 24
 
 [node name="CornerTL" type="ColorRect" parent="Root/Content"]
 unique_name_in_owner = true
@@ -168,42 +175,41 @@ offset_bottom = 536.0
 [node name="StartBtn" type="Button" parent="Root/Content"]
 unique_name_in_owner = true
 offset_left = 670.0
-offset_top = 554.0
-offset_right = 910.0
-offset_bottom = 598.0
+offset_top = 544.0
+offset_right = 1170.0
+offset_bottom = 586.0
 text = "开始 / 继续"
 
 [node name="RogueBtn" type="Button" parent="Root/Content"]
 unique_name_in_owner = true
-visible = false
-offset_left = 930.0
-offset_top = 554.0
-offset_right = 1170.0
-offset_bottom = 598.0
+offset_left = 670.0
+offset_top = 596.0
+offset_right = 910.0
+offset_bottom = 638.0
 text = "重跑 · RE-RUN"
 
 [node name="DualBtn" type="Button" parent="Root/Content"]
 unique_name_in_owner = true
 offset_left = 930.0
-offset_top = 554.0
+offset_top = 596.0
 offset_right = 1170.0
-offset_bottom = 598.0
+offset_bottom = 638.0
 text = "双人试炼"
 
 [node name="PanelBtn" type="Button" parent="Root/Content"]
 unique_name_in_owner = true
 offset_left = 670.0
-offset_top = 610.0
+offset_top = 648.0
 offset_right = 910.0
-offset_bottom = 654.0
+offset_bottom = 690.0
 text = "档案几何"
 
 [node name="SettingsBtn" type="Button" parent="Root/Content"]
 unique_name_in_owner = true
 offset_left = 930.0
-offset_top = 610.0
+offset_top = 648.0
 offset_right = 1170.0
-offset_bottom = 654.0
+offset_bottom = 690.0
 text = "设 置"
 
 [node name="Floater0" type="TextureRect" parent="Root/Content"]

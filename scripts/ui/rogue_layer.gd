@@ -10,6 +10,9 @@ var dir = null                   # RogueDirector(避免类型环引用,运行时
 var _status_labels := {}
 var _card_tween: Tween
 
+## 卡片框线素材(aseprite 源 assets/art/ui/card_frame.aseprite;_draw 弃用)
+var _card_frame: Texture2D = load("res://assets/ui/card_frame.png")
+
 @onready var _root: Control = %Root
 @onready var _status: Control = %Status
 @onready var _overlay: Control = %Overlay   # 压暗层 + 居中卡片(选路 / 奖励 / 结算 / 选体)
@@ -86,18 +89,16 @@ func _open_overlay() -> VBoxContainer:
 		c.queue_free()
 	_overlay.visible = true
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
+	# 卡片框线 = aseprite 素材(assets/art/ui/card_frame.aseprite → PNG,
+	# 九宫格:墨面板 + 纸白顶规线 + 红角刻;代码侧零 _draw 装饰)
+	var frame := StyleBoxTexture.new()
+	frame.texture = _card_frame
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		frame.set_texture_margin(side, 20.0)
+		frame.set_content_margin(side, 0.0)
+	card.add_theme_stylebox_override("panel", frame)
+	card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # 像素纪律:禁柔化
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
-	card.draw.connect(func() -> void:
-		var r := Rect2(Vector2.ZERO, card.size)
-		card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
-		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
-				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
-			var sx := -1.0 if corner.x == 0.0 else 1.0
-			var sy := -1.0 if corner.y == 0.0 else 1.0
-			card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
-			card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
 	card.resized.connect(func() -> void: card.pivot_offset = card.size / 2.0)
 	center.add_child(card)
 	Adaptive.register_card(card)
@@ -113,7 +114,35 @@ func _open_overlay() -> VBoxContainer:
 	_card_tween.tween_property(card, "modulate:a", 1.0, 0.18)
 	_card_tween.tween_property(card, "scale", Vector2.ONE, 0.26) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# 键盘 / 手柄路径:卡片建好后延迟把焦点交给第一张卡(内容随 show_* 同帧填充)
+	_grab_first_card.call_deferred(center)
 	return vb
+
+
+## 焦点落位(延迟一帧,等 show_* 填充完):选卡可焦点,方向键 / 摇杆移动。
+func _grab_first_card(center: CenterContainer) -> void:
+	if not _overlay.visible or center.get_child_count() == 0:
+		return
+	var stack: Array = [(center.get_child(center.get_child_count() - 1) as Node)]
+	while not stack.is_empty():
+		var n: Node = stack.pop_front()
+		if n is Button and (n as Button).focus_mode != Control.FOCUS_NONE:
+			(n as Button).grab_focus()
+			return
+		for c in n.get_children():
+			stack.append(c)
+
+
+## 弹层是否开着(Main 的按键守卫据此拦截穿透)。
+func is_overlay_open() -> bool:
+	return _overlay.visible
+
+
+## 收回弹层(重跑选体阶段的 Esc 取消;选路 / 词条 / 结算必须选完,不开放取消)。
+func cancel_overlay() -> void:
+	if _card_tween != null and _card_tween.is_valid():
+		_card_tween.kill()
+	_close_overlay()
 
 
 func _close_overlay() -> void:
@@ -133,10 +162,11 @@ func _header(vb: VBoxContainer, title: String, sub: String) -> void:
 func _card_shell(min_size: Vector2) -> Button:
 	var b := Button.new()
 	b.custom_minimum_size = min_size
-	b.focus_mode = Control.FOCUS_NONE
+	# 焦点开启(键盘 / 手柄选卡;触屏点按不受影响)
 	b.add_theme_stylebox_override("normal",
 		Ui.sb(Color(Palette.I.ink_3, 0.99), 0, Color(Palette.I.paper, 0.20), 1, 0, 0))
 	b.add_theme_stylebox_override("hover", Ui.sb(Color(Palette.I.ink_3, 0.99), 0, Palette.I.red, 2, 0, 0))
+	b.add_theme_stylebox_override("focus", Ui.sb(Color(Palette.I.ink_3, 0.99), 0, Palette.I.red, 2, 0, 0))
 	b.add_theme_stylebox_override("pressed",
 		Ui.sb(Color(Palette.I.ink_3, 0.99), 0, Color(Palette.I.red, 0.6), 2, 0, 0))
 	Ui.wire_button(b, "")   # 卡片自管语义音:选体/选路 = click,词条 = buff

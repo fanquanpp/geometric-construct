@@ -22,7 +22,7 @@
 | 关卡(在演) | 1(机制试炼场 v5,分区 Z0–Z5)| `level_data.gd` LEVELS |
 | 关卡(历史文件未接线) | 1(伍试水 · 界与边)| `levels/pair_trial.json` |
 | 图鉴插图(入引擎) | 43 张 png | `assets/archive/` |
-| aseprite 源 | 47 个(tiles_v2 33 + icon_construct + levels/trial_v5 + mech 精灵 12)| `assets/art/`、`assets/art/levels/`、`assets/art/mech/` |
+| aseprite 源 | 79 个(tiles_v2 33 + icon_construct + levels/trial_v5 + **levels/rogue 28 + pair_trial** + mech 精灵 12 + **ui 卡框 2**)| `assets/art/`、`assets/art/levels/`(含 `rogue/`)、`assets/art/mech/`、`assets/art/ui/` |
 | 音频数据 .tres | 34(data/music 6 + data/sfx 28)| `data/music/`、`data/sfx/` | M-7/M-8 数值资源化(v0.38):BGM motif 与音效规格全 @export,Inspector 直调 |
 | svg 图标 | 69 个(7 类)| `assets/svg/` |
 | 字体 | 1(NotoSansSC-VF)| `assets/fonts/` |
@@ -211,7 +211,7 @@
 | 几何体肖像 svg | 5 | `assets/svg/characters/` | dash / spring / fall / roll / pair |
 | 图鉴插图 png | **43** | `assets/archive/` | 建筑 15 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200 |
 | 图鉴 aseprite 源 | 33 | `assets/art/tiles_v2/` | `bld_*` 15(v0.36 补 Kit 构件九件)+ `geo_*` 5 + `mech_*` 13 |
-| 关卡美术层 | 1 | `assets/levels/trial_v5.png`(源 `assets/art/levels/trial_v5.aseprite`,**全分辨率 6400×1080**)| 试炼场 v5 地图皮「长卷 · 归门圣环」(v0.29.1 细化升格,契约 art-style.md §6.2;沿革:v0.29 修 v0.27 双倍放大)|| 关卡语义层 | 2 | `assets/levels/trial_v5_map.png` + `_ent.png`(源同上 `map`/`map_ent` 层)| 颜色图例几何+锚点 SSOT,`tools/ase2level.py` 编译 `levels/trial_v5.json`(v0.30.0,契约见 levels.md §0.1)|
+| 关卡美术层 | 30 | `assets/levels/trial_v5.png`(源 `assets/art/levels/trial_v5.aseprite`,6400×1080,「长卷 · 归门圣环」)+ **肉鸽片段 28 张与 pair_trial 一张(v0.38.0,`assets/levels/rogue/*.png`,源 `assets/art/levels/rogue/*.aseprite`,由 tools/level_ase_build.py 按图层配方合成)** ||| 关卡语义层 | 2 | `assets/levels/trial_v5_map.png` + `_ent.png`(源同上 `map`/`map_ent` 层)| 颜色图例几何+锚点 SSOT,`tools/ase2level.py` 编译 `levels/trial_v5.json`(v0.30.0,契约见 levels.md §0.1)|
 | 机关精灵图库 | 12 源 + 12 条带 | `assets/art/mech/` | 限时桥/传送/弹射/琴键/加速门/推箱/动板/拉杆/曲面 buff + 爆点/尘/碎片动画,200×200 共 39 帧(v0.30.0,供机关 _draw→AnimatedSprite2D 迁移与图鉴动帧取用;气闸 4 帧随 v0.36 孤儿清退移除——「气闸」语义 = 踩踏开关多开关布局,由 LeverGate levers 承载)|
 
 | 游戏图标 | 7 | `icon.png`(256)+ `icon_192` + `icon_fg/bg/mono_432`(源 `assets/art/icon_construct.aseprite`)| 构成徽章 v3:墨底幽灵菱线 + 构成红斜面菱芯 + 四纸白卫星(菱/三角/圆/方);432 母版 ×4 整数导出,安全区内构图(v0.28.1,Android 启动器四字段已接线)|

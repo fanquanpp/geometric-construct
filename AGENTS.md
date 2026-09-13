@@ -28,7 +28,7 @@
 	 通过(顶弹 / 可推动 / 跳高的物理仿真);
    - 真机(Android debug apk)触屏走查关键链路。
 5. **已知坑速查**(详见各记忆与 docs):GDScript 方法内不支持嵌套
-   `func`(用 lambda);spawns 按下标索引;FontVariation 无渲染属性;
+   `func`(用 lambda);**GDScript 无列表推导式**(`[x for y in arr]` 是语法错误,用循环或 `Array.map/filter`);场景里的全屏遮罩节点(`%Fade` 之类)默认态即不透明时,转场系统接管后必须显式退役,否则永久盖住世界画布(层序:HUD > 世界 > 背景);spawns 按下标索引;FontVariation 无渲染属性;
    Rect2 无 is_empty();ThorVG 弧线 `A` 命令方向反直觉(用折线);
    MIUI adb tap 偶发双注入;`--quit-after` 单位是帧;Resource 共享
    引用(默认同一份数据,运行时写入串改全部使用者,`duplicate()`
@@ -50,12 +50,20 @@
 > 单场景(Main.tscn 独苗)与代码 `const` 数值是待清偿债,按
 > REFACTOR.md §八台账分批迁移,不阻塞机制优先。
 
-**R1 · tscn 优先,多场景组合(禁单场景巨石)**
-- 一切**常驻节点结构**(子系统容器 / UI 面板 / 实体 / 特效层 /
-  灯光 rig)必须落 `.tscn` 场景文件,编辑器中组装、`instantiate()`
-  复用;游戏本体不得只有 `Main.tscn` 一个场景,新系统禁止再往
-  单场景里拼树。
-- 脚本内 `Xxx.new()` + `add_child` 串常驻树 = 违规。仅两类豁免:
+**R1 · tscn 优先,多场景组合(禁单场景巨石 · 强制检查项)**
+- **不允许只有一个 Main 场景**——这是硬性验收项,不是风格建议:
+  游戏本体必须由多个合理设计的场景组合而成(子系统容器 / UI 面板 /
+  实体 / 特效层 / 灯光 rig 各自独立 `.tscn`,编辑器中组装、
+  `instantiate()` 复用);新系统禁止再往单场景里拼树,评审 / 交付时
+  发现「功能落在 Main 单场景内」即打回。依据 = Godot 官方场景组织
+  最佳实践(docs.godotengine.org → Best Practices → Scene organization):
+  场景应自包含、相互依赖最小化,可复用 / 可独立测试的节点组一律
+  独立成场景,组合优于继承。
+- 脚本内 `Xxx.new()` + `add_child` 串常驻树 = 违规。
+- **UI 装饰禁 `_draw`**(2026-09-13 用户拍板):框线 / 角刻 / 规线 /
+  花饰一律 aseprite 素材化(源入 assets/art,引擎用 PNG 入非 .gdignore
+  目录),由场景节点承载(NinePatchRect / TextureRect / StyleBoxTexture);
+  `_draw` 只留动态状态绘制(高亮脉冲 / 进度类)。仅两类豁免:
   ①运行时才能确定数量 / 形态的动态内容(粒子迸散 / 关卡内容物按
   JSON 编译装配 / 联机对端实体);②dev 钩子与测试分镜。豁免处
   必须注释注明「动态生成豁免」。

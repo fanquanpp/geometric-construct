@@ -1,8 +1,8 @@
 class_name LevelData
-## 关卡数据(v0.17 机制完善期):全部演出关卡已清空,
-## 仅保留「机制试炼场」单一功能测试关——
-## 分层语义 / 双平台置换(逆)/ 双子双平台(伍)/ 全机关物逐区自检;
-## 机制全部达到完美与正常后,才开始游戏关卡与剧情设计(用户决策 2026-09-10)。
+## 关卡数据(v0.38.0):幕 0「机制试炼场」= 机制试炼场(全机关物逐区自检)
+## + 伍试水·界与边(双子试水关,纯 JSON 手写);
+## 幕 1「关卡设计」仍为占位幕——机制全部达到完美与正常后,
+## 才开始游戏关卡与剧情设计(用户决策 2026-09-10)。
 ## 数值标准:1 格 = 100 px;可跳台阶高必须比 jump_units 低 0.1。
 
 static var LEVELS: Array[LevelDef] = []
@@ -40,14 +40,14 @@ static func _static_init() -> void:
 	ACTS.append({
 		"name": "机制试炼场",
 		"title": "功能测试",
-		"hint": "双平台置换 · 双子双平台 · 分层语义 · 全机关物,逐区自检",
+		"hint": "机关全览 · 双子试水 —— 一切机制的可玩目录",
 		"icon": "buttons/play-flat.svg",
-		"levels": [0],
+		"levels": [0, 1],
 	})
 	ACTS.append({
 		"name": "关卡设计",
 		"title": "未启动",
-		"hint": "机制全部完善与正常后,才开始关卡与剧情设计",
+		"hint": "机制全部完善与正常后,才开始关卡与剧情设计(2026-09-10 决策)",
 		"icon": "icons/lock-flat.svg",
 		"levels": [],
 	})
@@ -55,13 +55,14 @@ static func _static_init() -> void:
 	#   SSOT = aseprite 语义层(v0.30.0 地图管线):像素承载几何与锚点,
 	#   JSON 承载参数与文案;本文件不再硬编码任何关卡数据。
 	#   编辑流程:改 aseprite → aseprite CLI 导出 map/ent PNG → 跑编译器。
-	#   注:levels/pair_trial.json(双子试水关)未入库——不满足现行
-	#   grid_check 规则(摆渡扫掠 / 伍门可达 / 共面接缝,2026-09-13 实测
-	#   5 项),修复须经 aseprite 源重编译,登记待办见 REFACTOR §八。
-	#   联机选图页随本注册表增长,多关卡自然出现。
-	var f := FileAccess.open("res://levels/trial_v5.json", FileAccess.READ)
-	assert(f != null, "level json missing: res://levels/trial_v5.json")
-	LEVELS.append(from_json_text(f.get_as_text()))
+	#   例外:levels/pair_trial.json 为纯 JSON 手写关(无 aseprite 源、
+	#   无 art 皮,LaneRenderer 出图);v0.38.0 起修复五项 gridcheck 违规
+	#   并入编幕 0 第 2 场。
+	var files := ["res://levels/trial_v5.json", "res://levels/pair_trial.json"]
+	for path in files:
+		var f := FileAccess.open(path, FileAccess.READ)
+		assert(f != null, "level json missing: %s" % path)
+		LEVELS.append(from_json_text(f.get_as_text()))
 
 
 ## 关卡 JSON 契约版本(levels.md §0 / speed-dev data-contract.md §5):
@@ -128,7 +129,8 @@ static func from_json_text(text: String) -> LevelDef:
 		def.push_boxes.append({"cell": _json_vec2(pb.get("cell",
 				{"x": 0, "y": 0}))})
 	for sp in d.get("ski_patches", []):
-		def.ski_patches.append(_json_rect(sp))
+		# ase2level 产物为 {rect: …} 包裹;裸 {x,y,w,h}(编辑器契约)亦兼容
+		def.ski_patches.append(_json_rect(sp.get("rect", sp)))
 	for pp in d.get("portals", []):
 		def.portals.append({"a": _json_vec2(pp.get("a", {"x": 0, "y": 0})),
 			"b": _json_vec2(pp.get("b", {"x": 0, "y": 0}))})
