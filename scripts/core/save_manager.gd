@@ -20,6 +20,7 @@ static var I: SaveManager       # 全局引用(RunState 读取局外解锁)
 ##   rogue/runs          int    重跑总次数
 ##   rogue/style         bool   结算页装饰版式(落款红章)
 ##   rogue/seen_act1     bool   第一幕开演剧已播
+##   rogue/seen_act2..5  bool   第二~五幕开演剧已播
 ##   rogue/seen_rogue    bool   重跑序说已播
 var unlocked := 0
 var rogue_shards := 0
@@ -28,6 +29,10 @@ var rogue_best_chapter := 0
 var rogue_runs := 0
 var rogue_style := false
 var seen_act1 := false
+var seen_act2 := false    # 第二幕开演剧已播
+var seen_act3 := false    # 第三幕
+var seen_act4 := false    # 第四幕
+var seen_act5 := false    # 第五幕
 var seen_rogue := false
 var seen_rogue_dash := false    # 疾 · 个人单章已播
 var seen_rogue_spring := false  # 跃
@@ -69,6 +74,10 @@ func write_save() -> void:
 	cfg.set_value("rogue", "runs", rogue_runs)
 	cfg.set_value("rogue", "style", rogue_style)
 	cfg.set_value("rogue", "seen_act1", seen_act1)
+	cfg.set_value("rogue", "seen_act2", seen_act2)
+	cfg.set_value("rogue", "seen_act3", seen_act3)
+	cfg.set_value("rogue", "seen_act4", seen_act4)
+	cfg.set_value("rogue", "seen_act5", seen_act5)
 	cfg.set_value("rogue", "seen_rogue", seen_rogue)
 	cfg.set_value("rogue", "seen_rogue_dash", seen_rogue_dash)
 	cfg.set_value("rogue", "seen_rogue_spring", seen_rogue_spring)
@@ -112,6 +121,14 @@ func note_story(kind: String) -> void:
 	match kind:
 		"act1":
 			seen_act1 = true
+		"act2":
+			seen_act2 = true
+		"act3":
+			seen_act3 = true
+		"act4":
+			seen_act4 = true
+		"act5":
+			seen_act5 = true
 		"rogue_intro":
 			seen_rogue = true
 		"rogue_dash":
@@ -130,6 +147,14 @@ func story_seen(kind: String) -> bool:
 	match kind:
 		"act1":
 			return seen_act1
+		"act2":
+			return seen_act2
+		"act3":
+			return seen_act3
+		"act4":
+			return seen_act4
+		"act5":
+			return seen_act5
 		"rogue_intro":
 			return seen_rogue
 		"rogue_dash":
@@ -159,6 +184,10 @@ func _load_rogue(cfg: ConfigFile) -> void:
 	rogue_runs = int(cfg.get_value("rogue", "runs", 0))
 	rogue_style = bool(cfg.get_value("rogue", "style", false))
 	seen_act1 = bool(cfg.get_value("rogue", "seen_act1", false))
+	seen_act2 = bool(cfg.get_value("rogue", "seen_act2", false))
+	seen_act3 = bool(cfg.get_value("rogue", "seen_act3", false))
+	seen_act4 = bool(cfg.get_value("rogue", "seen_act4", false))
+	seen_act5 = bool(cfg.get_value("rogue", "seen_act5", false))
 	seen_rogue = bool(cfg.get_value("rogue", "seen_rogue", false))
 	seen_rogue_dash = bool(cfg.get_value("rogue", "seen_rogue_dash", false))
 	seen_rogue_spring = bool(cfg.get_value("rogue", "seen_rogue_spring", false))

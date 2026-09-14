@@ -79,11 +79,14 @@ func start_level(index: int, intro := true) -> void:
 	if NetSession.I != null and NetSession.I.is_net():
 		main.net_room_layer.visible = false
 		NetSession.I.on_level_built()
-	# 第一幕首次开演:先看开演剧,再上手(act1.ks 触发幕 = 第一幕)
-	if current == LevelData.first_level_of_act(0) and intro and not main._save.seen_act1:
-		main._save.note_story("act1")
-		main.get_tree().paused = true
-		main.show_story("act1")
+	# 幕开演剧(v0.44.0 泛化):首次进入某幕首场,播该幕开演剧(kind = act1..act5)
+	if act_i >= 0 and current == LevelData.first_level_of_act(act_i) \
+			and intro:
+		var kind := "act%d" % (act_i + 1)
+		if not main._save.story_seen(kind):
+			main._save.note_story(kind)
+			main.get_tree().paused = true
+			main.show_story(kind)
 
 
 ## 肉鸽局内装载片段(RogueDirector 调用):不走标准解锁与通关流转。
