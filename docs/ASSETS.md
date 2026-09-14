@@ -17,10 +17,10 @@
 | 机关物(立项 / 规划未入图鉴) | 2(充电桩 / 反重力门)| `glossary.md` §2 |
 | 肉鸽词条(重跑) | 13(通用 5 + 专属 8)| `scripts/data/run_modifiers.gd` |
 | 剧情篇目 | 8(= `story/*.ks`)| `archive_data.gd` STORIES |
-| 幕(现行) | 2(机制试炼场 / 关卡设计占位)| `scripts/data/level_data.gd` ACTS |
-| 幕(七幕主纲) | 7(2 已演 + 5 规划)| `story.md` §1.5 |
-| 关卡(在演) | 1(机制试炼场 v5,分区 Z0–Z5)| `level_data.gd` LEVELS |
-| 关卡(历史文件未接线) | 1(伍试水 · 界与边)| `levels/pair_trial.json` |
+| 幕(现行) | 5(第一~第五幕,正戏全量)| `scripts/data/level_data.gd` ACTS |
+| 幕(七幕主纲) | 7(5 已演 + 序幕/落幕剧本)| `story.md` §1.5 |
+| 关卡(在演) | 26(五幕 26 场,v0.44.0)| `levels/act1..act5/*.json` |
+| ~~测试道~~ | ~~2~~ | ~~trial_v5 / pair_trial~~ | v0.44.0 清退(测试关内容清退令)|
 | 图鉴插图(入引擎) | 43 张 png | `assets/archive/` |
 | aseprite 源 | 15 个(icon_construct 1 + mech 精灵 12 + ui 卡框 2)| `assets/art/`、`assets/art/mech/`、`assets/art/ui/` | v0.39.0 清退:地图皮源 30(levels/)+ 图鉴源 33(tiles_v2/)+ png 产物 38 —— 三套自研分层系统退役,唯余 R1 素材化所需 |
 | 音频数据 .tres | 34(data/music 6 + data/sfx 28)| `data/music/`、`data/sfx/` | M-7/M-8 数值资源化(v0.38):BGM motif 与音效规格全 @export,Inspector 直调 |
@@ -145,27 +145,18 @@
 
 | 序 | 幕名 | 标题 | 状态 |
 |---|---|---|---|
-| 0 | **机制试炼场** | 功能测试 | 在演(唯一)|
-| 1 | **关卡设计** | 未启动 | 锁定占位(机制达标后重启)|
+| 0 | **第一幕** | 各自的路上 | ✅ v0.38.0 六场 |
+| 1 | **第二幕** | 界与边 | ✅ v0.44.0 六场 |
+| 2 | **第三幕** | 分岔 | ✅ v0.44.0 五场 |
+| 3 | **第四幕** | 蜕变 | ✅ v0.44.0 五场 |
+| 4 | **第五幕** | 刻度的真相 | ✅ v0.44.0 四场(终关接尾声)|
 
-### 6.2 在演关卡:机制试炼场 v4(13350 × 2200)
+### 6.2 在演关卡:正戏五幕 26 场(v0.44.0)
 
-八层定值 × who 集合 × faces 四型 × 全机关物;命名分区(zones):
-
-| 分区 | 名称 | 考核内容 |
-|---|---|---|
-| Z0 | 出生 | 浮台:疾二段跳 / 跃顶弹 |
-| Z1 | 八层展区 | L3 / L5 / L6 / L7 / L8 各一 |
-| Z2 | 置换走廊 | faces 四型 + 逆双平台置换(天花天路)|
-| Z3 | 机关物 | 琴键 / 摆渡 / 坑内滚出坡 / 电梯 / 甲板加速门 / 曲面 / 气闸门 |
-| Z4 | 双子磁界 | 磁力边界(唯逆可穿) + 限时桥(掉坑测召回)|
-| Z5 | 归门 | 伍归门壁龛:双体同区到站 |
-
-### 6.3 历史关卡文件(未接线)
-
-| 文件 | 关名 | 说明 |
-|---|---|---|
-| `levels/pair_trial.json` | 伍试水 · 界与边 | v0.16 伍试水关;现行数据表不再引用,留档 |
+组件语义 v4(who 集合 × faces 四型,层概念已退役)× 全机关物;
+逐关七维登记见 `docs/story/seven_dimensions.md`,逐关规格源
+`tools/author_acts.py`(第二~五幕,改关重跑);作关纪律 = 引擎原生
+schema + grid_check / reach_check 双门禁逐关过线。
 
 ### 6.4 七幕主纲(`story.md` §1.5,叙事骨架)
 
@@ -219,7 +210,7 @@
 | svg 场景物件 | 5 | `assets/svg/objects/` | exit-door / platform / portal / spike / spring |
 | 字体 | 1 | `assets/fonts/NotoSansSC-VF.ttf` | 思源黑体可变字重(全游戏唯一字体)|
 | 剧情脚本 | 8 | `story/*.ks` | 与 §5 篇目一一对应 |
-| 关卡 JSON | 1 | `levels/pair_trial.json` | 历史留档(§6.3)|
+| 关卡 JSON | 26 | `levels/act1..act5/*.json` | 正戏五幕(v0.44.0;~~pair_trial~~ 已清退)|
 
 ## 9. 权威来源对照
 

@@ -10,7 +10,7 @@ var _seen := {}
 
 
 func _initialize() -> void:
-	# headless 裸 SceneTree 无 Main:R3 单例手动点亮(layer_check 同款补亮)
+	# headless 裸 SceneTree 无 Main:R3 单例手动点亮(comp_check 同款补亮)
 	CharacterManager.I = CharacterManager.new()
 	var levels: Array[LevelDef] = LevelData.LEVELS
 	if levels.is_empty():

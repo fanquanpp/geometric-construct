@@ -141,7 +141,7 @@ geometric-construct/
 ├── tools/
 │   └── gen_svgs.py          # SVG 素材生成器(改素材先改这里再生成)
 ├── tests/                   # 开发用截图 / 验证场景(shot_*.tscn;
-│                            #   grid_check / layer_check / modifier_check /
+│                            #   grid_check / comp_check / modifier_check /
 │                            #   mover_check / trait_check headless 验证脚本)
 ├── build/                   # 构建产物(已 gitignore)
 └── docs/                    # ARCHITECTURE / DESIGN / ROADMAP / UPDATE / CHANGELOG
@@ -262,7 +262,8 @@ A 跳,X 冲刺,LB/RB 切换,Back 召回,Start 暂停。
 # 运行
 godot --path .
 
-# 自动通关测试(机制试炼场单关,应看到 LEVEL COMPLETE 与 end state=WIN)
+# 自动通关测试(legacy:呆板机器人已打不过现役关,仅作流转冒烟;门禁以
+# flow_check / reach_check / comp_check 为准)
 godot --path . -- --autotest=0
 
 # 修改 SVG/字体等资源后,先触发导入再截图

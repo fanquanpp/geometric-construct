@@ -109,7 +109,7 @@ func _surfaces(def: LevelDef) -> Array:
 	var out: Array = []
 	for p0 in def.platforms:
 		var it := Comp.normalize(p0)
-		if not Comp.is_solid_layer(it["layer"]) or it["faces"] == Comp.FACES_NONE:
+		if it["faces"] == Comp.FACES_NONE:
 			continue
 		var r: Rect2 = it["rect"]
 		var who: Array = Comp.who_of(it)
@@ -144,7 +144,7 @@ func _blocked_at(def: LevelDef, x: float, y_top: float) -> bool:
 	## (x, y_top) 行走带是否被实体件竖直遮断(gate / 高墙)。
 	for p0 in def.platforms:
 		var it := Comp.normalize(p0)
-		if not Comp.is_solid_layer(it["layer"]) or it["faces"] == Comp.FACES_NONE:
+		if it["faces"] == Comp.FACES_NONE:
 			continue
 		var r: Rect2 = it["rect"]
 		if x < r.position.x or x > r.end.x:
@@ -374,8 +374,7 @@ func _pad_landing(def: LevelDef, pos: Vector2, vec: Vector2) -> Dictionary:
 			return {}
 		for p0 in def.platforms:
 			var it := Comp.normalize(p0)
-			if it["faces"] == Comp.FACES_NONE or \
-					not Comp.is_solid_layer(it["layer"]):
+			if it["faces"] == Comp.FACES_NONE:
 				continue
 			var r: Rect2 = it["rect"]
 			if p.x >= r.position.x and p.x <= r.end.x \

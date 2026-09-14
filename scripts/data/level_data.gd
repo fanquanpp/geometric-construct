@@ -1,8 +1,7 @@
 class_name LevelData
-## 关卡数据(v0.38.1):幕 0「机制试炼场」= 机关全览 + 伍试水;
-## 幕 1「第一幕 · 各自的路上」= 五位几何体的机关课六场
-## (疾速 / 弹阶 / 对面 / 坡道 / 双生阶 + 合演终场),
-## 全部走 aseprite 分层管线(L3 背景剪影 + L4 主实体),逐成员可达门禁。
+## 关卡数据(v0.44.0):测试道(机制试炼场 / 伍试水)已随"测试关内容清退"
+## 移除,正戏五幕为主线 —— 第一幕「各自的路上」(六场)+ 第二幕「界与边」
+## + 第三幕「分岔」+ 第四幕「蜕变」+ 第五幕「刻度的真相」。
 ## 数值标准:1 格 = 100 px;可跳台阶高必须比 jump_units 低 0.1。
 
 static var LEVELS: Array[LevelDef] = []
@@ -38,29 +37,57 @@ static func first_level_of_act(act: int) -> int:
 
 static func _static_init() -> void:
 	ACTS.append({
-		"name": "机制试炼场",
-		"title": "功能测试",
-		"hint": "机关全览 · 双子试水 —— 一切机制的可玩目录",
-		"icon": "buttons/play-flat.svg",
-		"levels": [0, 1],
-	})
-	ACTS.append({
 		"name": "第一幕",
 		"title": "各自的路上",
 		"hint": "五位几何体的机关课:疾速 / 弹阶 / 对面 / 坡道 / 双生阶,终场合演",
 		"icon": "buttons/play-flat.svg",
-		"levels": [2, 3, 4, 5, 6, 7],
+		"levels": [0, 1, 2, 3, 4, 5],
+	})
+	ACTS.append({
+		"name": "第二幕",
+		"title": "界与边",
+		"hint": "伍入队:边界是为了保护,还是为了隔开?",
+		"icon": "buttons/play-flat.svg",
+		"levels": [6, 7, 8, 9, 10, 11],
+	})
+	ACTS.append({
+		"name": "第三幕",
+		"title": "分岔",
+		"hint": "独自一人时,我还算什么?——四段单章正剧化",
+		"icon": "buttons/play-flat.svg",
+		"levels": [12, 13, 14, 15, 16],
+	})
+	ACTS.append({
+		"name": "第四幕",
+		"title": "蜕变",
+		"hint": "我能背叛自己的形状吗?——疾学会停 / 跃为自己折 / 逆落地 / 圆回头",
+		"icon": "buttons/play-flat.svg",
+		"levels": [17, 18, 19, 20, 21],
+	})
+	ACTS.append({
+		"name": "第五幕",
+		"title": "刻度的真相",
+		"hint": "如果一切都被定义过,我们算什么?——真相与代价,五门归位",
+		"icon": "buttons/play-flat.svg",
+		"levels": [22, 23, 24, 25],
 	})
 
-	#   SSOT = levels/*.json(v0.39.0 起地图皮与语义层管线整体退役,
-	#   JSON 即唯一事实源,直接手编 / 工具直出;本文件不再硬编码任何关卡数据)。
-	#   levels/pair_trial.json 为纯 JSON 手写关;v0.38.0 起修复五项
-	#   gridcheck 违规并入编幕 0 第 2 场。
+	#   SSOT = levels/*.json(v0.39.0 起 JSON 即唯一事实源,直接手编 / 工具直出)。
 	var files := [
-		"res://levels/trial_v5.json", "res://levels/pair_trial.json",
 		"res://levels/act1/a1_dash.json", "res://levels/act1/a1_spring.json",
 		"res://levels/act1/a1_fall.json", "res://levels/act1/a1_roll.json",
 		"res://levels/act1/a1_pair.json", "res://levels/act1/a1_finale.json",
+		"res://levels/act2/b2_gate.json", "res://levels/act2/b2_trace.json",
+		"res://levels/act2/b2_wall.json", "res://levels/act2/b2_mirror.json",
+		"res://levels/act2/b2_asym.json", "res://levels/act2/b2_finale.json",
+		"res://levels/act3/b3_dash.json", "res://levels/act3/b3_spring.json",
+		"res://levels/act3/b3_fall.json", "res://levels/act3/b3_roll.json",
+		"res://levels/act3/b3_cross.json",
+		"res://levels/act4/b4_still.json", "res://levels/act4/b4_fold.json",
+		"res://levels/act4/b4_landing.json", "res://levels/act4/b4_turn.json",
+		"res://levels/act4/b4_meta.json",
+		"res://levels/act5/b5_measure.json", "res://levels/act5/b5_price.json",
+		"res://levels/act5/b5_truth.json", "res://levels/act5/b5_finale.json",
 	]
 	for path in files:
 		var f := FileAccess.open(path, FileAccess.READ)
@@ -167,7 +194,7 @@ static func from_json_text(text: String) -> LevelDef:
 	for z in d.get("zones", []):
 		def.zones.append({"rect": _json_rect(z.get("rect",
 				{"x": 0, "y": 0, "w": 100, "h": 100})),
-			"name": str(z.get("name", "")), "layer": int(z.get("layer", 4))})
+			"name": str(z.get("name", ""))})
 	return def
 
 

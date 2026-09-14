@@ -23,7 +23,7 @@
 4. **验收基线**:改动物理 / 关卡 / UI 后——
    - `--headless --path . --check-only --script res://<改动脚本>` 全绿;
    - `--headless --script res://tests/grid_check.gd` 不得新增违规;
-   - 涉及分层 / 双体 / 机关:`--headless --script res://tests/layer_check.gd`、
+   - 涉及双体 / 机关:`--headless --script res://tests/comp_check.gd`、
 	 `-- --recalltest` 通过;
    - 涉及特性 / 手感数值:`--headless --script res://tests/trait_check.gd`
 	 通过(顶弹 / 可推动 / 跳高的物理仿真);

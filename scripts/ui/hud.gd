@@ -195,7 +195,7 @@ func _process(delta: float) -> void:
 			var names := PackedStringArray()
 			for g in who:
 				names.append(Geometries.ALL[clampi(int(g), 0, Geometries.ALL.size() - 1)].name)
-			sig = " · L%d·%s" % [it["layer"], "共享" if names.is_empty() else "+".join(names)]
+			sig = " · %s" % ["共享" if names.is_empty() else "+".join(names)]
 			break
 	# 坐标读数用 display_name():双体当前半体显示"界"/"边",不再恒显示"界"
 	_coords.text = "%s · %sx %.2f, y %.2f%s" % [p.display_name(), zone,

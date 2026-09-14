@@ -7,7 +7,7 @@ extends Node2D
 ## 近景 = 1 格细线 + 5 格主线;中景 = 仅 5 格主线;远景 = 10 格点阵 + 缘坐标数字。
 
 var level_size := Vector2.ZERO
-var zones: Array = []   # 命名分区 [{rect, name, layer}](levels.md §8.2)
+var zones: Array = []   # 命名分区 [{rect, name}](levels.md §8.2)
 var _tier := 0    # 0 近景 / 1 中景 / 2 远景
 
 func _ready() -> void:

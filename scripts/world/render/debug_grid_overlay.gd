@@ -2,11 +2,11 @@ class_name DebugGridOverlay
 extends Node2D
 
 ## 坐标化调试叠加层(--debug-grid,levels.md §8.3):组件左上格点标注
-## `id·层`,who 非空组件加首位几何体色点并附 who 名单;机关物同款。
+## `id`,who 非空组件加首位几何体色点并附 who 名单;机关物同款。
 ## 默认关闭,命令行 `--debug-grid` 开启后逐帧重绘。
 
 var items: Array = []    # 归一化平台组件(Comp.normalize)
-var entries: Array = []  # 机关物条目 {item: {layer, who, id?}, rect}
+var entries: Array = []  # 机关物条目 {item: {who, id?}, rect}
 var _on := false
 
 func _process(_delta: float) -> void:
@@ -23,7 +23,7 @@ func _draw() -> void:
 	for it in items:
 		var r: Rect2 = it["rect"]
 		var who: Array = it["who"]
-		var mark := str(it["id"]) + "·L" + str(it["layer"])
+		var mark := str(it["id"])
 		if not who.is_empty():
 			var names := PackedStringArray()
 			for g in who:
@@ -39,5 +39,5 @@ func _draw() -> void:
 		var er: Rect2 = e["rect"]
 		var it2: Dictionary = e["item"]
 		draw_string(Ui.HEAD, er.position + Vector2(5, 13),
-			str(int(it2.get("id", 0))) + "·L" + str(Comp.layer_of(it2)),
+			str(int(it2.get("id", 0))),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Palette.I.paper, 0.6))

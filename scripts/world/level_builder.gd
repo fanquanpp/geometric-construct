@@ -22,17 +22,16 @@ const LIGHT_SUN_ROTATION := -0.70   # rad ≈ -40°
 ## shadow_filter NONE 硬边,art-style.md §8),不再手绘偏移暗块。
 ## 关卡背景带 1 格 = 100 px 的定位网格(与 HUD 坐标读数对齐)。
 ##
-## 分层语义 v3(levels.md §7.10):八层定值 × 双归属 + 组件编号 ——
-##   组件 = {id, layer(1..8), faces, who 集合, tags};实体性写入层表
-##   (L4–L7 实体,L1–L3 / L8 景观纯视觉)。构建期把实体层组件实际出现的
-##   (layer, who) 签名编译为 Godot 碰撞位(位 1 弃用,位 2 = 玩家几何体,
+## 组件语义 v4(levels.md §7.10,v0.44.0 层概念整体退役):
+##   组件 = {id, faces, who 集合, tags} —— faces=none 即纯装饰(背景剪影,
+##   无碰撞),其余为实体;who 集合定归属(空 = 全员)。构建期把实体组件
+##   实际出现的 who 签名编译为 Godot 碰撞位(位 1 弃用,位 2 = 玩家几何体,
 ##   签名位 3..29 按出场顺序分配);玩家 collision_mask = 适用签名位并集,
 ##   出生算定一次。faces 用 one-way 碰撞实现(top 顶面可站 / bottom 底面
-##   可站,逆向天花板)。渲染 = 引擎原生节点分层(v0.43.0,LayerVisual
-##   渲染控制器退役):每层一个 Node2D 容器,层间画序 = 容器 z_index
-##   (契约 _layer_z)+ 树序,层内每件石板一个 TerrainKit.slab_node
-##   (Polygon2D/Line2D,零自定义绘制);机关物由 FocusDriver 驱动高亮
-##   三档呈现,切换受控几何体时波次交叉淡化。
+##   可站,逆向天花板)。渲染 = 引擎原生节点(R0):装饰 / 实体各一个
+##   Node2D 容器,画序 = 容器 z_index(装饰 0 < 实体 1 < 玩家 5)+ 树序,
+##   每件石板一个 TerrainKit.slab_node(Polygon2D/Line2D,零自定义绘制);
+##   机关物由 FocusDriver 驱动高亮三档呈现,切换受控几何体时波次交叉淡化。
 
 
 ## 关卡表现层宿主与镜头场景(场景资源强制约束 R1:常驻结构走 .tscn;
@@ -83,10 +82,10 @@ static func build(def: LevelDef) -> Node2D:
 		root.add_child(body)
 		bodies[key] = body
 
-	# —— 平台:碰撞按签名入位,渲染按八层定值表分组(§7.10) ——
+	# —— 平台:碰撞按 who 签名入位,装饰 / 实体分容器渲染(§7.10) ——
 	var items: Array = []
 	var used_ids := {}
-	var layer_seq := {}
+	var id_seq := {}
 	# 左右隐形墙(仅碰撞,不绘制;对全员恒实体,任何几何体都不可穿出)
 	var walls := [
 		Rect2(-40, -700, 40, def.size.y + 1400),
@@ -94,38 +93,36 @@ static func build(def: LevelDef) -> Node2D:
 	]
 	for it0 in def.platforms:
 		var it := Comp.normalize(it0)
-		_assign_id(it, used_ids, layer_seq)
+		_assign_id(it, used_ids, id_seq)
 		items.append(it)
-		if it["faces"] != Comp.FACES_NONE \
-				and int(it["layer"]) >= Comp.LAYER_BACK:
+		if it["faces"] != Comp.FACES_NONE:
 			root.add_child(TerrainKit.rect_occluder(it["rect"]))
-		if not Comp.is_solid_layer(it["layer"]) \
-				or it["faces"] == Comp.FACES_NONE:
-			continue    # 景观层 / 纯装饰:无碰撞(所见即所碰)
+		if it["faces"] == Comp.FACES_NONE:
+			continue    # 纯装饰:无碰撞(所见即所碰)
 		var ckey := Comp.sig_key(it)
 		if not combos.has(ckey):
 			continue    # 位耗尽被丢弃的签名(构建期已报错)
 		bodies[ckey].add_child(_rect_shape(it["rect"], it["faces"]))
 	for w in walls:
 		bodies["walls"].add_child(_rect_shape(w, Comp.FACES_FULL))
-	# 每层一个 Node2D 容器(引擎原生分层,R0):层间画序 = 容器 z_index
-	# (契约 _layer_z)+ 树序;层内大块先画(面积降序,树序即画序),
-	# 每件石板一个 TerrainKit.slab_node(零 _draw、零运行时控制器)
-	var buckets := {}
+	# 两个 Node2D 容器(引擎原生,R0):装饰(0)在下、实体(1)在上,
+	# 玩家 z5、机关 3/4 既有值都在实体容器之上;容器内大块先画
+	# (面积降序,树序即画序),每件石板一个 TerrainKit.slab_node
+	var buckets := {"Decor": [], "Solid": []}
 	for it2 in items:
-		var l: int = it2["layer"]
-		if not buckets.has(l):
-			buckets[l] = []
-		(buckets[l] as Array).append(it2)
-	for l: int in buckets.keys():
-		var bucket: Array = buckets[l]
+		(buckets["Decor" if it2["faces"] == Comp.FACES_NONE else "Solid"]
+			as Array).append(it2)
+	for bucket_name in ["Decor", "Solid"]:
+		var bucket: Array = buckets[bucket_name]
 		bucket.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 			var ra: Rect2 = a["rect"]
 			var rb: Rect2 = b["rect"]
 			return ra.size.x * ra.size.y > rb.size.x * rb.size.y)
+		if bucket.is_empty():
+			continue
 		var holder := Node2D.new()
-		holder.name = "Layer%d" % l
-		holder.z_index = _layer_z(l)
+		holder.name = bucket_name
+		holder.z_index = DECOR_Z if bucket_name == "Decor" else SOLID_Z
 		root.add_child(holder)
 		for it3: Dictionary in bucket:
 			holder.add_child(TerrainKit.slab_node(it3, bucket))
@@ -139,10 +136,10 @@ static func build(def: LevelDef) -> Node2D:
 		ramp.pts = PackedVector2Array(r["pts"])
 		ramp.base_y = r["base"]
 		ramp.layer_value = _bit_value(combos, Comp.sig_key(r))
-		ramp.z_index = _layer_z(Comp.layer_of(r))
+		ramp.z_index = SOLID_Z
 		root.add_child(ramp)
 		focus_entries.append({"node": ramp,
-			"item": {"layer": Comp.layer_of(r), "who": Comp.who_of(r)},
+			"item": {"who": Comp.who_of(r)},
 			"rect": TerrainKit.ramp_bounds(ramp.pts, ramp.base_y)})
 
 	# —— 加速门 ——
@@ -165,10 +162,10 @@ static func build(def: LevelDef) -> Node2D:
 		mover.period = mv.get("period", 3.0)
 		mover.phase = mv.get("phase", 0.0)
 		mover.layer_value = _bit_value(combos, Comp.sig_key(mv))
-		mover.z_index = _layer_z(Comp.layer_of(mv))
+		mover.z_index = SOLID_Z
 		root.add_child(mover)
 		focus_entries.append({"node": mover,
-			"item": {"layer": Comp.layer_of(mv), "who": Comp.who_of(mv)},
+			"item": {"who": Comp.who_of(mv)},
 			"rect": r})
 
 	# —— 开关门(动态构件:踩踏开关 ↔ 门板 full/none 切换) ——
@@ -184,7 +181,7 @@ static func build(def: LevelDef) -> Node2D:
 		gate.door_item = Comp.normalize(lg["door"])
 		gate.invert = lg.get("invert", false)
 		gate.layer_bit = combos["dyn:lg:%d" % li]["bit"]
-		gate.z_index = _layer_z(gate.door_item["layer"])
+		gate.z_index = SOLID_Z
 		root.add_child(gate)
 		focus_entries.append({"node": gate, "item": gate.door_item,
 			"rect": gate.door_item["rect"]})
@@ -199,10 +196,10 @@ static func build(def: LevelDef) -> Node2D:
 		bridge.phase = tb.get("phase", 0.0)
 		bridge.sync_beat = tb.get("sync_beat", false)
 		bridge.layer_bit = combos["dyn:tb:%d" % ti]["bit"]
-		bridge.z_index = _layer_z(Comp.layer_of(tb))
+		bridge.z_index = SOLID_Z
 		root.add_child(bridge)
 		focus_entries.append({"node": bridge,
-			"item": {"layer": Comp.layer_of(tb), "who": Comp.who_of(tb)},
+			"item": {"who": Comp.who_of(tb)},
 			"rect": tb["rect"]})
 
 	# —— 钢琴地板砖(踩踏 / 滚过发声,audio.md §4) ——
@@ -211,20 +208,20 @@ static func build(def: LevelDef) -> Node2D:
 		tile.slab_rect = pt["rect"]
 		tile.note = pt.get("note", "")
 		tile.layer_value = _bit_value(combos, Comp.sig_key(pt))
-		tile.z_index = _layer_z(Comp.layer_of(pt))
+		tile.z_index = SOLID_Z
 		root.add_child(tile)
 		focus_entries.append({"node": tile,
-			"item": {"layer": Comp.layer_of(pt), "who": Comp.who_of(pt)},
+			"item": {"who": Comp.who_of(pt)},
 			"rect": pt["rect"]})
 
 	# —— 推箱 / 滑雪带 / 传送对 / 弹射板(v0.27 机制群,structures.md §7)——
 	for pb in def.push_boxes:
 		var box := PushBox.new()
 		box.cell = pb["cell"]
-		box.z_index = _layer_z(Comp.LAYER_MAIN)
+		box.z_index = SOLID_Z
 		root.add_child(box)
 		focus_entries.append({"node": box,
-			"item": {"layer": Comp.LAYER_MAIN, "who": []},
+			"item": {"who": []},
 			"rect": Rect2(box.cell - Vector2(50, 50), Vector2(100, 100))})
 	for sp in def.ski_patches:
 		var ski := SkiPatch.new()
@@ -275,8 +272,8 @@ static func build(def: LevelDef) -> Node2D:
 	# —— 几何体:collision_mask = 适用组合位并集,出生算定一次(§7.6) ——
 	for idx in def.roster:
 		var cd: GeometryDef = Geometries.ALL[idx]
-		# spawns 契约:按下标索引;缺项退回原点并告警(spawns 按下标的坑,
-		# layer_check 教训;数据契约见 levels.md)
+			# spawns 契约:按下标索引;缺项退回原点并告警(spawns 按下标的坑,
+			# comp_check 教训;数据契约见 levels.md)
 		if idx >= def.spawns.size():
 			push_warning("LevelBuilder: spawns[%d] 缺项(名册 %s)—— 退回原点" %
 				[idx, cd.name])
@@ -343,13 +340,11 @@ static func build(def: LevelDef) -> Node2D:
 	return root
 
 
-## 显示层 z 契约(levels.md §7.10,引擎原生 z_index 直接承载,无常量表):
-## 景观 L1–L3 递增沉底,实体 L4–L7 递增且全在玩家 z5 之下(所见即所碰,
-## 角色永不被实体石板盖住);L8 前景剪影 = 6,唯一压在玩家之上的层。
-static func _layer_z(layer: int) -> int:
-	if layer >= Comp.LAYER_FRONT:
-		return 6
-	return layer - 3
+## —— 画序带(引擎原生 z_index,§7.10):装饰 0(定位网格之上、实体
+## 之下)< 实体 1 < 机关 3/4(既有值)< 玩家 5(player.gd)—— 角色永
+## 不被实体石板盖住;需要前景遮挡时另立更高 z 的容器,不设固定层表。——
+const DECOR_Z := 0
+const SOLID_Z := 1
 
 
 ## 分层语义 v3(levels.md §7.10):碰撞位编译。
@@ -373,8 +368,8 @@ static func _compile_combos(def: LevelDef, geos: int) -> Dictionary:
 	samples.append_array(def.piano_tiles)
 	for it0 in samples:
 		var it: Dictionary = it0 if it0 is Dictionary else {"rect": it0}
-		if not Comp.is_solid_layer(Comp.layer_of(it)):
-			continue    # 景观层:纯视觉,不占位
+		if Comp.faces_of(it) == Comp.FACES_NONE:
+			continue    # 纯装饰:不占位
 		var key := Comp.sig_key(it)
 		if combos.has(key):
 			continue
@@ -412,16 +407,15 @@ static func _expand(who: Array, geos: int) -> Array:
 	return out
 
 
-## 组件编号分配(§7.10):显式 id 优先(登记占用);缺省按层分段自动编
-## (L4 首件 = 401),段内撞号退回负数临时号。
+## 组件编号分配(§7.10):显式 id 优先(登记占用);缺省 401 起自动编,
+## 撞号退回负数临时号。
 static func _assign_id(it: Dictionary, used: Dictionary, seq: Dictionary) -> void:
 	if int(it["id"]) != 0:
 		used[int(it["id"])] = true
 		return
-	var layer: int = it["layer"]
-	var n: int = int(seq.get(layer, 0)) + 1
-	seq[layer] = n
-	var cand: int = layer * 100 + n
+	var n: int = int(seq.get("n", 0)) + 1
+	seq["n"] = n
+	var cand: int = 400 + n
 	if used.has(cand):
 		cand = -(used.size() + 1)
 	it["id"] = cand

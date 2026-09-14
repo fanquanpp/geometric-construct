@@ -87,7 +87,7 @@ func _check_level(li: Variant, def: LevelDef) -> void:
 	var solids: Array = []
 	for p0 in def.platforms:
 		var it := Comp.normalize(p0)
-		if Comp.is_solid_layer(it["layer"]) and it["faces"] != Comp.FACES_NONE:
+		if it["faces"] != Comp.FACES_NONE:
 			solids.append(it)
 	for pt in def.piano_tiles:
 		var it := Comp.normalize(pt)

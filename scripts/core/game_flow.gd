@@ -49,7 +49,7 @@ func start_level(index: int, intro := true) -> void:
 	Sfx.play("start")
 	# 幕归属由 LevelData.ACTS 推导(v0.15 序章扩容后不再按下标硬编码)
 	var act_i := LevelData.act_index_of(current)
-	main._ambience_motif("prologue" if act_i <= 0 else "act1")
+	main._ambience_motif("act1")
 
 	main._menu.visible = false
 	main._menu.close_act_panel()
@@ -66,7 +66,8 @@ func start_level(index: int, intro := true) -> void:
 	main._refresh_roster()
 	main._hud.reveal_corners()
 	if intro:
-		var act_name := "序章" if act_i <= 0 else str(LevelData.ACTS[act_i]["name"])
+		var act_name := str(LevelData.ACTS[act_i]["name"]) if act_i >= 0 \
+			else "正戏"
 		main._hud.show_intro("%s · 第 %d 场 · %s" % [act_name, LevelData.scene_no_of(current),
 			Geometries.get_def(level_def.focus).full_name], level_def)
 		var focus: GeometryDef = Geometries.get_def(level_def.focus)
@@ -78,8 +79,8 @@ func start_level(index: int, intro := true) -> void:
 	if NetSession.I != null and NetSession.I.is_net():
 		main.net_room_layer.visible = false
 		NetSession.I.on_level_built()
-	# 第一幕首次开演:先看开演剧,再上手(序幕钩子的下一拍)
-	if current == LevelData.first_level_of_act(1) and intro and not main._save.seen_act1:
+	# 第一幕首次开演:先看开演剧,再上手(act1.ks 触发幕 = 第一幕)
+	if current == LevelData.first_level_of_act(0) and intro and not main._save.seen_act1:
 		main._save.note_story("act1")
 		main.get_tree().paused = true
 		main.show_story("act1")
@@ -132,7 +133,11 @@ func clear_level() -> void:
 	main.camera_rig = null
 	main._doors.clear()
 	if main._level_root != null:
-		main._level_root.queue_free()
+		# 必须 free() 立即释放(v0.31 教训,v0.44.0 回归修):queue_free 的
+		# 延迟释放窗口里,旧根 _init 连接的 character_created 仍挂在
+		# CharacterManager 上,新关 build 建体时会被同帧抢挂——玩家随旧根
+		# 一并被释放,下一关"无法诞生"(players 空 / 位置错)。
+		main._level_root.free()
 		main._level_root = null
 
 

@@ -331,26 +331,48 @@ func run_tour_shot() -> void:
 	m._unlocked = LevelData.LEVELS.size() - 1
 	m.start_level(_shot_level, false)
 	await m.get_tree().create_timer(0.4).timeout
-	var tours := {
-		0: [["spawn", Vector2(300, 855)],
-			["ski", Vector2(950, 820)],
-			["pushbox", Vector2(1750, 820)],
-			["speedgate", Vector2(2200, 820)],
-			["launchpad", Vector2(2450, 820)],
-			["portal", Vector2(3300, 760)],
-			["piano", Vector2(3800, 830)],
-			["dodge", Vector2(4280, 700)],
-			["airgate", Vector2(5000, 820)],
-			["ramp_top", Vector2(5300, 620)],
-			["exits", Vector2(5950, 826)],
-			["wuwu_niche", Vector2(6220, 560)],
-			["ceiling_road", Vector2(6150, 225)]],
-	}
-	var waypoints: Array = tours.get(_shot_level, [["spawn", Vector2(300, 850)]])
+	# 数据驱动节拍(v0.44.0,旧试炼场手排节拍表退役):出生点 + 检查点 +
+	# 实体平台顶按 x 均布采样(跳过出口门 ±120 横距,防误触 WIN);
+	# 伍双体关传送地面半体(界挂天花,传送顶面会把镜像体抛向 top_kill)。
+	var def: LevelDef = m.game_flow.level_def
+	var wps: Array = []
+	var spawn: Variant = def.spawns[def.focus] \
+		if def.focus < def.spawns.size() else Vector2(300, 850)
+	if spawn is Dictionary:
+		spawn = spawn["b"]
+	wps.append(["spawn", spawn])
+	for cp in def.checkpoints:
+		wps.append(["cp", cp["pos"]])
+	var solids: Array = []
+	for it0 in def.platforms:
+		var it := Comp.normalize(it0)
+		if it["faces"] != Comp.FACES_NONE:
+			solids.append(it["rect"])
+	solids.sort_custom(func(a: Rect2, b: Rect2) -> bool:
+		return a.get_center().x < b.get_center().x)
+	var pick := maxi(1, ceili(solids.size() / 6.0))
+	for k in solids.size():
+		if k % pick != 0:
+			continue
+		var r: Rect2 = solids[k]
+		var top: Vector2 = Vector2(r.get_center().x, r.position.y - 80.0)
+		var near_exit := false
+		for e in def.exits:
+			if absf(e[1].x - top.x) < 120.0:
+				near_exit = true
+				break
+		if not near_exit:
+			wps.append(["p%02d" % k, top])
+	var waypoints: Array = wps
 	for wp in waypoints:
 		if m.players.is_empty():
 			break
 		var p: Player = m.players[m.view_slot()]
+		if p != null and p.partner != null:
+			for q in m.players:
+				if q.pair_half == 1:
+					p = q
+					break
 		p.position = wp[1]
 		p.velocity = Vector2.ZERO
 		await m.get_tree().create_timer(0.55).timeout
