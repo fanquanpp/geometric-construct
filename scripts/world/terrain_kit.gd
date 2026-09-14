@@ -20,10 +20,8 @@ static func draw_focus(c: CanvasItem, r: Rect2, col: Color) -> void:
 
 ## 石板节点(R0 引擎原生,v0.43.0):一件平台组件 → 一个 Node2D,内含
 ## Polygon2D 面 / 亮肩 / 顶缘亮线 / 底缘蓝线 / 红刻度 / 接触裙角与
-## Line2D 装饰框,零 _draw、零运行时控制器(LayerVisual 渲染控制器
-## 随八层渲染退役,静态视觉迁入本函数;三档运行时透明度一并退役——
-## 现役关卡 who 集合零使用)。layer_items = 同层全部组件(裙角的静态
-## 承接判定要跨件比对)。
+## Line2D 装饰框,零 _draw、零运行时控制器。
+## layer_items = 同层全部组件(裙角的静态承接判定要跨件比对)。
 static func slab_node(it: Dictionary, layer_items: Array) -> Node2D:
 	var node := Node2D.new()
 	var r: Rect2 = it["rect"]

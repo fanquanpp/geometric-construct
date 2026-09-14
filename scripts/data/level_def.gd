@@ -4,8 +4,8 @@ extends RefCounted
 ## 占位关卡规范:每关只讲一个几何体的特性,布局保持最小可玩
 ## (地面 / 天花板 + 出口门 + 该特性对应机关),具体关卡设计后续迭代。
 ##
-## v0.18 分层语义 v3 已实装(levels.md §7.10):八层定值 layer ∈ 1..8,
-## 组件编号 id,who 集合归属;lanes / far 废弃(旧档读取兼容见 Comp.normalize)。
+## 组件语义 v4(levels.md §7.10):组件 = {id, faces, who 集合, tags};
+## faces=none 即纯装饰,who 空 = 全员共享(层概念已退役)。
 
 var name: String = ""          # 关卡名(角色代号 + 形态)
 var focus: int = 0             # 本关教学主角(角色下标)

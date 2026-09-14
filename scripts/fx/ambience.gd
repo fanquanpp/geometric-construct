@@ -66,7 +66,7 @@ static func _motif_view(res: AmbienceMotif) -> Dictionary:
 ## BEAT EVENT(卷十一):节拍驱动表现的统一事件总线。
 ## 通道四分(防全屏抽搐):MAIN 主拍 / HALF 半拍 / MELODY 旋律事件 /
 ## SPECIAL 循环边界(小节线)。BPM 与拍点由本节拍器正典供出;
-## 订阅方 = UI / Mechanism / Light / Particle(首批:地图皮信标 + 记录点信标)。
+## 订阅方 = UI / Mechanism / Light / Particle(首批:记录点信标)。
 signal beat(kind: int, index: int)
 enum BeatKind { MAIN, HALF, MELODY, SPECIAL }
 

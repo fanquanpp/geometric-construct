@@ -21,6 +21,12 @@
 
 ### 门禁
 - 五份剧本 `--storyshot=NAME` 逐段全播零错(每段 5 镜);game_flow / save_manager / shot_harness 真加载三断言通过(check-only 单查加载环噪音照旧以运行时为准);界边成对互答 / 圆禁疑问句 / 旁白零度收束声线自检过。
+### 清账追加(同日第二笔)
+- **图鉴内容清账(玩家可见)**:档案建筑 / 机关条目中「图层 L4–L7 实体层」「景观层 L1–L3 / L8」「地图皮归门圣环」「图层系统预设笔刷」「试炼场四连砖」等废弃口径全清;石板 / 立柱的「硬投影 offset(7,8)」改指引擎光影实算;开关门「图层」标签正名「碰撞」。
+- **死文件清退**:`tests/level_shot`(加载即失败的四 Demo 关验证,职责已由 flow_check / tourshot 覆盖)与 `tools/ase2level.py`、`tools/shot_diff.py`(输入管线与对比对象均已清退)删除;`tools/__pycache__` 清理。
+- **注释与预设清账**:level_def 头注改 v4 语义;ambience 订阅方、ambient_particles、level_builder、terrain_kit 的退役墓碑注释收净;export_presets `version/name` 由恒定陈旧的 "0.15.0" 对齐 "0.44.1"。
+- **活文档同步**:roguelike.md 头注(SSOT = levels/rogue/*.json,旧管线清退)、structures.md 记录点契约去 ase2level 引用。
+- 门禁:GRIDCHECK PASS(54 关)/ COMP CHECK PASS / 改动脚本 check-only 零错;panelshot 13 镜图鉴实拍复核(建筑页 SPEC 无层号、要点指引擎实算)。
 
 ## v0.44.0(2026-09-14)
 

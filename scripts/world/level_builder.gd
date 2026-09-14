@@ -46,7 +46,7 @@ static func build(def: LevelDef) -> Node2D:
 	var root: LevelRoot = LEVEL_ROOT_SCENE.instantiate()
 
 	# —— 环境粒子(尘埃/雪屑,世界域氛围):与关卡美术无关,无条件装配
-	#    (雪屑按 def.ski_patches 数据驱动;地图皮已随 v0.39.0 退役)——
+	#    (雪屑按 def.ski_patches 数据驱动)——
 	root.add_child(AmbientParticles.for_level(def))
 
 	# —— 引擎光影 rig(v0.19 art-style §8):环境冷档 + 定向平行光,

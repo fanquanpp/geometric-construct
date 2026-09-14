@@ -135,7 +135,6 @@ StringName 直书于 Comp.tags 与 levels 数据。)
 | 物理 | Area2D 触发区(72×96,玩家层),零碰撞;触碰按**体身份键**(`body_key`)登记召回落点(`roster.checkpoints`,最近触碰语义;双体两半各占一键,characters.md §5) |
 | 演出 | 触碰即 `arrive` 音 + 亮灯;死亡重生与 R 召回回最近信标(无记录点回出生点);联机主机权威,客机经 `EV_CHECKPOINT` 复现亮灯,召回走既有 `net_recall` 通路 |
 
-- 数据契约:LevelDef.checkpoints = `[{pos: Vector2 召回落点}]`,JSON 同构;
-  试炼场语义色 `#50C878` 实心小块经 ase2level 编译(levels.md §0.1)。
+- 数据契约:LevelDef.checkpoints = `[{pos: Vector2 召回落点}]`,JSON 同构。
 - 触发区惯例(2026-09-13 联网核对):保持 monitoring 常开 + 布尔记账防重放,
   不在 body_entered 回调里改物理状态。

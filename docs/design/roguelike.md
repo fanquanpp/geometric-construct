@@ -2,7 +2,7 @@
 
 > 状态:**现行(v0.38.0 重跑回归)**——入口重新点亮(menu_layer)+ 片段库 v1 重开:
 > 四位主角(疾/跃/逆/圆)各 3 章 × 快稳二选一 + 章末精英考,共 28 枚手工片段,
-> 全部按 aseprite 管线(levels/rogue/*.meta.json + aseprite 源 → ase2level 编译);
+> levels/rogue/*.json 即 SSOT(路线卡文案 _title/_note 住 *.meta.json;旧 aseprite 管线已随 v0.44 清退);
 > 完整性双门禁:tests/grid_check.gd(静态纪律)+ tests/rogue_check.gd(走查机器人实跑)。
 > 一句话:一局制肉鸽 = **单人独立几何体**(选一位主角跑完全程)× 随机路线 ×
 > 局内词条 × 局外解锁;死亡即结算。

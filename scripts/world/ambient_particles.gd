@@ -5,7 +5,7 @@ extends Node2D
 ##   雪屑 —— 滑雪带上的缓降微雪(数据驱动:def.ski_patches)。
 ## 预算(fx-light-uiux):常驻发射器 1(尘埃)+ 雪屑×补丁,加
 ## Backdrop 屏域 motes 2 = 同屏 ≤4 达标;粒子全部硬边方块,无柔化贴图。
-## v0.39.0:所有关卡无条件装配(滴水通道随地图皮退役)。
+## 所有关卡无条件装配(雪屑按关卡数据驱动)。
 
 const DUST_AMOUNT := 20
 const SNOW_AMOUNT := 12
