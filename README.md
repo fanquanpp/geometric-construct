@@ -15,10 +15,10 @@
 
 ## 预览
 
-![管道测试道 · 出生段](docs/preview/tube_spawn.png)
-![推箱室](docs/preview/tube_pushbox.png)
-![弹射与传送对](docs/preview/tube_portal.png)
-![归门圆丘坡(斜刻度曲面)](docs/preview/tube_ramp.png)
+![第二幕「界与边」· 会合:界沿天花、磁界张开](docs/preview/act2_meet.png)
+![第三幕「分岔」· 圆的长坡](docs/preview/act3_roll.png)
+![第四幕「蜕变」· 疾的静止](docs/preview/act4_still.png)
+![第五幕「刻度的真相」· 落幕五门归位](docs/preview/act5_finale.png)
 
 ## 当前内容
 
