@@ -8,6 +8,7 @@ extends Control
 
 signal same_pressed
 signal cross_pressed
+signal back_pressed
 
 var _open := false
 var _tween: Tween
@@ -43,6 +44,13 @@ func _ready() -> void:
 	%CrossBtn.pressed.connect(func() -> void: cross_pressed.emit())
 	_same.pressed.connect(func() -> void: same_pressed.emit())
 	Ui.style(%Hint, 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
+	# 返回出口(v0.44.2):旧版只有 Esc 能收卡,触屏用户点进来就出不去 ——
+	# 双端就地给一颗「返 回」,与 Android 返回键 / Esc 同语义(宿主收卡)。
+	var back: Button = %BackBtn
+	back.text = "返 回"
+	back.add_theme_font_size_override("font_size", 16)
+	Ui.wire_button(back, "ui_back")
+	back.pressed.connect(func() -> void: back_pressed.emit())
 
 
 ## 打开联接方式选择:按设备态刷新同设备项文案与可用性(触屏置灰)。
@@ -53,6 +61,8 @@ func open_card(touch: bool) -> void:
 		else "同屏分键 · P1 键盘左区 + P2 右区 / 双手柄")
 	_same.disabled = touch
 	_same.modulate = Color(1, 1, 1, 0.42 if touch else 1.0)
+	# 底注双端自适应(v0.44.2):有就地返回钮后,Esc 提示只留给桌面
+	(%Hint as Label).text = "" if touch else "Esc 返回"
 	# 真机修复(v0.42.2,与 act_panel_card 同款):开卡瞬间视口可能仍是
 	# 布局一瞬间的旧矩形(竖屏残留/首帧未展开)→ 卡片偏左、遮罩半屏。
 	# 每次展开强制重锚全矩形并延迟二次确认(布局时序无关)。

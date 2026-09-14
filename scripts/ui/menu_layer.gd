@@ -31,7 +31,6 @@ var _act_idx := -1                 # 当前打开的剧目(二级菜单卡片态
 @onready var _chapter_hint: Label = %ChapterHint
 @onready var _toast_label: Label = %Toast
 @onready var _start_btn: Button = %StartBtn
-@onready var _rogue_btn: Button = %RogueBtn
 @onready var _dual_btn: Button = %DualBtn
 @onready var _panel_btn: Button = %PanelBtn
 @onready var _settings_btn: Button = %SettingsBtn
@@ -62,9 +61,9 @@ func _ready() -> void:
 	Ui.style(_intro, 17, Ui.BODY, Color(Palette.I.paper, 0.78),
 		HORIZONTAL_ALIGNMENT_LEFT, false, 8)
 	_intro.text = "四个几何体,被丢进一个不存在的地方。\n形状即性格,属性即命运——\n速度、弹性、置换与惯性,\n唯有互相依靠,才能找到各自的出口。"
-	# 左下:操作提示(触屏设备无键盘,改为触摸指引)
-	_keys.text = "1–4 选择剧目    R 重跑    C 档案几何    S 设置    Esc 退出" \
-		if not DisplayServer.is_touchscreen_available() \
+	# 左下:操作提示(触屏设备无键盘,改为触摸指引;--touch 桌面同口径)
+	_keys.text = "1–5 选择剧目    C 档案几何    S 设置    Esc 退出" \
+		if not Adaptive.is_touch_mode() \
 		else "点按剧目进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
 	Ui.style(_keys, 13, Ui.LIGHT, Color(Palette.I.dim, 0.9))
 	_ver_left.text = "%s · 反犬旁僻(fanquanpp)" % Version.full_string()
@@ -77,15 +76,17 @@ func _ready() -> void:
 		var idx := i
 		var act: Dictionary = LevelData.ACTS[idx]
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(490, 62)
-		b.text = "%02d   %s · %s" % [idx, act["name"], act["title"]]
+		# 行高 50(v0.44.2):五幕 26 场后旧 62px 行溢出 ActList 骨架 56px,
+		# 压住「剧目进度」提示与 toast 行——5×50 + 4×8 间距回到 294px 容器内
+		b.custom_minimum_size = Vector2(490, 50)
+		b.text = "%02d   %s · %s" % [idx + 1, act["name"], act["title"]]
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.add_theme_font_override("font", Ui.HEAD)
 		b.add_theme_font_size_override("font_size", 21)
 		b.add_theme_constant_override("icon_max_width", 30)
 		b.add_theme_constant_override("h_separation", 14)
 		b.icon = Ui.icon(act["icon"])
-		b.pivot_offset = Vector2(12, 31)
+		b.pivot_offset = Vector2(12, 25)
 		Ui.wire_button(b, "")   # try_open_act 自播 click / error(开演与拒绝语义不同)
 		b.pressed.connect(func() -> void: try_open_act(idx))
 		b.focus_entered.connect(func() -> void: show_act_hint(idx))
@@ -105,22 +106,6 @@ func _ready() -> void:
 	_start_btn.add_theme_color_override("font_color", Color.WHITE)
 	Ui.wire_button(_start_btn)
 	_start_btn.pressed.connect(func() -> void: m.start_game())
-
-	# 肉鸽(重跑)入口 v0.38.0 回归:红描边 = 单人重跑语言,与红色实心的
-	# 开始/继续同族;双人试炼保持橙色(P2 侧语言)。
-	_rogue_btn.add_theme_font_size_override("font_size", 18)
-	_rogue_btn.add_theme_font_override("font", Ui.HEAD)
-	_rogue_btn.add_theme_color_override("font_color", Palette.I.red)
-	_rogue_btn.add_theme_color_override("font_hover_color", Color.WHITE)
-	_rogue_btn.add_theme_color_override("font_pressed_color", Color.WHITE)
-	_rogue_btn.add_theme_stylebox_override("normal",
-		Ui.sb(Color(Palette.I.red, 0.10), 0, Palette.I.red, 1, 20, 8))
-	_rogue_btn.add_theme_stylebox_override("hover",
-		Ui.sb(Palette.I.red, 0, Palette.I.red, 1, 20, 8))
-	_rogue_btn.add_theme_stylebox_override("pressed",
-		Ui.sb(Color(Palette.I.red, 0.68), 0, Palette.I.red, 1, 20, 8))
-	Ui.wire_button(_rogue_btn)
-	_rogue_btn.pressed.connect(func() -> void: m.start_rogue_run())
 
 	# N1 同屏双人入口(net.md §3):橙 = P2 侧语言(与 chips 双人高亮同源);
 	# 触屏设备首版仅 P1 触屏、P2 手柄(双触屏分区后置,net.md §11)。
@@ -158,6 +143,7 @@ func _ready() -> void:
 		Sfx.play("ui_open")
 		close_dual_pick()
 		m.open_net_room())
+	_dual_pick.back_pressed.connect(func() -> void: close_dual_pick())
 
 	# —— 漂浮几何徽标:纹理 + 常驻慢速旋转 + 浮动参数 ——
 	var xs := [0.05, 0.42, 0.95, 0.80]
@@ -188,7 +174,7 @@ func _play_entrance() -> void:
 	tw.set_parallel(true)
 	tw.tween_property(_kicker, "modulate:a", 1.0, 0.30).set_delay(0.10)
 	tw.tween_property(_intro, "modulate:a", 1.0, 0.35).set_delay(0.72)
-	for item: Control in [_sec, _chapter_hint, _start_btn, _rogue_btn, _dual_btn,
+	for item: Control in [_sec, _chapter_hint, _start_btn, _dual_btn,
 			_panel_btn, _settings_btn]:
 		item.modulate.a = 0.0
 		tw.tween_property(item, "modulate:a", 1.0, 0.22).set_delay(0.55)
@@ -239,11 +225,11 @@ func is_act_panel_open() -> bool:
 
 ## 二级菜单行按下(卡片信号):解锁判定 / 反馈音 / 开演流转在宿主。
 func _on_level_pressed(li: int) -> void:
-	var def: LevelDef = LevelData.LEVELS[li]
+	var level_name := LevelData.scene_name(li)
 	if li > _unlocked:
 		Sfx.play("ui_error")
 		_act_panel.error_feedback_row(li)
-		toast("%02d %s — 先通关前一场" % [LevelData.scene_no_of(li), def.name])
+		toast("%02d %s — 先通关前一场" % [LevelData.scene_no_of(li), level_name])
 		return
 	Sfx.play("ui_click")
 	close_act_panel()
@@ -330,4 +316,4 @@ func set_unlocked(unlocked: int) -> void:
 		b.self_modulate = Color(1, 1, 1, 1.0 if playable else 0.5)
 	if _act_btns.size() > 0:
 		_act_btns[0].grab_focus()
-	_chapter_hint.text = "剧目进度 · 已解锁 %d / %d 场" % [unlocked + 1, LevelData.LEVELS.size()]
+	_chapter_hint.text = "剧目进度 · 已解锁 %d / %d 场" % [unlocked + 1, LevelData.count()]

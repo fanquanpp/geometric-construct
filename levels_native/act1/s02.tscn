@@ -1,0 +1,45 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2_ts"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="3_ts"]
+[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="4_door"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/piano_tile.tscn" id="5_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/mover.tscn" id="6_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/timed_bridge.tscn" id="7_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/ski_patch.tscn" id="8_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/launch_pad.tscn" id="9_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/portal_pair.tscn" id="10_sc"]
+[ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="11_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="12_hint"]
+
+[node name="LevelRoot" type="Node2D"]
+script = ExtResource("1_nl")
+level_name = "疾 · 折返"
+intro_text = "空中再按一次 Space——二段跳。\n高度不是墙,是台阶。"
+focus = 0
+roster = Array[int]([0])
+level_size = Vector2(3400, 2000)
+kill_y = 2600
+top_kill_y = -420
+[node name="Decor" type="TileMapLayer" parent="."]
+z_index = 0
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAIAAUAAAAAAAEAAAA=")
+[node name="Solid" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAARAAcAAAAAAAAAAAASAAcAAAAAAAAAAAATAAcAAAABAAAAAAAUAAcAAAAAAAAAAAAMAAoAAAAAAAAAAAANAAoAAAABAAAAAAAOAAoAAAAAAAAAAAAPAAoAAAAAAAAAAAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAAFAA0AAAAAAAAAAAAGAA0AAAAAAAAAAAAHAA0AAAAAAAAAAAAIAA0AAAAAAAAAAAAJAA0AAAAAAAAAAAAWAA0AAAAAAAAAAAAXAA0AAAAAAAAAAAAYAA0AAAAAAAAAAAAZAA0AAAAAAAAAAAAaAA0AAAAAAAAAAAAbAA0AAAAAAAAAAAAcAA0AAAAAAAAAAAAdAA0AAAAAAAAAAAAeAA0AAAAAAAAAAAA=")
+[node name="Spawn0" type="Marker2D" parent="."]
+position = Vector2(300, 1275)
+[node name="ExitDoor0" parent="." instance=ExtResource("4_door")]
+position = Vector2(2850, 1254)
+geo_index = 0
+[node name="Mover0" parent="." instance=ExtResource("6_sc")]
+position = Vector2(1650, 930)
+size = Vector2(200, 40)
+travel = Vector2(300, 0)
+period = 4
+[node name="HintMarker0" parent="." instance=ExtResource("12_hint")]
+position = Vector2(700, 1050)
+text = "空中再按 Space = 二段跳"

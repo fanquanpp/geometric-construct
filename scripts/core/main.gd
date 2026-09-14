@@ -20,8 +20,6 @@ const MENU_SCENE := preload("res://scenes/ui/menu_layer.tscn")
 const ARCHIVE_SCENE := preload("res://scenes/ui/archive_panel.tscn")
 const SETTINGS_SCENE := preload("res://scenes/ui/settings_panel.tscn")
 const PAUSE_SCENE := preload("res://scenes/ui/pause_menu.tscn")
-const ROGUE_LAYER_SCENE := preload("res://scenes/ui/rogue_layer.tscn")
-const ROGUE_DIR_SCENE := preload("res://scenes/modes/rogue/rogue_director.tscn")
 const NET_SESSION_SCENE := preload("res://scenes/net/net_session.tscn")
 const NET_ROOM_SCENE := preload("res://scenes/ui/net_room_layer.tscn")
 const BOOT_SCENE := preload("res://scenes/ui/boot_intro.tscn")
@@ -50,9 +48,8 @@ var _unlocked := 0
 var _auto_shot := false
 var debug_move := Vector2.ZERO
 var debug_jump := false
-## 镜头变焦覆盖(>0 时镜头锁定该 zoom):网格 LOD / 远景档截图验证用。
+## 镜头变焦覆盖(>0 时镜头锁定该 zoom):远景档截图验证用。
 var debug_zoom := 0.0
-var debug_grid := false   # --debug-grid:组件 id·层 标注叠加层(levels.md §8.3)
 var frame_no := 0
 
 var roster: RosterController  # 名册域控制器(Sprint 3):切换/召回/到站/记录点真身
@@ -66,28 +63,17 @@ var _doors: Dictionary:
 		return roster.doors
 # (通关链序列号 _complete_seq 已随 v0.38.2 流转域迁 GameFlow.complete_seq)
 
-# ———— 肉鸽模式(RogueDirector 驱动,modes/rogue) ————
-var rogue_layer: RogueLayer
-var rogue_dir: RogueDirector
-## _rogue / _level_def 真身同在 GameFlow(上注:域未就绪回退原默认值)。
-var _rogue := false:
-	get:
-		return game_flow.rogue if game_flow != null else false
-	set(value):
-		if game_flow != null:
-			game_flow.rogue = value
-var _level_def: LevelDef:
+# ———— 联机(net.md,N2 同网直连) ————
+var net_session: NetSession      # 会话中枢(Main 创建,两端路径一致才能 RPC 寻址)
+var net_room_layer: NetRoomLayer # 房间流程页(流程带 30)
+
+## _level_def 真身同在 GameFlow(域未就绪回退原默认值)。
+var _level_def: Dictionary:
 	get:
 		return game_flow.level_def if game_flow != null else null
 	set(value):
 		if game_flow != null:
 			game_flow.level_def = value
-var _pending_rogue_pick := false # 剧情播完后弹出"选本局主角"
-var _pending_rogue_focus := -1   # 已选主角:个人单章剧播完后开跑
-
-# ———— 联机(net.md,N2 同网直连) ————
-var net_session: NetSession      # 会话中枢(Main 创建,两端路径一致才能 RPC 寻址)
-var net_room_layer: NetRoomLayer # 房间流程页(流程带 30,与 RogueLayer 同带互斥)
 
 # ———— 自动化测试 ————
 ## 测试模式:屏蔽真实键盘的切换/重开/暂停输入,避免外部按键干扰自动验证。
@@ -98,14 +84,12 @@ var _held_keys := {}
 # ———— 开发钩子 ————
 ## dev 旗标与分派真身已下沉 scripts/dev/shot_harness.gd(v0.39.1,导出
 ## 剥离);这里只留游戏侧命令行旋钮与 game_flow 通关打印开关。
-var _json_level_path := ""      # --leveljson=<res://...>:JSON 关卡覆盖(editor 契约前置)
 var _auto_test := false         # --autotest=N:通关流转打印(game_flow 读)
 
 
 func _ready() -> void:
 	I = self
-	Ui.init_font()
-	# 角色管理器最先装配(R3 数据驱动画面):关卡建体经它入池发信号
+	Ui.init_font()	# 角色管理器最先装配(R3 数据驱动画面):关卡建体经它入池发信号
 	var cm: CharacterManager = CHARACTER_MANAGER_SCENE.instantiate()
 	add_child(cm)
 	# 名册域控制器(Sprint 3):切换 / 召回 / 到站 / 记录点真身
@@ -150,14 +134,6 @@ func _ready() -> void:
 	_pause.m = self
 	add_child(_pause)
 
-	# 肉鸽模式:UI 层 + 流程控制器(modes/rogue)
-	rogue_layer = ROGUE_LAYER_SCENE.instantiate() as RogueLayer
-	add_child(rogue_layer)
-	rogue_dir = ROGUE_DIR_SCENE.instantiate() as RogueDirector
-	rogue_dir.main = self
-	rogue_dir.layer = rogue_layer
-	add_child(rogue_dir)
-
 	# 联机:会话中枢 + 房间流程页(net.md;path 一致,RPC 才能寻址)
 	net_session = NET_SESSION_SCENE.instantiate() as NetSession
 	add_child(net_session)
@@ -167,7 +143,7 @@ func _ready() -> void:
 
 	_save = SaveManager.new()
 	_save.load_save()
-	_save.clamp_unlocked(LevelData.LEVELS.size() - 1)
+	_save.clamp_unlocked(LevelData.campaign_last())
 	_unlocked = _save.unlocked
 	_menu.set_unlocked(_unlocked)
 	_menu.visible = true
@@ -177,6 +153,37 @@ func _ready() -> void:
 	add_child(BOOT_SCENE.instantiate())
 
 	_parse_auto_shot()
+
+
+## Android 返回键接管(v0.44.2;配 project.godot quit_on_go_back=false):
+## 返回键 = 各态 Esc 语义逐级收口,任何页面都不再被系统直接杀进程——
+## 设置 / 档案面板先收;局内弹暂停;暂停时返回=继续;房间页逐级退;
+## 标题菜单按 Esc 同规则收弹层,无弹层才退出应用。
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		_android_back()
+
+
+func _android_back() -> void:
+	if settings_panel.is_open:
+		settings_panel.close()
+	elif archive_panel.is_open:
+		archive_panel.go_back()
+	elif _state == State.PLAYING:
+		_open_pause()
+	elif _state == State.PAUSED:
+		resume_game()
+	elif _state == State.ROOM:
+		net_room_layer.back_out()
+	elif _state == State.MENU:
+		if _menu.is_dual_pick_open():
+			_menu.close_dual_pick()
+		elif _menu.is_act_panel_open():
+			_menu.close_act_panel()
+		else:
+			get_tree().quit()
+	elif _state == State.WIN:
+		_return_to_menu()
 
 
 func _exit_tree() -> void:
@@ -197,11 +204,6 @@ func _clear_level() -> void:
 
 func start_level(index: int, intro := true) -> void:
 	game_flow.start_level(index, intro)
-
-
-## 肉鸽局内装载片段(RogueDirector 调用):不走标准解锁与通关流转(域委托)。
-func start_rogue_fragment(def: LevelDef, elite_title := "") -> void:
-	game_flow.start_rogue_fragment(def, elite_title)
 
 
 func _collect_players() -> void:
@@ -291,10 +293,10 @@ func _joybind(action: String, ev: InputEvent) -> void:
 
 ## 启动同屏双人(net.md §3):管道测试道 Z0 双分位,
 ## P1 = roster 偶数下标链,P2 = 奇数下标链。
-func start_level_dual() -> void:
+func start_level_dual(index := 0) -> void:
 	if NetSession.I != null and NetSession.I.is_net():
 		return   # 同屏双人与联机会话互斥(槽位归属 NetSession,不混管)
-	start_level(0)   # 先正常启动(内部 _switch_to(0) 设 is_active;此刻 dual_mode=false,守卫未生效)
+	start_level(index)   # 先正常启动(内部 _switch_to(0) 设 is_active;此刻 dual_mode=false,守卫未生效)
 	dual_mode = true  # 后翻开关:此后切换守卫生效,绑定须手动
 	# 双活绑定:前两 Player 各绑独立输入槽;is_active 双开(dual_mode 下
 	# switch_to 已除役,P2 的高亮只能在这里点亮)。
@@ -396,9 +398,8 @@ func _physics_process(_delta: float) -> void:
 	if archive_panel.is_open or settings_panel.is_open:
 		return
 	if _state == State.PLAYING:
-		# 状态空窗守卫(v0.35.1):肉鸽选体 / 单章剧窗口期 _state 已是
-		# PLAYING 而 _level_def 尚未装配(start_rogue_fragment 才落值),
-		# 本帧无可玩数据——整帧跳过,防 Nil 逐帧报错(rogueshot 曾 157 帧)
+		# 状态空窗守卫:转场窗口期 _state 已是 PLAYING 而 _level_def
+		# 尚未装配时,本帧无可玩数据——整帧跳过,防 Nil 逐帧报错
 		if _level_def == null:
 			return
 		_check_deaths()
@@ -430,16 +431,9 @@ func _physics_process(_delta: float) -> void:
 	elif _state == State.MENU:
 		if debug_solo:
 			return
-		# 重跑选体弹层开着时:Esc 收回弹层留在标题,其余按键不穿透
-		# (选路 / 词条弹层在 PLAYING 态,不在此分支)
-		if rogue_layer.is_overlay_open():
-			if Input.is_action_just_pressed("ui_cancel"):
-				Sfx.play("ui_back")
-				rogue_layer.cancel_overlay()
-			return
 		# 数字键:二级菜单开着时直达该_choose剧目内的场次;否则快速选剧目
 		# (1=序章开演 → 进二级菜单,2-4 未上演幕同样给出 toast 反馈);
-		# R 重跑 · C 打开档案几何;S 打开设置;Esc 关二级菜单 / 退出游戏
+		# C 打开档案几何;S 打开设置;Esc 关二级菜单 / 退出游戏
 		if _menu.is_dual_pick_open():
 			if Input.is_action_just_pressed("ui_cancel"):
 				_menu.close_dual_pick()
@@ -454,8 +448,6 @@ func _physics_process(_delta: float) -> void:
 		for i in LevelData.ACTS.size():
 			if _key_pressed(KEY_1 + i):
 				_menu.try_open_act(i)
-		if _key_pressed(KEY_R):
-			start_rogue_run()
 		if _key_pressed(KEY_C):
 			open_archive()
 		if _key_pressed(KEY_S):
@@ -531,9 +523,6 @@ func quit_to_menu() -> void:
 	Sfx.play("ui_close")
 	get_tree().paused = false
 	_pause.close()
-	if _rogue:
-		_rogue = false
-		rogue_dir.exit_run()
 	# 联机:离开即散房(关 peer / 停信标);主机散房 → 客机收 server_disconnected
 	if NetSession.I != null and NetSession.I.is_net():
 		NetSession.I.leave("")
@@ -544,8 +533,8 @@ func quit_to_menu() -> void:
 # ———————————————— 剧情文字(konado) ————————————————
 
 ## 播放剧情:暂停世界,叠放 Konado 对话层;结束后恢复。
-## kind:"act1" 开演剧(首进第一幕)/ "epilogue" 尾声(通关画面)/
-## "rogue_*" 肉鸽序说与单章。回看走档案几何剧情页的全文本阅读器,不经此处。
+## kind:"act1" 开演剧(首进第一幕)/ "epilogue" 尾声(通关画面)。
+## 回看走档案几何剧情页的全文本阅读器,不经此处。
 func show_story(kind: String) -> void:
 	var story: StoryLayer = STORY_SCENE.instantiate()
 	story.m = self
@@ -555,67 +544,11 @@ func show_story(kind: String) -> void:
 
 func on_story_finished() -> void:
 	get_tree().paused = false
-	# 个人单章剧播完 → 正式开跑
-	if _pending_rogue_focus >= 0:
-		_begin_rogue_run()
-		return
-	# 重跑序说播完 → 弹出"选本局主角"
-	if _pending_rogue_pick:
-		_pending_rogue_pick = false
-		_open_rogue_pick()
-
-
-## 菜单入口:进入重跑(肉鸽)模式 —— 首局先看"重跑序说",再选本局主角;
-## 每位主角首次重跑时播放他的个人单章刻画(story/rogue_<slug>.ks)。
-func start_rogue_run() -> void:
-	if _state != State.MENU:
-		return
-	Sfx.play("ui_open")
-	get_tree().paused = true
-	if not _save.seen_rogue:
-		_save.note_story("rogue_intro")
-		show_story("rogue_intro")
-	else:
-		_open_rogue_pick()
-
-
-func _open_rogue_pick() -> void:
-	var shards := _save.rogue_shards
-	var runs := _save.rogue_runs
-	rogue_layer.show_geo_pick(_on_rogue_picked, shards, runs)
-
-
-## 选定本局主角:先看他的个人单章(仅首次),再正式开跑。
-func _on_rogue_picked(idx: int) -> void:
-	_state = State.PLAYING
-	_menu.visible = false
-	_hud.visible = true
-	_pending_rogue_focus = idx
-	var kind := "rogue_%s" % Geometries.get_def(idx).slug
-	if not _save.story_seen(kind):
-		_save.note_story(kind)
-		get_tree().paused = true
-		show_story(kind)
-	else:
-		_begin_rogue_run()
-
-
-func _begin_rogue_run() -> void:
-	rogue_dir.begin(_pending_rogue_focus)
-	_pending_rogue_focus = -1
 
 
 ## 幕落回菜单(motion.md §2.3 三类大流转之三:折线幕帘,域委托)。
 func _return_to_menu() -> void:
 	game_flow.return_to_menu()
-
-
-## 肉鸽落幕结算完成,回到标题菜单。
-func finish_rogue_run() -> void:
-	get_tree().paused = false
-	_rogue = false
-	rogue_dir.exit_run()
-	_return_to_menu()
 
 
 # ———————————————— BGM motif ————————————————
@@ -715,12 +648,8 @@ func _check_complete() -> void:
 func _parse_auto_shot() -> void:
 	# 游戏侧旋钮(main 所有物,dev 面不碰;v0.39.1 起 dev 旗标全部下沉)
 	for raw in OS.get_cmdline_user_args():
-		if raw == "--debug-grid":
-			debug_grid = true
-		elif raw.begins_with("--zoom="):
+		if raw.begins_with("--zoom="):
 			debug_zoom = raw.substr(7).to_float()
-		elif raw.begins_with("--leveljson="):
-			_json_level_path = raw.substr(12)
 	# dev 旗标解析与分派真身(shot_harness;导出剥离,缺失 = 钩子关闭)
 	var h := _dev_harness()
 	if h != null:

@@ -121,10 +121,10 @@ Entity
 
 ## 卷五 · 空间语义(扩展正典)
 
-现有正典:`layer / faces / who / tags / id`(levels.md §7.10)。
+现有正典:`faces / who / tags / id`(levels.md §7)。
 扩展候选(**逐项拍板后入 glossary**,不一次性全上):
 
-`lane(旧档兼容,只读) / height-band / width / direction / gravity-relation /
+`height-band / width / direction / gravity-relation /
 visibility / accessible_by / interaction`。
 
 原则:语义字段必须**可被 gridcheck 校验**或**可被玩法读取**;
@@ -264,7 +264,7 @@ atmosphere 剪影层与 audio 动机库各有一个识别条目。
 | 推箱/滑雪带/传送对/弹射板 | gameplay 卷二 | M/Physics+State(M1–M2) | **保留(观察期)** | 组合矩阵已登记 |
 | 记录点信标 | structures §8 | M/Trigger+State | **保留(v0.36 实装)** | 信标实体 + 像素契约落地;正式关排布随 P2 |
 | 充电桩 | structures §5 | M/Character(M3) | **暂缓** | 随第二幕 |
-| 单向闸 | gameplay 卷二 | S(A03 变体) | **合并** | faces=top 预设笔刷 |
+| 单向闸 | gameplay 卷二 | S(A03 变体) | **合并** | faces=top 语义 |
 | 计时环/脆弱块 | gameplay 卷二 | M | **暂缓** | 随 P3 |
 | LevelDef.platforms 全部 | levels.md §7 | S(A01–A16 槽位) | 保留 | 逐步映射 Kit 构件 ID |
 | 反重力门(规划) | glossary §2 | M/Space | **暂缓**(逆置换是其个体版) | — |

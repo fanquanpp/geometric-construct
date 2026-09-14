@@ -4,7 +4,10 @@ extends RefCounted
 ## 水平加速 / 摩擦的步进公式,无副作用——输入当前速度与姿态参数,
 ## 返回新值。手感数值权威在 MovementTuning(data/tuning/movement_default.tres
 ## ,场景资源强制约束 R2 / REFACTOR §八 M-1);本文件只剩公式,零数值。
-## 每局修正(肉鸽词条)走 RunState 修饰链,与调参资源正交。
+
+## 三段重力倍率:上升顶点窗口减轻(微悬停的目标感)/ 下落加重(利落)。
+const APEX_MULT := 0.86
+const FALL_MULT := 1.24
 
 
 ## —— 三段重力:上升恒定(顶点窗口内减轻,制造"微悬停"的目标感),
@@ -17,12 +20,12 @@ static func gravity_step(vel: Vector2, def: GeometryDef, gravity_dir: int,
 	var g_mult := 1.0
 	if v.y * gravity_dir < 0.0:
 		if absf(v.y) < t.apex_window:
-			g_mult = RunState.modified(def, "gravity_apex_mult")
+			g_mult = APEX_MULT
 		v.y += t.gravity * g_mult * gravity_dir * dt
 	else:
 		var v_n := clampf(absf(v.y) / t.max_fall, 0.0, 1.0)   # 归一化落速 v/v∞
 		var a_fall := t.gravity \
-			* RunState.modified(def, "gravity_fall_mult") * (1.0 - v_n * v_n)
+			* FALL_MULT * (1.0 - v_n * v_n)
 		v.y += a_fall * gravity_dir * dt
 		if absf(v.y) > t.max_fall:
 			v.y = t.max_fall * signf(v.y)   # 极端帧安全阀(渐近线之内)
@@ -31,7 +34,7 @@ static func gravity_step(vel: Vector2, def: GeometryDef, gravity_dir: int,
 
 ## 等效重量(曲面 buff 减半在调用方以 ramp_buffed 表达)。
 static func eff_weight(p: Player, ramp_buffed: bool) -> float:
-	return RunState.modified(p.def, "weight") \
+	return p.def.weight \
 		* (MovementTuning.I.ramp_weight_ratio if ramp_buffed else 1.0)
 
 
@@ -59,7 +62,6 @@ static func friction_mu(p: Player, ramp_buffed: bool) -> float:
 	if p.def.shape == GeometryDef.Shape.BALL:
 		return t.ball_mu_roll * friction_factor(p, ramp_buffed)
 	return t.standard_mu * friction_factor(p, ramp_buffed) \
-		* RunState.modified(p.def, "friction") \
 		* (t.ski_friction_mult if p.skiing else 1.0)
 
 

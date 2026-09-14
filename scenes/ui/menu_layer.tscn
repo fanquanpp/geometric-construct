@@ -155,7 +155,7 @@ offset_top = 176.0
 offset_right = 520.0
 offset_bottom = 470.0
 mouse_filter = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
 [node name="ChapterHint" type="Label" parent="Root/Content/Right"]
 unique_name_in_owner = true
@@ -179,14 +179,6 @@ offset_top = 544.0
 offset_right = 1170.0
 offset_bottom = 586.0
 text = "开始 / 继续"
-
-[node name="RogueBtn" type="Button" parent="Root/Content"]
-unique_name_in_owner = true
-offset_left = 670.0
-offset_top = 596.0
-offset_right = 910.0
-offset_bottom = 638.0
-text = "重跑 · RE-RUN"
 
 [node name="DualBtn" type="Button" parent="Root/Content"]
 unique_name_in_owner = true

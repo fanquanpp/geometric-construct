@@ -62,15 +62,6 @@ grow_horizontal = 0
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="Coords" type="Label" parent="Root"]
-unique_name_in_owner = true
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -44.0
-offset_right = 760.0
-offset_bottom = -10.0
-
 [node name="NetBadge" type="Label" parent="Root"]
 unique_name_in_owner = true
 visible = false

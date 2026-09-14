@@ -13,7 +13,7 @@ extends Node
 ##             Main 既有回调;
 ##   movers —— 零带宽:主机随快照携带关卡时钟 t,客机端指数靠拢,动平台
 ##             / 限时桥按共享时钟取值(Mover/TimedBridge);
-##   生成   —— 无 MultiplayerSpawner:两端由同一 LevelDef 同步 build
+##   生成   —— 无 MultiplayerSpawner:两端由同一关卡场景同步装载
 ##             (版本 + 关卡哈希门禁 D7 保证一致),缺省 spawn 全免。
 ##
 ## 本节点由 Main 创建(path 两端一致,RPC 才能寻址),process_mode ALWAYS
@@ -35,10 +35,6 @@ const EV_BUFFED := 5
 const EV_SEAL := 6
 const EV_COMPLETE := 7
 const EV_BACK := 8
-# —— 肉鸽×联机事件位预留(roguelike.md §7 立项草案;零行为,实装另批)——
-const EV_RUN_MOD := 9    # 词条变更广播(主机 → 客机只读副本)
-const EV_RUN_TICK := 10  # 刻度消耗广播
-const EV_RUN_PATH := 11  # 选路结果广播
 const EV_LEVER := 9     # arg = 关内门序号(LeverGate.gate_id),arg2 = 门态(1 开)
 const EV_CHECKPOINT := 10   # arg = 关内信标序号(CheckpointBeacon.beacon_id)
 
@@ -233,15 +229,15 @@ func other_geo_arr() -> Array:
 
 ## 主机侧:当前选图下认领是否覆盖齐全(开演钮解锁条件)。
 func can_start() -> bool:
-	if not (is_host() and pick_level >= 0 and pick_level < LevelData.LEVELS.size()):
+	if not (is_host() and pick_level >= 0 and pick_level < LevelData.count()):
 		return false
-	return claims_cover(LevelData.LEVELS[pick_level].roster, _host_geo, _client_geo)
+	return claims_cover(LevelData.scene_roster(pick_level), _host_geo, _client_geo)
 
 
 ## 主机选图:广播定档,两端房间页转选角页。
 func host_pick_level(index: int) -> void:
 	if not (is_host() and mode != Mode.NONE
-			and index >= 0 and index < LevelData.LEVELS.size()):
+			and index >= 0 and index < LevelData.count()):
 		return
 	pick_level = index
 	rpc_map_picked.rpc(index)
@@ -256,9 +252,9 @@ func rpc_map_picked(index: int) -> void:
 
 ## 主机认领 / 释放:本地权威仲裁 + 全量广播(2 人房,流量可忽略)。
 func host_toggle_claim(index: int, on: bool) -> void:
-	if not (is_host() and pick_level >= 0 and pick_level < LevelData.LEVELS.size()):
+	if not (is_host() and pick_level >= 0 and pick_level < LevelData.count()):
 		return
-	if claim_ok(LevelData.LEVELS[pick_level].roster, _host_geo, _client_geo, index, on):
+	if claim_ok(LevelData.scene_roster(pick_level), _host_geo, _client_geo, index, on):
 		if on:
 			_host_geo.append(index)
 		else:
@@ -275,9 +271,9 @@ func client_toggle_claim(index: int, on: bool) -> void:
 
 @rpc("any_peer", "call_remote", "reliable", 0)
 func rpc_claim(index: int, on: bool) -> void:
-	if not (is_host() and pick_level >= 0 and pick_level < LevelData.LEVELS.size()):
+	if not (is_host() and pick_level >= 0 and pick_level < LevelData.count()):
 		return
-	if claim_ok(LevelData.LEVELS[pick_level].roster, _client_geo, _host_geo, index, on):
+	if claim_ok(LevelData.scene_roster(pick_level), _client_geo, _host_geo, index, on):
 		if on:
 			_client_geo.append(index)
 		else:
@@ -375,7 +371,7 @@ func back_to_lobby() -> void:
 
 # ———————————————— 关卡生命周期 ————————————————
 
-## 主机开演:可靠 RPC 令两端同步 start_level(同一 LevelDef,D7 门禁)。
+## 主机开演:可靠 RPC 令两端同步 start_level(同一关卡场景,D7 门禁)。
 func host_start_level(index: int) -> void:
 	if not (is_host() and mode != Mode.NONE):
 		return

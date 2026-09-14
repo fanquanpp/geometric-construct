@@ -33,18 +33,18 @@
 
 内容 = 纯数据,零逻辑改动。这是"更新包"的基本形态:
 
-- **关卡包**:在 `scripts/data/level_data.gd` 追加关卡(遵守 `LevelDef`
-  字段,分层语义见 levels.md §7.10)。关卡按数组顺序编号,
-  **只能在尾部追加**,不得在中间插入(会破坏玩家解锁进度——解锁存的是下标)。
-  当前「关卡设计」幕锁定、唯一在演 = 机制试炼场,演出关卡随机制达标后重启
-  (机制完善期既定方向)。
+- **关卡包**:在 `levels_native/<幕>/` 新建 `<场>.tscn`(根 = NativeLevel,
+  TileMapLayer 摆位 + 机关实例,摆放约定见 levels.md §1),并在
+  `level_data.gd` 的 `SCENES` / `ACTS` 登记(路径 / 名录 / 幕-场序)。
+  幕-场序 = 解锁存档契约,**只能尾部追加**,不得插入。
+  现行 = 第一幕六场在演(原生作关),二~五幕占位重制中。
 - **几何体包**:在 `data/characters/` 追加一份 GeometryDef `.tres`
   (参照 `dash.tres`,全字段 Inspector 可调),并在
   `scripts/data/geometries.gd` 的 `PATHS` 尾部登记下标,再提供
   `assets/svg/characters/<slug>-flat.svg`。几何体下标同样只能追加
   (`spawns`/存档按位掩码记录)。
 - **档案几何条目**:建筑物 / 机关图鉴条目是纯字典表(`ArchiveData`),
-  新增条目零代码——补 aseprite 源与 PNG(见 §4)后改数据表即可。
+  新增条目零代码——补孤本 PNG(见 §4)后改数据表即可。
 - 新增实体类型(如新机关):`scripts/entities/` 加类,`LevelDef` 加数组字段,
   `level_builder.gd` 加一段实例化——此类变更属于 MINOR。
 
@@ -60,6 +60,11 @@
   衍生素材目录**,地图 / 实体不得引用;显示纪律见 art-style.md §6.1
   (源 aseprite 已随 v0.39.0 清退,PNG 为孤本)。
   地图为引擎原生节点分层(Polygon2D),本条不构成瓦片管线重启。
+- **图块集(关卡地形,原生作关)**:aseprite 绘制(100×100 网格)→
+  导出 PNG 到 `assets/tiles/`(B 管线:CLI 导出,零插件)→
+  `data/tiles/native_tileset.tres` 引用;物理层 / 单向 / 地形集配置
+  见 levels.md §0。占位图块 = `tools/build_native_kit.gd` 生成,
+  素材到位后直接覆盖。
 - 素材变更后必须执行 `godot --headless --path . --import` 再测试。
 
 ## 5. 发布前检查单
@@ -67,7 +72,7 @@
 - [ ] `version.gd` 已按第 1 节规则升级
 - [ ] `CHANGELOG.md` 已补条目
 - [ ] 存档迁移:删掉 `user://speed-rouge.cfg` 与保留旧档两种情况下,游戏都能正常启动
-- [ ] `tests/flow_check` / `tests/comp_check` / `grid_check` / `reach_check` 门禁全绿(主线五幕 26 关)
+- [ ] `tests/native_check` / `tests/flow_check` / `-- --recalltest` / `-- --dualtest` / `tests/trait_check` 门禁全绿(现役关卡目录)
 - [ ] `--menushot` / `--panelshot`(档案几何全页签)/ `--autoshot=0` / `--tourshot` 截图人工过目(风格锚定不跑偏)
 - [ ] 新增 SVG 已进 `gen_svgs.py`,无游离的手改 svg;新增图鉴插图直接更新
 	  `assets/archive/` PNG(源 aseprite 已清退,地图零贴图纪律不破)

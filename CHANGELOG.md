@@ -3,6 +3,125 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.45.0(2026-09-15 · 作关换代)
+
+> **原生编辑器作关落地(M1–M4)+ 肉鸽模式整体删除 + 旧地图系统清退**
+> (用户拍板 2026-09-15;方案与决策记录:docs/design/native-levels.md)。
+
+### 新增
+- **原生作关管线**:`levels_native/` 每关一个 `.tscn`(Decor/Solid 两层
+  TileMapLayer + 门/机关/提示场景实例 + Spawn 标记,编辑器内直接可改);
+  `NativeLevel` 关卡根(roster 建体 / TileSet 物理层 mask 出生算定 /
+  相机四锁与边界墙);`LevelData` 换代为关卡目录(SCENES/ACTS 登记,
+  幕-场序 = 解锁存档契约);机关参数 `@export` 化并补场景壳
+  (exit_door / speed_gate / hint_marker / checkpoint_beacon)。
+- **TileSet 样板**(`data/tiles/native_tileset.tres`):物理层 0=共享 +
+  1..5=疾/跃/逆/圆/伍专属;单向踏面 = 碰撞多边形 One Way;占位图块
+  `assets/tiles/native_tiles.png`(`tools/build_native_kit.gd` 生成,
+  aseprite 素材到位后同名覆盖,场景零改动)。
+- **正式图块集落地**(Aseprite 全量绘制,同名覆盖占位图,场景零改动):
+  `assets/tiles/native_tiles.png` 40 格(4 列×10 行),源
+  `assets/art/tiles/native_tiles.aseprite`(tiles 层 + 隐藏 guides 网格)。
+  内容:实心 A / B(红刻)/ 内嵌面板 / 柱面;**16 邻接变体**(地形集
+  自动拼接备用,i=N+2E+4S+8W);单向薄板四变体(红铆 / 纸白刻度 /
+  **逆天花板踏面在底** / 红核心);**45° 双向坡**(右升 / 右降);
+  装饰:暗板剪影 / 蓝图格 / 红刻度三柱 / **四色刻度幕差分**(疾红·
+  跃黄·逆蓝·圆橙·伍白,art-style §7.2)/ 雪佛龙 / 几何圆环 / 取景框
+  角标 / 斜切三角拼贴 / 红顶地标 / 斜撑桁架。构成纪律全遵守:硬边
+  零渐变、缘线 PAPER·30%、构成红唯一强调、色板与 palette.tres 同源。
+  图集坐标契约(逐格语义 + TileSet 重建时物理配置建议)入 levels.md
+  §0;**勿再运行 `tools/build_native_kit.gd`**(会以占位灰块覆盖)。
+  **同日已被下条 192 格生成器图集接替,本批 aseprite 源档案保留;**
+  其坡面三角件、四色刻度三柱语义已由下条坡面 / 幕差分族补齐。
+- **图块集换代 192 格**(Aseprite 全量绘制;`tools/gen_tiles.lua`
+  生成器为源,PNG 孤本同名覆盖,场景零改动):`assets/tiles/native_tiles.png`
+  16 列 × 12 行——实心主族 16(基准/红刻/角刻/斜切/纹样/圆环/点阵/
+  取景框/亮面板/动板/墨块)+ 单向薄板与端件窄条 / 半高块×2 /
+  **逆天花板三件**(踏面在底)/ 薄墙·宽柱·基座·阶台·棚板·栅格 /
+  装饰暗板 16 / **红刻 16**(守每屏红 ≤3)/ **地形 16 邻接三族**
+  (石板·亮面板·墨块,手拼即用、地形集可随时启用)/ 灰阶环境 +
+  角色四色点缀(方块·横条·圆环 × 黄蓝橙,art-style §7.2)/
+  门框四件 + 巨构 8 + 管线铭牌 / 组合纹样 16 / 标记导航 16 /
+  **坡面·幕差分族 16**(45° 坡×4 踏面 P30 斜缘 / 缓坡 2:1×2 /
+  阶梯坡升降×2 / 四色刻度三柱×4 / 四色焦点框×4,art-style §7.2)。
+  **TileSet 同步重建**(`native_tileset.tres`):192 图位逐格碰撞
+  (整方 / 顶缘 24px·12px One Way / 逆天花板底缘反向 One Way /
+  半高·柱·门框·阶台局部多边形 / 坡件三角与三级阶梯多边形 /
+  装饰无碰撞);兼容契约(0,0)(1,0)(2,0)(0,1)(1,1) 五格不变。
+  图位契约入 levels.md §0;门禁 flow_check 全绿、native_check 全部
+  已落盘场景装载通过(本批验证时 13 关全绿;其后关卡目录并行扩至
+  27 关,在途登记项与本批无关);L0/L4 关卡实拍复核(平台无缝拼合、
+  顶缘线贯通、单向板与装饰暗板就位,`.shots/level_L*_tiles.png`)。
+- **第一幕六场重制**(参照 TWA 教学弧;`tools/build_native_act1.gd`
+  产出可编辑 .tscn):初速 / 折返 / 门厅(加速门)/ 高墙(爬墙+记录点)/
+  折叠(跃弹性)/ 合演·双生阶(疾+伍);`dev/probe.tscn` 门禁探针关。
+- **门禁换代**:native_check(逐关装载:体数/落地/专属门/Spawn)+
+  flow_check(通关流转→场景 Spawn 断言)+ recalltest(出生/信标/界边
+  召回,场景化)+ dualtest(probe 关,封印吸入判据)全绿;
+  trait_check / nettest 保留通过。
+- **第二~五幕全战役续作(26 场齐)**:act2 六场 + act3 五场(分岔:
+  疾/跃/逆/圆单章 + 路口)+ act4 五场(蜕变:静止/折叠/落地/回头/终场)+
+  act5 四场(刻度的真相:量尺/代价/真相/落幕)——布局忠实转译自 v0.44
+  已测原版 JSON(tools/act2_src/ = 原布局档案),伍走廊范式/单章机制课
+  原样保留;出生点按吸附后静息位重排;probe 探针关移至目录末位,
+  `campaign_last()` 界定战役终点(通关第五幕终场 = 尾声 WIN)。
+- **地形图块集全量绘制**(1600×1200 = 16×12 槽,含单向板/装饰/变体;
+  aseprite-mcp 绘制后经 CLI 导出覆盖 assets/tiles/native_tiles.png):
+  全部 26 场直接换装,TileSet 零改动。
+- **机关素材化(全部 12 件)**:第一批终点门(三帧:待命→到站→吸入)与
+  记录点信标(灭/亮);第二批 SpeedGate(静/强化)、TimedBridge(实/虚,
+  虚化保留线框+预警闪)、PianoTile(基/响)、PortalPair(三帧循环门环,
+  双端)、LeverGate 踏板(凸/凹)、Mover 石板(MoverSlab 程序绘制退役)、
+  Ramp(正典帧贴包围盒下衬,曲线亮线/红刻保留)、PushBox、LaunchPad、
+  SkiPatch——统一经 `TerrainKit.mech_sprite`(按各帧非透明占位框精确
+  适配机关区域,所见即所碰);动态演出全保留(雪佛龙/预警闪/粒子/高亮)。
+  九个机关场景壳入 `scenes/world/mechanisms/`(可拖摆,参数 Inspector 调)。
+  旧关卡预览图四张与过时 UI 截图清退。
+
+### 变更
+- 出口门 / 信标摆位语义:`position` 即世界锚点(`center`/`pos` 字段删除,
+  玩家到站与召回目标改读 position);出生点 = 静息位(地面顶 −25px)。
+- 玩家三段重力倍率回归 MovementCore 常量(APEX 0.86 / FALL 1.24),
+  coyote / swap_cooldown 入 MovementTuning(.tres 可调)。
+
+### 移除
+- **肉鸽模式全家**:RogueDirector / RunState / RunModifiers / StatBonus /
+  RogueFragments / RogueLayer;菜单「重跑」入口与 R 键;rogue_* 配乐四首
+  与剧本五篇;levels/rogue 片段库;rogue_check / modifier_check;存档
+  rogue 游玩字段(幕开演旗标保留,沿用历史节名)。
+- **旧地图系统**:LevelBuilder 运行时装配、Comp 组件语义、LevelDef、
+  grid_layer 定位网格、debug_grid_overlay 与 `--debug-grid`、zones 分区、
+  HUD 格坐标读数、`levels/*.json` 88 个、`tools/author_acts.py`、
+  grid/comp/reach/mover 旧检验器、`--trialshot` / `--leveljson` /
+  `--rogueautotest` 钩子。
+- 文档:roguelike.md 删除;levels.md 重写为原生作关契约;README /
+  UPDATE / ARCHITECTURE / design 索引换代;L0 DNA「程序化地图」与
+  structures `_draw` 制图约束退役判词。
+
+### 门禁
+- native_check ALL PASS(7 关)/ FLOW CHECK PASS / RECALLTEST 4 链 PASS /
+  DUALTEST 六链 PASS / TRAIT CHECK PASS / NETTEST 指纹-发现-传输 PASS /
+  改动脚本 check-only 全绿。
+
+## v0.44.2(2026-09-15)
+
+> **移动端全量界面走查修复批**(真机 Redmi K60 Ultra + 桌面 1280×720 / 20:9 双端分镜 100+ 镜洞察;P0 数据 bug + Android 返回链路 + 五幕菜单布局 + 触屏可达性)。
+
+### 修复
+- **加速门解析崩溃(P0,玩法实伤)**:`levels/act3/b3_roll.json`(L15 圆·长坡)与 `levels/act5/b5_truth.json`(L24 第四层真相)的 `gates` 坐标以 `[x, y]` 数组直出,`LevelDef._json_vec2` 只认 `{x, y}` 字典 → 每次启动静态初始化报 8 条脚本错误,两关加速门静默落原点 (0,0)×(0,0) 失效。两份 JSON 归一为契约字典形态,`_json_vec2` / `_json_rect` 容错数组形态(工直出不再炸)。
+- **Android 返回键杀进程(P1)**:任意页面按系统返回键直接退出应用(实测双人卡片 / 局内 / 剧情均中招)。`config/quit_on_go_back=false` + `Main._android_back()` 按栈顶路由:设置 / 档案(阅读器先回目录)→ 暂停(=继续)→ 局内(=弹暂停)→ 房间逐级 → 菜单弹层依次收 → 标题根退出。
+- **标题菜单「剧目进度」被五幕行遮压(P1)**:剧目行 62px × 5 行溢出 ActList 骨架(4 幕时代排版)56px,压住进度提示与 toast 行。行高 50 + 间距 8 回到容器内;顺带剧目编号 00–04 → **01–05**(与全场 01 起口径一致)。
+- **触屏不可达页(导航死路)**:剧情目录页补页脚关闭栏(键位页同款「就地关闭」纪律);联机房间选择页补「返回」行;双人卡片补「返回」按钮 + 信号(`back_pressed`,宿主收卡)。
+- **设置面板「关闭」钮不靠右**:内层再套 HBox 被容器按最小宽排,spacer 失效——版本号与关闭钮直接装入场景骨架 `%Foot` 行。
+- **recalltest 内容漂移(双体段)**:试炼关清退后 L0 花名册只含疾,切伍断言恒败。双体段迁到真含伍的 a1_pair(L4),按现行「首点切另一半」语义校准(出生即选界 → 首点得边),界半体贴顶沉降容差 8px;四段全过。
+- **触屏文案与按钮语义**:剧目二级卡底注触屏出「点按场次开演 · 左下返回」(桌面保留 Esc 口径);暂停菜单「虚拟按键」开关在触摸屏设备隐藏(真机上常驻开、开关只会误导);标题菜单左下操作提示改 `Adaptive.is_touch_mode()` 判定(--touch 桌面与真机同口径)。
+
+### 变更
+- 真机走查环境重建:4.7.2 导出模板重装(磁盘清理后缺失);debug 签名变更,真机需卸载重装(存档重置)。
+
+### 门禁
+- GRIDCHECK PASS(54 关,零脚本报错——此前每次启动 8 条)/ COMP CHECK PASS / FLOW CHECK PASS / REACHCHECK ALL PASS(54 关)/ RECALLTEST 四段 PASS / 改动脚本 check-only 零错;桌面 --menushot / --setshot / --panelshot / --roomshot / --actshot×5 / --rogueshot / --tourshot(L0/L3/L10/L25)/ --transitionshot / --bootshot 复拍过目,20:9 宽屏变体(2400×1080)三镜对照;真机 v0.44.2 菜单 / 双人卡片 / 房间返回 / 局内返回弹暂停实拍复核。
+
 ## v0.44.1(2026-09-14)
 
 > **正戏五幕开演剧 + 正式落幕幕重写**(纯内容批:剧本四新一改 + 触发泛化)。
@@ -27,6 +146,11 @@
 - **注释与预设清账**:level_def 头注改 v4 语义;ambience 订阅方、ambient_particles、level_builder、terrain_kit 的退役墓碑注释收净;export_presets `version/name` 由恒定陈旧的 "0.15.0" 对齐 "0.44.1"。
 - **活文档同步**:roguelike.md 头注(SSOT = levels/rogue/*.json,旧管线清退)、structures.md 记录点契约去 ase2level 引用。
 - 门禁:GRIDCHECK PASS(54 关)/ COMP CHECK PASS / 改动脚本 check-only 零错;panelshot 13 镜图鉴实拍复核(建筑页 SPEC 无层号、要点指引擎实算)。
+### 清账追加三(2026-09-15,词表终清)
+- **活文档终扫**:levels.md 旧 §0.1「Aseprite 语义层编译管线」段整删(与 §0「SSOT = levels/*.json、ase2level 已删」自相矛盾的残留;§8 zones 去 layer 字段、调试标注/HUD 读数描述去层号);README 组件语义行 v3 八层 → v4、图鉴口径改孤本 PNG、分镜清单去 laneshot;UPDATE 关卡包流程改「levels/ 追加 JSON + ACTS 登记」并去「试炼场在演」旧态;AGENTS R4 去「ase2level 编译产物」;ARCHITECTURE level_data 行改五幕装载、§7.10 → §7;REFACTOR §九 v3/LayerVisual/layer_check 表述改 v4/引擎原生/comp_check;glossary 建筑物行 LayerVisual → TerrainKit.slab_node。
+- **设计文档同步**:characters / gameplay / audio / motion / atmosphere / structures / entities·00 / design README 索引——「图层系统」「八层定值」「预设笔刷」「§7.10」全部正名为组件语义 v4(levels.md §7);art-style §6.1 改「孤本 PNG 规格」(源 aseprite 清退、动态帧 _f2/_f3 同为孤本、世界投影指引擎实算)。
+- **代码词表终清**:机关物 `layer_bit`/`layer_value` → **`sig_bit`/`sig_value`**(语义本就是 who 签名碰撞位,纯改名零行为);level_builder / player / level_def / component / focus_driver / terrain_kit / level_data / rogue_fragments 的 v3、`(layer, who)`、§7.10、L4–L7、景观层、ase2level 出处等注释全改 v4 口径;**游戏内文本**:设置面板「调试网格(组件 id·层 标注)」→「调试网格(组件 id 标注)」。
+- 门禁:改动脚本 check-only 18 文件零错 / GRIDCHECK PASS(54 关,warns=4 同基线)/ COMP CHECK PASS / FLOW CHECK PASS / REACHCHECK ALL PASS(54 关)。
 
 ## v0.44.0(2026-09-14)
 

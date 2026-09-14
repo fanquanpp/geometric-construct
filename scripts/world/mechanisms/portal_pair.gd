@@ -5,17 +5,32 @@ extends Node2D
 ## 防乒乓循环(调研结论 2026-09-11:出口偏移是反循环标准解)。
 ## 两端各一块感应区;双向可穿(A↔B)。
 
-var a := Vector2.ZERO            # A 门中心
-var b := Vector2.ZERO            # B 门中心
-var gate_size := Vector2(90.0, 170.0)
+@export var a := Vector2.ZERO            # A 门中心(相对本节点)
+@export var b := Vector2(240, 0)         # B 门中心(相对本节点)
+@export var gate_size := Vector2(90.0, 170.0)
 var _cooldown := {}              # body -> 剩余冷却秒
 var _areas: Array = []
+var _frames: Array = []
+var _sprs: Array = []
+var _anim_t := 0.0
 
 const EXIT_PUSH := 46.0
 const COOLDOWN := 0.5
 
 func _ready() -> void:
 	z_index = 4
+	_frames = [
+		preload("res://assets/archive/mech_portal.png"),
+		preload("res://assets/archive/mech_portal_f2.png"),
+		preload("res://assets/archive/mech_portal_f3.png"),
+	]
+	for end: Vector2 in [a, b]:
+		for k in 3:
+			var spr := TerrainKit.mech_sprite(_frames[k],
+				Rect2(end - gate_size / 2.0, gate_size))
+			spr.visible = k == 0
+			add_child(spr)
+			_sprs.append(spr)
 	for end: Vector2 in [a, b]:
 		var area := Area2D.new()
 		area.position = end
@@ -38,7 +53,7 @@ func _on_enter(body: Node2D, end: Vector2) -> void:
 	var other: Vector2 = b if end == a else a
 	var outward: Vector2 = (other - end).normalized()
 	_cooldown[body] = COOLDOWN
-	(body as Player).global_position = other + outward * EXIT_PUSH
+	(body as Player).global_position = global_position + other + outward * EXIT_PUSH
 	Sfx.play("switch", -6.0)
 	queue_redraw()
 
@@ -47,25 +62,8 @@ func _physics_process(delta: float) -> void:
 		_cooldown[k] = float(_cooldown[k]) - delta
 		if float(_cooldown[k]) <= 0.0:
 			_cooldown.erase(k)
-	queue_redraw()   # 门内粒子/呼吸逐帧
-
-func _draw() -> void:
-	# 双门:取景框语言(目标角色色双线框)改用传送青蓝,雪佛龙指向对面
-	for end: Vector2 in [a, b]:
-		var local := end - position
-		var r := Rect2(local - gate_size / 2.0, gate_size)
-		draw_rect(r, Color("4E86D8", 0.18))
-		draw_rect(r, Color("4E86D8", 0.9), false, 2.0)
-		draw_rect(r.grow(-6.0), Color(Palette.I.paper, 0.5), false, 1.0)
-		var dir: float = signf(b.x - a.x)
-		var cx := local.x
-		for k in 2:
-			var off := -10.0 + 20.0 * float(k)
-			draw_polyline(PackedVector2Array([
-				Vector2(cx + dir * off - dir * 8.0, local.y - 18.0),
-				Vector2(cx + dir * off + dir * 8.0, local.y),
-				Vector2(cx + dir * off - dir * 8.0, local.y + 18.0)]),
-				Color(Palette.I.paper, 0.7), 2.0)
-		# 端点刻度
-		draw_rect(Rect2(Vector2(local.x - 4.0, local.y - gate_size.y / 2.0 - 8.0),
-			Vector2(8, 4)), Color(Palette.I.red, 0.8))
+	# 门环三帧循环(图鉴正典动画;静置也呼吸,标识"这里能传")
+	_anim_t += delta
+	var fi := int(_anim_t / 0.25) % 3
+	for i in range(_sprs.size()):
+		_sprs[i].visible = i % 3 == fi

@@ -113,8 +113,8 @@
   「角色只交参数表」拍板同向;首个样板 = REFACTOR.md §八 M-4)。
 
 **R4 · 边界(与既有契约不冲突)**
-- 关卡几何仍走 `levels/*.json` + LevelDef(ase2level 编译产物,
-  契约 levels.md)——JSON 是内容包与编译产物,不是编辑器调参
+- 关卡几何仍走 `levels/*.json` + LevelDef(手编 / 工具直出的 JSON,
+  契约 levels.md)——JSON 是内容包,不是编辑器调参
   数值,不在 .tres 化范围;词条表(run_modifiers)按 REFACTOR
   Phase 3 拍板保持 `.gd`(系统能力,非调参数值)。
 - 双端路径与文档同步要求(本文件第 1 条)不变;新增场景 / 资源

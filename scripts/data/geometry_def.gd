@@ -5,15 +5,14 @@ extends Resource
 ## Inspector 直调;resource 只作静态数据,运行时禁止写入(共享引用,
 ## 一处写处处变)。
 ##
-## 属性规范(glossary.md §4 加成数值条 v3,v0.36.0):
+## 属性规范(glossary.md §4,v0.36.0):
 ##   内部存储 = 物理倍率(0.0 – 2.0):1.0 = 标准物理基准,0.0 = 无该能力,
 ##   2.0 = 物理上限;物理公式(px/s、格、反弹率)与本文件数值绑定。
-##   **基础值只属于几何体自己**;局内修正走「加成数值条」(StatBonus):
-##   档位 0 = 无加成,+1..+4 = 基础 × (1 + 0.25×档),−1 = 锁定,
-##   基础 ≤ 0 的能力 = "状态-1"(非禁用,是天生没有)。
+##   **基础值只属于几何体自己**;基础 ≤ 0 的能力 = "状态-1"
+##   (非禁用,是天生没有)。
 ##   基础读数(存档/文档兼容记法)= 物理倍率 + 1.0(物理 0.0 → -1.0);
 ##   跳高例外:读数 = 格数(标准跳 2.0 格 = 基准 2.0)。常规域读数
-##   -1.0 – 3.0;词条满档硬顶读数 5.0。
+##   -1.0 – 3.0。
 ##
 ## 标尺换算:1.0 属性单位 = 100 px(1 格)。
 ##   跳高(格) = jump_units(独立属性,二段跳几何体统一 2.0 格/跳);
@@ -112,11 +111,10 @@ func friction_reading() -> float:
 	return snappedf(mu / t.standard_mu * 2.0, 0.1)
 
 
-## 档案页属性行(纯基础数据,不含局内加成——加成由 ArchivePanel 渲染时
-## 经 RunState 叠加):
-##   {label, bar: true,  key, absent, base_read, hint} —— 加成数值条行
-##   (bar 键 ∈ StatBonus.BAR_KEYS;absent = 基础不具备 → 面板显示"状态-1");
-##   {label, bar: false, absent, value, hint} —— 派生/材质读数行(无档位);
+## 档案页属性行(纯基础数据):
+##   {label, bar: true,  key, absent, base_read, hint} —— 数值条行
+##   (absent = 基础不具备 → 面板显示"状态-1");
+##   {label, bar: false, absent, value, hint} —— 派生/材质读数行;
 ##   {label, text} —— 形体行。
 ## 基础读数 = 标尺记法(物理 + 1.0,物理 0 → -1.0;glossary.md §4)。
 ## 派生量一律按真实物理式换算:
@@ -124,9 +122,8 @@ func friction_reading() -> float:
 ##   跳高 → h = v₀² / 2g(起跳速度按能量守恒反推);
 ##   弹性 → 反弹率 e = bounce × 0.5(牛顿碰撞定律 v′ = e·v);
 ##   摩擦 → 减速度 a = μ·g(库伦摩擦,重量项视作材质差异)。
-## modifier(可选,依赖注入):词条钩子解算函数 `func(def, key) -> float`
-## (data 层叶节点不反向依赖 modes 层的 RunState;由 UI 消费方注入,
-##  缺省 = 直通原始值)。M-5 尾款:攀墙行走钩子,局内实时反映词条倍率。
+## modifier(可选,依赖注入):属性解算函数 `func(def, key) -> float`
+## (data 层叶节点不反向依赖 UI;由消费方注入,缺省 = 直通原始值)。
 func stat_rows(modifier: Callable = Callable()) -> Array:
 	var hook := func(key: String, base: float) -> float:
 		if modifier.is_valid():

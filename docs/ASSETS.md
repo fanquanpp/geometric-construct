@@ -19,10 +19,11 @@
 | 剧情篇目 | 8(= `story/*.ks`)| `archive_data.gd` STORIES |
 | 幕(现行) | 5(第一~第五幕,正戏全量)| `scripts/data/level_data.gd` ACTS |
 | 幕(七幕主纲) | 7(5 已演 + 序幕/落幕剧本)| `story.md` §1.5 |
-| 关卡(在演) | 26(五幕 26 场,v0.44.0)| `levels/act1..act5/*.json` |
+| 关卡(在演) | 6(第一幕六场 native;二~五幕占位随作关续批)| `levels_native/act1/*.tscn` | v0.45 换代:JSON 26 关管线退役(归档 git 历史) |
 | ~~测试道~~ | ~~2~~ | ~~trial_v5 / pair_trial~~ | v0.44.0 清退(测试关内容清退令)|
 | 图鉴插图(入引擎) | 43 张 png | `assets/archive/` |
-| aseprite 源 | 15 个(icon_construct 1 + mech 精灵 12 + ui 卡框 2)| `assets/art/`、`assets/art/mech/`、`assets/art/ui/` | v0.39.0 清退:地图皮源 30(levels/)+ 图鉴源 33(tiles_v2/)+ png 产物 38 —— 三套自研分层系统退役,唯余 R1 素材化所需 |
+| 图块集(入引擎) | 1(native_tiles.png,192 格 16 列×12 行)| `assets/tiles/` | v0.45 原生作关唯一图块素材,图位契约 levels.md §0;PNG 为孤本,生成器 `tools/gen_tiles.lua` 同批入库 |
+| aseprite 源 | 15 个(icon_construct 1 + mech 精灵 12 + ui 卡框 2)| `assets/art/`、`assets/art/mech/`、`assets/art/ui/` | v0.39.0 清退:地图皮源 30(levels/)+ 图鉴源 33(tiles_v2/)+ png 产物 38 —— 三套自研分层系统退役,唯余 R1 素材源;图块集不走 aseprite 源,以 Lua 生成器为源 |
 | 音频数据 .tres | 34(data/music 6 + data/sfx 28)| `data/music/`、`data/sfx/` | M-7/M-8 数值资源化(v0.38):BGM motif 与音效规格全 @export,Inspector 直调 |
 | svg 图标 | 69 个(7 类)| `assets/svg/` |
 | 字体 | 1(NotoSansSC-VF)| `assets/fonts/` |

@@ -30,10 +30,6 @@ var _boot_shot := false
 var _intro_shot := false
 var _story_shot := false
 var _story_kind := "prologue"   # --storyshot=NAME:指定要截图/验证的剧本
-var _rogue_shot := false
-var _rogue_auto := false
-var _rogue_focus := 0           # --rogueautotest=N:指定主角跑通局
-var _trial_shot := false        # --trialshot:JSON 关卡出生点连拍(双体/磁界验证)
 var _tour_shot := false
 var _tap_shot := false          # --tapshot:点按粒子反馈分镜(TouchControls 触点反馈)
 var _perf_log := false
@@ -91,18 +87,10 @@ func boot(args: Array) -> void:
 			_story_shot = true
 			if raw.contains("="):
 				_story_kind = raw.substr(12)
-		elif raw == "--rogueshot":
-			_rogue_shot = true
-		elif raw.begins_with("--rogueautotest"):
-			_rogue_auto = true
-			if raw.contains("="):
-				_rogue_focus = raw.substr(15).to_int()
 		elif raw == "--tourshot":
 			_tour_shot = true
 		elif raw == "--tapshot":
 			_tap_shot = true
-		elif raw == "--trialshot":
-			_trial_shot = true
 		elif raw == "--perflog":
 			_perf_log = true
 		elif raw.begins_with("--level="):
@@ -142,8 +130,6 @@ func boot(args: Array) -> void:
 			run_net_join(_net_join_ip)
 		else:
 			m.net_session.run_self_test()
-	if _trial_shot:
-		run_trial_shot()
 	if _panel_shot:
 		run_panel_shot()
 	if _set_shot:
@@ -156,10 +142,6 @@ func boot(args: Array) -> void:
 		run_intro_shot()
 	if _story_shot:
 		run_story_shot()
-	if _rogue_shot:
-		run_rogue_shot()
-	if _rogue_auto:
-		run_rogue_auto_test()
 	if _tour_shot:
 		run_tour_shot()
 	if _perf_log:
@@ -230,79 +212,6 @@ func run_intro_shot() -> void:
 	m.get_tree().quit()
 
 
-## 截取肉鸽模式 UI(选体 / 选路 / 词条三选一 / 结算,逐屏截图验收)。
-func run_rogue_shot() -> void:
-	if _shot_dir.is_empty():
-		_shot_dir = "res://.shots"
-	m._state = Main.State.PLAYING
-	await m.get_tree().create_timer(0.6).timeout
-	var done := func(_a = null) -> void: pass
-	m.rogue_layer.show_geo_pick(done, 34, 2)
-	await m.get_tree().create_timer(0.5).timeout
-	await _shot("rogue_pick")
-	m.rogue_layer._close_overlay()
-	var mock_routes := [
-		{"title": "演示甲", "note": "快 · 三级梯田直上,缺口只有两格"},
-		{"title": "演示乙", "note": "稳 · 全程地面安全网,谷底滚不碎"},
-	]
-	m.rogue_layer.show_route(1, mock_routes, done)
-	await m.get_tree().create_timer(0.5).timeout
-	await _shot("rogue_route")
-	m.rogue_layer._close_overlay()
-	m.rogue_layer.show_reward([
-		RunModifiers.ALL[0], RunModifiers.ALL[4], RunModifiers.ALL[5]], done)
-	await m.get_tree().create_timer(0.5).timeout
-	await _shot("rogue_reward")
-	m.rogue_layer._close_overlay()
-	m.rogue_layer.show_settle({
-		"cleared": false, "chapter": 2, "arrivals": 12, "elites": 1, "deaths": 3,
-		"shards": 17, "balance": 34, "mods": [RunModifiers.ALL[1], RunModifiers.ALL[4]],
-	}, done)
-	await m.get_tree().create_timer(0.5).timeout
-	await _shot("rogue_settle")
-	m.rogue_layer._close_overlay()
-	# 局内状态条:mock 一局(2 段进度 / 3 格刻度 / 2 词条)后装载真片段
-	m.rogue_dir.run = RunState.new(0)
-	m.rogue_dir.run.chapter = 2
-	m.rogue_dir.run.fragments_done = 1
-	m.rogue_dir.run.ticks = 3
-	m.rogue_dir.run.add_mod(RunModifiers.ALL[1])
-	m.rogue_dir.run.add_mod(RunModifiers.ALL[4])
-	m.get_tree().paused = false
-	# v0.17 片段库已清空:状态条 mock 照常截图,真片段装载跳过
-	var _routes: Array = RogueFragments.chapter_routes(0, 1)
-	if _routes.is_empty():
-		print("ROGUESHOT: 片段库已清空,跳过片段装载")
-		m.get_tree().quit()
-		return
-	m.start_rogue_fragment(_routes[0]["def"])
-	m.rogue_layer.refresh_status(m.rogue_dir.run)
-	await m.get_tree().create_timer(0.6).timeout
-	await _shot("rogue_status")
-	m.rogue_dir.run = null
-	m.get_tree().quit()
-
-
-## 肉鸽全流程自动测试:auto 模式下自动选路 / 选奖励 / 强制完成片段,
-## 跑完一整局(三章 + 三精英考 + 结算)直到回菜单。
-func run_rogue_auto_test() -> void:
-	print("TEST: rogue auto run begin")
-	m._menu.visible = false
-	m._hud.visible = true
-	m._state = Main.State.PLAYING
-	m.rogue_dir.auto = true
-	print("TEST: rogue focus=", Geometries.get_def(_rogue_focus).name)
-	m.rogue_dir.begin(_rogue_focus)
-	var deadline := Time.get_ticks_msec() + 120000
-	while Time.get_ticks_msec() < deadline \
-			and m.rogue_dir.phase != RogueDirector.Phase.IDLE:
-		await m.get_tree().create_timer(0.5).timeout
-	print("TEST: rogue run end phase=", m.rogue_dir.phase,
-		" mods=", m.rogue_dir.run.mod_ids() if m.rogue_dir.run != null else [],
-		" shards=", m._save.rogue_shards, " runs=", m._save.rogue_runs)
-	m.get_tree().quit()
-
-
 ## 截取剧情对话框(序幕)。
 ## 刻意先开局把相机带到关卡深处再开对话:验证变暗遮罩不再跟随相机
 ## (follow_viewport 关闭后,遮罩恒定铺满屏幕,左右两侧都不会漏光)。
@@ -323,48 +232,29 @@ func run_story_shot() -> void:
 	m.get_tree().quit()
 
 
-## 巡航截图:沿大型关卡的关键节拍传送受控几何体,逐点截图验收。
-## 节拍表按当前关卡下标内建;新巨构关卡在此追加自己的节拍行。
+## 巡航截图:沿关卡场景摆位的关键节拍传送受控几何体,逐点截图验收。
+## 节拍表 = 场景摆位本身(原生作关):出生点 + 记录点信标 + 出口门(抬高
+## 160px 目检,不踩门区,防误触 WIN)。
 func run_tour_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
-	m._unlocked = LevelData.LEVELS.size() - 1
+	m._unlocked = LevelData.count() - 1
 	m.start_level(_shot_level, false)
 	await m.get_tree().create_timer(0.4).timeout
-	# 数据驱动节拍(v0.44.0,旧试炼场手排节拍表退役):出生点 + 检查点 +
-	# 实体平台顶按 x 均布采样(跳过出口门 ±120 横距,防误触 WIN);
-	# 伍双体关传送地面半体(界挂天花,传送顶面会把镜像体抛向 top_kill)。
-	var def: LevelDef = m.game_flow.level_def
 	var wps: Array = []
-	var spawn: Variant = def.spawns[def.focus] \
-		if def.focus < def.spawns.size() else Vector2(300, 850)
-	if spawn is Dictionary:
-		spawn = spawn["b"]
-	wps.append(["spawn", spawn])
-	for cp in def.checkpoints:
-		wps.append(["cp", cp["pos"]])
-	var solids: Array = []
-	for it0 in def.platforms:
-		var it := Comp.normalize(it0)
-		if it["faces"] != Comp.FACES_NONE:
-			solids.append(it["rect"])
-	solids.sort_custom(func(a: Rect2, b: Rect2) -> bool:
-		return a.get_center().x < b.get_center().x)
-	var pick := maxi(1, ceili(solids.size() / 6.0))
-	for k in solids.size():
-		if k % pick != 0:
-			continue
-		var r: Rect2 = solids[k]
-		var top: Vector2 = Vector2(r.get_center().x, r.position.y - 80.0)
-		var near_exit := false
-		for e in def.exits:
-			if absf(e[1].x - top.x) < 120.0:
-				near_exit = true
-				break
-		if not near_exit:
-			wps.append(["p%02d" % k, top])
-	var waypoints: Array = wps
-	for wp in waypoints:
+	var root: Node = m._level_root
+	for idx: int in m.game_flow.level_def["roster"]:
+		var mk := root.get_node_or_null(NodePath("Spawn%d" % idx)) as Marker2D
+		if mk != null:
+			wps.append(["spawn%d" % idx, mk.global_position])
+			break
+	for n in root.get_children():
+		if n is CheckpointBeacon:
+			wps.append(["cp%d" % n.beacon_id, n.position])
+	for n in root.get_children():
+		if n is ExitDoor:
+			wps.append(["door%d" % n.geo_index, n.position + Vector2(0, -160)])
+	for wp: Array in wps:
 		if m.players.is_empty():
 			break
 		var p: Player = m.players[m.view_slot()]
@@ -493,40 +383,21 @@ func run_recall_test() -> void:
 		" pos=", p.position, " spawn=", p.spawn_pos)
 	if not ok:
 		fails += 1
-	# ② 双子:点伍芯片(= m.switch_to_geo(4))→ 默认选中界;召回回天花出生点 a
-	m.switch_to_geo(4)
-	await m.get_tree().physics_frame
-	var jie: Player = m.players[m.view_slot()]
-	var ok_jie: bool = jie.pair_half == 0
-	jie.position = jie.spawn_pos + Vector2(600, 0)
-	await _recall_keypress()
-	ok_jie = ok_jie and jie.position.distance_to(jie.spawn_pos) < 2.0 \
-		and jie.gravity_dir == -1 and not jie.dying
-	print("RECALLTEST 界 ", "PASS" if ok_jie else "FAIL",
-		" pos=", jie.position, " spawn=", jie.spawn_pos,
-		" g=", jie.gravity_dir)
-	if not ok_jie:
-		fails += 1
-	# ③ 同键再点(切换另一半语义)→ 边;召回回地面出生点 b
-	m.switch_to_geo(4)
-	await m.get_tree().physics_frame
-	var bian: Player = m.players[m.view_slot()]
-	var ok_bian: bool = bian.pair_half == 1
-	bian.position = bian.spawn_pos + Vector2(-300, 0)
-	await _recall_keypress()
-	ok_bian = ok_bian and bian.position.distance_to(bian.spawn_pos) < 2.0 \
-		and bian.gravity_dir == 1 and not bian.dying
-	print("RECALLTEST 边 ", "PASS" if ok_bian else "FAIL",
-		" pos=", bian.position, " spawn=", bian.spawn_pos,
-		" g=", bian.gravity_dir)
-	if not ok_bian:
-		fails += 1
-	# ④ 记录点信标(v0.36 实装):触碰登记(体身份键入账)→ 召回回信标落点
-	m.switch_to_geo(0)
-	await m.get_tree().physics_frame
+	# ② 记录点信标:触碰登记(体身份键入账)→ 召回回信标落点
+	# (留在 L0:花名册 [0],与本段单体同几何;信标位置 = s01 场景摆位)
 	var cpr: Player = m.players[m.view_slot()]
-	var bpos: Vector2 = LevelData.LEVELS[0].checkpoints[0]["pos"]
+	var beacon: CheckpointBeacon = null
+	for n in m._level_root.get_children():
+		if n is CheckpointBeacon:
+			beacon = n
+			break
+	if beacon == null:
+		print("RECALLTEST 信标 FAIL: s01 缺信标摆位")
+		m.get_tree().quit(1)
+		return
+	var bpos: Vector2 = beacon.position
 	cpr.position = bpos
+	print("DBG recall: bpos=", bpos, " cpr=", cpr.position)
 	await m.get_tree().physics_frame
 	await m.get_tree().physics_frame
 	await m.get_tree().physics_frame
@@ -536,6 +407,38 @@ func run_recall_test() -> void:
 	print("RECALLTEST 信标 ", "PASS" if ok_cp else "FAIL",
 		" pos=", cpr.position, " beacon=", bpos)
 	if not ok_cp:
+		fails += 1
+	# ③④ 双子链路(合演关 L5:花名册 [疾, 伍]):切伍首切 = 界(pair_half 0,
+	# 候选首序),再切 = 边;界召回贴合容差 8px(天花板半体向上安放)。
+	m.start_level(5, false)
+	await m.get_tree().create_timer(0.5).timeout
+	m.switch_to_geo(4)
+	await m.get_tree().physics_frame
+	var jie: Player = m.players[m.view_slot()]
+	print("DBG jie ph=", jie.pair_half, " g=", jie.gravity_dir,
+		" pos=", jie.position, " spawn=", jie.spawn_pos)
+	var ok_jie: bool = jie.pair_half == 0 and jie.gravity_dir == -1
+	jie.position = jie.spawn_pos + Vector2(600, 0)
+	await _recall_keypress()
+	ok_jie = ok_jie and jie.position.distance_to(jie.spawn_pos) < 8.0 \
+		and jie.gravity_dir == -1 and not jie.dying
+	print("RECALLTEST 界 ", "PASS" if ok_jie else "FAIL",
+		" pos=", jie.position, " spawn=", jie.spawn_pos,
+		" g=", jie.gravity_dir)
+	if not ok_jie:
+		fails += 1
+	m.switch_to_geo(4)
+	await m.get_tree().physics_frame
+	var bian: Player = m.players[m.view_slot()]
+	var ok_bian: bool = bian.pair_half == 1 and bian.gravity_dir == 1
+	bian.position = bian.spawn_pos + Vector2(-300, 0)
+	await _recall_keypress()
+	ok_bian = ok_bian and bian.position.distance_to(bian.spawn_pos) < 2.0 \
+		and bian.gravity_dir == 1 and not bian.dying
+	print("RECALLTEST 边 ", "PASS" if ok_bian else "FAIL",
+		" pos=", bian.position, " spawn=", bian.spawn_pos,
+		" g=", bian.gravity_dir)
+	if not ok_bian:
 		fails += 1
 	m.get_tree().quit(0 if fails == 0 else 1)
 
@@ -559,7 +462,7 @@ func _recall_keypress() -> void:
 ## N1 同屏双人冒烟自测(--dualtest,headless):双活绑定 / 分区输入 /
 ## 双活禁切 / 死亡保操控 / 双体到站登记,五链路一次走完。
 func run_dual_test() -> void:
-	m.start_level_dual()
+	m.start_level_dual(26)
 	await m.get_tree().create_timer(0.5).timeout
 	var fails := 0
 	var p1: Player = m.players[0]   # 疾 → P1 槽
@@ -584,16 +487,16 @@ func run_dual_test() -> void:
 		" p1_dx=%.1f p2_dx=%.1f" % [p1.position.x - x1, p2.position.x - x2])
 	if not ok_input:
 		fails += 1
-	# ③ 双活禁切:chips 直达在双活下应无效(双开不受扰动)
+	# ③ 双活禁切:chips 直达在双活下应无效(roster 不变、双开保持)
 	m.switch_to_geo(2)
 	await m.get_tree().physics_frame
-	var ok_noswitch: bool = not m.players[2].is_active \
+	var ok_noswitch: bool = m.players.size() == 2 \
 		and p1.is_active and p2.is_active
 	print("DUALTEST noswitch ", "PASS" if ok_noswitch else "FAIL")
 	if not ok_noswitch:
 		fails += 1
 	# ④ 死亡保操控:P2 的跃坠杀 → 重生回出生点,is_active 不丢
-	p2.position = Vector2(p2.position.x, 1500.0)   # kill_y = 1400
+	p2.position = Vector2(p2.position.x, 1550.0)   # probe kill_y = 1500
 	await m.get_tree().create_timer(1.2).timeout
 	var ok_death: bool = not p2.dying and p2.is_active \
 		and p2.position.distance_to(p2.spawn_pos) < 32.0   # 32px:含落地安放的物理沉降
@@ -602,16 +505,27 @@ func run_dual_test() -> void:
 	if not ok_death:
 		fails += 1
 	# ⑤ 双体到站登记:各自进各自门;全员未齐不误通关
+	# (0.2s 窗口断言双到站;seal 后 enter_exit 错峰吸入会把 arrived 翻 false)
 	var d0: ExitDoor = m._doors.get(p1.index)
 	var d1: ExitDoor = m._doors.get(p2.index)
-	p1.position = d0.center
-	p2.position = d1.center
-	await m.get_tree().create_timer(0.4).timeout
-	var ok_arrive: bool = p1.arrived and p2.arrived \
-		and m._state == Main.State.PLAYING
+	p1.position = d0.position
+	p2.position = d1.position
+	await m.get_tree().create_timer(1.0).timeout
+	# 全员到站的不可逆判据 = 门封印(seal);seal 后 enter_exit 会把
+	# arrived 翻 false、in_exit 翻 true,所以这里不认 arrived 旗标。
+	var ok_arrive: bool = d0.sealed and d1.sealed
 	print("DUALTEST arrive ", "PASS" if ok_arrive else "FAIL",
 		" p1=", p1.arrived, " p2=", p2.arrived)
 	if not ok_arrive:
+		fails += 1
+	# ⑥ 封印吸入:全员到站 → 门封印 → enter_exit 错峰吸入 → 通关流转
+	await m.get_tree().create_timer(1.6).timeout
+	var ok_seal: bool = p1.in_exit and p2.in_exit \
+		and m._state != Main.State.PLAYING
+	print("DUALTEST seal ", "PASS" if ok_seal else "FAIL",
+		" p1=", p1.in_exit, " p2=", p2.in_exit, " state=",
+		Main.State.keys()[m._state])
+	if not ok_seal:
 		fails += 1
 	print("DUALTEST ALL ", "PASS" if fails == 0 else "FAIL(%d)" % fails)
 	m.get_tree().quit(0 if fails == 0 else 1)
@@ -622,7 +536,7 @@ func run_dual_test() -> void:
 func run_dual_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
-	m.start_level_dual()
+	m.start_level_dual(26)
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("dual_spawn")
 	# P1 右行 / P2 左行各走一段:双取景拉开 + 分区输入的可见证据
@@ -757,24 +671,6 @@ func run_tap_shot() -> void:
 	m.get_tree().quit()
 
 
-## JSON 试水关出生点连拍:验证双体渲染 / 磁力边界 / 双门(开发用)。
-func run_trial_shot() -> void:
-	if _shot_dir.is_empty():
-		_shot_dir = ".shots_v16"
-	m.start_level(0, false)
-	await m.get_tree().create_timer(0.4).timeout
-	await _shot("trial_spawn")
-	await m.get_tree().create_timer(0.8).timeout
-	await _shot("trial_rest")
-	# 信标分镜(v0.36):传送至记录点信标,验证实体渲染与触碰亮灯
-	var bpos: Vector2 = LevelData.LEVELS[0].checkpoints[0]["pos"]
-	var p: Player = m.players[m.view_slot()]
-	p.position = bpos
-	await m.get_tree().create_timer(0.6).timeout
-	await _shot("trial_checkpoint")
-	m.get_tree().quit()
-
-
 ## 截取标题菜单画面。
 func run_menu_shot() -> void:
 	await m.get_tree().create_timer(1.0).timeout
@@ -789,7 +685,7 @@ func run_menu_shot() -> void:
 
 ## 自动通关测试:一直向右走 + 周期性跳跃,打印关键事件直到超时。
 func run_auto_test() -> void:
-	m._unlocked = LevelData.LEVELS.size() - 1
+	m._unlocked = LevelData.count() - 1
 	print("TEST: begin level ", _shot_level)
 	m.start_level(_shot_level, false)
 	m.debug_move = Vector2(1, 0)
@@ -809,7 +705,7 @@ func run_auto_test() -> void:
 
 
 func run_auto_shot() -> void:
-	m._unlocked = LevelData.LEVELS.size() - 1
+	m._unlocked = LevelData.count() - 1
 	m.start_level(_shot_level, false)
 	await m.get_tree().create_timer(1.0).timeout
 	await _shot("a")

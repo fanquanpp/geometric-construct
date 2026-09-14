@@ -1,21 +1,17 @@
 class_name GameFlow
 extends Node
 ## 流转域控制器(REFACTOR.md Phase 4-4 前半,v0.38.2):关卡装载 / 幕流转 /
-## 通关判定的唯一归属地。Main 保留同名一行委托与 _current/_level_def/_rogue
-## 属性转发(hud / net / 名册 / 钢琴块 / 分镜钩子的调用点零改动)——
-## 本文件只迁职责不改语义:start_level / start_rogue_fragment / 通关流转
-## 与 main.gd 原实现逐行同构(名册域先例同构,见 roster_controller.gd)。
+## 通关判定的唯一归属地。Main 保留同名一行委托与 _current 属性转发
+## (hud / net / 名册 / 钢琴块 / 分镜钩子的调用点零改动)。
 ##
 ## 状态:
 ##   current      当前标准关下标(-1 = 无关)
-##   rogue        当前片段是否肉鸽局内关卡(不走标准解锁/流转)
-##   level_def    当前装载的关卡数据(标准关 = LEVELS[current])
+##   level_def    当前装载的关卡清单(NativeLevel 字段摘录,见 start_level)
 ##   complete_seq 通关链序列号:重开/换关时作废待执行的自动流转
 
 var main: Main
 var current := -1
-var rogue := false
-var level_def: LevelDef
+var level_def: Dictionary = {}
 var complete_seq := 0
 
 
@@ -29,21 +25,19 @@ func start_level(index: int, intro := true) -> void:
 	main.get_tree().paused = false
 	if main._pause != null:
 		main._pause.close()
-	rogue = false
-	current = clampi(index, 0, LevelData.LEVELS.size() - 1)
-	level_def = LevelData.LEVELS[current]
-	# JSON 关卡覆盖(--leveljson,editor 数据契约走查):不进 ACTS / 进度体系
-	if not main._json_level_path.is_empty():
-		var f := FileAccess.open(main._json_level_path, FileAccess.READ)
-		if f != null:
-			level_def = LevelData.from_json_text(f.get_as_text())
-		else:
-			push_warning("start_level: --leveljson 打开失败 %s" % main._json_level_path)
+	current = clampi(index, 0, LevelData.count() - 1)
 	clear_level()
 	main._doors.clear()
 	main._checkpoints.clear()   # 换关作废记录点:陈旧坐标会把召回/重生送进异世界
-	main._level_root = LevelBuilder.build(level_def)
-	main.add_child(main._level_root)
+	var scene: PackedScene = load(LevelData.scene_path(current))
+	var root: NativeLevel = scene.instantiate()
+	main._level_root = root
+	main.add_child(root)
+	# 关卡清单(表现层消费面):名称 / 教学主角 / 名册 / 死亡线 ——
+	# 原生作关后关卡数据在场景里,这里只摘 HUD / 名册 / 判定要用的字段。
+	level_def = {"name": root.level_name, "intro": root.intro_text,
+		"focus": root.focus, "roster": root.roster,
+		"kill_y": root.kill_y, "top_kill_y": root.top_kill_y}
 	collect_players()
 	main._state = Main.State.PLAYING
 	Sfx.play("start")
@@ -62,15 +56,15 @@ func start_level(index: int, intro := true) -> void:
 	main.touch_controls.set_switch_available(
 		Geometries.roster_body_total(level_def.roster) > 1)
 	main._hud.show_win(false)
-	main._hud.set_level_info(level_def)
+	main._hud.set_level_info(current, level_def["name"])
 	main._refresh_roster()
 	main._hud.reveal_corners()
 	if intro:
 		var act_name := str(LevelData.ACTS[act_i]["name"]) if act_i >= 0 \
 			else "正戏"
 		main._hud.show_intro("%s · 第 %d 场 · %s" % [act_name, LevelData.scene_no_of(current),
-			Geometries.get_def(level_def.focus).full_name], level_def)
-		var focus: GeometryDef = Geometries.get_def(level_def.focus)
+			Geometries.get_def(level_def["focus"]).full_name], level_def)
+		var focus: GeometryDef = Geometries.get_def(level_def["focus"])
 		main._hud.narration(focus.quote, focus.color, 3.8)
 	main._switch_to(0, true)
 	# 联机(N2):两端装配完成后算定绑定 / 标注 remote_driven / 注入输入源
@@ -87,44 +81,6 @@ func start_level(index: int, intro := true) -> void:
 			main._save.note_story(kind)
 			main.get_tree().paused = true
 			main.show_story(kind)
-
-
-## 肉鸽局内装载片段(RogueDirector 调用):不走标准解锁与通关流转。
-func start_rogue_fragment(def: LevelDef, elite_title := "") -> void:
-	complete_seq += 1
-	main.dual_mode = false   # 肉鸽片段恒单人
-	main.get_tree().paused = false
-	if main._pause != null:
-		main._pause.close()
-	rogue = true
-	level_def = def
-	clear_level()
-	main._doors.clear()
-	main._checkpoints.clear()   # 肉鸽片段换载:记录点同样作废
-	main._level_root = LevelBuilder.build(def)
-	main.add_child(main._level_root)
-	collect_players()
-	main._state = Main.State.PLAYING
-	Sfx.play("start")
-	main._ambience_motif("rogue_%s" % Geometries.get_def(main.rogue_dir.run.focus).slug)
-
-	main._menu.visible = false
-	main._menu.close_act_panel()
-	main.archive_panel.close()
-	main.settings_panel.close()
-	main._hud.visible = true
-	main.touch_controls.set_in_game(true)
-	main._hud.show_win(false)
-	main._hud.set_level_info(def, "考" if not elite_title.is_empty() else "重跑")
-	main.touch_controls.set_switch_available(Geometries.roster_body_total(def.roster) > 1)
-	main._refresh_roster()
-	main._hud.fade_from_black()
-	var kicker := "重跑 · 精英考 · %s" % elite_title \
-		if not elite_title.is_empty() else "重跑 · %s章 · 第 %d 段" % [
-			["一", "二", "三"][clampi(main.rogue_dir.run.chapter - 1, 0, 2)],
-			main.rogue_dir.run.fragments_done + 1]
-	main._hud.show_intro(kicker, def)
-	main._switch_to(0, true)
 
 
 func collect_players() -> void:
@@ -170,11 +126,7 @@ func restart_level() -> void:
 	if main._state != Main.State.PLAYING:
 		return
 	Sfx.play("restart")
-	# 肉鸽局内重来:重开当前片段(不计死亡,不烧刻度)
-	if rogue:
-		main._hud.transition_blocks(0.3, func() -> void: start_rogue_fragment(level_def))
-	else:
-		main._hud.fade_to_black(0.25, func() -> void: start_level(current))
+	main._hud.fade_to_black(0.25, func() -> void: start_level(current))
 	main._state = Main.State.TRANSITION
 
 
@@ -185,25 +137,11 @@ func check_complete() -> void:
 		if not p.in_exit:
 			return
 
-	# 肉鸽局:通关流转交给 RogueDirector(选路 / 奖励 / 精英考 / 结算)
-	if rogue:
-		main._state = Main.State.TRANSITION
-		complete_seq += 1
-		var seq_r := complete_seq
-		var elite := main.rogue_dir.in_elite
-		main.get_tree().create_timer(0.9).timeout.connect(func() -> void:
-			if seq_r == complete_seq and main.rogue_dir != null:
-				if elite:
-					main.rogue_dir.on_elite_complete()
-				else:
-					main.rogue_dir.on_fragment_complete())
-		return
-
 	main._state = Main.State.TRANSITION
 	Sfx.play("complete")
 	if main._auto_test:
 		print("TEST: LEVEL COMPLETE ", current)
-	main._hud.show_complete("归位。" if current == LevelData.LEVELS.size() - 1 else "通过。")
+	main._hud.show_complete("归位。" if current == LevelData.campaign_last() else "通过。")
 	# 联机(N2):客机由 EV_COMPLETE 复现结算画面;两端都不自动进下一关,
 	# 停留片刻后回房间等待主机再开演(net.md §7 主机选关)。
 	if NetSession.I != null and NetSession.I.is_net():
@@ -216,7 +154,7 @@ func check_complete() -> void:
 				main.net_back_to_room())
 		return
 	if current + 1 > main._unlocked:
-		main._unlocked = mini(current + 1, LevelData.LEVELS.size() - 1)
+		main._unlocked = mini(current + 1, LevelData.campaign_last())
 		main._save.unlocked = main._unlocked
 		main._save.write_save()
 	# 延迟流转:期间重开/换关会递增序列号,令本次流转作废
@@ -228,7 +166,7 @@ func check_complete() -> void:
 
 
 func after_complete() -> void:
-	if current >= LevelData.LEVELS.size() - 1:
+	if current >= LevelData.campaign_last():
 		main._state = Main.State.WIN
 		Sfx.play("fanfare")
 		main._hud.show_win(true)

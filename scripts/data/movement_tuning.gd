@@ -4,7 +4,7 @@ extends Resource
 ## 三段重力 / 水平加速 / 摩擦公式与材质 μ 的唯一数值来源,默认实例在
 ## data/tuning/movement_default.tres——调手感直接在编辑器 Inspector 改,
 ## 不再改代码 const。resource 只作静态数据,运行时禁止写入本资源
-## (共享引用,一处写处处变);每局修正走 RunState 修饰链,不动这里。
+## (共享引用,一处写处处变)。
 ##
 ## 迁移来源:Geometries.GRAVITY / RUN_SPEED、MovementCore 五常量与
 ## 公式内系数、GeometryDef.MU_FRICTION / BALL_MU_ROLL / CLIMB_UNITS /
@@ -27,6 +27,8 @@ static func _static_init() -> void:
 # ———— 三段重力(movement_core.gravity_step) ————
 @export var max_fall := 1150.0         ## 终端速度 v∞:二次空气阻力渐近上限
 @export var apex_window := 110.0       ## 顶点判定窗口(|vy| 低于此值)
+@export var coyote := 0.09             ## 土狼时间(秒):离地后仍可起跳的窗口
+@export var swap_cooldown := 0.25      ## 置换冷却(秒)
 
 # ———— 水平加速(movement_core.horizontal_step / accel_factor) ————
 @export var base_accel := 2400.0       ## 标准 1.0 重量几何体的地面加速度

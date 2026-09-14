@@ -1,0 +1,51 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2_ts"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="3_ts"]
+[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="4_door"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/piano_tile.tscn" id="5_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/mover.tscn" id="6_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/timed_bridge.tscn" id="7_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/ski_patch.tscn" id="8_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/launch_pad.tscn" id="9_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/portal_pair.tscn" id="10_sc"]
+[ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="11_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="12_hint"]
+
+[node name="LevelRoot" type="Node2D"]
+script = ExtResource("1_nl")
+level_name = "疾 · 门厅"
+intro_text = "穿过加速门,冲刺跨过门厅断口。\nShift 是他的第二条腿。"
+focus = 0
+roster = Array[int]([0])
+level_size = Vector2(3600, 2000)
+kill_y = 2600
+top_kill_y = -420
+[node name="Decor" type="TileMapLayer" parent="."]
+z_index = 0
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAJAAYAAAAAAAEAAAA=")
+[node name="Solid" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAAFAA0AAAAAAAAAAAAGAA0AAAAAAAAAAAAHAA0AAAAAAAAAAAAIAA0AAAAAAAAAAAAJAA0AAAAAAAAAAAAKAA0AAAAAAAAAAAALAA0AAAAAAAAAAAAMAA0AAAAAAAAAAAANAA0AAAAAAAAAAAAOAA0AAAAAAAAAAAAPAA0AAAAAAAAAAAAQAA0AAAAAAAAAAAARAA0AAAAAAAAAAAASAA0AAAAAAAAAAAAYAA0AAAAAAAAAAAAZAA0AAAAAAAAAAAAaAA0AAAAAAAAAAAAbAA0AAAAAAAAAAAAcAA0AAAAAAAAAAAAdAA0AAAAAAAAAAAAeAA0AAAAAAAAAAAAeAA0AAAABAAAAAAAfAA0AAAAAAAAAAAAgAA0AAAAAAAAAAAAhAA0AAAAAAAAAAAA=")
+[node name="Spawn0" type="Marker2D" parent="."]
+position = Vector2(300, 1275)
+[node name="ExitDoor0" parent="." instance=ExtResource("4_door")]
+position = Vector2(3050, 1254)
+geo_index = 0
+[node name="TimedBridge0" parent="." instance=ExtResource("7_sc")]
+position = Vector2(1900, 1290)
+size = Vector2(500, 24)
+on_time = 1.5
+off_time = 1.5
+[node name="SkiPatch0" parent="." instance=ExtResource("8_sc")]
+position = Vector2(900, 1275)
+size = Vector2(500, 40)
+[node name="SpeedGate0" parent="." instance=ExtResource("11_sc")]
+position = Vector2(1500, 1150)
+zone_size = Vector2(96, 190)
+[node name="HintMarker0" parent="." instance=ExtResource("12_hint")]
+position = Vector2(900, 1050)
+text = "Shift 冲刺 · 穿门更快"

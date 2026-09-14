@@ -115,36 +115,24 @@ func _ready() -> void:
 
 	body.add_child(_rule())
 
-	# ———— 调试(双端;坐标化辅助设计,levels.md §8.3)————
-	body.add_child(_section_label("调试 DEBUG"))
-	var dbg_btn := _toggle_btn()
-	dbg_btn.button_pressed = Main.I != null and Main.I.debug_grid
-	dbg_btn.toggled.connect(func(on: bool) -> void:
-		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
-		if Main.I != null:
-			Main.I.debug_grid = on)
-	body.add_child(_row("调试网格(组件 id·层 标注)", dbg_btn))
-
-	body.add_child(_rule())
-
 	# —— 底部:版本信息 + 关闭 ——
-	var foot := HBoxContainer.new()
-	foot.add_theme_constant_override("separation", 12)
+	# 直接装进场景骨架的 %Foot 行(v0.44.2 修复:旧版内层再套一个 HBox,
+	# 容器把子项按最小宽排 → spacer 失效,关闭钮紧跟版本号而非靠右)
+	_foot.add_theme_constant_override("separation", 12)
 	var ver := Ui.l("%s · %s" % [Version.GAME_TITLE_EN, Version.full_string()],
 		12, Ui.LIGHT, Palette.I.dim)
 	ver.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	foot.add_child(ver)
+	_foot.add_child(ver)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	foot.add_child(spacer)
+	_foot.add_child(spacer)
 	var close_btn := Button.new()
 	close_btn.text = "关 闭"
 	close_btn.custom_minimum_size = Vector2(120, 42)
 	close_btn.add_theme_font_size_override("font_size", 16)
 	Ui.wire_button(close_btn)
 	close_btn.pressed.connect(func() -> void: close())
-	foot.add_child(close_btn)
-	_foot.add_child(foot)
+	_foot.add_child(close_btn)
 
 
 ## 场景骨架的样式施加(颜色经 Palette、文字经 Ui;场景文件零色值)。

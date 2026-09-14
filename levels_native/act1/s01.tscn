@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2_ts"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="3_ts"]
+[ext_resource type="PackedScene" path="res://scenes/world/checkpoint_beacon.tscn" id="4_bc"]
+[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="5_door"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/piano_tile.tscn" id="6_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/mover.tscn" id="7_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/timed_bridge.tscn" id="8_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/ski_patch.tscn" id="9_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/launch_pad.tscn" id="10_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/portal_pair.tscn" id="11_sc"]
+[ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="12_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="13_hint"]
+[ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="14_hint"]
+
+[node name="LevelRoot" type="Node2D"]
+script = ExtResource("1_nl")
+level_name = "疾 · 初速"
+intro_text = "A/D 移动,Space 跳过缺口。\n速度是他的答案。"
+focus = 0
+roster = Array[int]([0])
+level_size = Vector2(3200, 2000)
+kill_y = 2600
+top_kill_y = -420
+[node name="Decor" type="TileMapLayer" parent="."]
+z_index = 0
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAKAAUAAAAAAAEAAAAEAAkAAAAAAAEAAAA=")
+[node name="Solid" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAAFAA0AAAAAAAAAAAAGAA0AAAAAAAAAAAAHAA0AAAAAAAAAAAAIAA0AAAAAAAAAAAAJAA0AAAAAAAAAAAAKAA0AAAAAAAAAAAAKAA0AAAABAAAAAAALAA0AAAAAAAAAAAAQAA0AAAAAAAAAAAARAA0AAAAAAAAAAAASAA0AAAAAAAAAAAATAA0AAAAAAAAAAAAUAA0AAAAAAAAAAAAVAA0AAAAAAAAAAAAWAA0AAAABAAAAAAAWAA0AAAAAAAAAAAAXAA0AAAAAAAAAAAAYAA0AAAAAAAAAAAAZAA0AAAAAAAAAAAAOAA8AAAAAAAAAAAAPAA8AAAAAAAAAAAA=")
+[node name="Spawn0" type="Marker2D" parent="."]
+position = Vector2(300, 1275)
+[node name="CheckpointBeacon0" parent="." instance=ExtResource("4_bc")]
+position = Vector2(1700, 1275)
+[node name="ExitDoor0" parent="." instance=ExtResource("5_door")]
+position = Vector2(2650, 1254)
+geo_index = 0
+[node name="PianoTile0" parent="." instance=ExtResource("6_sc")]
+position = Vector2(600, 1292)
+size = Vector2(300, 24)
+[node name="PianoTile1" parent="." instance=ExtResource("6_sc")]
+position = Vector2(2400, 1292)
+size = Vector2(300, 24)
+[node name="HintMarker0" parent="." instance=ExtResource("13_hint")]
+position = Vector2(300, 1050)
+text = "A/D 移动 · Space 跳跃"
+[node name="HintMarker1" parent="." instance=ExtResource("14_hint")]
+position = Vector2(1350, 1050)
+text = "跳过缺口"

@@ -5,9 +5,8 @@ extends Area2D
 ## 到达不收取:到站几何体保持可操控,走出门区自动取消到站;
 ## 只有全员到站、终点激活(sealed)后才进入统一吸入。
 
-var geo_index: int
-var center: Vector2
-var size := Vector2(64, 92)
+@export var geo_index: int
+@export var size := Vector2(64, 92)
 
 ## 终点激活后的封印:到站状态不可撤销,等待统一吸入。
 var sealed := false:
@@ -15,7 +14,7 @@ var sealed := false:
 		if sealed == v:
 			return
 		sealed = v
-		queue_redraw()
+		_refresh_texture()
 		if v:
 			# 镜头 Freeze(presentation 卷九):封印 = 「幕落」级事件,
 			# 世界骤停一瞬让全员到齐被读到(减动效门控在 freeze 内)
@@ -54,6 +53,18 @@ static func _stepped_light_texture() -> ImageTexture:
 	return _light_tex
 var _icon: Sprite2D
 var _check: Sprite2D
+var _spr: Sprite2D
+
+## 门体精灵(图鉴正典三帧:待命 → 到站 → 吸入;200 画布 ×0.5 = 100px)。
+const T_IDLE := preload("res://assets/archive/mech_exit_door.png")
+const T_ARRIVE := preload("res://assets/archive/mech_exit_door_f2.png")
+const T_ENTER := preload("res://assets/archive/mech_exit_door_f3.png")
+
+
+func _refresh_texture() -> void:
+	if _spr == null:
+		return
+	_spr.texture = T_ENTER if sealed else (T_ARRIVE if _filled else T_IDLE)
 
 
 func _ready() -> void:
@@ -61,7 +72,11 @@ func _ready() -> void:
 	collision_mask = 2
 	z_index = 3
 	_color = Geometries.ALL[geo_index].color
-	position = center
+
+	_spr = Sprite2D.new()
+	_spr.texture = T_IDLE
+	_spr.scale = Vector2(0.5, 0.5)
+	add_child(_spr)
 
 	var cs := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
@@ -134,6 +149,7 @@ func _refresh_fill() -> void:
 	_burst.emitting = full
 	_icon.visible = not full
 	_check.visible = full
+	_refresh_texture()
 
 
 ## 客机侧门区判定抑制:到站/离站/进门由主机权威触发(事件 RPC 复现),
@@ -175,31 +191,3 @@ func _process(delta: float) -> void:
 	_t += delta
 	_icon.position = Vector2(0, -size.y / 2.0 - 30 + sin(_t * 2.1) * 4.0)
 	_check.position = Vector2(0, -size.y / 2.0 - 30 + sin(_t * 2.1) * 4.0)
-	queue_redraw()
-
-
-func _draw() -> void:
-	var r := Rect2(-size / 2.0, size)
-
-	# 门腔(墨色) + 几何体色内框;三档就绪态(FbW 双门等待语义):
-	# 空 = 暗框 / 半就绪(有人到站未满员,如双子单半)= 中亮 / 满员 = 亮框
-	draw_rect(r, Color(Palette.I.ink, 0.94))
-	var inner := r.grow(-5.0)
-	var inner_alpha := 0.55 if _filled else (0.42 if not _arrived_set.is_empty() else 0.30)
-	draw_rect(inner, Color(_color, inner_alpha), false, 2.0)
-
-	# 腔内发光核心:几何方点,呼吸缩放
-	var pulse := 0.5 + 0.5 * sin(_t * 3.0)
-	var core := 7.0 + pulse * 3.0
-	draw_rect(Rect2(Vector2(-core / 2.0, -core / 2.0), Vector2(core, core)),
-		_color.lerp(Color.WHITE, 0.45))
-
-	# 外框:粗几何体色描边 + 顶部红色门楣
-	draw_rect(r, _color.lerp(Color.WHITE, 0.35 if _filled else 0.15), false, 3.0)
-	draw_rect(Rect2(r.position - Vector2(6, 10), Vector2(size.x + 12, 6)),
-		_color if _filled else Color(_color, 0.8))
-
-	# 到站态:外围取景框;封印(终点激活)态:红色取景框
-	if _filled:
-		draw_rect(r.grow(7.0),
-			Color(Palette.I.red, 0.95) if sealed else Color(Palette.I.paper, 0.9), false, 1.5)

@@ -1,0 +1,47 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2_ts"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="3_ts"]
+[ext_resource type="PackedScene" path="res://scenes/world/checkpoint_beacon.tscn" id="4_bc"]
+[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="5_door"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/piano_tile.tscn" id="6_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/mover.tscn" id="7_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/timed_bridge.tscn" id="8_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/ski_patch.tscn" id="9_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/launch_pad.tscn" id="10_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/portal_pair.tscn" id="11_sc"]
+[ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="12_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="13_hint"]
+[ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="14_hint"]
+
+[node name="LevelRoot" type="Node2D"]
+script = ExtResource("1_nl")
+level_name = "逆 · 落地"
+intro_text = "这一整关没有天花板。逆把置换键收起来,用自己的脚,走完一段地上的路。"
+focus = 2
+roster = Array[int]([2])
+level_size = Vector2(3200, 1200)
+kill_y = 1400
+top_kill_y = -420
+[node name="Decor" type="TileMapLayer" parent="."]
+z_index = 0
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAKAAMAAAAAAAEAAAALAAMAAAAAAAEAAAAMAAMAAAAAAAEAAAAXAAMAAAAAAAEAAAAYAAMAAAAAAAEAAAAKAAQAAAAAAAEAAAALAAQAAAAAAAEAAAAMAAQAAAAAAAEAAAAXAAQAAAAAAAEAAAAYAAQAAAAAAAEAAAAKAAUAAAAAAAEAAAALAAUAAAAAAAEAAAAMAAUAAAAAAAEAAAAXAAUAAAAAAAEAAAAYAAUAAAAAAAEAAAAKAAYAAAAAAAEAAAALAAYAAAAAAAEAAAAMAAYAAAAAAAEAAAAXAAYAAAAAAAEAAAAYAAYAAAAAAAEAAAAKAAcAAAAAAAEAAAALAAcAAAAAAAEAAAAMAAcAAAAAAAEAAAAXAAcAAAAAAAEAAAAYAAcAAAAAAAEAAAAKAAgAAAAAAAEAAAALAAgAAAAAAAEAAAAMAAgAAAAAAAEAAAAXAAgAAAAAAAEAAAAYAAgAAAAAAAEAAAAKAAkAAAAAAAEAAAALAAkAAAAAAAEAAAAMAAkAAAAAAAEAAAA=")
+[node name="Solid" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAAAAkAAAAAAAAAAAABAAkAAAAAAAAAAAACAAkAAAAAAAAAAAADAAkAAAAAAAAAAAAEAAkAAAAAAAAAAAAFAAkAAAAAAAAAAAAGAAkAAAAAAAAAAAAHAAkAAAAAAAAAAAAIAAkAAAAAAAAAAAAJAAkAAAAAAAAAAAAKAAkAAAAAAAAAAAALAAkAAAAAAAAAAAAMAAkAAAAAAAAAAAANAAkAAAAAAAAAAAAOAAkAAAAAAAAAAAAPAAkAAAAAAAAAAAAQAAkAAAAAAAAAAAARAAkAAAAAAAAAAAASAAkAAAAAAAAAAAATAAkAAAAAAAAAAAAUAAkAAAAAAAAAAAAVAAkAAAAAAAAAAAAWAAkAAAAAAAAAAAAXAAkAAAAAAAAAAAAYAAkAAAAAAAAAAAAZAAkAAAAAAAAAAAAaAAkAAAAAAAAAAAAbAAkAAAAAAAAAAAAcAAkAAAAAAAAAAAAdAAkAAAAAAAAAAAAeAAkAAAAAAAAAAAAfAAkAAAAAAAAAAAAAAAoAAAAAAAAAAAABAAoAAAAAAAAAAAACAAoAAAAAAAAAAAADAAoAAAAAAAAAAAAEAAoAAAAAAAAAAAAFAAoAAAAAAAAAAAAGAAoAAAAAAAAAAAAHAAoAAAAAAAAAAAAIAAoAAAAAAAAAAAAJAAoAAAAAAAAAAAAKAAoAAAAAAAAAAAALAAoAAAAAAAAAAAAMAAoAAAAAAAAAAAANAAoAAAAAAAAAAAAOAAoAAAAAAAAAAAAPAAoAAAAAAAAAAAAQAAoAAAAAAAAAAAARAAoAAAAAAAAAAAASAAoAAAAAAAAAAAATAAoAAAAAAAAAAAAUAAoAAAAAAAAAAAAVAAoAAAAAAAAAAAAWAAoAAAAAAAAAAAAXAAoAAAAAAAAAAAAYAAoAAAAAAAAAAAAZAAoAAAAAAAAAAAAaAAoAAAAAAAAAAAAbAAoAAAAAAAAAAAAcAAoAAAAAAAAAAAAdAAoAAAAAAAAAAAAeAAoAAAAAAAAAAAAfAAoAAAAAAAAAAAA=")
+[node name="Spawn2" type="Marker2D" parent="."]
+position = Vector2(200, 880)
+[node name="CheckpointBeacon0" parent="." instance=ExtResource("4_bc")]
+position = Vector2(1600, 850)
+[node name="ExitDoor2" parent="." instance=ExtResource("5_door")]
+position = Vector2(3050, 830)
+geo_index = 2
+[node name="HintMarker0" parent="." instance=ExtResource("13_hint")]
+position = Vector2(600, 700)
+text = "没有天花的路:用脚走完"
+[node name="HintMarker1" parent="." instance=ExtResource("14_hint")]
+position = Vector2(2150, 700)
+text = "落地,不是坠落"

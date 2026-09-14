@@ -304,6 +304,14 @@ func close() -> void:
 	closed.emit()
 
 
+## 逐级返回(Esc / B / Android 返回键同语义):阅读器先回剧情目录,再按才关。
+func go_back() -> void:
+	if _tab == "story":
+		_switch_tab("gallery")
+	else:
+		close()
+
+
 func _input(event: InputEvent) -> void:
 	if not is_open:
 		return

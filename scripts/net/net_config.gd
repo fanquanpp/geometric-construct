@@ -10,15 +10,14 @@ const ROOM_TTL := 3.0               # 房间应答过期时间(秒)
 const STATE_HZ_DIV := 3             # 主机状态快照周期:每 3 物理帧 = 20Hz(net.md §6)
 
 ## 双端版本门禁:版本号 + 关卡数据指纹(任一不齐 → 房间标灰,D7)。
-## 关卡数据哈希覆盖决定玩法一致性的全部 LevelDef 结构字段(数值不逐项展开,
-## 关卡内容改动必经 level_data.gd,结构指纹足以拦截两端包不一致)。
+## 指纹覆盖关卡登记表(路径 / 名录)与每个关卡场景文件的全文哈希
+## (场景即内容,场景字节变 = 指纹变,足以拦截两端包不一致)。
 static func payload_hash() -> String:
 	var parts := PackedStringArray([Version.number_string()])
-	for d in LevelData.LEVELS:
-		parts.append("%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d" % [
-			d.name, d.size, d.roster, d.spawns.size(),
-			d.platforms.size(), d.ramps.size(), d.gates.size(), d.exits.size(),
-			d.movers.size(), d.lever_gates.size(), d.timed_bridges.size()])
+	for s in LevelData.SCENES:
+		var f := FileAccess.open(str(s["path"]), FileAccess.READ)
+		parts.append("%s|%s|%s|%08x" % [s["path"], s["name"], s["roster"],
+			f.get_as_text().hash() if f != null else 0])
 	return "%08x" % ";".join(parts).hash()
 
 

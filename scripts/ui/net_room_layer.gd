@@ -3,7 +3,7 @@ extends CanvasLayer
 ## 房间流程页(net.md §4/§7/§8,N2 同网直连):PICK 选择创建/加入 →
 ## HOST 建房等待 → JOIN 搜索/手动 IP → LOBBY 已连接 → MAP 主机选图 →
 ## ROLE 双方认领几何体(每人 1–3 位,名册位全覆盖才可开演)。
-## Flow 型页面(ui-flow.md):落流程带 30(与 RogueLayer 同带互斥),
+## Flow 型页面(ui-flow.md):落流程带 30,
 ## 不改玩法状态,只与 Main.State.ROOM 配合;Esc 由 Main 路由进 back_out()。
 ## 版本门禁(D7):版本或关卡指纹不齐的房间标灰"版本不同"。
 
@@ -205,6 +205,9 @@ func _show_pick() -> void:
 		func() -> void: _enter_host()))
 	_body.add_child(_big_btn("加入房间", "搜索附近房间,或手动输入主机 IP",
 		func() -> void: _show_join()))
+	# 返回出口(v0.44.2):旧版选择页只有 Esc 能回标题,触屏用户被锁在页内
+	_body.add_child(_big_btn("返回", "回到标题菜单",
+		func() -> void: back_out()))
 
 
 # —— ② HOST:建房等待 ——
@@ -309,7 +312,7 @@ func _show_lobby() -> void:
 	# 已有选图认领时直接展示"你将操控谁";否则显示绑定集合兜底文案。
 	var names := PackedStringArray()
 	var ns: NetSession = NetSession.I
-	if ns != null and ns.pick_level >= 0 and ns.pick_level < LevelData.LEVELS.size():
+	if ns != null and ns.pick_level >= 0 and ns.pick_level < LevelData.count():
 		for g: int in ns.my_claims():
 			var cd: GeometryDef = Geometries.get_def(g)
 			names.append(cd.name + ("/" + cd.name_half if cd.paired else ""))
@@ -341,14 +344,13 @@ func _show_map() -> void:
 			Color(Palette.I.paper, 0.6)))
 		for li in levels:
 			var idx := int(li)
-			var d: LevelDef = LevelData.LEVELS[idx]
 			var names := PackedStringArray()
-			for g in d.roster:
+			for g in LevelData.scene_roster(idx):
 				var cd: GeometryDef = Geometries.get_def(int(g))
 				names.append(cd.name + ("/" + cd.name_half if cd.paired else ""))
-			_body.add_child(_big_btn(d.name,
+			_body.add_child(_big_btn(LevelData.scene_name(idx),
 				"第 %d 场 · %d 具体身 · %s" % [LevelData.scene_no_of(idx),
-					Geometries.roster_body_total(d.roster), " / ".join(names)],
+					Geometries.roster_body_total(LevelData.scene_roster(idx)), " / ".join(names)],
 				func() -> void: NetSession.I.host_pick_level(idx),
 				not NetSession.I.is_host()))
 	_body.add_child(_big_btn("返回", "回到房间等待页",
@@ -360,15 +362,15 @@ func _show_map() -> void:
 
 func _show_role() -> void:
 	var ns: NetSession = NetSession.I
-	if ns.pick_level < 0 or ns.pick_level >= LevelData.LEVELS.size():
+	if ns.pick_level < 0 or ns.pick_level >= LevelData.count():
 		if ns.is_host():
 			_show_host()
 		else:
 			_show_lobby()
 		return
 	_phase = Phase.ROLE
-	var d: LevelDef = LevelData.LEVELS[ns.pick_level]
-	_title_of("选择角色", "ROLE PICK · %s · 每人 1–3 位,点按认领 / 再点释放" % d.name)
+	_title_of("选择角色", "ROLE PICK · %s · 每人 1–3 位,点按认领 / 再点释放"
+		% LevelData.scene_name(ns.pick_level))
 	_clear_body()
 	_ensure_status()
 	var chips := HBoxContainer.new()
@@ -377,7 +379,7 @@ func _show_role() -> void:
 	_body.add_child(chips)
 	var mine: Array = ns.my_claims()
 	var other: Array = ns.other_claims()
-	for g in d.roster:
+	for g in LevelData.scene_roster(ns.pick_level):
 		chips.add_child(_role_chip(int(g), mine, other))
 	if ns.is_host():
 		_role_start = _big_btn("开 演", "全员有主 · 绑定即定,开局后集合内可切换",
@@ -436,9 +438,9 @@ func _refresh_role_line() -> void:
 	if _phase != Phase.ROLE or _status == null or not is_instance_valid(_status):
 		return
 	var ns: NetSession = NetSession.I
-	if ns.pick_level < 0 or ns.pick_level >= LevelData.LEVELS.size():
+	if ns.pick_level < 0 or ns.pick_level >= LevelData.count():
 		return
-	var roster: Array = LevelData.LEVELS[ns.pick_level].roster
+	var roster: Array = LevelData.scene_roster(ns.pick_level)
 	var uncovered := 0
 	for g in roster:
 		if not (ns.host_claims_arr().has(int(g)) or ns.client_claims_arr().has(int(g))):

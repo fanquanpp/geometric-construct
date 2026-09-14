@@ -1,9 +1,9 @@
 # 架构规范 · ARCHITECTURE
 
-> 几何构成 GEOMETRIC CONSTRUCT · 构成主义几何肉鸽游戏 · Godot 4.7 · 纯 GDScript
-> 肉鸽系统为后续版本内容;当前仓库是初期 Demo(几何体机制与关卡奠基)。
+> 几何构成 GEOMETRIC CONSTRUCT · 构成主义几何平台闯关 · Godot 4.7 · 纯 GDScript
+> 现行 = 原生编辑器作关 + 第一幕六场(作关换代 v0.45,native-levels.md)。
 > 本文是项目结构的唯一权威描述;改动结构前先改本文。
-> 后续功能(地图编辑分享 / 同屏双人 / 跨设备联机 / 肉鸽)的技术方案见 `docs/ROADMAP.md`。
+> 技术方案档案见 docs/design/(作关换代 = native-levels.md;联机 = net.md)。
 
 ## 目录结构
 
@@ -23,10 +23,9 @@ geometric-construct/
 │   ├── ui/                  #   hud(结构骨架 + EdgeIndicator 子场景)/ menu_layer
 │   │                        #   (海报骨架 + ActPanelCard / DualPickCard 弹层子场景)
 │   │                        #   / pause_menu / settings_panel(骨架)/ archive_panel
-│   │                        #   / touch_controls / net_room_layer / rogue_layer
+│   │                        #   / touch_controls / net_room_layer
 │   │                        #   / boot_intro / story_layer
 │   ├── fx/                  #   ambience
-│   ├── modes/rogue/         #   rogue_director
 │   └── net/                 #   net_session
 ├── data/                    # 静态数据资源 .tres(R2:数值权威,Inspector 直调;
 │   │                        #   resource 只作静态数据,禁运行时写入)
@@ -36,7 +35,7 @@ geometric-construct/
 ├── scripts/
 │   ├── core/                # 总控与系统层
 │   │   ├── main.gd          #   状态机:MENU/PLAYING/PAUSED/TRANSITION/WIN,
-│   │   │                    #   标准闯关与肉鸽局(rogue 分支)流转、
+│   │   │                    #   关卡流转、
 │   │   │                    #   输入边沿检测、调试钩子分派(实现迁 scripts/dev/,
 │   │   │                    #   导出剥离;名册域委托 roster / 流转域委托 game_flow)
 │   │   ├── roster_controller.gd # 名册域:切换/召回/到站/记录点(v0.24.0;
@@ -55,11 +54,7 @@ geometric-construct/
 │   │   ├── geometries.gd    #   几何体注册表(装载 data/characters/*.tres;UNIT_PX 标尺)
 │   │   ├── movement_tuning.gd # 手感调参 Resource(值在 data/tuning;static I 访问)
 │   │   ├── archive_data.gd  #   档案几何条目表(建筑 / 机关 / 剧情目录,纯字典)
-│   │   ├── level_def.gd     #   关卡定义类(含 movers 移动构件字段)
-│   │   ├── level_data.gd    #   关卡数据表(序章 4 场 + 第一幕 6 场巨构)
-│   │   ├── component.gd     #   地图组件语义组 v4:id/faces/who 集合(levels.md §7.10)
-│   │   ├── run_modifiers.gd #   肉鸽词条表(通用 + 主角专属,稀有度)
-│   │   └── rogue_fragments.gd # 肉鸽单人片段库(按主角分组的快/稳排法 + 精英考)
+│   │   └── level_data.gd    #   关卡目录(SCENES/ACTS:levels_native/*.tscn 幕-场登记)
 │   ├── entities/            # 场景内实体
 │   │   ├── player.gd        #   几何体控制器(编排+跳跃/爬墙/置换/承载状态机;
 │   │   │                    #   body_key() 体身份键(v0.21.0,双体契约 characters.md §5):
@@ -71,12 +66,9 @@ geometric-construct/
 │   │   ├── exit_door.gd     #   几何体专属终点门(到站不收取,可撤销;sealed 终点激活;
 │   │   │                    #   双体两半都到站才算满,离门即取消——未满员同样成立)
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)
-│   ├── world/               # 关卡装配与环境
-│   │   ├── level_builder.gd #   LevelDef → 节点树装配编排 + 碰撞签名编译(§7.10);
-│   │   │                    #   渲染唯一管线 = 引擎原生节点分层(v0.43.0,R0:
-│   │   │                    #   每层 Node2D 容器 z_index + TerrainKit.slab_node)
-│   │   ├── render/          #   渲染层:focus_driver(机关高亮三档)
-│   │   │                    #   / grid_layer(定位网格 LOD)/ debug_grid_overlay(--debug-grid)
+│   ├── world/               # 关卡与环境(作关 = levels_native/*.tscn 原生摆位)
+│   │   ├── native_level.gd  #   原生关卡根:roster 建体 / 物理层 mask / 相机与边界墙
+│   │   ├── terrain_kit.gd   #   机关共享件(磁界位 / 高亮描边 / 光影遮挡体)
 │   │   ├── mechanisms/      #   机关物:ramp / mover(+slab·track) / timed_bridge
 │   │   │                    #   / lever_gate / piano_tile / mag_boundary
 │   │   ├── mechanism_registry.gd # (已撤除,见 CHANGELOG v0.31.1;契约存 structures.md §7)
@@ -103,15 +95,10 @@ geometric-construct/
 │   │   │                    #   / story(全文本阅读器)——RefCounted,数据驱动页豁免
 │   │   ├── touch_controls.gd#   虚拟按键层(TouchScreenButton → InputMap 动作)
 │   │   ├── story_layer.gd   #   Konado 剧情层(story/*.ks,播放时暂停世界)
-│   │   ├── rogue_layer.gd   #   肉鸽 UI:选主角 / 选路卡 / 词条三选一 / 结算页
 │   │   └── pause_menu.gd    #   暂停菜单
 │   ├── fx/                  # 表现层辅助
 │   │   ├── sfx.gd           #   程序化芯片音效引擎(合成器 + 音效库,见"音频架构")
 │   │   └── ambience.gd      #   程序化环境垫乐
-│   ├── modes/                # 玩法模式层(scripts/modes/README.md)
-│   │   └── rogue/            #   肉鸽「重跑 RE-RUN」(单人独立几何体)
-│   │       ├── run_state.gd      # 一局状态 + 属性钩子覆盖层 modified()
-│   │       └── rogue_director.gd # 流程:选路→片段→奖励→精英考→结算
 │   └── net/                  # 跨设备联机底座(设计权威 docs/design/net.md;
 │                             #   N0/N1/N2 已实装,N3 预埋未接线)
 │       ├── input_source.gd   #   N0 输入槽(LOCAL/REMOTE,Player 四读口注入)
@@ -139,16 +126,17 @@ geometric-construct/
 │       ├── audio/           # 音频开关
 │       └── buttons/         # 按钮图标
 ├── tools/
-│   └── gen_svgs.py          # SVG 素材生成器(改素材先改这里再生成)
+│   ├── gen_svgs.py          # SVG 素材生成器(改素材先改这里再生成)
+│   ├── build_native_kit.gd  # 占位图块集生成(aseprite 重绘前的 interim)
+│   └── build_native_act1.gd # 第一幕场景生成器(产出可编辑 .tscn)
 ├── tests/                   # 开发用截图 / 验证场景(shot_*.tscn;
-│                            #   grid_check / comp_check / modifier_check /
-│                            #   mover_check / trait_check headless 验证脚本)
+│                            #   native_check / flow_check / trait_check /
+│                            #   recalltest / dualtest / nettest 门禁)
 ├── build/                   # 构建产物(已 gitignore)
 └── docs/                    # ARCHITECTURE / DESIGN / UPDATE / CHANGELOG
-	└── design/              # 策划侧设计档案(总纲/美术/动效/音频/氛围/角色/建筑/关卡/UI流/剧情/肉鸽)
+	└── design/              # 策划侧设计档案(总纲/美术/动效/音频/氛围/角色/建筑/关卡/UI流/剧情)
 ```
 
-> modes 层交互约束见 scripts/modes/README.md;肉鸽实现见文末「肉鸽模式」一节。
 > 预留目录(net)的交互约束见其 README;
 > **音频资源约定**:音效/垫乐全部程序化合成(sfx.gd / ambience.gd),
 > 不引入二进制音频文件;未来如需引入,先按 ROADMAP 落音频总线方案。
@@ -172,9 +160,8 @@ geometric-construct/
 - **数据驱动画面**:Manager 读 `.tres` → 建实体入池 → 只发信号
   (如 `character_created`);表现层场景 `_ready` 预连接信号,回调里
   `add_child` + 入场演出。逻辑层不碰表现树。
-- **不变项**:关卡几何数据仍走 `levels/*.json` + LevelDef(编译产物
-  内容包,契约 levels.md);`_draw` 程序化渲染管线与 palette 代码
-  形态(Phase 2)不因本约束专门推翻,随首次触改渐进迁移(§八 M-2)。
+- **不变项**:关卡几何 = `levels_native/*.tscn` 原生场景摆位
+  (目录登记 LevelData,契约 levels.md / native-levels.md)。
 
 ## 输入动作(InputMap)
 
@@ -243,18 +230,6 @@ A 跳,X 冲刺,LB/RB 切换,Back 召回,Start 暂停。
   `--tourshot` 数据驱动巨构巡航截图 · `--trialshot` 出生连拍 · `--recalltest` 召回链路自测 ·
   `--zoom=N` 锁定镜头变焦 · `--rogueshot` 肉鸽 UI 截图 ·
   `--rogueautotest[=N]` 肉鸽按主角自动跑整局 · `--shotdir=<path>` 输出目录。
-
-## 肉鸽模式(scripts/modes/rogue)
-
-「重跑 RE-RUN」= **单人独立几何体**的一局制肉鸽(设计权威 docs/design/roguelike.md):
-
-- **属性钩子**:Player 的属性读取走 `RunState.modified(def, key)`,
-  无局时逐字段直通;局内词条堆叠覆盖,六项标尺属性钳制 0.0–2.0。
-- **流转**:Main 在 `_rogue` 时把通关 / 死亡回调转给 RogueDirector
-  (选路二选一 → 片段 → 奖励三选一 → 章末专属精英考 → 落幕结算);
-  片段复用 `LevelBuilder.build` 装配,roster 只有主角一位、单门归位。
-- **分层**:modes 层只调 Main 公开方法,不反向改 core 流程;
-  词条表(run_modifiers)与片段库(rogue_fragments)是纯数据(data 层)。
 
 ## 运行与测试
 

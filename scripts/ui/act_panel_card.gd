@@ -66,7 +66,10 @@ func open_act(idx: int, unlocked: int) -> void:
 	_unlocked = unlocked
 	var act: Dictionary = LevelData.ACTS[idx]
 	_title_label.text = "%s · %s" % [act["name"], act["title"]]
-	_keys_hint.text = "1-%d 直达 · Esc 返回" % act["levels"].size()
+	# 底注双端自适应(v0.44.2):触屏没有 Esc,指引到左下返回键
+	_keys_hint.text = "1-%d 直达 · Esc 返回" % act["levels"].size() \
+		if not Adaptive.is_touch_mode() \
+		else "点按场次开演 · 左下「返回剧目」退回"
 	_populate_rows(idx)
 	_open = true
 	# 真机修复:开卡瞬间视口可能仍是布局一瞬间的旧矩形(竖屏残留 /
@@ -125,7 +128,7 @@ func _populate_rows(idx: int) -> void:
 			_add_wip_row(k)
 			continue
 		var li: int = levels[k]
-		var def: LevelDef = LevelData.LEVELS[li]
+		var meta: Dictionary = LevelData.scene_meta(li)
 		var unlocked := li <= _unlocked
 		var cleared := li < _unlocked
 		var is_next := li == _unlocked
@@ -139,15 +142,15 @@ func _populate_rows(idx: int) -> void:
 		# 图标限宽 28:SVG 原始尺寸会把行高撑到 ~80px,
 		# 六行关卡的卡片总高超出 720 设计稿被上下裁切(真机实测修复)
 		b.add_theme_constant_override("icon_max_width", 28)
-		b.icon = Ui.icon("characters/%s-flat.svg" % Geometries.get_def(def.focus).slug)
-		b.text = "%02d   %s" % [k + 1, def.name]
+		b.icon = Ui.icon("characters/%s-flat.svg" % Geometries.get_def(meta["focus"]).slug)
+		b.text = "%02d   %s" % [k + 1, meta["name"]]
 		b.pivot_offset = Vector2(12, 27)
 		b.self_modulate = Color(1, 1, 1, 1.0 if unlocked else 0.45)
 		Ui.wire_button(b, "")   # 未解锁给拒绝音、可演给确认音,条件音效宿主自管
 		b.mouse_entered.connect(func() -> void:
-			_level_hint.text = def.intro.replace("\n", "  "))
+			_level_hint.text = str(meta.get("intro", "")).replace("\n", "  "))
 		b.focus_entered.connect(func() -> void:
-			_level_hint.text = def.intro.replace("\n", "  "))
+			_level_hint.text = str(meta.get("intro", "")).replace("\n", "  "))
 		b.pressed.connect(func() -> void:
 			level_pressed.emit(li))
 		_row_by_li[li] = b

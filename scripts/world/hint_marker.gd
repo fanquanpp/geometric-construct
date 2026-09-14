@@ -8,7 +8,7 @@ extends Node2D
 ## 文字自身不做位移动画(物理像素取整会呈不规则 1px 跳步,真机可见卡顿),
 ## 只做透明度呼吸,动效法则见 docs/design/art-style.md §3。
 
-var text := ""
+@export var text := ""
 var _label: Label
 var _plate: PanelContainer
 var _t := randf() * TAU

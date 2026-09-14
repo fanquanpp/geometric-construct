@@ -15,15 +15,14 @@ extends CharacterBody2D
 # 手感数值已下沉 MovementTuning(data/tuning/movement_default.tres,
 # 场景资源强制约束 R2 / REFACTOR §八 M-1);原 MovementCore 常量别名
 # 随 M-1 迁移删除,调用点直读资源实例。
-# 三段重力倍率(FALL 1.24 / APEX 0.86)走 RunState 修饰链
-# (DEFAULTS.gravity_fall_mult / gravity_apex_mult,Sprint 2 入链)
-## 词条「玻璃疾走」:重落地即碎的冲击阈值。
-const GLASS_IMPACT := 620.0
-## 词条速度上限的绝对钳制(与门厅"加速门×曲面"峰值 3.75 一致,
-## 非强化状态的旧手感完全不变)。
+## 空中跳次数(二段跳的第 2 跳额度;全员 1)。
+const AIR_JUMPS := 1
+## 速度上限的绝对钳制(与门厅"加速门×曲面"峰值 3.75 一致)。
 const MOD_SPEED_CAP := 3.75
 ## 可推动(肆·圆):推挤传速加速度(px/s²,characters.md §4)。
 const PUSH_TRANSFER := 1800.0
+## 磁力边界碰撞位(伍·界/边专用;TileSet 共享层为 bit1,本位为特权位)。
+const BOUNDARY_BIT := 1 << 30
 ## 轻点/长按跳判定(v0.16 常量化,characters.md §2):
 ## 按下即起跳(缓冲 0.12s)→ 上升中松键且速度仍超起跳速的 MovementTuning.I.jump_cut_ratio
 ## → 剩余速度 ×MovementTuning.I.jump_cut_mult(轻点 ≈ 满跳 55% 高,长按全程不截断)。
@@ -38,8 +37,8 @@ var is_active := false
 var rider_of: Player = null
 var speed_buffed := false     # 加速门强化(永久,直至死亡重生)
 var gravity_dir: int = 1      # 当前重力方向(置换会翻转;1 = 向下,-1 = 向上)
-## 世界碰撞位并集(LevelBuilder 构建期按实体签名算定,分层语义 v3
-## levels.md §7.10:签名 = (layer, who),仅实体层组件占位,空集 = 1)。
+## 世界碰撞位并集(NativeLevel 出生时按 TileSet 物理层算定:
+## 共享层 + 本角色专属层;装饰不占位,空集 = 1)。
 var world_mask := 1
 
 ## 进门时的缩小系数,由 Tween 驱动。
@@ -108,10 +107,10 @@ func _ready() -> void:
 		gravity_dir = -1
 	# 磁力边界(伍):除逆(穿透)与双子自身外,人人受阻(characters.md §5)
 	if not def.can_pass_boundary and pair_half < 0:
-		collision_mask |= TerrainKit.BOUNDARY_BIT
+		collision_mask |= BOUNDARY_BIT
 	up_direction = Vector2(0, -gravity_dir)
 	z_index = 5
-	_climb_budget = RunState.modified(def, "climb_units") * MovementTuning.I.climb_units * Geometries.UNIT_PX
+	_climb_budget = (1.0 if def.can_climb else 0.0) * MovementTuning.I.climb_units * Geometries.UNIT_PX
 	# 曲面跳跃板:圆球需要贴住更陡的坡面并在末端切线飞出
 	if def.shape == GeometryDef.Shape.BALL:
 		floor_max_angle = deg_to_rad(60.0)
@@ -268,9 +267,9 @@ func _physics_process(delta: float) -> void:
 	_swap_cd -= dt
 	_coyote -= dt
 	if on_ground:
-		_coyote = RunState.modified(def, "coyote")
+		_coyote = MovementTuning.I.coyote
 		_jump_cut = false
-		_climb_budget = RunState.modified(def, "climb_units") * MovementTuning.I.climb_units * Geometries.UNIT_PX
+		_climb_budget = (1.0 if def.can_climb else 0.0) * MovementTuning.I.climb_units * Geometries.UNIT_PX
 
 	# ———— 疾 · 爬墙:离地贴住世界墙面(非同伴)且朝墙压方向 → 吸附;
 	# 只按方向 = 缓降滑壁,按住跳跃键 = 沿墙向上爬(受单次 2.0 格预算限制)。
@@ -294,7 +293,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		_climbing = false
 
-	var jump_power := RunState.jump_v(def) * _overload_jump_ratio()
+	var jump_power := def.jump_v * _overload_jump_ratio()
 	if _jump_buffer > 0.0 and def.can_jump:
 		if on_ground or _coyote > 0.0:
 			# 第一段跳(地面 / 土狼时间);跃顶起跳触发顶弹翻倍(characters.md §3)
@@ -351,12 +350,12 @@ func _physics_process(delta: float) -> void:
 			" slides=", get_slide_collision_count(), " floor=", is_on_floor(),
 			" deg=%.0f" % rad_to_deg(get_floor_angle() if is_on_floor() else 0.0))
 	if not is_on_floor() and was_floor and vel.y * gravity_dir > 0:
-		_coyote = RunState.modified(def, "coyote")
+		_coyote = MovementTuning.I.coyote
 
 	# ———— 离地:发放空中跳跃次数(二段跳的第 2 跳额度;词条「云梯踏」+1) ————
 	var now_on_floor := is_on_floor()
 	if was_floor and not now_on_floor:
-		_air_jumps_left = maxi(int(RunState.modified(def, "air_jumps")), 0)
+		_air_jumps_left = AIR_JUMPS
 
 	# ———— 落地判定:弹性反弹 or 站稳 ————
 	var landed := now_on_floor and not was_floor
@@ -370,11 +369,7 @@ func _physics_process(delta: float) -> void:
 				Main.I.camera_rig.kick(minf(1.6 + impact / 420.0, 4.6))
 		var eff_bounce := effective_bounce()
 		var carrying := _has_riders()
-		# 玻璃疾走:重落地即碎(死亡按重拼结算,消耗红色刻度)
-		if RunState.has_flag(def, "glass") and impact > GLASS_IMPACT:
-			_swap_air = false
-			die()
-		elif carrying or impact <= MovementTuning.I.bounce_min or eff_bounce <= 0.0:
+		if carrying or impact <= MovementTuning.I.bounce_min or eff_bounce <= 0.0:
 			# 驮着同伴时收力站稳 / 低速落地站稳;有一定冲击则补轻着地音
 			if absf(vel.y) < 5.0:
 				_squash(1.24, 0.78)
@@ -463,7 +458,7 @@ func _perform_swap(vel: Vector2) -> Vector2:
 	up_direction = Vector2(0, -gravity_dir)
 	vel.y = MovementTuning.I.swap_launch * gravity_dir
 	_swap_buffer = 0.0
-	_swap_cd = RunState.modified(def, "swap_cooldown")
+	_swap_cd = MovementTuning.I.swap_cooldown
 	_coyote = 0.0
 	_jump_cut = false
 	_swap_air = true
@@ -478,22 +473,21 @@ func _perform_swap(vel: Vector2) -> Vector2:
 ## 词条钩子:base_speed / buff_sprint_speed 覆盖读取,双倍门(gate_mult)
 ## 只放大加速门强化后的上限,全局钳制在 MOD_SPEED_CAP。
 func _target_multiplier(sprinting: bool) -> float:
-	var cap := RunState.modified(def, "base_speed")
+	var cap := def.base_speed
 	if speed_buffed:
-		cap = maxf(cap, RunState.modified(def, "buff_sprint_speed"))
+		cap = maxf(cap, def.buff_sprint_speed)
 	if sprinting and def.can_sprint:
-		cap = maxf(cap, RunState.modified(def, "buff_sprint_speed") if speed_buffed
-			else def.sprint_speed)
+		cap = maxf(cap, def.buff_sprint_speed if speed_buffed else def.sprint_speed)
 	if speed_buffed:
-		cap = minf(cap * RunState.modified(def, "gate_mult"), MOD_SPEED_CAP)
+		cap = minf(cap, MOD_SPEED_CAP)
 	if _ramp_timer > 0.0:
 		cap = minf(cap * MovementTuning.I.ramp_boost, MOD_SPEED_CAP)
 	return cap
 
 
-## 实际弹性:基础值(0.5;跃为 2.0)+ 词条覆盖。
+## 实际弹性:基础值(0.5;跃为 2.0)。
 func effective_bounce() -> float:
-	return RunState.modified(def, "bounce")
+	return def.bounce
 
 
 ## 背负超载时跳跃高度减半:头顶来者总重大于自身负重力 → 0.5,否则 1.0。
@@ -505,8 +499,8 @@ func _overload_jump_ratio() -> float:
 	var rider_load := 0.0
 	for p in Main.I.players:
 		if p != self and is_instance_valid(p) and p.rider_of == self:
-			rider_load += RunState.modified(p.def, "weight")
-	if rider_load > RunState.modified(def, "carry") + 0.01:
+			rider_load += p.def.weight
+	if rider_load > def.carry + 0.01:
 		return sqrt(MovementTuning.I.overload_jump_ratio)
 	return 1.0
 
@@ -686,7 +680,7 @@ func arrive_at(door: ExitDoor) -> void:
 	Sfx.play("arrive")
 	SettingsManager.haptic(30)
 	var tw := create_tween()
-	tw.tween_property(self, "position:x", door.center.x, 0.22) \
+	tw.tween_property(self, "position:x", door.position.x, 0.22) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	Main.I.on_player_arrived(self)
 
@@ -728,7 +722,7 @@ func enter_exit(door: ExitDoor) -> void:
 
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(self, "position", door.center + Vector2(0, 4 * gravity_dir), 0.4) \
+	tw.tween_property(self, "position", door.position + Vector2(0, 4 * gravity_dir), 0.4) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	tw.tween_property(self, "shrink", 0.08, 0.42) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)

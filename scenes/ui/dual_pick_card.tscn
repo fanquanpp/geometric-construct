@@ -65,3 +65,8 @@ custom_minimum_size = Vector2(0, 86)
 unique_name_in_owner = true
 text = "Esc 返回"
 horizontal_alignment = 1
+
+[node name="BackBtn" type="Button" parent="Center/Card/VB"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 42)
+size_flags_horizontal = 4

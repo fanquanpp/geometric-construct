@@ -7,28 +7,36 @@ extends StaticBody2D
 ## 重触发(glissando)——静止压砖不再"机关枪式"连响;
 ## 落地速度 → 音量;演出 = 顶缘亮线脉冲 + 音符粒子;双几何体同砖 = 和音。
 
-var slab_rect := Rect2()
-var note := ""            # 音名("C4");空 = 按 y 反向映射
-var layer_value := 1
-var hl_color := Color(0, 0, 0, 0)   # 专属高亮色(FocusDriver 写入,§7.10)
+@export var size := Vector2(300, 24)   # 砖面尺寸(节点置于砖面中心)
+@export var note := ""           # 音名("C4");空 = 按 y 反向映射
+@export var sig_value := 1
+var hl_color := Color(0, 0, 0, 0)   # 专属高亮色(FocusDriver 写入,§7)
 var _pulse := 0.0         # 顶缘亮线脉冲剩余时间
 var _last_played := {}    # 体身份键(body_key)-> 上次触发时刻(秒)
 var _in_contact := {}    # 体身份键 -> 是否接触中(接触沿判定,v0.16;
 						 # 双体两半各占一键,互不吞接触沿)
+var _spr_idle: Sprite2D
+var _spr_on: Sprite2D
 
 func _ready() -> void:
-	collision_layer = layer_value
+	collision_layer = sig_value
 	collision_mask = 0
 	add_to_group("piano")   # 联机客机端琴键声效自查(Player._piano_cosmetic)
 	var cs := CollisionShape2D.new()
-	cs.position = slab_rect.get_center()
 	var shape := RectangleShape2D.new()
-	shape.size = slab_rect.size
+	shape.size = size
 	cs.shape = shape
 	add_child(cs)
-	add_child(TerrainKit.rect_occluder(slab_rect))   # 引擎光影遮挡体(v0.19)
-	if note.is_empty() and Main.I != null and Main.I._level_def != null:
-		note = Sfx.note_for_height(slab_rect.position.y, Main.I._level_def.size.y)
+	add_child(TerrainKit.rect_occluder(Rect2(-size / 2.0, size)))   # 引擎光影遮挡体(v0.19)
+	_spr_idle = TerrainKit.mech_sprite(preload("res://assets/archive/mech_piano_tile.png"),
+		Rect2(-size / 2.0, size))
+	_spr_on = TerrainKit.mech_sprite(preload("res://assets/archive/mech_piano_tile_f2.png"),
+		Rect2(-size / 2.0, size))
+	_spr_on.visible = false
+	add_child(_spr_idle)
+	add_child(_spr_on)
+	if note.is_empty() and Main.I != null:
+		note = Sfx.note_for_height(global_position.y, 2000.0)
 
 ## 玩家每帧报告接触(由 Player 调用):impact = 落地/滚动速度。
 ## 接触沿触发一次;持续接触仅圆的滚奏(移动中)按 0.075s 重触发。
@@ -71,7 +79,7 @@ func _note_burst(_player: Player) -> void:
 	burst.scale_amount_min = 2.0
 	burst.scale_amount_max = 3.5
 	burst.color = Color(Palette.I.paper, 0.85)
-	burst.position = Vector2(0, -slab_rect.size.y * 0.5 - 2.0)
+	burst.position = Vector2(0, -size.y * 0.5 - 2.0)
 	burst.finished.connect(burst.queue_free)
 	add_child(burst)
 
@@ -82,7 +90,7 @@ func _has_other_rider(player: Player) -> bool:
 		return false
 	for p in m.players:
 		if p != player and is_instance_valid(p) and not p.dying \
-				and slab_rect.grow(6.0).has_point(p.position + Vector2(0,
+				and Rect2(-size / 2.0, size).grow(6.0).has_point(p.position + Vector2(0,
 					p.def.size.y * 0.5 * p.gravity_dir)):
 			return true
 	return false
@@ -90,17 +98,11 @@ func _has_other_rider(player: Player) -> bool:
 func _process(delta: float) -> void:
 	if _pulse > 0.0:
 		_pulse = maxf(_pulse - delta, 0.0)
-		queue_redraw()
+	var on := _pulse > 0.0
+	if _spr_on.visible != on:
+		_spr_on.visible = on
+		_spr_idle.visible = not on
 
 func _draw() -> void:
-	var r := Rect2(slab_rect.position, slab_rect.size)
-	draw_rect(r, Color("262B34"))
-	draw_rect(Rect2(r.position, Vector2(r.size.x, 3)), Color("313845"))
-	# 顶缘亮线:基态克制,触发时脉冲提亮(motion.md 玩法演出,M5 量级)
-	var glow := 0.30 + 0.55 * (_pulse / 0.4)
-	draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, glow))
-	# 音级刻度:左缘红块(触发时展开为双倍宽)
-	var mw := 10.0 if _pulse > 0.0 else 5.0
-	draw_rect(Rect2(r.position + Vector2(0, 4), Vector2(mw, 3)), Color(Palette.I.red, 0.8))
-	# 专属高亮描边(呼吸脉冲,§7.10)
-	TerrainKit.draw_focus(self, r, hl_color)
+	# 专属高亮描边(呼吸脉冲,§7)
+	TerrainKit.draw_focus(self, Rect2(-size / 2.0, size), hl_color)

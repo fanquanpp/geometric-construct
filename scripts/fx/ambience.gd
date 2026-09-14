@@ -33,10 +33,6 @@ const FADE := 0.12   # 收音防咔哒(秒)
 const MOTIFS := {
 	"prologue": "res://data/music/prologue.tres",
 	"act1": "res://data/music/act1.tres",
-	"rogue_dash": "res://data/music/rogue_dash.tres",
-	"rogue_spring": "res://data/music/rogue_spring.tres",
-	"rogue_fall": "res://data/music/rogue_fall.tres",
-	"rogue_roll": "res://data/music/rogue_roll.tres",
 }
 static var _motif_cache := {}
 

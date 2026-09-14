@@ -98,6 +98,31 @@ func build(p, page: Control) -> void:
 	Ui.wire_button(read_btn, "ui_open")
 	text.add_child(read_btn)
 
+	# 页脚就地关闭(v0.44.2,键位页同款双端纪律):目录页不在翻页型
+	# 页签里(无 btn_row),触屏用户必须有就地关闭路径。
+	var foot := PanelContainer.new()
+	foot.position = Vector2(376, 648)
+	foot.size = Vector2(836, 44)
+	foot.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 14, 4))
+	var foot_row := HBoxContainer.new()
+	foot_row.add_theme_constant_override("separation", 12)
+	var tip := Ui.l("Esc / B 返回" if not Adaptive.is_touch_mode()
+		else "点按左侧条目切换 · 阅读全文进入整段重读",
+		12, Ui.LIGHT, Palette.I.dim)
+	tip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	foot_row.add_child(tip)
+	var close_btn := Button.new()
+	close_btn.text = "关 闭"
+	close_btn.custom_minimum_size = Vector2(110, 36)
+	close_btn.add_theme_font_size_override("font_size", 15)
+	Ui.wire_button(close_btn)
+	close_btn.pressed.connect(func() -> void: panel.close())
+	foot_row.add_child(close_btn)
+	foot.add_child(foot_row)
+	page.add_child(foot)
+
 	page.set_meta("refs", {"rows": rows, "name": name_l, "sub": sub_l,
 		"beats": beats_box, "read": read_btn})
 	refresh()

@@ -1,0 +1,45 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2_ts"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="3_ts"]
+[ext_resource type="PackedScene" path="res://scenes/world/checkpoint_beacon.tscn" id="4_bc"]
+[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="5_door"]
+[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="6_door"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/piano_tile.tscn" id="7_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/mover.tscn" id="8_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/timed_bridge.tscn" id="9_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/ski_patch.tscn" id="10_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/launch_pad.tscn" id="11_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/portal_pair.tscn" id="12_sc"]
+[ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="13_sc"]
+
+[node name="LevelRoot" type="Node2D"]
+script = ExtResource("1_nl")
+level_name = "probe · 门禁探针"
+intro_text = ""
+focus = 0
+roster = Array[int]([0, 1])
+level_size = Vector2(2600, 2000)
+kill_y = 1500
+top_kill_y = -420
+[node name="Decor" type="TileMapLayer" parent="."]
+z_index = 0
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAA=")
+[node name="Solid" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAAFAA0AAAAAAAAAAAAGAA0AAAAAAAAAAAAHAA0AAAAAAAAAAAAIAA0AAAAAAAAAAAAJAA0AAAAAAAAAAAAKAA0AAAAAAAAAAAALAA0AAAAAAAAAAAAMAA0AAAAAAAAAAAANAA0AAAAAAAAAAAAOAA0AAAAAAAAAAAAPAA0AAAAAAAAAAAAQAA0AAAAAAAAAAAARAA0AAAAAAAAAAAASAA0AAAAAAAAAAAATAA0AAAAAAAAAAAA=")
+[node name="Spawn0" type="Marker2D" parent="."]
+position = Vector2(300, 1275)
+[node name="Spawn1" type="Marker2D" parent="."]
+position = Vector2(500, 1275)
+[node name="CheckpointBeacon0" parent="." instance=ExtResource("4_bc")]
+position = Vector2(1400, 1275)
+[node name="ExitDoor0" parent="." instance=ExtResource("5_door")]
+position = Vector2(2300, 1254)
+geo_index = 0
+[node name="ExitDoor1" parent="." instance=ExtResource("6_door")]
+position = Vector2(2450, 1254)
+geo_index = 1

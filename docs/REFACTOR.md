@@ -314,14 +314,14 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
 | ControlPoint / ControlManager | RosterController + body_key 契约 + InputSource 槽位 | 已达标,语义更细(双体) |
 | RelationshipManager | characters.md §5 双体契约(伍·界/边) | 已达标 |
 | FormManager 形态 | 五角色=五定义,无同体多形态问题域 | 不采纳 |
-| RouteResolver 条件路线 | 分层语义 v3:八层定值 + who 集合 = 编译期路线裁决;reach_check 数学门禁 | 已达标且更硬 |
+| RouteResolver 条件路线 | 组件语义 v4:who 集合 = 编译期路线裁决(层概念已退役);reach_check 数学门禁 | 已达标且更硬 |
 | InteractionSystem / InteractionEvent | 物理接触直接契约(承载/推挤/顶弹,characters.md §4) | 不采纳(两体交互规模,事件总线过度设计);entities→mechanisms 信号化另评估(§三.2-5) |
 | GoalSystem / GoalGroup(ALL/ANY/SEQUENCE) | ExitDoor 满员到站语义 | 现有关全为"全员到门",组合语义无问题域→储备,出现多终点关再立 |
-| LevelSpace 空间树 / SpaceManager | 单画布横版卷轴范式 + 层语义;肉鸽=片段关卡制 | 不采纳(房间制范式与本项目不符) |
+| LevelSpace 空间树 / SpaceManager | 单画布横版卷轴范式 + 组件语义 v4;肉鸽=片段关卡制 | 不采纳(房间制范式与本项目不符) |
 | SpaceTransition | portal_pair / 电梯 = 显式机制节点 | 已达标 |
 | EventBus 全局总线 | 场景预连接信号(R3 纪律);玩法层零 autoload | 不采纳(违依赖方向;Main 收窄才是既定路) |
-| 四通道模型(物理/逻辑/交互/可见) | 与分层语义 v3 同构:物理碰撞 / who 逻辑 / 接触交互 / 演出分层(LayerVisual 节点分层,v0.39.0 起) | 概念映射记档,不新立系统 |
-| Collision Layer 重规划 | 现行层语义由 gridcheck / layer_check 看守 | 不动 |
+| 四通道模型(物理/逻辑/交互/可见) | 与组件语义 v4 同构:物理碰撞 / who 逻辑 / 接触交互 / 画序带(引擎原生节点分层,v0.43.0 起) | 概念映射记档,不新立系统 |
+| Collision Layer 重规划 | 现行碰撞签名由 gridcheck / comp_check 看守 | 不动 |
 | Node=空间 / Resource=定义 / State=状态 / System=行为 / Manager=协调 | 与 AGENTS.md R0-R4 + 数据层叶节点法则同向 | 采信为命名对照(ARCHITECTURE.md「场景与资源约定」) |
 | GameManager 跨系统协调 | main.gd 状态机(扇入 28 收窄 = 既定 Phase 4) | 部分达标 → §十 1/2/3 收口 |
 

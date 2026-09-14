@@ -27,6 +27,9 @@ func _ready() -> void:
 	%SettingsBtn.pressed.connect(func() -> void: m.open_settings())
 	_leave_btn.pressed.connect(func() -> void: m.quit_to_menu())
 	%TouchBtn.pressed.connect(func() -> void: _toggle_touch(%TouchBtn))
+	# 触屏设备虚拟按键本来就常驻,这个开关面向桌面端(真机上只会造成
+	# 「关了怎么还在」的误导);触摸屏设备直接隐藏(v0.44.2)
+	(%TouchBtn as Button).visible = not DisplayServer.is_touchscreen_available()
 	%EscHint.text = "点按按钮继续游戏" if DisplayServer.is_touchscreen_available() \
 		else "Esc · 继续游戏"
 

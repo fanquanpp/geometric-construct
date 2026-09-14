@@ -1,0 +1,48 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2_ts"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="3_ts"]
+[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="4_door"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/piano_tile.tscn" id="5_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/mover.tscn" id="6_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/timed_bridge.tscn" id="7_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/ski_patch.tscn" id="8_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/launch_pad.tscn" id="9_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/portal_pair.tscn" id="10_sc"]
+[ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="11_sc"]
+[ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="12_hint"]
+
+[node name="LevelRoot" type="Node2D"]
+script = ExtResource("1_nl")
+level_name = "跃 · 折叠"
+intro_text = "跃落得越深,弹得越高。\n折叠自己,是为了更高的起飞。"
+focus = 1
+roster = Array[int]([1])
+level_size = Vector2(3400, 2000)
+kill_y = 2600
+top_kill_y = -420
+[node name="Decor" type="TileMapLayer" parent="."]
+z_index = 0
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAHAAYAAAAAAAEAAAAZAAYAAAAAAAEAAAA=")
+[node name="Solid" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAYAAoAAAACAAAAAAAZAAoAAAACAAAAAAAaAAoAAAACAAAAAAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAAFAA0AAAAAAAAAAAAGAA0AAAAAAAAAAAAHAA0AAAAAAAAAAAAIAA0AAAAAAAAAAAAJAA0AAAAAAAAAAAAKAA0AAAAAAAAAAAAPAA0AAAAAAAAAAAAQAA0AAAAAAAAAAAARAA0AAAAAAAAAAAASAA0AAAAAAAAAAAATAA0AAAAAAAAAAAAUAA0AAAAAAAAAAAAVAA0AAAAAAAAAAAAWAA0AAAAAAAAAAAAXAA0AAAAAAAAAAAAYAA0AAAAAAAAAAAAZAA0AAAAAAAAAAAAaAA0AAAAAAAAAAAAbAA0AAAAAAAAAAAAcAA0AAAAAAAAAAAAdAA0AAAAAAAAAAAAeAA0AAAAAAAAAAAAfAA0AAAAAAAAAAAALABAAAAAAAAAAAAAMABAAAAAAAAAAAAANABAAAAAAAAAAAAAOABAAAAAAAAAAAAA=")
+[node name="Spawn1" type="Marker2D" parent="."]
+position = Vector2(300, 1275)
+[node name="ExitDoor1" parent="." instance=ExtResource("4_door")]
+position = Vector2(2950, 1254)
+geo_index = 1
+[node name="TimedBridge0" parent="." instance=ExtResource("7_sc")]
+position = Vector2(1300, 1290)
+size = Vector2(400, 24)
+on_time = 1.8
+off_time = 1.8
+[node name="SkiPatch0" parent="." instance=ExtResource("8_sc")]
+position = Vector2(1750, 1275)
+size = Vector2(400, 40)
+[node name="HintMarker0" parent="." instance=ExtResource("12_hint")]
+position = Vector2(800, 1050)
+text = "跃:弹性 ×4,落弹即起"

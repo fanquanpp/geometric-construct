@@ -111,7 +111,7 @@ func refresh() -> void:
 
 	for c in _stats_box.get_children():
 		c.queue_free()
-	for row in gd.stat_rows(func(def, key): return RunState.modified(def, key)):
+	for row in gd.stat_rows():
 		_stats_box.add_child(make_stat_row(gd, row))
 
 	for c in _traits_box.get_children():
@@ -129,11 +129,8 @@ func refresh() -> void:
 		_traits_box.add_child(hb)
 
 
-## 单条属性行:标签 + 加成数值条(档位格 ×4 + 锁定区)+ 数值 + 释义。
-## 条语言(glossary.md §4 v3):格 = 加成档位(0 无加成 → 4 满),锁定区
-## 红块 = 档位 -1;基础不具备的能力整条不画,数值列示"状态-1"。
-## 数值列:无加成时显示基础读数;局内有加成时显示"+N",释义列前缀
-## 「基础 → 实际」读数换算(肉鸽局内暂停打开档案 = 实时生效中)。
+## 单条属性行:标签 + 数值条 + 数值 + 释义。
+## 基础不具备的能力整条不画,数值列示"状态-1";数值列显示基础读数。
 func make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 14)
@@ -157,7 +154,7 @@ func make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 
 	var is_bar: bool = row.get("bar", false)
 	var absent: bool = row.get("absent", false)
-	var lvl: int = RunState.bonus_level(str(row.get("key", ""))) if is_bar else 0
+	var lvl := 0
 	var col: Color = gd.color
 	var shown := not absent   # 状态-1(天生没有):条区整段留白
 	bar.draw.connect(func() -> void:
@@ -200,10 +197,6 @@ func make_stat_row(gd: GeometryDef, row: Dictionary) -> Control:
 	hb.add_child(value)
 
 	var hint_text: String = row["hint"]
-	if is_bar and not absent and lvl != 0:
-		var eff := RunState.modified(gd, str(row["key"]))
-		hint_text = "基础 %.1f → 实际 %.1f · %s" % [row["base_read"],
-			StatBonus.to_reading(str(row["key"]), eff), hint_text]
 	var hint := Ui.l(hint_text, 13, Ui.LIGHT, Palette.I.dim)
 	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

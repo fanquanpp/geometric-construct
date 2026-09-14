@@ -20,7 +20,6 @@ var hints := HudHints.new()   # 按键提示条域(v0.39.4 域拆)
 @onready var _level_total: Label = %TotalLabel
 @onready var _level_name: Label = %NameLabel
 @onready var _hint_row: HBoxContainer = %HintRow
-@onready var _coords: Label = %Coords
 @onready var _net_badge: Label = %NetBadge
 @onready var _edge: Control = %Edge
 @onready var _narration: Label = %Narration
@@ -131,7 +130,6 @@ func _apply_styles() -> void:
 	Ui.style(_level_num, 24, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	Ui.style(_level_total, 16, Ui.HEAD, Palette.I.dim)
 	Ui.style(_level_name, 22, Ui.HEAD, Palette.I.paper)
-	Ui.style(_coords, 18, Ui.LIGHT, Color(Palette.I.dim, 0.95))
 	Ui.style(_net_badge, 13, Ui.HEAD, Palette.I.orange)
 	_narration.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	Ui.style(_narration, 22, Ui.HEAD, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, true, 6)
@@ -162,7 +160,6 @@ func _touch_mode() -> bool:
 	return Adaptive.is_touch_mode()
 
 
-## 左下角坐标:实时显示受控几何体的世界坐标(单位:格,1 格 = 100 px)。
 func _process(delta: float) -> void:
 	if _intro.visible:
 		_layout_intro_skip()
@@ -171,52 +168,21 @@ func _process(delta: float) -> void:
 		if _anchor_flash.t >= 0.14:
 			_anchor_flash.active = false
 			(_anchor_flash["ctl"] as Control).visible = false
-	var m = Main.I
-	if m == null or m.players.is_empty() or m.view_slot() < 0 \
-			or m.view_slot() >= m.players.size():
-		_coords.text = ""
-		return
-	var p: Player = m.players[m.view_slot()]
-	var zone := ""
-	var sig := ""
-	if m._level_def != null:
-		for z in m._level_def.zones:
-			if (z["rect"] as Rect2).has_point(p.position):
-				zone = str(z["name"]) + " · "
-				break
-	if m._level_root != null and m._level_root.has_meta("items"):
-		for it in m._level_root.get_meta("items"):
-			if not Comp.solid_for(it, p.index):
-				continue
-			var feet: Vector2 = p.position + Vector2(0, p.def.size.y * 0.5 * p.gravity_dir)
-			if not (it["rect"] as Rect2).grow(2.0).has_point(feet):
-				continue
-			var who: Array = it["who"]
-			var names := PackedStringArray()
-			for g in who:
-				names.append(Geometries.ALL[clampi(int(g), 0, Geometries.ALL.size() - 1)].name)
-			sig = " · %s" % ["共享" if names.is_empty() else "+".join(names)]
-			break
-	# 坐标读数用 display_name():双体当前半体显示"界"/"边",不再恒显示"界"
-	_coords.text = "%s · %sx %.2f, y %.2f%s" % [p.display_name(), zone,
-		p.position.x / Geometries.UNIT_PX, p.position.y / Geometries.UNIT_PX, sig]
 
 
-## 右上章节徽章:官方关按"幕内场次 / 幕内总场"编号(序章 01–06,第一幕
-## 01–06),肉鸽等自定义标签直接显示;不在任何幕的关卡退回全局序号。
-func set_level_info(def: LevelDef, num_label := "") -> void:
-	var li := LevelData.LEVELS.find(def)
+## 右上章节徽章:官方关按"幕内场次 / 幕内总场"编号,自定义标签直接显示;
+## 不在任何幕的关卡退回全局序号。
+func set_level_info(index: int, level_name: String, num_label := "") -> void:
 	if not num_label.is_empty():
 		_level_num.text = num_label
 		_level_total.visible = false
 	else:
-		var act := LevelData.act_index_of(li)
-		_level_num.text = "%02d" % LevelData.scene_no_of(li)
+		var act := LevelData.act_index_of(index)
+		_level_num.text = "%02d" % LevelData.scene_no_of(index)
 		_level_total.text = "/ %02d" % ((LevelData.ACTS[act]["levels"] as Array).size() \
-			if act >= 0 else LevelData.LEVELS.size())
+			if act >= 0 else LevelData.count())
 		_level_total.visible = true
-	_level_name.text = def.name
-	hints.rebuild(def)
+	_level_name.text = level_name
 
 
 ## 队伍 chips 域委托(v0.39.4:真身 HudChips,roster_controller 调用点零改动)。
@@ -239,10 +205,10 @@ func narration(text: String, color: Color, dur := 3.2) -> void:
 	_narr_tween.tween_property(_narration, "modulate:a", 0.0, 0.8)
 
 
-func show_intro(kicker: String, def: LevelDef) -> void:
+func show_intro(kicker: String, def: Dictionary) -> void:
 	_intro_num.text = kicker
-	_intro_title_label.text = def.name
-	_intro_text.text = hints.adapt_copy(def.intro)
+	_intro_title_label.text = def["name"]
+	_intro_text.text = hints.adapt_copy(str(def.get("intro", "")))
 	# 正文宽度上限:可见区 72% 且不超过 860px,超长自动折行 —— 杜绝溢出边框
 	var vis := Adaptive.visible_size(get_viewport())
 	_intro_text.custom_minimum_size = Vector2(minf(vis.x * 0.72, 860.0), 0)

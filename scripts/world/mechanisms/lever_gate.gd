@@ -7,12 +7,14 @@ extends Node2D
 ## 一门多开关(v0.15):门两侧各一只开关 = 气闸式互让题(先过者踩住
 ## 对侧开关,接留守者过来),任一开关被踩即算"踩下"。
 
-var lever_rects: Array = []   # Array[Rect2] 踩踏开关板(≥1)
-var door_item := {}      # Comp.normalize 后的门板组件字典
+@export var lever_rects: Array = []   # Array[Rect2] 踩踏开关板(≥1,世界坐标)
+@export var door_item := {}      # 门板组件字典(rect/faces…)
+var _pad_off: Array = []
+var _pad_on: Array = []
 var invert := false      # false:踩下 = 门开;true:踩下 = 门关
-var layer_bit := 1
+var sig_bit := 1
 var gate_id := 0         # 关内序号(联机事件按此寻址)
-var hl_color := Color(0, 0, 0, 0)   # 门板专属高亮色(FocusDriver 写入,§7.10)
+var hl_color := Color(0, 0, 0, 0)   # 门板专属高亮色(FocusDriver 写入,§7)
 var _riders: Array = []  # 每只开关上的几何体集合({body: true})
 var _door_body: StaticBody2D
 var _door_occ: LightOccluder2D   # 门板遮挡体随开关切换(门开 = 不投影)
@@ -23,7 +25,7 @@ func _ready() -> void:
 	set_meta("gate_id", gate_id)
 	var r: Rect2 = door_item["rect"]
 	_door_body = StaticBody2D.new()
-	_door_body.collision_layer = 1 << (layer_bit - 1)
+	_door_body.collision_layer = 1 << (sig_bit - 1)
 	_door_body.collision_mask = 0
 	var cs := CollisionShape2D.new()
 	cs.position = r.get_center()
@@ -50,6 +52,14 @@ func _ready() -> void:
 		area.body_entered.connect(_on_body_entered.bind(i))
 		area.body_exited.connect(_on_body_exited.bind(i))
 		add_child(area)
+		var lr: Rect2 = lever_rects[i]
+		_pad_off.append(TerrainKit.mech_sprite(
+			preload("res://assets/archive/mech_lever_pad.png"), lr))
+		_pad_on.append(TerrainKit.mech_sprite(
+			preload("res://assets/archive/mech_lever_pad_f2.png"), lr))
+		add_child(_pad_off[i])
+		add_child(_pad_on[i])
+		_pad_on[i].visible = false
 	_apply(_initial_open())
 
 func _initial_open() -> bool:
@@ -90,8 +100,8 @@ func _apply(open: bool) -> void:
 	if _open == open:
 		return
 	_open = open
-	# 运行时碰撞位切换:门板虚化 = 全体不可撞(levels.md §7.6)
-	_door_body.set_collision_layer_value(layer_bit, not open)
+	# 运行时碰撞位切换:门板虚化 = 全体不可撞(levels.md §7)
+	_door_body.set_collision_layer_value(sig_bit, not open)
 	_door_occ.visible = not open   # 门开不投影(与线框虚化语言一致)
 	queue_redraw()
 
@@ -116,23 +126,13 @@ func _draw() -> void:
 	# 开关与门之间画一条 8% 亮度的地面连线,标出"这只开关管这扇门"
 	for i in lever_rects.size():
 		var lever_rect: Rect2 = lever_rects[i]
-		var lr := Rect2(lever_rect.position + Vector2(0, lever_rect.size.y - 10),
-			Vector2(lever_rect.size.x, 10))
 		var pressed: bool = not (_riders[i] as Dictionary).is_empty()
-		var sink := 4.0 if pressed else 0.0
-		var link_y := lr.end.y - 2.0
-		var lx0 := minf(lr.get_center().x, r.get_center().x)
-		var lx1 := maxf(lr.get_center().x, r.get_center().x)
+		_pad_on[i].visible = pressed
+		_pad_off[i].visible = not pressed
+		var link_y: float = lever_rect.end.y - 2.0
+		var lx0: float = minf(lever_rect.get_center().x, r.get_center().x)
+		var lx1: float = maxf(lever_rect.get_center().x, r.get_center().x)
 		draw_rect(Rect2(Vector2(lx0, link_y), Vector2(lx1 - lx0, 2)),
 			Color(Palette.I.red if pressed else Palette.I.paper, 0.22 if pressed else 0.10))
-		draw_rect(Rect2(Vector2(lr.position.x - 3, lr.end.y - 3),
-			Vector2(lr.size.x + 6, 3)), Color(0, 0, 0, 0.38))
-		draw_rect(Rect2(lr.position + Vector2(0, sink), lr.size),
-			Color("313845") if not pressed else Color("3A4254"))
-		draw_rect(Rect2(lr.position + Vector2(0, sink),
-			Vector2(lr.size.x, 2)), Color(Palette.I.red, 0.9 if not pressed else 0.5))
-		if pressed:
-			draw_rect(Rect2(lever_rect.position + Vector2(lever_rect.size.x * 0.5 - 14,
-				lr.position.y - 16), Vector2(28, 3)), Color(Palette.I.red, 0.8))
-	# 门板专属高亮描边(呼吸脉冲,§7.10)
+	# 门板专属高亮描边(呼吸脉冲,§7)
 	TerrainKit.draw_focus(self, r, hl_color)

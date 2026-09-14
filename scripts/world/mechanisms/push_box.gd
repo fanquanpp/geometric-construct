@@ -6,8 +6,8 @@ extends StaticBody2D
 ## 纯物理推挤可预测,解谜不惩罚实验。
 ## 碰撞:箱体占位时挡人(层 bit31,构建期并入玩家 mask)。
 
-var cell := Vector2.ZERO      # 当前格心(世界坐标)
-var hl_color := Color(0, 0, 0, 0)   # 专属高亮色(FocusDriver 写入,§7.10)
+@export var cell := Vector2.ZERO      # 当前格心(世界坐标)
+var hl_color := Color(0, 0, 0, 0)   # 专属高亮色(FocusDriver 写入,§7)
 var _sliding := false
 var _area: Area2D
 const CELL := 100.0
@@ -22,6 +22,8 @@ func _ready() -> void:
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(CELL, CELL)
 	cs.shape = shape
+	add_child(TerrainKit.mech_sprite(preload("res://assets/archive/mech_push_box.png"),
+		Rect2(Vector2(-CELL / 2.0, -CELL / 2.0), Vector2(CELL, CELL))))
 	add_child(cs)
 	# 顶入感应区:比箱体略大,持续读玩家顶入方向(连顶连滑 = 多格推)
 	_area = Area2D.new()
@@ -79,13 +81,11 @@ func _blocked(target: Vector2) -> bool:
 
 func _draw() -> void:
 	var r := Rect2(Vector2(-CELL / 2.0, -CELL / 2.0), Vector2(CELL, CELL))
-	draw_rect(r, Color("3A4254"))
-	draw_rect(r, Color(Palette.I.paper, 0.42), false, 1.5)
 	# 两侧顶推雪佛龙(指向可推方向)
 	for side: float in [-1.0, 1.0]:
 		var cx := side * (CELL / 2.0 - 14.0)
 		draw_polyline(PackedVector2Array([
 			Vector2(cx - side * 6.0, -14.0), Vector2(cx + side * 6.0, 0.0),
 			Vector2(cx - side * 6.0, 14.0)]), Color(Palette.I.paper, 0.55), 2.0)
-	# 专属高亮描边(呼吸脉冲,§7.10)
+	# 专属高亮描边(呼吸脉冲,§7)
 	TerrainKit.draw_focus(self, r, hl_color)
