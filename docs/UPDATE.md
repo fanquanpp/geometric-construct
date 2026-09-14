@@ -55,12 +55,11 @@
 - **SVG(UI 图标 / 角色徽标)**:全部由 `tools/gen_svgs.py` 生成——
   改素材先改生成器再执行 `python tools/gen_svgs.py`,禁止手改 svg 成品
   (会被覆盖)。SVG 渲染器(ThorVG)**不支持 `<text>`**,文字一律用折线字形。
-- **aseprite 图鉴插图(档案几何专用,v0.19 立)**:源
-  `assets/art/tiles_v2/*.aseprite`(bld_* 建筑 / mech_* 机关 / geo_* 几何肖像,
-  清单见其 README)→ 导出 1x PNG(统一 200×200 画布;动态帧加 `_f2`/`_f3`
-  后缀)到 `assets/archive/`——**唯一入引擎的 aseprite 衍生素材目录**,
-  地图 / 实体不得引用;显示纪律与图层规范见 art-style.md §6.1。
-  地图本身仍**全 `_draw()` 程序化渲染**,本条不构成瓦片管线重启。
+- **图鉴插图(档案几何专用)**:成品 PNG 直住 `assets/archive/`
+  (统一 200×200 画布;动态帧加 `_f2`/`_f3` 后缀)——**唯一入引擎的
+  衍生素材目录**,地图 / 实体不得引用;显示纪律见 art-style.md §6.1
+  (源 aseprite 已随 v0.39.0 清退,PNG 为孤本)。
+  地图为引擎原生节点分层(Polygon2D),本条不构成瓦片管线重启。
 - 素材变更后必须执行 `godot --headless --path . --import` 再测试。
 
 ## 5. 发布前检查单
@@ -68,9 +67,9 @@
 - [ ] `version.gd` 已按第 1 节规则升级
 - [ ] `CHANGELOG.md` 已补条目
 - [ ] 存档迁移:删掉 `user://speed-rouge.cfg` 与保留旧档两种情况下,游戏都能正常启动
-- [ ] `--autotest=0` LEVEL COMPLETE(机制试炼场,当前唯一在演关;见 docs/ARCHITECTURE.md 运行命令)
+- [ ] `tests/flow_check` / `tests/comp_check` / `grid_check` / `reach_check` 门禁全绿(主线五幕 26 关)
 - [ ] `--menushot` / `--panelshot`(档案几何全页签)/ `--autoshot=0` / `--tourshot` 截图人工过目(风格锚定不跑偏)
-- [ ] 新增 SVG 已进 `gen_svgs.py`,无游离的手改 svg;新增图鉴插图源在
-	  `assets/art/tiles_v2/` 且 PNG 已导出到 `assets/archive/`(地图零贴图纪律不破)
-- [ ] Android:导出段显式 `texture_format/etc2_astc=true`、`rendering/viewport/hdr_2d` 关闭(核对项见 docs/ROADMAP.md §5「Android 性能」)
+- [ ] 新增 SVG 已进 `gen_svgs.py`,无游离的手改 svg;新增图鉴插图直接更新
+	  `assets/archive/` PNG(源 aseprite 已清退,地图零贴图纪律不破)
+- [ ] Android:导出段显式 `texture_format/etc2_astc=true`(export_presets.cfg 已声明)、`rendering/viewport/hdr_2d` 关闭
 - [ ] Android 真机抽查:`--perflog` 基线 + `dumpsys gfxinfo` 帧时间无异常 jank
