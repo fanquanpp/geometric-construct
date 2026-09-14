@@ -144,7 +144,7 @@ geometric-construct/
 │                            #   grid_check / comp_check / modifier_check /
 │                            #   mover_check / trait_check headless 验证脚本)
 ├── build/                   # 构建产物(已 gitignore)
-└── docs/                    # ARCHITECTURE / DESIGN / ROADMAP / UPDATE / CHANGELOG
+└── docs/                    # ARCHITECTURE / DESIGN / UPDATE / CHANGELOG
 	└── design/              # 策划侧设计档案(总纲/美术/动效/音频/氛围/角色/建筑/关卡/UI流/剧情/肉鸽)
 ```
 

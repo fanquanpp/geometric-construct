@@ -16,7 +16,7 @@
 | 视觉规范(调色板 / 形状语言 / 动效法则 M1–M9 / 审计清单 / 素材管线) | [design/art-style.md](design/art-style.md) |
 | 几何体角色设计(标尺与利用率 / 手感公约数 / 射程矩阵 / 配合矩阵 / 档案台词) | [design/characters.md](design/characters.md) |
 | 特殊建筑物(终点门 / 加速门 / 曲面板 / 移动构件 / 动态构件 / 规划) | [design/structures.md](design/structures.md) |
-| 关卡设计(数据规范 / 写作流程 / 动态地图原则 / 八层分层系统 / 网格量尺) | [design/levels.md](design/levels.md) |
+| 关卡设计(数据规范 / 写作流程 / 动态地图原则 / 组件语义 v4 / 网格量尺) | [design/levels.md](design/levels.md) |
 | 多人联机(三档连接 / 输入槽 / LAN 发现 / 同步规格 / 中继服) | [design/net.md](design/net.md) |
 | UI 流与层级(三型页面 / 层带规范 / 导航语义 / 档案几何五页签) | [design/ui-flow.md](design/ui-flow.md) |
 | 动效与特效(程序化管线 / 资产清单 / 转场规范 / 性能预算 / 玩法配合) | [design/motion.md](design/motion.md) |

@@ -43,7 +43,7 @@
 | 13 | Data 基础设施 | scripts/data/(9 文件) | 叶节点化(§三.2-②) |
 | 14 | Research 基础设施 | **缺** → 新建 docs/research/narrative/ | 研究资料与正式设定隔离(用户方案 §23) |
 | 15 | Standards 基础设施 | glossary.md + 各文档"纪律"段 | SSOT 表(§五)为总纲 |
-| 16 | Tools 基础设施 | tests/(5 校验 + 4 shot 场景)+ tools/(shot_diff)+ **dev/shot_harness** + godot_ai MCP | 已成型;导出剥离已就绪 |
+| 16 | Tools 基础设施 | tests/(校验套件 + shot 场景)+ tools/(作关器)+ **dev/shot_harness** + godot_ai MCP | 已成型;导出剥离已就绪 |
 
 ---
 
@@ -55,10 +55,10 @@
 |---|---|---|
 | scripts/ 共 54 个 .gd ≈ 13,286 行 | core 5/1343 · data 9/1187 · dev 1/468 · entities 3/1316 · fx 2/713 · net 5/830 · ui 12/4817 · world 5/897 · mechanisms 12/795 · render 4/391 · modes/rogue 2/329 | 全部在用(无死文件) |
 | scenes/ | Main.tscn(唯一游戏场景) | 在用 |
-| tests/ | grid_check / layer_check / modifier_check / mover_check / trait_check + level_shot / shot_all / story_shot / win_shot(场景+脚本) | 在用;v4 坐标重排事项随 v0.30.0 关卡 JSON 化消失 |
+| tests/ | grid_check / comp_check / modifier_check / mover_check / trait_check + level_shot / shot_all / story_shot / win_shot(场景+脚本) | 在用;v4 坐标重排事项随 v0.30.0 关卡 JSON 化消失 |
 | tools/ | shot_diff.py | 在用 |
 | story/ | 9 个 .ks(prologue/act1/epilogue/rogue_intro + 四单章) | 在用 |
-| docs/ 根 | ARCHITECTURE / ASSETS / CHANGELOG / DESIGN / ROADMAP / UPDATE / **REFACTOR(本文)** | 在用 |
+| docs/ 根 | ARCHITECTURE / ASSETS / CHANGELOG / DESIGN / UPDATE / **REFACTOR(本文)** | 在用 |
 | docs/design/ | 15 + bible.md | 在用;重复点见 §3.3 |
 | assets/ | archive 34 png · levels/trial_v5.png · art/(tiles_v2 21 源 + icon_jasmine + levels 源)· svg 68 · fonts 1 | 在用(遗留目录已在 v0.27 清除) |
 | addons/ | godot_ai + konado(+speed-dev 内 gode,不入库) | 在用 |
@@ -108,7 +108,7 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
 | structures.md | 机关登记(生命周期契约) | — | 正常 |
 | roguelike.md | 重跑系统唯一权威 | — | 正常 |
 | art-style/audio/motion/atmosphere | 各自规范 | — | 正常;调色板常量落 data/palette |
-| ARCHITECTURE/REFACTOR/ROADMAP/ASSETS/CHANGELOG/UPDATE | 架构/施工/排期/资产账/版本/发版 | — | 正常 |
+| ARCHITECTURE/REFACTOR/ASSETS/CHANGELOG/UPDATE | 架构/施工/资产账/版本/发版 | — | 正常 |
 
 ---
 
@@ -309,7 +309,7 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
 |---|---|---|
 | CharacterDefinition | GeometryDef .tres(data/characters/ 五角色) | 已达标(M-4) |
 | Registry + Factory | CharacterManager:读表→建体入池→发 character_created | 已达标(R3 标准形) |
-| CharacterPool 生命周期 | 入池复用不销毁(ROADMAP §5 成文:对象池不做) | 已达标 |
+| CharacterPool 生命周期 | 入池复用不销毁(成文裁定:对象池不做) | 已达标 |
 | CharacterState / RoguelikeState | RunState(RefCounted 钩子覆盖层,modifier_check 门禁) | 已达标;联机 per-player = M-6 待办另立项 |
 | ControlPoint / ControlManager | RosterController + body_key 契约 + InputSource 槽位 | 已达标,语义更细(双体) |
 | RelationshipManager | characters.md §5 双体契约(伍·界/边) | 已达标 |
