@@ -29,7 +29,7 @@
 
 ### 门禁
 - GRIDCHECK PASS(54 关 = 26 主线 + 28 肉鸽,warns 4 基线)/ REACH PASS ×54 逐成员 / MODCHECK / COMP CHECK / FLOW CHECK 全 PASS;check-only 九文件零错(单查固有加载环噪音除外,以运行时门禁为准)。
-- PC 截图:tourshot 数据驱动巡行(伍关界挂天花 y2.15 稳定、磁界张开、读数共享)+ trialshot 出生镜(.shots_v44);真机 K60 走查**待补验**——本批收口时 Android SDK 目录(`AppData/Local/Android/Sdk`)被外部清空,adb/导出链路暂断,SDK 恢复后装 v0.44.0 apk 复走五幕剧目与局内。
+- PC 截图:tourshot 数据驱动巡行(伍关界挂天花 y2.15 稳定、磁界张开、读数共享)+ trialshot 出生镜(.shots_v44);**真机 K60 补验完成**:SDK 重建(C:\Atian\android-sdk,cmdline-tools 拉 build-tools 34 + platform-tools)后出包装机——五幕剧目行全量、第二幕选关卡六场解锁链正确、会合关界/边双体稳定诞生(界挂天花 y2.15)、logcat 零脚本错。
 - 文档:README / levels §0+§7.10(v4)/ seven_dimensions(五幕 26 关七维全登记)/ ASSETS 幕表 / ARCHITECTURE / AGENTS 基线行;version MINOR 44。
 
 ## v0.43.0(2026-09-14)
