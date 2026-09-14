@@ -57,7 +57,7 @@ geometric-construct/
 │   │   ├── archive_data.gd  #   档案几何条目表(建筑 / 机关 / 剧情目录,纯字典)
 │   │   ├── level_def.gd     #   关卡定义类(含 movers 移动构件字段)
 │   │   ├── level_data.gd    #   关卡数据表(序章 4 场 + 第一幕 6 场巨构)
-│   │   ├── component.gd     #   地图组件语义组 v3:id/layer(八层定值)/faces/who 集合(levels.md §7.10)
+│   │   ├── component.gd     #   地图组件语义组 v4:id/faces/who 集合(levels.md §7.10)
 │   │   ├── run_modifiers.gd #   肉鸽词条表(通用 + 主角专属,稀有度)
 │   │   └── rogue_fragments.gd # 肉鸽单人片段库(按主角分组的快/稳排法 + 精英考)
 │   ├── entities/            # 场景内实体
@@ -240,7 +240,7 @@ A 跳,X 冲刺,LB/RB 切换,Back 召回,Start 暂停。
 - **调试钩子**(命令行 user args,`--` 之后):
   `--autotest=N` 自动通关测试 · `--autoshot=N` 关卡截图 · `--menushot` 菜单截图 ·
   `--panelshot` 档案几何截图(全页签) · `--introshot` 开场卡截图 · `--doorshot` 门特写 ·
-  `--tourshot` 巨构巡航截图 · `--laneshot` 分层 v3 八层验收截图 · `--recalltest` 召回链路自测 ·
+  `--tourshot` 数据驱动巨构巡航截图 · `--trialshot` 出生连拍 · `--recalltest` 召回链路自测 ·
   `--zoom=N` 锁定镜头变焦 · `--rogueshot` 肉鸽 UI 截图 ·
   `--rogueautotest[=N]` 肉鸽按主角自动跑整局 · `--shotdir=<path>` 输出目录。
 
