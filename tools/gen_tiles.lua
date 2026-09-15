@@ -210,11 +210,12 @@ do
   end
   ox, oy = T(12, 0)                                            -- (12,0) 取景框角标
   solid_base(ox, oy, SLAB, PANEL, EDGE_L, DARKV)
-  local a = 18
-  hline(ox + 10, oy + 16, a, PAPER, 3); vline(ox + 10, oy + 16, a, PAPER, 3)
-  hline(ox + 90 - a, oy + 16, a, PAPER, 3); vline(ox + 87, oy + 16, a, PAPER, 3)
-  hline(ox + 10, oy + 84, a, PAPER, 3); vline(ox + 10, oy + 84 - a, a, PAPER, 3)
-  hline(ox + 90 - a, oy + 84, a, PAPER, 3); vline(ox + 87, oy + 84 - a, a, PAPER, 3)
+  local a = 24
+  hline(ox + 8, oy + 16, a, PAPER, 4); vline(ox + 8, oy + 16, a, PAPER, 4)
+  hline(ox + 92 - a, oy + 16, a, PAPER, 4); vline(ox + 84, oy + 16, a, PAPER, 4)
+  hline(ox + 8, oy + 84, a, PAPER, 4); vline(ox + 8, oy + 84 - a, a, PAPER, 4)
+  hline(ox + 92 - a, oy + 84, a, PAPER, 4); vline(ox + 84, oy + 84 - a, a, PAPER, 4)
+  disc(ox + 50, oy + 50, 3, DIM)
   ox, oy = T(13, 0)                                            -- (13,0) 亮面板
   solid_base(ox, oy, PANEL, PANEL, EDGE_L, DARKV)
   rstroke(ox + 8, oy + 8, 84, 84, INK3, 2)
@@ -312,9 +313,9 @@ do
     fill(ox, oy, 100, 100, DARKV)
     return ox, oy
   end
-  local ox, oy = dark(0, 2); rstroke(ox + 6, oy + 6, 88, 88, INK3, 2)      -- 素板
+  local ox, oy = dark(0, 2); rstroke(ox + 6, oy + 6, 88, 88, DIM, 2)       -- 素板
   ox, oy = dark(1, 2)                                                      -- 三分
-  vline(ox + 33, oy, 100, INK3, 2); vline(ox + 66, oy, 100, INK3, 2)
+  vline(ox + 33, oy, 100, DIM, 2); vline(ox + 66, oy, 100, DIM, 2)
   ox, oy = dark(2, 2)                                                      -- 梯形巨面
   trap(ox + 50, oy + 30, oy + 88, 40, 84, INK3)
   hline(ox + 34, oy + 30, 32, PAPER, 2)
@@ -342,12 +343,14 @@ do
   hline(ox + 16, oy + 66, 68, DIM, 2)
   ox, oy = dark(11, 2)                                                     -- 点刻
   disc(ox + 50, oy + 50, 5, DIM)
-  vline(ox + 49, oy + 20, 12, INK3, 2); hline(ox + 44, oy + 30, 12, INK3, 2)
-  vline(ox + 49, oy + 68, 12, INK3, 2); hline(ox + 44, oy + 68, 12, INK3, 2)
+  vline(ox + 49, oy + 20, 12, DIM, 2); hline(ox + 44, oy + 30, 12, DIM, 2)
+  vline(ox + 49, oy + 68, 12, DIM, 2); hline(ox + 44, oy + 68, 12, DIM, 2)
   ox, oy = dark(12, 2)                                                     -- 山脊剪影
   tri(ox + 4, oy + 96, ox + 24, oy + 50, ox + 44, oy + 96, INK3)
   tri(ox + 46, oy + 96, ox + 66, oy + 42, ox + 92, oy + 96, INK3)
+  line(ox + 4, oy + 96, ox + 24, oy + 50, PAPER, 2)
   line(ox + 24, oy + 50, ox + 44, oy + 96, PAPER, 2)
+  line(ox + 46, oy + 96, ox + 66, oy + 42, PAPER, 2)
   line(ox + 66, oy + 42, ox + 92, oy + 96, PAPER, 2)
   ox, oy = dark(13, 2)                                                     -- 巨面
   fill(ox, oy, 100, 100, INK3)
@@ -356,6 +359,9 @@ do
   hline(ox, oy + 30, 60, INK3, 8)
   hline(ox, oy + 52, 80, INK3, 8)
   hline(ox, oy + 74, 100, INK3, 8)
+  hline(ox, oy + 30, 60, DIM, 2)
+  hline(ox, oy + 52, 80, DIM, 2)
+  hline(ox, oy + 74, 100, DIM, 2)
   ox, oy = dark(15, 2)                                                     -- 空板
 end
 
@@ -452,22 +458,24 @@ do
   -- ── 12–15 列 · 坡面 / 幕差分族 ──
   -- 坡件:踏面 = PAPER·30% 斜缘线 + 内侧受光带;碰撞配三角多边形
   -- (见 native_tileset.tres);四色 = 幕差分(art-style §7.2)。
-  local function slope45(cx, cy, body, lit, down)
+  local function slope45(cx, cy, body, lit, down, edge)
     local ox, oy = T(cx, cy)
     if down then
       -- 右降:踏面 左上→右下,本体在右上侧
       tri(ox, oy, ox + 100, oy, ox + 100, oy + 100, body)
       line(ox + 6, oy + 6, ox + 96, oy + 96, lit, 14)
-      line(ox, oy, ox + 100, oy + 100, EDGE_S, 3)
+      line(ox, oy, ox + 100, oy + 100, edge, 3)
     else
       -- 右升:踏面 左下→右上,本体在右下侧
       tri(ox, oy + 100, ox + 100, oy, ox + 100, oy + 100, body)
       line(ox + 6, oy + 94, ox + 96, oy + 6, lit, 14)
-      line(ox, oy + 100, ox + 100, oy, EDGE_S, 3)
+      line(ox, oy + 100, ox + 100, oy, edge, 3)
     end
   end
-  slope45(12, 4, SLAB, PANEL, true); slope45(13, 4, SLAB, PANEL, false)
-  slope45(14, 4, PANEL, SLAB, true); slope45(15, 4, PANEL, SLAB, false)
+  slope45(12, 4, SLAB, PANEL, true, EDGE_S)
+  slope45(13, 4, SLAB, PANEL, false, EDGE_S)
+  slope45(14, 4, PANEL, SLAB, true, EDGE_L)
+  slope45(15, 4, PANEL, SLAB, false, EDGE_L)
   local function ramp25(cx, cy, down)
     local ox, oy = T(cx, cy)
     if down then
@@ -515,6 +523,227 @@ do
     rstroke(ox + 10, oy + 10, 80, 80, FOUR[i + 1], 3)
     disc(ox + 50, oy + 50, 5, FOUR[i + 1])
   end
+end
+
+-- ══ R12–R13 · 过渡件族(端头变厚 / 削角 / 材质交界 / 坡脚跑平 / 桥接 / 墙面分层) ══
+do
+  local TRANS = pc.rgba(0, 0, 0, 0)
+  -- 组件:整块段(受光带+顶缘+底暗带)/ 24px 薄板段 / 立面墨线
+  local function seg_full(ox, oy, x0, x1, body, lit, edge, dark)
+    fill(ox + x0, oy, x1 - x0, 100, body)
+    fill(ox + x0, oy, x1 - x0, 12, lit)
+    hline(ox + x0, oy, x1 - x0, edge, 3)
+    hline(ox + x0, oy + 96, x1 - x0, dark, 4)
+  end
+  local function seg_strip(ox, oy, x0, x1)
+    fill(ox + x0, oy, x1 - x0, 24, PANEL)
+    hline(ox + x0, oy, x1 - x0, EDGE_L, 3)
+    hline(ox + x0, oy + 21, x1 - x0, DARKV, 3)
+  end
+  local function seg_half(ox, oy, x0, x1, body, lit, edge)
+    fill(ox + x0, oy + 50, x1 - x0, 50, body)
+    fill(ox + x0, oy + 50, x1 - x0, 12, lit)
+    hline(ox + x0, oy + 50, x1 - x0, edge, 3)
+    hline(ox + x0, oy + 96, x1 - x0, DARKV, 4)
+  end
+  local function face(ox, x, y0, y1)
+    vline(ox + x - 1, y0, y1 - y0, INK, 3)
+  end
+
+  -- (0,12) 变厚·左薄右厚 / (1,12) 左厚右薄
+  local ox, oy = T(0, 12)
+  seg_strip(ox, oy, 0, 50)
+  seg_full(ox, oy, 50, 100, SLAB, PANEL, EDGE_L, DARKV)
+  face(ox, 50, 24, 100)
+  ox, oy = T(1, 12)
+  seg_full(ox, oy, 0, 50, SLAB, PANEL, EDGE_L, DARKV)
+  seg_strip(ox, oy, 50, 100)
+  face(ox, 50, 24, 100)
+  -- (2,12) 凸节点·中厚 / (3,12) 凹节点·中薄
+  ox, oy = T(2, 12)
+  seg_strip(ox, oy, 0, 25)
+  seg_full(ox, oy, 25, 75, SLAB, PANEL, EDGE_L, DARKV)
+  seg_strip(ox, oy, 75, 100)
+  face(ox, 25, 24, 100); face(ox, 75, 24, 100)
+  ox, oy = T(3, 12)
+  seg_full(ox, oy, 0, 25, SLAB, PANEL, EDGE_L, DARKV)
+  seg_strip(ox, oy, 25, 75)
+  seg_full(ox, oy, 75, 100, SLAB, PANEL, EDGE_L, DARKV)
+  face(ox, 25, 24, 100); face(ox, 75, 24, 100)
+  -- (4,12) 半高→全高·左低右高 / (5,12) 左高右低
+  ox, oy = T(4, 12)
+  seg_half(ox, oy, 0, 50, SLAB, PANEL, EDGE_S)
+  seg_full(ox, oy, 50, 100, SLAB, PANEL, EDGE_L, DARKV)
+  face(ox, 50, 50, 100)
+  ox, oy = T(5, 12)
+  seg_full(ox, oy, 0, 50, SLAB, PANEL, EDGE_L, DARKV)
+  seg_half(ox, oy, 50, 100, SLAB, PANEL, EDGE_S)
+  face(ox, 50, 50, 100)
+  -- (6,12)~(9,12) 削角 45°(左上/右上/左下/右下)
+  local function chamfer(cx, cy, corner)
+    local x, y = T(cx, cy)
+    fill(x, y, 100, 100, SLAB)
+    hline(x, y, 100, EDGE_S, 3)
+    hline(x, y + 96, 100, DARKV, 4)
+    if corner == "tl" then
+      tri(x, y, x + 50, y, x, y + 50, TRANS)
+      line(x, y + 50, x + 50, y, INK, 3)
+      line(x + 8, y + 50, x + 50, y + 8, PANEL, 6)
+    elseif corner == "tr" then
+      tri(x + 50, y, x + 100, y, x + 100, y + 50, TRANS)
+      line(x + 50, y, x + 100, y + 50, INK, 3)
+      line(x + 50, y + 8, x + 92, y + 50, PANEL, 6)
+    elseif corner == "bl" then
+      tri(x, y + 50, x, y + 100, x + 50, y + 100, TRANS)
+      line(x, y + 50, x + 50, y + 100, INK, 3)
+      line(x + 8, y + 50, x + 50, y + 92, PANEL, 6)
+    else
+      tri(x + 50, y + 100, x + 100, y + 50, x + 100, y + 100, TRANS)
+      line(x + 50, y + 100, x + 100, y + 50, INK, 3)
+      line(x + 50, y + 92, x + 92, y + 50, PANEL, 6)
+    end
+  end
+  chamfer(6, 12, "tl"); chamfer(7, 12, "tr")
+  chamfer(8, 12, "bl"); chamfer(9, 12, "br")
+  -- (10,12) 材质对角·石↔亮 / (11,12) 竖分·石↔墨 / (12,12) 竖分·亮↔动 / (13,12) 对角·动↔石
+  ox, oy = T(10, 12)
+  fill(ox, oy, 100, 100, SLAB)
+  tri(ox, oy, ox + 100, oy, ox + 100, oy + 100, PANEL)
+  line(ox, oy, ox + 100, oy + 100, INK, 2)
+  hline(ox, oy, 100, EDGE_L, 3)
+  hline(ox, oy + 96, 100, DARKV, 4)
+  ox, oy = T(11, 12)
+  seg_full(ox, oy, 0, 50, SLAB, PANEL, EDGE_L, DARKV)
+  fill(ox + 50, oy, 50, 100, INK3)
+  hline(ox + 50, oy, 50, EDGE_I, 3)
+  hline(ox + 50, oy + 96, 50, INK, 4)
+  face(ox, 50, 0, 100)
+  ox, oy = T(12, 12)
+  fill(ox, oy, 50, 100, PANEL)
+  hline(ox, oy, 50, EDGE_L, 3)
+  fill(ox + 50, oy, 50, 100, MOVS)
+  fill(ox + 50, oy, 50, 12, MOVP)
+  hline(ox + 50, oy, 50, EDGE_M, 3)
+  hline(ox, oy + 96, 100, INK, 4)
+  face(ox, 50, 0, 100)
+  ox, oy = T(13, 12)
+  fill(ox, oy, 100, 100, SLAB)
+  tri(ox, oy, ox + 100, oy, ox, oy + 100, MOVS)
+  line(ox + 100, oy, ox, oy + 100, INK, 2)
+  hline(ox, oy, 100, EDGE_M, 3)
+  hline(ox, oy + 96, 100, DARKV, 4)
+  -- (14,12) 柱头 / (15,12) 柱脚
+  ox, oy = T(14, 12)
+  fill(ox + 26, oy + 18, 48, 82, SLAB)
+  vline(ox + 26, oy + 18, 82, DARKV, 2); vline(ox + 72, oy + 18, 82, DARKV, 2)
+  fill(ox + 14, oy, 72, 18, SLAB)
+  fill(ox + 14, oy, 72, 8, PANEL)
+  hline(ox + 14, oy, 72, EDGE_S, 3)
+  hline(ox + 14, oy + 18, 72, INK, 3)
+  ox, oy = T(15, 12)
+  fill(ox + 26, oy, 48, 83, SLAB)
+  vline(ox + 26, oy, 83, DARKV, 2); vline(ox + 72, oy, 83, DARKV, 2)
+  fill(ox + 14, oy + 83, 72, 17, SLAB)
+  fill(ox + 14, oy + 83, 72, 8, PANEL)
+  hline(ox + 14, oy + 83, 72, EDGE_S, 3)
+  hline(ox + 14, oy + 96, 72, DARKV, 4)
+
+  -- R13 · 坡脚跑平 / 桥接 / 墙面分层
+  local function slope_run(cx, cy, high_left)
+    local x, y = T(cx, cy)
+    fill(x, y + 50, 100, 50, SLAB)
+    if high_left then
+      tri(x, y, x + 50, y + 50, x, y + 50, SLAB)
+      line(x, y, x + 50, y + 50, EDGE_S, 3)
+      line(x + 4, y + 6, x + 46, y + 48, PANEL, 8)
+      hline(x + 50, y + 50, 50, EDGE_S, 3)
+      fill(x + 50, y + 53, 50, 8, PANEL)
+    else
+      tri(x + 100, y, x + 100, y + 50, x + 50, y + 50, SLAB)
+      line(x + 50, y + 50, x + 100, y, EDGE_S, 3)
+      line(x + 54, y + 48, x + 96, y + 6, PANEL, 8)
+      hline(x, y + 50, 50, EDGE_S, 3)
+      fill(x, y + 53, 50, 8, PANEL)
+    end
+    hline(x, y + 96, 100, DARKV, 4)
+  end
+  slope_run(0, 13, true); slope_run(1, 13, false)
+  -- (2,13) 双层桥·薄对薄(上单向) / (3,13) 薄对厚
+  ox, oy = T(2, 13)
+  seg_strip(ox, oy, 0, 100)
+  fill(ox, oy + 50, 100, 24, PANEL)
+  hline(ox, oy + 50, 100, EDGE_L, 3)
+  hline(ox, oy + 71, 100, DARKV, 3)
+  ox, oy = T(3, 13)
+  seg_strip(ox, oy, 0, 100)
+  fill(ox, oy + 50, 100, 50, SLAB)
+  fill(ox, oy + 50, 100, 12, PANEL)
+  hline(ox, oy + 50, 100, EDGE_S, 3)
+  hline(ox, oy + 96, 100, DARKV, 4)
+  -- (4,13) 天桥·厚对薄(天花) / (5,13) 双层天花·薄对薄
+  ox, oy = T(4, 13)
+  fill(ox, oy, 100, 50, SLAB)
+  fill(ox, oy, 100, 4, INK2)
+  fill(ox, oy + 76, 100, 24, PANEL)
+  hline(ox, oy + 97, 100, EDGE_L, 3)
+  ox, oy = T(5, 13)
+  fill(ox, oy + 26, 100, 24, PANEL)
+  hline(ox, oy + 47, 100, EDGE_L, 3)
+  fill(ox, oy + 76, 100, 24, PANEL)
+  hline(ox, oy + 97, 100, EDGE_L, 3)
+  -- (6,13) 踢脚·底亮 / (7,13) 顶裙·顶暗
+  ox, oy = T(6, 13)
+  solid_base(ox, oy, SLAB, PANEL, EDGE_L, DARKV)
+  fill(ox, oy + 84, 100, 12, PANEL)
+  hline(ox, oy + 96, 100, EDGE_L, 4)
+  ox, oy = T(7, 13)
+  fill(ox, oy, 100, 100, SLAB)
+  fill(ox, oy, 100, 16, INK2)
+  hline(ox, oy, 100, DARKV, 3)
+  hline(ox, oy + 96, 100, DARKV, 4)
+  -- (8,13) 腰线 / (9,13)(10,13) 分层 / (11,13) 女儿墙 / (12,13) 檐口
+  ox, oy = T(8, 13)
+  solid_base(ox, oy, SLAB, PANEL, EDGE_L, DARKV)
+  fill(ox, oy + 44, 100, 12, DARKV)
+  hline(ox, oy + 48, 100, PAPER, 2)
+  ox, oy = T(9, 13)
+  seg_full(ox, oy, 0, 100, SLAB, PANEL, EDGE_L, DARKV)
+  fill(ox, oy + 50, 100, 50, DARKV)
+  hline(ox, oy + 49, 100, INK, 3)
+  ox, oy = T(10, 13)
+  fill(ox, oy, 100, 50, DARKV)
+  hline(ox, oy, 100, DARKV, 3)
+  fill(ox, oy + 50, 100, 50, SLAB)
+  fill(ox, oy + 50, 100, 12, PANEL)
+  hline(ox, oy + 50, 100, EDGE_S, 3)
+  hline(ox, oy + 49, 100, INK, 3)
+  hline(ox, oy + 96, 100, DARKV, 4)
+  ox, oy = T(11, 13)
+  solid_base(ox, oy, SLAB, PANEL, EDGE_L, DARKV)
+  fill(ox, oy + 12, 100, 3, INK)
+  ox, oy = T(12, 13)
+  solid_base(ox, oy, SLAB, PANEL, EDGE_L, DARKV)
+  fill(ox, oy + 84, 100, 12, PANEL)
+  hline(ox, oy + 84, 100, PAPER, 3)
+  fill(ox, oy + 96, 100, 4, INK)
+  -- (13,13) 嵌筋·横 / (14,13) 嵌筋·竖 / (15,13) 百叶过渡带
+  ox, oy = T(13, 13)
+  solid_base(ox, oy, SLAB, PANEL, EDGE_L, DARKV)
+  fill(ox, oy + 40, 100, 20, PANEL)
+  hline(ox, oy + 40, 100, INK, 2)
+  hline(ox, oy + 58, 100, INK, 2)
+  disc(ox + 16, oy + 50, 2, PAPER); disc(ox + 50, oy + 50, 2, PAPER)
+  disc(ox + 84, oy + 50, 2, PAPER)
+  ox, oy = T(14, 13)
+  solid_base(ox, oy, SLAB, PANEL, EDGE_L, DARKV)
+  fill(ox + 40, oy + 16, 20, 80, PANEL)
+  vline(ox + 40, oy + 16, 80, INK, 2)
+  vline(ox + 58, oy + 16, 80, INK, 2)
+  disc(ox + 50, oy + 28, 2, PAPER); disc(ox + 50, oy + 56, 2, PAPER)
+  disc(ox + 50, oy + 84, 2, PAPER)
+  ox, oy = T(15, 13)
+  solid_base(ox, oy, SLAB, PANEL, EDGE_L, DARKV)
+  for i = 0, 4 do hline(ox, oy + 52 + i * 9, 100, DARKV, 4) end
 end
 
 -- ══ R8 · 灰阶 / 环境族 ════════════════════════════════════════════
@@ -753,7 +982,7 @@ do
     if dir == "u" then
       vline(c - 2, s, 34, PAPER, 5); chevU(c, s - 16, 36, 5, PAPER)
     elseif dir == "d" then
-      vline(c - 2, oy + 16, 34, PAPER, 5)
+      vline(c - 2, oy + 16, 42, PAPER, 5)
       line(c - 18, s + 8, c, s + 26, PAPER, 5)
       line(c, s + 26, c + 18, s + 8, PAPER, 5)
     elseif dir == "l" then
