@@ -21,20 +21,31 @@ extends LevelRoot
 @export var top_kill_y := -600.0        # 升顶死亡线(逆的置换关用)
 
 const CAMERA_RIG_SCENE := preload("res://scenes/world/camera_rig.tscn")
+const MAG_BOUNDARY_SCENE := preload("res://scenes/world/mechanisms/mag_boundary.tscn")
 
 
 func _ready() -> void:
+	var twins: Array = []   # [天花半体, 地面半体](伍在场:partner 互引 + 磁界)
 	for idx in roster:
 		var gdef: GeometryDef = Geometries.ALL[idx]
 		var mask := 1 | (1 << (idx + 1))   # bit1 共享层 + 本角色专属层
 		if gdef.paired:
-			CharacterManager.I.create_character(gdef, idx,
+			var ha: Player = CharacterManager.I.create_character(gdef, idx,
 				_marker("Spawn%d_a" % idx), 0, mask)
-			CharacterManager.I.create_character(gdef, idx,
+			var hb: Player = CharacterManager.I.create_character(gdef, idx,
 				_marker("Spawn%d_b" % idx), 1, mask)
+			ha.partner = hb   # 双体契约(characters.md §5):调用方接线
+			hb.partner = ha
+			twins = [ha, hb]
 		else:
 			CharacterManager.I.create_character(gdef, idx,
 				_marker("Spawn%d" % idx), -1, mask)
+	if not twins.is_empty():
+		# 磁力边界(伍·界/边):两端锚定双子,随移动逐帧伸缩(v2 速度投影)
+		var mb: MagBoundary = MAG_BOUNDARY_SCENE.instantiate()
+		mb.a = twins[0]
+		mb.b = twins[1]
+		add_child(mb)
 	var cam := CAMERA_RIG_SCENE.instantiate()
 	cam.limit_left = 0
 	cam.limit_top = 0

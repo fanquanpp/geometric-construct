@@ -1,72 +1,93 @@
-[gd_scene format=3]
+[gd_scene format=4]
 
 [ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
-[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2_ts"]
 [ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="3_ts"]
+[ext_resource type="Script" path="res://scripts/world/mechanisms/checkpoint_beacon.gd" id="4_503lh"]
 [ext_resource type="PackedScene" path="res://scenes/world/checkpoint_beacon.tscn" id="4_bc"]
-[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="5_door"]
-[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="6_door"]
-[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="7_door"]
+[ext_resource type="Script" path="res://scripts/entities/exit_door.gd" id="6_3ldrq"]
 [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="8_door"]
-[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/piano_tile.tscn" id="9_sc"]
-[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/mover.tscn" id="10_sc"]
+[ext_resource type="Script" path="res://scripts/world/mechanisms/timed_bridge.gd" id="8_vse1c"]
+[ext_resource type="Script" path="res://scripts/world/hint_marker.gd" id="10_oyjqw"]
 [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/timed_bridge.tscn" id="11_sc"]
-[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/ski_patch.tscn" id="12_sc"]
-[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/launch_pad.tscn" id="13_sc"]
-[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/portal_pair.tscn" id="14_sc"]
-[ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="15_sc"]
-[ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="16_hint"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="17_hint"]
 
-[node name="LevelRoot" type="Node2D"]
+[node name="LevelRoot" type="Node2D" unique_id=1837958236]
 script = ExtResource("1_nl")
 level_name = "代价"
 intro_text = "每一次重拼,都要消耗一段红色刻度。这一关,桥会塌,箱要推——代价第一次看得见。"
-focus = 0
 roster = Array[int]([0, 1, 2, 3])
 level_size = Vector2(4800, 1200)
-kill_y = 1400
-top_kill_y = -420
-[node name="Decor" type="TileMapLayer" parent="."]
-z_index = 0
+kill_y = 1400.0
+top_kill_y = -420.0
+
+[node name="Decor" type="TileMapLayer" parent="." unique_id=1670201667]
+tile_map_data = PackedByteArray("AAAPAAMAAAAAAAEAAAAQAAMAAAAAAAEAAAAgAAMAAAAAAAEAAAAhAAMAAAAAAAEAAAAPAAQAAAAAAAEAAAAQAAQAAAAAAAEAAAAgAAQAAAAAAAEAAAAhAAQAAAAAAAEAAAAPAAUAAAAAAAEAAAAQAAUAAAAAAAEAAAAgAAUAAAAAAAEAAAAhAAUAAAAAAAEAAAAPAAYAAAAAAAEAAAAQAAYAAAAAAAEAAAAgAAYAAAAAAAEAAAAhAAYAAAAAAAEAAAAPAAcAAAAAAAEAAAAQAAcAAAAAAAEAAAAgAAcAAAAAAAEAAAAhAAcAAAAAAAEAAAAPAAgAAAAAAAEAAAAQAAgAAAAAAAEAAAAgAAgAAAAAAAEAAAAhAAgAAAAAAAEAAAAgAAkAAAAAAAEAAAAhAAkAAAAAAAEAAAAYAAYAAAAPAAcAAAAoAAQAAAAKAAIAAAA=")
 tile_set = ExtResource("3_ts")
-tile_map_data = PackedByteArray("AAAPAAMAAAAAAAEAAAAQAAMAAAAAAAEAAAAgAAMAAAAAAAEAAAAhAAMAAAAAAAEAAAAPAAQAAAAAAAEAAAAQAAQAAAAAAAEAAAAgAAQAAAAAAAEAAAAhAAQAAAAAAAEAAAAPAAUAAAAAAAEAAAAQAAUAAAAAAAEAAAAgAAUAAAAAAAEAAAAhAAUAAAAAAAEAAAAPAAYAAAAAAAEAAAAQAAYAAAAAAAEAAAAgAAYAAAAAAAEAAAAhAAYAAAAAAAEAAAAPAAcAAAAAAAEAAAAQAAcAAAAAAAEAAAAgAAcAAAAAAAEAAAAhAAcAAAAAAAEAAAAPAAgAAAAAAAEAAAAQAAgAAAAAAAEAAAAgAAgAAAAAAAEAAAAhAAgAAAAAAAEAAAAgAAkAAAAAAAEAAAAhAAkAAAAAAAEAAAA=")
-[node name="Solid" type="TileMapLayer" parent="."]
+
+[node name="Solid" type="TileMapLayer" parent="." unique_id=29227949]
 z_index = 1
+tile_map_data = PackedByteArray("AAAiAAUAAAAAAAQAAAAjAAUAAAADAAUAAAAkAAUAAAACAAQAAAAnAAYAAAAAAAQAAAAoAAYAAAABAAQAAAApAAYAAAACAAQAAAAuAAYAAAAAAAQAAAAvAAYAAAACAAQAAAAnAAcAAAAAAAYAAAAoAAcAAAABAAYAAAApAAcAAAACAAYAAAAAAAkAAAAAAAQAAAABAAkAAAABAAQAAAACAAkAAAABAAQAAAADAAkAAAABAAQAAAAEAAkAAAABAAQAAAAFAAkAAAABAAQAAAAGAAkAAAABAAQAAAAHAAkAAAABAAQAAAAIAAkAAAABAAQAAAAJAAkAAAABAAQAAAAKAAkAAAABAAQAAAALAAkAAAABAAQAAAAMAAkAAAABAAQAAAANAAkAAAABAAQAAAAOAAkAAAABAAQAAAAPAAkAAAABAAQAAAAQAAkAAAABAAQAAAARAAkAAAABAAQAAAASAAkAAAABAAQAAAATAAkAAAABAAQAAAAUAAkAAAABAAQAAAAVAAkAAAABAAQAAAAWAAkAAAABAAQAAAAXAAkAAAABAAQAAAAYAAkAAAABAAQAAAAZAAkAAAABAAQAAAAaAAkAAAABAAQAAAAbAAkAAAABAAQAAAAcAAkAAAABAAQAAAAdAAkAAAABAAQAAAAeAAkAAAABAAQAAAAfAAkAAAABAAQAAAAgAAkAAAABAAQAAAAhAAkAAAABAAQAAAAiAAkAAAABAAQAAAAjAAkAAAABAAQAAAAkAAkAAAABAAQAAAAlAAkAAAABAAQAAAAmAAkAAAABAAQAAAAnAAkAAAABAAQAAAAoAAkAAAABAAQAAAApAAkAAAABAAQAAAAqAAkAAAABAAQAAAArAAkAAAABAAQAAAAsAAkAAAABAAQAAAAtAAkAAAABAAQAAAAuAAkAAAABAAQAAAAvAAkAAAACAAQAAAAAAAoAAAAAAAYAAAABAAoAAAABAAYAAAACAAoAAAABAAYAAAADAAoAAAABAAYAAAAEAAoAAAABAAYAAAAFAAoAAAABAAYAAAAGAAoAAAABAAYAAAAHAAoAAAABAAYAAAAIAAoAAAABAAYAAAAJAAoAAAABAAYAAAAKAAoAAAABAAYAAAALAAoAAAABAAYAAAAMAAoAAAABAAYAAAANAAoAAAABAAYAAAAOAAoAAAABAAYAAAAPAAoAAAABAAYAAAAQAAoAAAABAAYAAAARAAoAAAABAAYAAAASAAoAAAABAAYAAAATAAoAAAABAAYAAAAUAAoAAAABAAYAAAAVAAoAAAABAAYAAAAWAAoAAAABAAYAAAAXAAoAAAABAAYAAAAYAAoAAAABAAYAAAAZAAoAAAABAAYAAAAaAAoAAAABAAYAAAAbAAoAAAABAAYAAAAcAAoAAAABAAYAAAAdAAoAAAABAAYAAAAeAAoAAAABAAYAAAAfAAoAAAABAAYAAAAgAAoAAAABAAYAAAAhAAoAAAABAAYAAAAiAAoAAAABAAYAAAAjAAoAAAABAAYAAAAkAAoAAAABAAYAAAAlAAoAAAABAAYAAAAmAAoAAAABAAYAAAAnAAoAAAABAAYAAAAoAAoAAAABAAYAAAApAAoAAAABAAYAAAAqAAoAAAABAAYAAAArAAoAAAABAAYAAAAsAAoAAAABAAYAAAAtAAoAAAABAAYAAAAuAAoAAAABAAYAAAAvAAoAAAACAAYAAAA=")
 tile_set = ExtResource("3_ts")
-tile_map_data = PackedByteArray("AAAiAAUAAAAAAAAAAAAjAAUAAAAAAAAAAAAkAAUAAAAAAAAAAAAnAAYAAAAAAAAAAAAoAAYAAAAAAAAAAAApAAYAAAAAAAAAAAAuAAYAAAAAAAAAAAAvAAYAAAAAAAAAAAAnAAcAAAAAAAAAAAAoAAcAAAAAAAAAAAApAAcAAAAAAAAAAAAAAAkAAAAAAAAAAAABAAkAAAAAAAAAAAACAAkAAAAAAAAAAAADAAkAAAAAAAAAAAAEAAkAAAAAAAAAAAAFAAkAAAAAAAAAAAAGAAkAAAAAAAAAAAAHAAkAAAAAAAAAAAAIAAkAAAAAAAAAAAAJAAkAAAAAAAAAAAAKAAkAAAAAAAAAAAALAAkAAAAAAAAAAAAMAAkAAAAAAAAAAAANAAkAAAAAAAAAAAAOAAkAAAAAAAAAAAAPAAkAAAAAAAAAAAAQAAkAAAAAAAAAAAARAAkAAAAAAAAAAAASAAkAAAAAAAAAAAATAAkAAAAAAAAAAAAUAAkAAAAAAAAAAAAVAAkAAAAAAAAAAAAWAAkAAAAAAAAAAAAXAAkAAAAAAAAAAAAYAAkAAAAAAAAAAAAZAAkAAAAAAAAAAAAaAAkAAAAAAAAAAAAbAAkAAAAAAAAAAAAcAAkAAAAAAAAAAAAdAAkAAAAAAAAAAAAeAAkAAAAAAAAAAAAfAAkAAAAAAAAAAAAgAAkAAAAAAAAAAAAhAAkAAAAAAAAAAAAiAAkAAAAAAAAAAAAjAAkAAAAAAAAAAAAkAAkAAAAAAAAAAAAlAAkAAAAAAAAAAAAmAAkAAAAAAAAAAAAnAAkAAAAAAAAAAAAoAAkAAAAAAAAAAAApAAkAAAAAAAAAAAAqAAkAAAAAAAAAAAArAAkAAAAAAAAAAAAsAAkAAAAAAAAAAAAtAAkAAAAAAAAAAAAuAAkAAAAAAAAAAAAvAAkAAAAAAAAAAAAAAAoAAAAAAAAAAAABAAoAAAAAAAAAAAACAAoAAAAAAAAAAAADAAoAAAAAAAAAAAAEAAoAAAAAAAAAAAAFAAoAAAAAAAAAAAAGAAoAAAAAAAAAAAAHAAoAAAAAAAAAAAAIAAoAAAAAAAAAAAAJAAoAAAAAAAAAAAAKAAoAAAAAAAAAAAALAAoAAAAAAAAAAAAMAAoAAAAAAAAAAAANAAoAAAAAAAAAAAAOAAoAAAAAAAAAAAAPAAoAAAAAAAAAAAAQAAoAAAAAAAAAAAARAAoAAAAAAAAAAAASAAoAAAAAAAAAAAATAAoAAAAAAAAAAAAUAAoAAAAAAAAAAAAVAAoAAAAAAAAAAAAWAAoAAAAAAAAAAAAXAAoAAAAAAAAAAAAYAAoAAAAAAAAAAAAZAAoAAAAAAAAAAAAaAAoAAAAAAAAAAAAbAAoAAAAAAAAAAAAcAAoAAAAAAAAAAAAdAAoAAAAAAAAAAAAeAAoAAAAAAAAAAAAfAAoAAAAAAAAAAAAgAAoAAAAAAAAAAAAhAAoAAAAAAAAAAAAiAAoAAAAAAAAAAAAjAAoAAAAAAAAAAAAkAAoAAAAAAAAAAAAlAAoAAAAAAAAAAAAmAAoAAAAAAAAAAAAnAAoAAAAAAAAAAAAoAAoAAAAAAAAAAAApAAoAAAAAAAAAAAAqAAoAAAAAAAAAAAArAAoAAAAAAAAAAAAsAAoAAAAAAAAAAAAtAAoAAAAAAAAAAAAuAAoAAAAAAAAAAAAvAAoAAAAAAAAAAAA=")
-[node name="Spawn0" type="Marker2D" parent="."]
+
+[node name="Spawn0" type="Marker2D" parent="." unique_id=1305265739]
 position = Vector2(200, 880)
-[node name="Spawn1" type="Marker2D" parent="."]
+
+[node name="Spawn1" type="Marker2D" parent="." unique_id=1552513359]
 position = Vector2(350, 880)
-[node name="Spawn2" type="Marker2D" parent="."]
+
+[node name="Spawn2" type="Marker2D" parent="." unique_id=425806760]
 position = Vector2(500, 880)
-[node name="Spawn3" type="Marker2D" parent="."]
+
+[node name="Spawn3" type="Marker2D" parent="." unique_id=1696780836]
 position = Vector2(650, 880)
-[node name="CheckpointBeacon0" parent="." instance=ExtResource("4_bc")]
+
+[node name="CheckpointBeacon0" type="Area2D" parent="." unique_id=1265972884 instance=ExtResource("4_bc")]
+z_index = 3
 position = Vector2(2500, 850)
-[node name="CheckpointBeacon1" parent="." instance=ExtResource("4_bc")]
+script = ExtResource("4_503lh")
+
+[node name="CheckpointBeacon1" type="Area2D" parent="." unique_id=1859812748 instance=ExtResource("4_bc")]
+z_index = 3
 position = Vector2(3900, 850)
-[node name="ExitDoor0" parent="." instance=ExtResource("5_door")]
+script = ExtResource("4_503lh")
+
+[node name="ExitDoor0" type="Area2D" parent="." unique_id=912299689 instance=ExtResource("8_door")]
+z_index = 3
 position = Vector2(4600, 830)
-geo_index = 0
-[node name="ExitDoor1" parent="." instance=ExtResource("6_door")]
+script = ExtResource("6_3ldrq")
+
+[node name="ExitDoor1" type="Area2D" parent="." unique_id=2011938246 instance=ExtResource("8_door")]
+z_index = 3
 position = Vector2(3950, 570)
+script = ExtResource("6_3ldrq")
 geo_index = 1
-[node name="ExitDoor2" parent="." instance=ExtResource("7_door")]
+
+[node name="ExitDoor2" type="Area2D" parent="." unique_id=199151493 instance=ExtResource("8_door")]
+z_index = 3
 position = Vector2(2500, 830)
+script = ExtResource("6_3ldrq")
 geo_index = 2
-[node name="ExitDoor3" parent="." instance=ExtResource("8_door")]
+
+[node name="ExitDoor3" type="Area2D" parent="." unique_id=1536937391 instance=ExtResource("8_door")]
+z_index = 3
 position = Vector2(3450, 830)
+script = ExtResource("6_3ldrq")
 geo_index = 3
-[node name="TimedBridge0" parent="." instance=ExtResource("11_sc")]
+
+[node name="TimedBridge0" type="StaticBody2D" parent="." unique_id=1363351926 instance=ExtResource("11_sc")]
 position = Vector2(1650, 930)
+script = ExtResource("8_vse1c")
 size = Vector2(300, 60)
 on_time = 2.2
-off_time = 2
-[node name="HintMarker0" parent="." instance=ExtResource("16_hint")]
+
+[node name="HintMarker0" type="Node2D" parent="." unique_id=1654939862 instance=ExtResource("17_hint")]
+z_index = 4
 position = Vector2(1400, 700)
+script = ExtResource("10_oyjqw")
 text = "限时桥:塌之前过"
-[node name="HintMarker1" parent="." instance=ExtResource("17_hint")]
+
+[node name="HintMarker1" type="Node2D" parent="." unique_id=2080807743 instance=ExtResource("17_hint")]
+z_index = 4
 position = Vector2(3100, 700)
+script = ExtResource("10_oyjqw")
 text = "推箱垫脚:代价是慢"
