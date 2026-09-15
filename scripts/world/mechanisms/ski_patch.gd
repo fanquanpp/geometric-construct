@@ -10,11 +10,13 @@ var _grace := {}                  # body -> 剩余余量秒
 func _ready() -> void:
 	collision_layer = 0
 	collision_mask = 2   # 玩家层
-	var cs := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = size
-	cs.shape = shape
-	add_child(cs)
+	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs == null:
+		cs = CollisionShape2D.new()
+		add_child(cs)
+	if cs.shape == null:
+		cs.shape = RectangleShape2D.new()
+	cs.shape.size = size
 	add_child(TerrainKit.mech_sprite(preload("res://assets/archive/mech_ski_patch.png"),
 		Rect2(-size / 2.0, size)))
 	body_entered.connect(_on_enter)

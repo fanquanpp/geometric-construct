@@ -78,11 +78,13 @@ func _ready() -> void:
 	_spr.scale = Vector2(0.5, 0.5)
 	add_child(_spr)
 
-	var cs := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = size + Vector2(8, 8)
-	cs.shape = shape
-	add_child(cs)
+	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs == null:
+		cs = CollisionShape2D.new()
+		add_child(cs)
+	if cs.shape == null:
+		cs.shape = RectangleShape2D.new()
+	cs.shape.size = size + Vector2(8, 8)
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 

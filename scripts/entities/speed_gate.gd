@@ -19,12 +19,13 @@ func _ready() -> void:
 	collision_mask = 2
 	z_index = 3
 
-	var cs := CollisionShape2D.new()
-	cs.position = Vector2.ZERO
-	var shape := RectangleShape2D.new()
-	shape.size = zone_size
-	cs.shape = shape
-	add_child(cs)
+	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs == null:
+		cs = CollisionShape2D.new()
+		add_child(cs)
+	if cs.shape == null:
+		cs.shape = RectangleShape2D.new()
+	cs.shape.size = zone_size
 	_spr_idle = TerrainKit.mech_sprite(T_IDLE, Rect2(-zone_size / 2.0, zone_size))
 	_spr_live = TerrainKit.mech_sprite(T_LIVE, Rect2(-zone_size / 2.0, zone_size))
 	_spr_live.visible = false

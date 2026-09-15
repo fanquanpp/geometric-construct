@@ -1,51 +1,49 @@
-[gd_scene format=3]
+[gd_scene format=4 uid="uid://yusm8y5y7rin"]
 
-[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
-[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2_ts"]
-[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="3_ts"]
-[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="4_door"]
+[ext_resource type="Script" uid="uid://ci0tecsjd3ggv" path="res://scripts/world/native_level.gd" id="1_nl"]
+[ext_resource type="TileSet" uid="uid://cynnbwn3k51o5" path="res://data/tiles/native_tileset.tres" id="3_ts"]
 [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="5_door"]
-[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/piano_tile.tscn" id="6_sc"]
-[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/mover.tscn" id="7_sc"]
-[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/timed_bridge.tscn" id="8_sc"]
-[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/ski_patch.tscn" id="9_sc"]
-[ext_resource type="PackedScene" path="res://scenes/world/mechanisms/launch_pad.tscn" id="10_sc"]
 [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/portal_pair.tscn" id="11_sc"]
-[ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="12_sc"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="13_hint"]
 
-[node name="LevelRoot" type="Node2D"]
+[node name="LevelRoot" type="Node2D" unique_id=1522327110]
 script = ExtResource("1_nl")
 level_name = "合演 · 双生阶"
-intro_text = "伍:一双两半,界在天花走,边在地面行。\n合演 = 各自的路,同一场。"
-focus = 0
+intro_text = "伍:一双两半,界在天花走,边在地面行。
+合演 = 各自的路,同一场。"
 roster = Array[int]([0, 4])
 level_size = Vector2(3400, 2000)
-kill_y = 2600
 top_kill_y = -420
-[node name="Decor" type="TileMapLayer" parent="."]
-z_index = 0
-tile_set = ExtResource("3_ts")
+
+[node name="Decor" type="TileMapLayer" parent="." unique_id=1142375858]
 tile_map_data = PackedByteArray("AAAGAAgAAAAAAAEAAAA=")
-[node name="Solid" type="TileMapLayer" parent="."]
-z_index = 1
 tile_set = ExtResource("3_ts")
-tile_map_data = PackedByteArray("AAACAAUAAAABAAAAAAADAAUAAAABAAAAAAAEAAUAAAABAAAAAAAFAAUAAAABAAAAAAAGAAUAAAABAAAAAAAHAAUAAAABAAAAAAAIAAUAAAABAAAAAAAJAAUAAAABAAAAAAAKAAUAAAABAAAAAAALAAUAAAABAAAAAAAMAAUAAAABAAAAAAANAAUAAAABAAAAAAAOAAUAAAABAAAAAAAPAAUAAAABAAAAAAAQAAUAAAABAAAAAAARAAUAAAABAAAAAAASAAUAAAABAAAAAAATAAUAAAABAAAAAAAUAAUAAAABAAAAAAAVAAUAAAABAAAAAAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAAFAA0AAAAAAAAAAAAGAA0AAAAAAAAAAAAHAA0AAAAAAAAAAAAIAA0AAAAAAAAAAAAJAA0AAAAAAAAAAAAKAA0AAAAAAAAAAAALAA0AAAAAAAAAAAAMAA0AAAAAAAAAAAANAA0AAAAAAAAAAAAOAA0AAAAAAAAAAAAPAA0AAAAAAAAAAAATAA0AAAAAAAAAAAAUAA0AAAAAAAAAAAAVAA0AAAAAAAAAAAAWAA0AAAAAAAAAAAAXAA0AAAAAAAAAAAAYAA0AAAAAAAAAAAAZAA0AAAAAAAAAAAAaAA0AAAAAAAAAAAAbAA0AAAAAAAAAAAAcAA0AAAAAAAAAAAAdAA0AAAAAAAAAAAAeAA0AAAAAAAAAAAAQABAAAAAAAAAAAAARABAAAAAAAAAAAAASABAAAAAAAAAAAAA=")
-[node name="Spawn0" type="Marker2D" parent="."]
+
+[node name="Solid" type="TileMapLayer" parent="." unique_id=2099081332]
+z_index = 1
+tile_map_data = PackedByteArray("AAACAAUAAAABAAAAAAADAAUAAAABAAAAAAAEAAUAAAABAAAAAAAFAAUAAAABAAAAAAAGAAUAAAABAAAAAAAHAAUAAAABAAAAAAAIAAUAAAABAAAAAAAJAAUAAAABAAAAAAAKAAUAAAABAAAAAAALAAUAAAABAAAAAAAMAAUAAAABAAAAAAANAAUAAAABAAAAAAAOAAUAAAABAAAAAAAPAAUAAAABAAAAAAAQAAUAAAABAAAAAAARAAUAAAABAAAAAAASAAUAAAABAAAAAAATAAUAAAABAAAAAAAUAAUAAAABAAAAAAAVAAUAAAABAAAAAAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAAFAA0AAAAAAAAAAAAGAA0AAAAAAAAAAAAHAA0AAAAAAAAAAAAIAA0AAAAAAAAAAAAJAA0AAAAAAAAAAAAKAA0AAAAAAAAAAAALAA0AAAAAAAAAAAAMAA0AAAAAAAAAAAANAA0AAAAAAAAAAAAOAA0AAAAAAAAAAAAPAA0AAAAAAAAAAAATAA0AAAAAAAAAAAAUAA0AAAAAAAAAAAAVAA0AAAAAAAAAAAAWAA0AAAAAAAAAAAAXAA0AAAAAAAAAAAAYAA0AAAAAAAAAAAAZAA0AAAAAAAAAAAAaAA0AAAAAAAAAAAAbAA0AAAAAAAAAAAAcAA0AAAAAAAAAAAAdAA0AAAAAAAAAAAAeAA0AAAAAAAAAAAAQABAAAAAAAAAAAAARABAAAAAAAAAAAAASABAAAAAAAAAAAAAQAA0AAAAAAA0AAAASAA0AAAABAA0AAAARAA0AAAADAA0AAAAfAA0AAAAAAAAAAAAgAA0AAAAAAAAAAAAWAAYAAAAMAAQAAAAXAAcAAAAMAAQAAAAYAAgAAAAMAAQAAAAZAAkAAAAMAAQAAAAaAAoAAAAMAAQAAAAbAAsAAAAMAAQAAAAcAAsAAAAEAAAAAAAdAAsAAAAEAAAAAAAeAAsAAAAEAAAAAAAfAAsAAAAEAAAAAAAgAAsAAAAEAAAAAAAbAAoAAAAEAAAAAAAaAAkAAAAEAAAAAAAZAAgAAAAEAAAAAAAYAAcAAAAEAAAAAAAXAAYAAAAEAAAAAAAWAAUAAAAEAAAAAAA=")
+tile_set = ExtResource("3_ts")
+
+[node name="Spawn0" type="Marker2D" parent="." unique_id=41523738]
 position = Vector2(300, 1275)
-[node name="Spawn4_a" type="Marker2D" parent="."]
+
+[node name="Spawn4_a" type="Marker2D" parent="." unique_id=413880644]
 position = Vector2(400, 615)
-[node name="Spawn4_b" type="Marker2D" parent="."]
+
+[node name="Spawn4_b" type="Marker2D" parent="." unique_id=909196237]
 position = Vector2(400, 1275)
-[node name="ExitDoor0" parent="." instance=ExtResource("4_door")]
+
+[node name="ExitDoor0" parent="." unique_id=1518277101 instance=ExtResource("5_door")]
 position = Vector2(2950, 1254)
-geo_index = 0
-[node name="ExitDoor4" parent="." instance=ExtResource("5_door")]
+
+[node name="ExitDoor4" parent="." unique_id=1674781234 instance=ExtResource("5_door")]
 position = Vector2(3150, 1254)
 geo_index = 4
-[node name="PortalPair0" parent="." instance=ExtResource("11_sc")]
+
+[node name="PortalPair0" parent="." unique_id=506605670 instance=ExtResource("11_sc")]
 a = Vector2(2400, 1275)
 b = Vector2(1400, 640)
-[node name="HintMarker0" parent="." instance=ExtResource("13_hint")]
+
+[node name="HintMarker0" parent="." unique_id=840463425 instance=ExtResource("13_hint")]
 position = Vector2(700, 1050)
 text = "伍:一双两半 · 切换换半体"

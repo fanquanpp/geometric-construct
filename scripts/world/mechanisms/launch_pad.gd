@@ -10,11 +10,13 @@ var _cooldown := 0.0
 func _ready() -> void:
 	collision_layer = 0
 	collision_mask = 2
-	var cs := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = Vector2(140.0, 44.0)
-	cs.shape = shape
-	add_child(cs)
+	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs == null:
+		cs = CollisionShape2D.new()
+		add_child(cs)
+	if cs.shape == null:
+		cs.shape = RectangleShape2D.new()
+	cs.shape.size = Vector2(140.0, 44.0)
 	add_child(TerrainKit.mech_sprite(preload("res://assets/archive/mech_launch_pad.png"),
 		Rect2(-70.0, -69.0, 140.0, 138.0)))
 	body_entered.connect(_on_enter)

@@ -19,12 +19,13 @@ func _ready() -> void:
 	sync_to_physics = true
 	collision_layer = sig_value
 	collision_mask = 0
-	var cs := CollisionShape2D.new()
-	cs.position = Vector2.ZERO
-	var shape := RectangleShape2D.new()
-	shape.size = size
-	cs.shape = shape
-	add_child(cs)
+	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs == null:
+		cs = CollisionShape2D.new()
+		add_child(cs)
+	if cs.shape == null:
+		cs.shape = RectangleShape2D.new()
+	cs.shape.size = size
 	# 遮挡体(引擎光影 v0.19):居中于石板,随平台一起动,投影由引擎实算
 	add_child(TerrainKit.rect_occluder(Rect2(-size / 2.0, size)))
 	add_child(TerrainKit.mech_sprite(preload("res://assets/archive/mech_mover.png"),

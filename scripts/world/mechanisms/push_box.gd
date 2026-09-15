@@ -18,13 +18,15 @@ func _ready() -> void:
 	position = cell
 	collision_layer = 1 << 31
 	collision_mask = 0
-	var cs := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = Vector2(CELL, CELL)
-	cs.shape = shape
+	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs == null:
+		cs = CollisionShape2D.new()
+		add_child(cs)
+	if cs.shape == null:
+		cs.shape = RectangleShape2D.new()
+	cs.shape.size = Vector2(CELL, CELL)
 	add_child(TerrainKit.mech_sprite(preload("res://assets/archive/mech_push_box.png"),
 		Rect2(Vector2(-CELL / 2.0, -CELL / 2.0), Vector2(CELL, CELL))))
-	add_child(cs)
 	# 顶入感应区:比箱体略大,持续读玩家顶入方向(连顶连滑 = 多格推)
 	_area = Area2D.new()
 	_area.collision_layer = 0

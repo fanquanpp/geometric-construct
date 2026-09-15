@@ -23,12 +23,13 @@ var _spr: Sprite2D          # 实心态正典帧(虚化 = 隐藏,改画线框)
 func _ready() -> void:
 	collision_layer = sig_value
 	collision_mask = 0
-	var cs := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = size
-	cs.shape = shape
-	add_child(cs)
-	position = Vector2.ZERO
+	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs == null:
+		cs = CollisionShape2D.new()
+		add_child(cs)
+	if cs.shape == null:
+		cs.shape = RectangleShape2D.new()
+	cs.shape.size = size
 	_occ = TerrainKit.rect_occluder(Rect2(-size / 2.0, size))
 	add_child(_occ)
 	_spr = TerrainKit.mech_sprite(preload("res://assets/archive/mech_timed_bridge.png"),

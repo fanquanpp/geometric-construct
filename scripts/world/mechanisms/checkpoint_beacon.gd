@@ -23,12 +23,14 @@ func _ready() -> void:
 	set_meta("checkpoint_id", beacon_id)
 	collision_layer = 0
 	collision_mask = 2   # 玩家层
-	var cs := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = Vector2(72, 96)
-	cs.shape = shape
+	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs == null:
+		cs = CollisionShape2D.new()
+		add_child(cs)
+	if cs.shape == null:
+		cs.shape = RectangleShape2D.new()
+	cs.shape.size = Vector2(72, 96)
 	cs.position = Vector2(0, -32)
-	add_child(cs)
 	_spr = Sprite2D.new()
 	_spr.texture = T_OFF
 	_spr.scale = Vector2(0.5, 0.5)

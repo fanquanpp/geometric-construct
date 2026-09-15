@@ -22,11 +22,13 @@ func _ready() -> void:
 	collision_layer = sig_value
 	collision_mask = 0
 	add_to_group("piano")   # 联机客机端琴键声效自查(Player._piano_cosmetic)
-	var cs := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = size
-	cs.shape = shape
-	add_child(cs)
+	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs == null:
+		cs = CollisionShape2D.new()
+		add_child(cs)
+	if cs.shape == null:
+		cs.shape = RectangleShape2D.new()
+	cs.shape.size = size
 	add_child(TerrainKit.rect_occluder(Rect2(-size / 2.0, size)))   # 引擎光影遮挡体(v0.19)
 	_spr_idle = TerrainKit.mech_sprite(preload("res://assets/archive/mech_piano_tile.png"),
 		Rect2(-size / 2.0, size))
