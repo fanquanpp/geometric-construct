@@ -10,8 +10,8 @@
 1. **素材**:图块集已全量绘制落位——`assets/tiles/native_tiles.png`
    (100×100 网格,16 列 × 14 行 = 224 图位;构成主义纪律同 art-style
    §1/§6)。PNG 为孤本,再生源 = `tools/gen_tiles.lua`(Aseprite Lua
-   生成器,画满全部图位后导出同名覆盖);**勿再运行
-   `tools/build_native_kit.gd`**(会以占位灰块覆盖正式图块)。
+   生成器,画满全部图位后导出同名覆盖;旧占位工具 `build_native_kit.gd`
+   已删除,任何灰块产物都不得覆盖正式图块)。
 2. **TileSet**(`data/tiles/native_tileset.tres`):物理层一次配好——
    `layer0 = 共享实体(bit1)`,`layer1..5 = 疾/跃/逆/圆/伍 专属(bit2..32)`;
    **224 图位碰撞多边形已逐格配好**(现行 = layer0:实心整方 / 单向踏面
@@ -24,7 +24,7 @@
 
 ### 图集地图(native_tiles.png · 224 格,16 列 × 14 行)
 
-> 源流:占位灰块(`tools/build_native_kit.gd`,已废勿跑)→ 40 格
+> 源流:占位灰块(旧工具已删,档见 git 历史)→ 40 格
 > aseprite 批次(`assets/art/tiles/native_tiles.aseprite`,档案保留)→
 > **现行 = `tools/gen_tiles.lua` 生成器全量绘制**(2026-09-15,同名覆盖,
 > 场景零改动)。色板与 palette.tres 同源;缘线 = PAPER·30%;构成红唯一

@@ -100,8 +100,8 @@ Entity
 - **一形多皮**:同一 Pillar 可有 Constructivist / Industrial / Theatre /
   Archive / Anomaly 五种 Visual 皮——**碰撞、尺寸、空间语义、玩法属性
   保持一致**(八语言融合矩阵领地规则,art-audio 卷二)。
-- 四层数据落点:Geometry/Function 进 LevelDef 组件字典(现有
-  rect/id/layer/faces/who/tags 即前两层);Visual 走风格层;Narrative
+- 四层数据落点(v0.45 原生换代):Geometry/Function 落原生场景
+  (TileMapLayer 图位 + 场景实例 @export);Visual 走风格层;Narrative
   走 bible 伏笔账本引用(related 机制)。
 
 ---
@@ -260,13 +260,13 @@ atmosphere 剪影层与 audio 动机库各有一个识别条目。
 | 踩踏开关+门板 | structures §5 | M/Trigger+State(M2) | 保留 | 机关链首发成员 |
 | 限时桥 | structures §5 | M/Time(M1) | 保留 | 节拍对齐深化(art-audio §5.5) |
 | 钢琴砖 | structures §5 | M/Trigger(M0)+SP 演出 | 保留 | 地图即乐谱(art-audio §5.4) |
-| 磁界 MagBoundary | structures §5 | M/Space+Character(M3–M4) | 保留 | 收线守卫已修(v0.27.x) |
+| ~~磁界 MagBoundary~~ | structures §5 | — | **v0.46 清退** | 全仓零实例化;复活自 git 历史并按场景壳规范重建 |
 | 推箱/滑雪带/传送对/弹射板 | gameplay 卷二 | M/Physics+State(M1–M2) | **保留(观察期)** | 组合矩阵已登记 |
 | 记录点信标 | structures §8 | M/Trigger+State | **保留(v0.36 实装)** | 信标实体 + 像素契约落地;正式关排布随 P2 |
 | 充电桩 | structures §5 | M/Character(M3) | **暂缓** | 随第二幕 |
 | 单向闸 | gameplay 卷二 | S(A03 变体) | **合并** | faces=top 语义 |
 | 计时环/脆弱块 | gameplay 卷二 | M | **暂缓** | 随 P3 |
-| LevelDef.platforms 全部 | levels.md §7 | S(A01–A16 槽位) | 保留 | 逐步映射 Kit 构件 ID |
+| ~~LevelDef.platforms 全部~~ | levels.md §0 | S(A01–A16 槽位) | **v0.45 清退** | 原生 TileMapLayer + Kit 图位(levels.md §0) |
 | 反重力门(规划) | glossary §2 | M/Space | **暂缓**(逆置换是其个体版) | — |
 | 背景剪影 | atmosphere.md | E | 保留 | — |
 | 异常(两套刻度等) | fx-light-uiux 卷一 | X | **冻结占位(P5)** | 伏笔账本登记制 |

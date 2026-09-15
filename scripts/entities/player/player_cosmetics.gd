@@ -184,7 +184,7 @@ static func draw_tri(p: Player, size: Vector2) -> void:
 	var hl_y := -h * 0.80 if flat_top else h * 0.80
 	p.draw_line(Vector2(-w * 0.26, hl_y), Vector2(w * 0.26, hl_y),
 		Color(1, 1, 1, 0.5), 3.0)
-	# 磁力锚点方块 = 顶点(界尖朝下 / 边尖朝上),与 MagBoundary 端点同语言
+	# 磁力锚点方块 = 顶点(界尖朝下 / 边尖朝上),与旧磁界端点同语言(该机关类已清退)
 	var apex_y := h * 0.86 if flat_top else -h * 0.86
 	p.draw_rect(Rect2(Vector2(-3.5, apex_y - 3.5), Vector2(7, 7)), Color(Palette.I.paper, 0.9))
 

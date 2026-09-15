@@ -28,7 +28,7 @@
   不可靠有序 RPC(`rpc_state`,PackedFloat32Array 快照,20Hz);客机输入
   上传 `rpc_input`(60Hz);事件走可靠 RPC(复用 `Main.I` 回调);movers
   只随快照携带关卡时钟;**无 Spawner/Synchronizer**——两端由同一
-  LevelDef 同构 build(D7 版本 + 哈希门禁)。选图选角 = 可靠 RPC
+  原生关卡场景 build(D7 版本 + 哈希门禁)。选图选角 = 可靠 RPC
   (`rpc_map_picked / rpc_claim / rpc_claims`,主机权威仲裁)。
 - **data 层保持纯数据可直接序列化**;entities 的输入读取走输入槽抽象
   (`Player.input_source`,与同屏双人共用,N0 公共前置)。

@@ -401,7 +401,7 @@ func on_level_built() -> void:
 	var own := my_claims()
 	var other := other_claims()
 	if own.is_empty() and other.is_empty():
-		var split := split_roster(_m._level_def.roster)
+		var split := split_roster(_m._level_info.roster)
 		own = split[0] if is_host() else split[1]
 		other = split[1] if is_host() else split[0]
 	_own_geo = (own as Array).duplicate()

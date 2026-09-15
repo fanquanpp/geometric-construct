@@ -1,3 +1,4 @@
+@tool
 class_name ExitDoor
 extends Area2D
 ## 几何体专属的终点门:锐利矩形门框,门上悬浮对应几何体徽标,
@@ -53,12 +54,12 @@ static func _stepped_light_texture() -> ImageTexture:
 	return _light_tex
 var _icon: Sprite2D
 var _check: Sprite2D
-var _spr: Sprite2D
-
-## 门体精灵(图鉴正典三帧:待命 → 到站 → 吸入;200 画布 ×0.5 = 100px)。
+## 门体精灵 = 场景烘焙 Visual(图鉴正典三帧:待命 → 到站 → 吸入,
+## 200 画布 ×0.5 = 100px;场景内换帧,见 _refresh_texture)。
 const T_IDLE := preload("res://assets/archive/mech_exit_door.png")
 const T_ARRIVE := preload("res://assets/archive/mech_exit_door_f2.png")
 const T_ENTER := preload("res://assets/archive/mech_exit_door_f3.png")
+@onready var _spr: Sprite2D = $Visual
 
 
 func _refresh_texture() -> void:
@@ -68,15 +69,12 @@ func _refresh_texture() -> void:
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		_editor_sync(true)
+		return
 	collision_layer = 0
 	collision_mask = 2
-	z_index = 3
 	_color = Geometries.ALL[geo_index].color
-
-	_spr = Sprite2D.new()
-	_spr.texture = T_IDLE
-	_spr.scale = Vector2(0.5, 0.5)
-	add_child(_spr)
 
 	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if cs == null:
@@ -190,6 +188,39 @@ func _on_body_exited(body: Node2D) -> void:
 
 
 func _process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		_editor_sync(false)
+		return
 	_t += delta
 	_icon.position = Vector2(0, -size.y / 2.0 - 30 + sin(_t * 2.1) * 4.0)
 	_check.position = Vector2(0, -size.y / 2.0 - 30 + sin(_t * 2.1) * 4.0)
+
+var _sig := ""
+
+## 编辑器预览(所见即所得):门楣悬浮对应几何体徽标 —— geo_index 在
+## 编辑器里原本不可见,预览让「哪扇门收谁」一眼可辨;
+## 临时 EditorPreview 子节点不写入场景文件。
+func _editor_sync(force: bool) -> void:
+	var s := "%d|%s" % [geo_index, size]
+	if not force and s == _sig:
+		return
+	_sig = s
+	var prev := get_node_or_null("EditorPreview")
+	if prev != null:
+		prev.queue_free()
+	if geo_index < 0 or geo_index >= Geometries.ALL.size():
+		return
+	var box := Node2D.new()
+	box.name = "EditorPreview"
+	var badge := Sprite2D.new()
+	badge.texture = Ui.icon("characters/%s-flat.svg" % Geometries.ALL[geo_index].slug)
+	badge.position = Vector2(0, -size.y / 2.0 - 30)
+	badge.scale = Vector2(0.62, 0.62)
+	box.add_child(badge)
+	add_child(box)
+
+func _get_configuration_warnings() -> PackedStringArray:
+	var w := PackedStringArray()
+	if geo_index < 0 or geo_index >= Geometries.ALL.size():
+		w.append("geo_index 越界(有效 0-%d)。" % (Geometries.ALL.size() - 1))
+	return w

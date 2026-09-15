@@ -1,3 +1,4 @@
+@tool
 class_name TimedBridge
 extends StaticBody2D
 
@@ -5,6 +6,7 @@ extends StaticBody2D
 ## 虚化期无碰撞(运行时 set_collision_layer_value 切位)、降透明度,
 ## 保留 8% 亮度线框 + 轨道线,切换状态可预读(可预读纪律)。
 ## on/off 各 ≥1s 保证可读;sync_beat = 与 BGM 节拍时钟对齐(audio.md §5)。
+## @tool:编辑器内 Visual 精灵随 size 参数实时重排(所见即所得)。
 
 @export var size := Vector2(400, 24)   # 桥板尺寸(节点置于桥板中心)
 @export var on_time := 2.0
@@ -20,7 +22,15 @@ var _beat_phase := 0.0   # 启动时对齐到的节拍相位
 var _occ: LightOccluder2D   # 遮挡体随实/虚切换(虚化 = 不投影)
 var _spr: Sprite2D          # 实心态正典帧(虚化 = 隐藏,改画线框)
 
+const T_FRAME := preload("res://assets/archive/mech_timed_bridge.png")
+
+@onready var _visual: Sprite2D = $Visual
+var _sig := ""
+
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		_editor_sync(true)
+		return
 	collision_layer = sig_value
 	collision_mask = 0
 	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
@@ -32,15 +42,28 @@ func _ready() -> void:
 	cs.shape.size = size
 	_occ = TerrainKit.rect_occluder(Rect2(-size / 2.0, size))
 	add_child(_occ)
-	_spr = TerrainKit.mech_sprite(preload("res://assets/archive/mech_timed_bridge.png"),
-		Rect2(-size / 2.0, size))
-	add_child(_spr)
+	_spr = _visual
+	TerrainKit.mech_layout(_spr, T_FRAME, Rect2(-size / 2.0, size))
 	_spr.visible = _solid
 	if sync_beat and Sfx.beat_period() > 0.0:
 		_beat_phase = Sfx.beat_time()
 		_t = _beat_phase
 
+func _process(_delta: float) -> void:
+	if Engine.is_editor_hint():
+		_editor_sync(false)
+
+## 编辑器预览同步:参数签名变化才重排(避免每帧重解码贴图)。
+func _editor_sync(force: bool) -> void:
+	var s := str(size)
+	if not force and s == _sig:
+		return
+	_sig = s
+	TerrainKit.mech_layout(_visual, T_FRAME, Rect2(-size / 2.0, size))
+
 func _physics_process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		return
 	# 联机同 Mover:共享关卡时钟(单机本地累计不变)
 	if NetSession.I != null and NetSession.I.is_net():
 		_t = NetSession.I._clock
@@ -70,6 +93,8 @@ func _physics_process(delta: float) -> void:
 			Sfx.play("ui_click", -8.0)
 
 func _draw() -> void:
+	if Palette.I == null:
+		return   # 编辑器极早期:静态资源未就绪,下帧重试
 	var r := Rect2(-size / 2.0, size)
 	# 轨道线:桥的行程始终可见(可预读的一部分)
 	draw_rect(Rect2(Vector2(r.position.x - 10, r.get_center().y - 1),

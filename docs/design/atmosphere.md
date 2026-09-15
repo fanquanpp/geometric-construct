@@ -35,9 +35,9 @@
 - **定义**:本关核心巨构的剪影多边形,置于天体与山脊之间——
   门厅关 = 巨柱与东塔剪影 / 大风琴关 = 四根音管剪影 / 穹顶关 = 放射曲面
   剪影 / 速度圣殿 = 高架长桥剪影。玩家还没进关,先在背景里"读到"本关的剧。
-- **数据驱动**:`LevelDef` 新增 `backdrop_theme`(枚举:default / atrium /
-  organ / dome / viaduct / …),backdrop 按 theme 实例化对应剪影组;
-  **旧关缺省 default = 现状零迁移**;关卡属性字段可选(Comp 语义)。
+- **数据驱动**(规划,未实装):关卡根新增 `backdrop_theme` 枚举
+  (default / atrium / organ / dome / viaduct / …),backdrop 按 theme
+  实例化对应剪影组;原生摆位下 = 关卡场景导出参数,缺省 default。
 - **来源两种**:a) 从 platforms 数据自动推导(取本关最大 2–3 个结构的
   外接多边形,缩放 0.6 + 降 5% 亮度——零手工);b) 手工多边形微调
   (关键关用)。首版走 a,验收不满意再手工。
@@ -79,7 +79,7 @@
 
 | 手段 | 用途 | 成本 / 约束 |
 |---|---|---|
-| **程序化多边形亮带**(首选) | 天光带 = Polygon2D 平行四边形,随关卡静态烘焙 | **零运行时成本**,LevelBuilder 画;首版全部用它 |
+| **程序化多边形亮带**(首选) | 天光带 = Polygon2D 平行四边形,随关卡静态烘焙 | **零运行时成本**,编辑器内摆 Polygon2D;首版全部用它 |
 | CanvasModulate | 区域明度 / 章节光色 | 全局单节点,零成本;区域切换 = 分段 set |
 | PointLight2D + 平色块纹理 | 动态亮区(开门照入的动态光带) | texture 用矩形/条形平色块(**禁默认径向衰减**);energy 阶梯化;**≤4 盏/屏** |
 | LightOccluder2D | 硬边遮挡影 | **v0.19 已实装**:全局唯一 1 盏 DirectionalLight2D 开投影,`shadow_filter = NONE` 保直角;遮挡体随构件挂载(art-style §8) |

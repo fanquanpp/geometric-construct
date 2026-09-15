@@ -168,12 +168,12 @@ func refresh_roster() -> void:
 	if main.dual_mode:
 		binds = dual_binds()
 	elif NetSession.I != null and NetSession.I.in_game() \
-			and main._level_def != null:
+			and main._level_info != null:
 		var own: Array = NetSession.I.own_geo_arr()
 		var other: Array = NetSession.I.other_geo_arr()
-		for g in main._level_def.roster:
+		for g in main._level_info.roster:
 			binds.append({"slot": 0 if own.has(int(g)) else 1, "geo": int(g)})
-	main._hud.refresh_roster(main._level_def.roster, active, mask, binds)
+	main._hud.refresh_roster(main._level_info.roster, active, mask, binds)
 
 
 func check_deaths(def: Dictionary) -> void:

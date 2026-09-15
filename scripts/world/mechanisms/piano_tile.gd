@@ -1,3 +1,4 @@
+@tool
 class_name PianoTile
 extends StaticBody2D
 
@@ -6,6 +7,7 @@ extends StaticBody2D
 ## v0.16 触发重构:接触沿触发一次,持续接触仅圆的滚奏(移动中)按 0.075s
 ## 重触发(glissando)——静止压砖不再"机关枪式"连响;
 ## 落地速度 → 音量;演出 = 顶缘亮线脉冲 + 音符粒子;双几何体同砖 = 和音。
+## @tool:编辑器内 Visual/VisualOn 随 size 参数实时重排(所见即所得)。
 
 @export var size := Vector2(300, 24)   # 砖面尺寸(节点置于砖面中心)
 @export var note := ""           # 音名("C4");空 = 按 y 反向映射
@@ -15,10 +17,18 @@ var _pulse := 0.0         # 顶缘亮线脉冲剩余时间
 var _last_played := {}    # 体身份键(body_key)-> 上次触发时刻(秒)
 var _in_contact := {}    # 体身份键 -> 是否接触中(接触沿判定,v0.16;
 						 # 双体两半各占一键,互不吞接触沿)
-var _spr_idle: Sprite2D
-var _spr_on: Sprite2D
+
+const T_IDLE := preload("res://assets/archive/mech_piano_tile.png")
+const T_ON := preload("res://assets/archive/mech_piano_tile_f2.png")
+
+@onready var _spr_idle: Sprite2D = $Visual
+@onready var _spr_on: Sprite2D = $VisualOn
+var _sig := ""
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		_editor_sync(true)
+		return
 	collision_layer = sig_value
 	collision_mask = 0
 	add_to_group("piano")   # 联机客机端琴键声效自查(Player._piano_cosmetic)
@@ -30,15 +40,32 @@ func _ready() -> void:
 		cs.shape = RectangleShape2D.new()
 	cs.shape.size = size
 	add_child(TerrainKit.rect_occluder(Rect2(-size / 2.0, size)))   # 引擎光影遮挡体(v0.19)
-	_spr_idle = TerrainKit.mech_sprite(preload("res://assets/archive/mech_piano_tile.png"),
-		Rect2(-size / 2.0, size))
-	_spr_on = TerrainKit.mech_sprite(preload("res://assets/archive/mech_piano_tile_f2.png"),
-		Rect2(-size / 2.0, size))
+	TerrainKit.mech_layout(_spr_idle, T_IDLE, Rect2(-size / 2.0, size))
+	TerrainKit.mech_layout(_spr_on, T_ON, Rect2(-size / 2.0, size))
 	_spr_on.visible = false
-	add_child(_spr_idle)
-	add_child(_spr_on)
 	if note.is_empty() and Main.I != null:
 		note = Sfx.note_for_height(global_position.y, 2000.0)
+
+func _process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		_editor_sync(false)
+		return
+	if _pulse > 0.0:
+		_pulse = maxf(_pulse - delta, 0.0)
+	var on := _pulse > 0.0
+	if _spr_on.visible != on:
+		_spr_on.visible = on
+		_spr_idle.visible = not on
+
+## 编辑器预览同步:参数签名变化才重排(避免每帧重解码贴图)。
+func _editor_sync(force: bool) -> void:
+	var s := str(size)
+	if not force and s == _sig:
+		return
+	_sig = s
+	var zone := Rect2(-size / 2.0, size)
+	TerrainKit.mech_layout(_spr_idle, T_IDLE, zone)
+	TerrainKit.mech_layout(_spr_on, T_ON, zone)
 
 ## 玩家每帧报告接触(由 Player 调用):impact = 落地/滚动速度。
 ## 接触沿触发一次;持续接触仅圆的滚奏(移动中)按 0.075s 重触发。
@@ -97,14 +124,8 @@ func _has_other_rider(player: Player) -> bool:
 			return true
 	return false
 
-func _process(delta: float) -> void:
-	if _pulse > 0.0:
-		_pulse = maxf(_pulse - delta, 0.0)
-	var on := _pulse > 0.0
-	if _spr_on.visible != on:
-		_spr_on.visible = on
-		_spr_idle.visible = not on
-
 func _draw() -> void:
+	if Palette.I == null:
+		return   # 编辑器极早期:静态资源未就绪,下帧重试
 	# 专属高亮描边(呼吸脉冲,§7)
 	TerrainKit.draw_focus(self, Rect2(-size / 2.0, size), hl_color)

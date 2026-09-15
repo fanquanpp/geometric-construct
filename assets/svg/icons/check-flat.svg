@@ -1,1 +1,2 @@
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' width='64' height='64'><polyline points='12,34 26,48 52,16' fill='none' stroke='#EDEAE0' stroke-width='5.5' stroke-linecap='square' stroke-linejoin='miter'/></svg>
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' width='64' height='64'><defs></defs><path d="M8.11 34.00 L25.79 43.90 L55.87 15.60 L51.60 12.13 L26.21 52.10 L12.00 30.11 Z" fill="#EDEAE0" fill-rule="evenodd"/></svg>

@@ -108,27 +108,24 @@ geometric-construct/
 │       └── net_config.gd     #   端口/魔数/版本门禁常量
 ├── story/                    # Konado KS 剧本(档案几何 · 剧情回顾页签可回看)
 │   ├── prologue.ks          #   序幕(标题菜单)
-│   ├── act1.ks              #   第一幕开演剧(首次进第一幕自动播放)
-│   ├── rogue_intro.ks       #   重跑序说(首次进重跑自动播放)
-│   ├── rogue_<slug>.ks      #   四位主角的个人单章刻画(首次选定自动播放)
+│   ├── act1.ks ~ act5.ks    #   五幕开演剧(幕首进自动播放)
 │   └── epilogue.ks          #   尾声(通关画面播放)
 ├── assets/
 │   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入)
 │   ├── archive/             # 档案几何示例图(200×200 PNG,图鉴唯一运行时
-│   │                        #   素材;绘制源 tiles_v2 已随 v0.39.0 清退)
+│   │                        #   素材;v0.46.0 构成主义全量重绘,生成器
+│   │                        #   tools/redraw/,PNG 为孤本可直改)
+│   ├── tiles/               # 关卡图块集 native_tiles.png(tools/gen_tiles.lua 直出)
 │   ├── fonts/               # NotoSansSC 可变字体
-│   └── svg/                 # 全部图标(仅 flat 单样式,见 docs/DESIGN.md)
-│       ├── characters/      #   角色徽标(与 slug 对应)
-│       ├── keys/            #   键帽(折线字形,禁用 <text>)
-│       ├── icons/           #   通用图标
-│       ├── objects/         #   关卡对象图标
-│       ├── arrows/          #   动作箭头
-│       ├── audio/           # 音频开关
-│       └── buttons/         # 按钮图标
+│   └── svg/                 # 在用图标 18 枚(仅 flat 单样式,见 docs/DESIGN.md):
+│                            #   characters / keys / icons / buttons 四类;
+│                            #   全套图标可经 tools/redraw/spec_icons.py 再生成
 ├── tools/
-│   ├── gen_svgs.py          # SVG 素材生成器(改素材先改这里再生成)
-│   ├── build_native_kit.gd  # 占位图块集生成(aseprite 重绘前的 interim)
-│   └── build_native_act1.gd # 第一幕场景生成器(产出可编辑 .tscn)
+│   ├── gen_tiles.lua        # 图块集生成器(assets/tiles 唯一来源)
+│   ├── build_native_levels.py  # 二~五幕场景生成器(act2_src/*.json 转译)
+│   ├── redraw/              # 素材重绘生成器 + 校验器(v0.46.0 入库)
+│   ├── inspect_mech_frames.gd  # 机关正典帧占位框实测(一次性)
+│   └── scan_tiles.gd        # 图块集逐格审计
 ├── tests/                   # 开发用截图 / 验证场景(shot_*.tscn;
 │                            #   native_check / flow_check / trait_check /
 │                            #   recalltest / dualtest / nettest 门禁)
@@ -217,19 +214,20 @@ A 跳,X 冲刺,LB/RB 切换,Back 召回,Start 暂停。
 
 ## 关键机制速查
 
-- **状态机**:`Main.State`,流转入口 `start_level / start_rogue_fragment /
-  _restart_level / _open_pause / resume_game / quit_to_menu / _show_menu /
-  start_rogue_run / finish_rogue_run`。
+- **状态机**:`Main.State`,流转入口 `start_level / start_level_dual /
+  _restart_level / _open_pause / resume_game / quit_to_menu / _show_menu`。
 - **实体上报**:Player → `Main.I.on_player_died / on_player_exited / on_respawn_done`。
 - **存档**:`SaveManager`(user://speed-rouge.cfg),结构版本 `meta/save_version`,
-  旧档 `lonelyblocks.cfg` 自动迁移;v3 新增 `rogue` 区段(刻度残段 /
-  已解锁词条 / 最远章节 / 剧情旗标),迁移分支给默认值。
+  旧档 `lonelyblocks.cfg` 自动迁移;剧情旗标沿用历史 `rogue/` 节名存取
+  (保旧档可读;肉鸽玩法本体已随 v0.45.0 清退)。
 - **调试钩子**(命令行 user args,`--` 之后):
   `--autotest=N` 自动通关测试 · `--autoshot=N` 关卡截图 · `--menushot` 菜单截图 ·
   `--panelshot` 档案几何截图(全页签) · `--introshot` 开场卡截图 · `--doorshot` 门特写 ·
-  `--tourshot` 数据驱动巨构巡航截图 · `--trialshot` 出生连拍 · `--recalltest` 召回链路自测 ·
-  `--zoom=N` 锁定镜头变焦 · `--rogueshot` 肉鸽 UI 截图 ·
-  `--rogueautotest[=N]` 肉鸽按主角自动跑整局 · `--shotdir=<path>` 输出目录。
+  `--tourshot` 数据驱动关卡巡航截图 · `--storyshot` 剧情分镜 ·
+  `--actshot`/`--setshot`/`--bootshot` 界面分镜 · `--tapshot` 点击走查 ·
+  `--transitionshot` 转场五式 · `--recalltest` 召回链路自测 ·
+  `--dualtest`/`--dualshot` 双人同屏 · `--nettest`/`--netauto`/`--netjoin=IP` 联机 ·
+  `--perflog` 性能日志 · `--zoom=N` 锁定镜头变焦 · `--shotdir=<path>` 输出目录。
 
 ## 运行与测试
 
@@ -238,7 +236,7 @@ A 跳,X 冲刺,LB/RB 切换,Back 召回,Start 暂停。
 godot --path .
 
 # 自动通关测试(legacy:呆板机器人已打不过现役关,仅作流转冒烟;门禁以
-# flow_check / reach_check / comp_check 为准)
+# native_check / flow_check / recalltest / dualtest / trait_check 为准)
 godot --path . -- --autotest=0
 
 # 修改 SVG/字体等资源后,先触发导入再截图

@@ -6,12 +6,12 @@ extends Node
 ##
 ## 状态:
 ##   current      当前标准关下标(-1 = 无关)
-##   level_def    当前装载的关卡清单(NativeLevel 字段摘录,见 start_level)
+##   level_info    当前装载的关卡清单(NativeLevel 字段摘录,见 start_level)
 ##   complete_seq 通关链序列号:重开/换关时作废待执行的自动流转
 
 var main: Main
 var current := -1
-var level_def: Dictionary = {}
+var level_info: Dictionary = {}
 var complete_seq := 0
 
 
@@ -35,7 +35,7 @@ func start_level(index: int, intro := true) -> void:
 	main.add_child(root)
 	# 关卡清单(表现层消费面):名称 / 教学主角 / 名册 / 死亡线 ——
 	# 原生作关后关卡数据在场景里,这里只摘 HUD / 名册 / 判定要用的字段。
-	level_def = {"name": root.level_name, "intro": root.intro_text,
+	level_info = {"name": root.level_name, "intro": root.intro_text,
 		"focus": root.focus, "roster": root.roster,
 		"kill_y": root.kill_y, "top_kill_y": root.top_kill_y}
 	collect_players()
@@ -54,17 +54,17 @@ func start_level(index: int, intro := true) -> void:
 	# 体数 > 1 才有"切换"可言(双子一位两具):按 roster 长度判断会把
 	# 纯双子阵容误判成"单人无切换"(v0.21.0 修正)
 	main.touch_controls.set_switch_available(
-		Geometries.roster_body_total(level_def.roster) > 1)
+		Geometries.roster_body_total(level_info.roster) > 1)
 	main._hud.show_win(false)
-	main._hud.set_level_info(current, level_def["name"])
+	main._hud.set_level_info(current, level_info["name"])
 	main._refresh_roster()
 	main._hud.reveal_corners()
 	if intro:
 		var act_name := str(LevelData.ACTS[act_i]["name"]) if act_i >= 0 \
 			else "正戏"
 		main._hud.show_intro("%s · 第 %d 场 · %s" % [act_name, LevelData.scene_no_of(current),
-			Geometries.get_def(level_def["focus"]).full_name], level_def)
-		var focus: GeometryDef = Geometries.get_def(level_def["focus"])
+			Geometries.get_def(level_info["focus"]).full_name], level_info)
+		var focus: GeometryDef = Geometries.get_def(level_info["focus"])
 		main._hud.narration(focus.quote, focus.color, 3.8)
 	main._switch_to(0, true)
 	# 联机(N2):两端装配完成后算定绑定 / 标注 remote_driven / 注入输入源

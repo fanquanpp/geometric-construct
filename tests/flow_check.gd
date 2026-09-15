@@ -46,9 +46,9 @@ func _ready() -> void:
 	if got.distance_to(want) > 40.0:
 		ok = false
 		print("FLOW FAIL: spawn got=", got, " want=", want,
-			" level=", flow.level_def.get("name", "?"), " geo=", p0.index)
+			" level=", flow.level_info.get("name", "?"), " geo=", p0.index)
 	if ok:
 		print("FLOW CHECK PASS (L%d→L%d · %s · geo%d @ %s)"
-			% [PROBE_IDX, PROBE_IDX + 1, flow.level_def.get("name", "?"),
+			% [PROBE_IDX, PROBE_IDX + 1, flow.level_info.get("name", "?"),
 			p0.index, got])
 	get_tree().quit(0 if ok else 1)

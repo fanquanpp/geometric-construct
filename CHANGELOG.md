@@ -3,6 +3,78 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.46.0(2026-09-15 · 编辑器所见即所得 + 素材重绘落位)
+
+> **机关场景壳素材化(@tool 所见即所得)+ 图鉴/图标全量重绘应用 + 死库存三遍清退**
+> (用户指令 2026-09-15:直改迭代,无需方案文档)。
+
+### 新增
+- **机关所见即所得**:13 个机关/实体场景(mover / piano_tile / ski_patch /
+  timed_bridge / launch_pad / push_box / portal_pair / lever_gate / ramp /
+  checkpoint_beacon / hint_marker / exit_door / speed_gate)全部改为
+  **场景内烘焙真实精灵**——`.tscn` 携带 Visual(Sprite2D / AnimatedSprite2D)
+  正典帧,编辑器打开即见图形,不再是空节点。参数化机关脚本升级 `@tool`:
+  size / a·b / lever_rects / pts / cell / zone_size / text 等导出参数在
+  编辑器内实时重排预览(签名比对,防每帧重解码贴图)。
+- `TerrainKit.mech_layout(spr, tex, zone)`:布局作用于**既有**精灵,场景
+  烘焙、@tool 预览与运行时共用同一条路径,所见即所碰;原 `mech_sprite`
+  (运行时新建精灵)退役。
+- 传送门动画资源化:`data/mech/portal_frames.tres`(SpriteFrames 三帧
+  4fps 循环 + autoplay),替换手写帧计数;lever_gate 门板改用图鉴正典帧
+  `mech_gate_door.png`(原 `_draw` 色块退役,虚化态线框保留)。
+- 弹射板发射箭头 / 推箱落格偏移 / ramp 曲线与红刻度 / 教学牌底板文字,
+  全部编辑器内实时可预览;z_index 落进场景文件(机关 3 / 门 3 / 提示 4),
+  编辑器层序与运行时一致。
+- **编辑器配置警告**(引擎原生 `_get_configuration_warnings`,R0):
+  lever_gate(缺 door_item / 无开关)、ramp(pts<2)、portal_pair(A/B 重合)、
+  exit_door(geo_index 越界)——场景面板节点即出黄叹号,摆错当场可见。
+- `levels_native/_template.tscn` 关卡模板:Decor/Solid 双层 + TileSet 预接线 +
+  Spawn0,新关复制改名即起步(不登记 SCENES,不进战役目录)。
+- 终点门编辑器徽标预览(@tool):门楣悬浮对应几何体徽标,`geo_index`
+  一眼可辨;推箱**拖摆即落格**(transform 变化回写 cell,undo 随
+  transform 一致回退,不再有"摆了位置运行时跳格"的错位)。
+- `tools/redraw/`:素材重绘生成器 + 校验器入库(build / verify / crosscheck /
+  spec_archive / spec_icons 等 7 件,可复现整套重绘);法相模型说明入
+  `docs/design/redraw-lighting.md`,重绘前后对照板入 `docs/ui/`。
+
+### 变更
+- **素材重绘落位**(并行会话交付包,4 轮复核 FAIL=0 后应用):43 张图鉴
+  PNG(构成主义统一光照:光自左上 / 影向右下,与 DirectionalLight2D
+  -40° 同向)+ 18 张在用 SVG 图标全部换新;图块集 native_tiles.png
+  **不在本轮**(224 格坐标契约与物理层绑定,以 e6c5b1d 审计终态为准)。
+- 提示牌底板构建函数与运行时共用一条路径(编辑器桌面字号、真机触屏字号
+  逻辑不变);svg 图标瘦身为在用 18 枚(孤儿 51 枚删除,全套可再生成);
+  docs/ 加 .gdignore(文档与 UI 截图不再进 Godot 导入)。
+- `level_def` 残留命名更名 `level_info`(game_flow / main /
+  roster_controller / shot_harness / net_session 五件)。
+
+### 修复
+- **@tool 编辑器路径实测修复**(headless 编辑器逐场景实跑 13/13 零
+  SCRIPT ERROR):lever_gate `_draw` 在编辑器内 `_pad_on` 为空越界;
+  `Palette.I` 在编辑器极早期为 Nil → 全部 @tool 绘制/同步路径加
+  「未就绪跳过本帧」守卫;hint_marker 补底板空引用兜底。
+  另:前轮 headless import 挂起 = 用户编辑器锁竞争(编辑器关闭后完整
+  跑通,退出码 0),非项目问题。
+- export_presets.cfg 还原:4.8 编辑器写入损坏(ETC2/ASTC 键变乱码键、
+  `permissions/vibrate` 丢失、export_path 指到仓库外)。
+- exit_door 场景壳碰撞 80×100 → 72×100(与运行时 size+8 对齐);
+  `buttons/story-flat.svg` 悬空引用清除(径用 play-flat)。
+
+### 移除
+- **死库存清退**(三遍 grep 复核零残留):`assets/art/mech` 12 源 + 12
+  strip(39 帧,为已废弃的 _draw→AnimatedSprite2D 迁移备料,零引用);
+  孤儿机关类 MagBoundary / MoverTrack(全仓零实例化;伍的界/边机制若
+  复活,从 git 历史取回并按新场景壳规范重建);ReachMargins 调参链
+  (.gd + .tres,消费者 reach_check 已随 v0.45 删除);
+  TerrainKit.BOUNDARY_BIT;tools/build_native_kit.gd(会以灰块覆盖正式
+  图块集的危险工具);gen_svgs.py(被 tools/redraw/spec_icons.py 取代);
+  konado 编辑器图标残留备份 4 件。
+- 文档陈旧项清理:ARCHITECTURE(rogue 剧本/状态机/钩子表/tools 表)、
+  REFACTOR(门禁表换代 + v0.45 判词)、ASSETS(肉鸽节、组件语义 v4 表、
+  JSON 关卡行、svg/aseprite 计数)、UPDATE / glossary / atmosphere /
+  gameplay / characters(--leveljson / LevelBuilder / mover_check /
+  pair_trial 残留)、AGENTS 验收基线换现行五门禁。
+
 ## v0.45.0(2026-09-15 · 作关换代)
 
 > **原生编辑器作关落地(M1–M4)+ 肉鸽模式整体删除 + 旧地图系统清退**

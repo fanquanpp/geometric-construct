@@ -125,10 +125,11 @@ complete/fanfare/start/restart/pause/resume + ui_* 系列 + story_next
 ## 6. 验收工具
 
 - 截图钩子:`--bootshot`(开屏)/ `--menushot`(菜单入场末态)/
-  `--introshot`(开场卡)/ `--rogueshot`(肉鸽四页)/ `--storyshot`(剧情)/
+  `--introshot`(开场卡)/ `--setshot`(设置面板)/ `--storyshot`(剧情)/
   `--tourshot`(巨构巡航 = 玩法演出巡检)——动效验收 = 关键帧截图序列,
   不引入录像工具(发布版体积与权限理由)。
-- 音视效联动验收:`--rogueautotest` 全流程跑通 = 打点音链完整触发。
+- 音视效联动验收:钩子分镜逐帧过目 = 打点音链完整触发
+  (旧 `--rogueautotest` 已随肉鸽清退)。
 
 ## 7. 修订记录
 

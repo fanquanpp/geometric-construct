@@ -159,8 +159,8 @@
 - **新角色 / 新关**:演奏手法与 motif 是角色 / 章节立项清单项
   (characters.md §10 矩阵已挂「音乐」行);新关可不设砖(钢琴砖是可选语义,
   不是全局依赖)。
-- **分享码 / 存档**:砖的 note 字段进 LevelDef 同构 JSON,校验器拒绝
-  调外音级;旧格式关卡无字段照常装载。
+- **分享码 / 存档**:砖的 note 字段 = 钢琴砖场景实例导出参数
+  (`piano_tile.note`,Inspector 直调);旧 JSON 校验器已随 v0.45 清退。
 - **验收**:BGM 侧静音断言已落地 = `--headless --script
   res://tests/ambience_check.gd`(逐 motif 峰值 / RMS / NaN 断言 +
   热切换冒烟,v0.37);音效注册数 / 音符流数断言随 --autotest 仍为

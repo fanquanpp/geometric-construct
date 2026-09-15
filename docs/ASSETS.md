@@ -1,7 +1,7 @@
 # 游戏名词与资产总账 · NAMES & ASSETS
 
-> 状态:现行(v0.19.3 · 2026-09-10)· 游戏内全部命名实体的**分类统计速查**:
-> 几何体 / 建筑物 / 机关物 / 物品词条 / 剧情标题 / 关卡与幕 / 系统命名 / 资产文件。
+> 状态:现行(v0.46.0 · 2026-09-15)· 游戏内全部命名实体的**分类统计速查**:
+> 几何体 / 建筑物 / 机关物 / 剧情标题 / 关卡与幕 / 系统命名 / 资产文件。
 > 本文只做**登记与计数**,不做设计展开;数值与语义的权威在对应文档与代码。
 > 术语定义见 `docs/design/glossary.md`(名词三域唯一权威);
 > **与代码数据表(`scripts/data/*.gd`)不一致时,以代码为准并回改本文。**
@@ -15,17 +15,16 @@
 | 建筑物图鉴 | 15(6 既有 + 9 件 Kit 构件 v0.36 补绘)| `scripts/data/archive_data.gd` BUILDINGS |
 | 机关物图鉴 | 13(全部实装;传送对 v0.27 / 记录点信标 v0.36)| `archive_data.gd` MECHS |
 | 机关物(立项 / 规划未入图鉴) | 2(充电桩 / 反重力门)| `glossary.md` §2 |
-| 肉鸽词条(重跑) | 13(通用 5 + 专属 8)| `scripts/data/run_modifiers.gd` |
-| 剧情篇目 | 8(= `story/*.ks`)| `archive_data.gd` STORIES |
+| 剧情篇目 | 7(= `story/*.ks`)| `archive_data.gd` STORIES |
 | 幕(现行) | 5(第一~第五幕,正戏全量)| `scripts/data/level_data.gd` ACTS |
 | 幕(七幕主纲) | 7(5 已演 + 序幕/落幕剧本)| `story.md` §1.5 |
-| 关卡(在演) | 6(第一幕六场 native;二~五幕占位随作关续批)| `levels_native/act1/*.tscn` | v0.45 换代:JSON 26 关管线退役(归档 git 历史) |
+| 关卡(在演) | 26(五幕全战役 native)+ dev/probe 探针 | `levels_native/act1..act5/*.tscn` | v0.45 换代:JSON 26 关管线退役(归档 git 历史);一/二幕用户重摆中 |
 | ~~测试道~~ | ~~2~~ | ~~trial_v5 / pair_trial~~ | v0.44.0 清退(测试关内容清退令)|
-| 图鉴插图(入引擎) | 43 张 png | `assets/archive/` |
-| 图块集(入引擎) | 1(native_tiles.png,224 格 16 列×14 行)| `assets/tiles/` | v0.45 原生作关唯一图块素材,图位契约 levels.md §0;PNG 为孤本,生成器 `tools/gen_tiles.lua` 同批入库 |
-| aseprite 源 | 15 个(icon_construct 1 + mech 精灵 12 + ui 卡框 2)| `assets/art/`、`assets/art/mech/`、`assets/art/ui/` | v0.39.0 清退:地图皮源 30(levels/)+ 图鉴源 33(tiles_v2/)+ png 产物 38 —— 三套自研分层系统退役,唯余 R1 素材源;图块集不走 aseprite 源,以 Lua 生成器为源 |
+| 图鉴插图(入引擎) | 43 张 png(**v0.46.0 构成主义全量重绘**)| `assets/archive/` |
+| 图块集(入引擎) | 1(native_tiles.png,224 格 16 列×14 行)| `assets/tiles/` | v0.45 原生作关唯一图块素材,图位契约 levels.md §0;PNG 为孤本,生成器 `tools/gen_tiles.lua` 同批入库;**不在 v0.46 重绘轮**(坐标契约与物理层绑定,以 e6c5b1d 审计终态为准) |
+| aseprite 源 | 4 个(icon_construct 1 + native_tiles 1 + ui 卡框 2)| `assets/art/`、`assets/art/ui/` | v0.46.0 清退 mech 精灵源 12 + strip 12(死库存);v0.39.0 清退:地图皮源 30(levels/)+ 图鉴源 33(tiles_v2/)|
 | 音频数据 .tres | 34(data/music 6 + data/sfx 28)| `data/music/`、`data/sfx/` | M-7/M-8 数值资源化(v0.38):BGM motif 与音效规格全 @export,Inspector 直调 |
-| svg 图标 | 69 个(7 类)| `assets/svg/` |
+| svg 图标 | 18 个(在用 4 类)| `assets/svg/` | v0.46.0 重绘并瘦身:孤儿 51 枚删除;全套 69 枚可经 `tools/redraw/spec_icons.py` 再生成 |
 | 字体 | 1(NotoSansSC-VF)| `assets/fonts/` |
 
 ## 1. 几何体(角色)
@@ -48,7 +47,8 @@
 
 ## 2. 建筑物图鉴(地形、景观与 Kit 构件 · 15)
 
-来源 `archive_data.gd` BUILDINGS;`bld_*` 对应 tiles_v2 重绘(源已清退 v0.39.0,PNG 为孤本)。
+来源 `archive_data.gd` BUILDINGS;`bld_*` 已随 v0.46.0 构成主义重绘
+(PNG 孤本直改,生成器 `tools/redraw/`)。
 
 | id | 中文名 | 英文副题 | 分类 | 一句话 |
 |---|---|---|---|---|
@@ -70,7 +70,9 @@
 
 ## 3. 机关物图鉴(可交互构件 · 13)
 
-来源 `archive_data.gd` MECHS;`mech_*` 对应 tiles_v2 重绘(源已清退 v0.39.0),双帧 = 两态静帧。
+来源 `archive_data.gd` MECHS;`mech_*` 已随 v0.46.0 构成主义重绘,双帧 = 两态静帧。
+**机关场景壳 = 所见即所得**(v0.46.0):`scenes/world/mechanisms/*.tscn` 内烘焙
+Visual 正典帧精灵,参数化机关脚本 `@tool` 预览随导出参数实时重排。
 规划名 ⇄ 现行名对照总表见 `glossary.md` §2;构件规格见 `structures.md`。
 
 | id | 中文名 | 英文副题 | 分类 | 形态帧 | 状态 |
@@ -80,11 +82,11 @@
 | `mech_ramp` | 曲面跳跃板 | RAMP | 机关 · 地形 | 单帧 | 实装 v0.8 |
 | `mech_mover` | 移动平台 | MOVER | 机关 · 动构件 | 单帧 | 实装 v0.8 |
 | `mech_lever_pad` | 踩踏开关 | LEVER PAD | 机关 · 触发 | 两态(凸·未踩 / 凹·踩住)| 实装 v0.13 |
-| `mech_gate_door` | 开关门板 | GATE DOOR | 机关 · 受控 | 两态(关·实心 / 开·虚化)| 实装 v0.13 |
+| `mech_gate_door` | 开关门板 | GATE DOOR | 机关 · 受控 | 两态(关·实心 / 开·虚化)| 实装 v0.13;v0.46 起门板运行时吃正典帧 |
 | `mech_timed_bridge` | 限时桥 | TIMED BRIDGE | 机关 · 节拍 | 2 帧动态(实心 / 虚化)| 实装 v0.15 |
 | `mech_piano_tile` | 钢琴砖 | PIANO TILE | 机关 · 演奏 | 两态(常态 / 触发)| 实装 v0.15 |
 | `mech_checkpoint` | 记录点信标 | CHECKPOINT | 机关 · 存续 | 两态(未激活 / 激活)| 实装 v0.36(召回管线 v0.17)|
-| `mech_portal` | 传送对 | PORTAL | 机关 · 穿越 | 3 帧动态(闭合 / 开启 / 脉冲)| 实装 v0.27 |
+| `mech_portal` | 传送对 | PORTAL | 机关 · 穿越 | 3 帧动态(闭合 / 开启 / 脉冲)| 实装 v0.27;v0.46 起 SpriteFrames 循环(`data/mech/portal_frames.tres`)|
 | `mech_push_box` | 推箱 | PUSH BOX | 机关 · 解谜 | 单帧 | 实装 v0.27 |
 | `mech_ski_patch` | 滑雪带 | SKI PATCH | 机关 · 地形 | 两态(常态 / 滑雪)| 实装 v0.27 |
 | `mech_launch_pad` | 弹射板 | LAUNCH PAD | 机关 · 弹射 | 单帧 | 实装 v0.27 |
@@ -96,36 +98,14 @@
 | 充电桩 | ChargingPile | 立项 v0.18 | 伍任一半体踩住 ↔ 磁力边界整体失效,离开恢复 |
 | 反重力门 | — | 规划 | 穿过后重力翻转;逆的"置换"是其个体版本 |
 
-## 4. 物品与词条(肉鸽「重跑 RE-RUN」)
+## 4. 物品与词条(~~肉鸽「重跑 RE-RUN」~~ · 已清退)
 
-> 模式现状:**休眠**(v0.17 关卡片段清空,入口隐藏,系统代码保留)。
-> 结构概念保留:主角专属片段链(疾 / 跃 / 逆 / 圆各一条)+ 章末精英考;
-> 每章二选一 = 同一母题的**快 / 稳**两种手工排法。
+> **v0.45.0 清退判词(2026-09-15)**:肉鸽模式全家(重跑玩法 / 词条 13 /
+> 刻度残段货币 / 片段库 / RERUN 剧本与配乐 / 存档 rogue 区段写入)已随
+> 作关换代整体删除,归档 git 历史;本节保留编号防断链。
+> 剧情旗标存档沿用历史 `rogue/` 节名(保旧档可读,见 ARCHITECTURE)。
 
-**货币**:**刻度残段** —— 局外解锁词条的兑换货币;常规 10 / 稀有 15 / 危险 12。
-
-**稀有度**:常规(白 `EDEAE0`)/ 稀有(黄 `E8B33A`)/ 危险(红 `E0492F`)。
-
-词条池 = 通用 + 本局主角专属,共 13 条(`run_modifiers.gd`):
-🔒 = 局外需刻度残段解锁(locked)。
-
-| id | 词条名 | 归属 | 稀有度 | 效果 |
-|---|---|---|---|---|
-| `short_beat` | 短拍节奏 | 通用 | 常规 | 土狼时间 +0.04s |
-| `weightless` | 失重镀层 | 通用 | 常规 | 重量 −0.3 |
-| `glass_dash` | 玻璃疾走 | 通用 | 危险 | 速度 +0.5,重落地即碎 |
-| `tailwind` | 顺风格 | 通用 | 常规 🔒 | 基础速度 +0.2 |
-| `steady_base` | 沉稳底盘 | 通用 | 常规 🔒 | 弹性 −0.2 |
-| `high_freq` | 高频踏点 | 疾 | 稀有 | 跳高 +0.3 格 |
-| `cloud_ladder` | 云梯踏 | 跃 | 稀有 | 空中跳 +1(三段跳)|
-| `glass_spring` | 琉璃跳 | 跃 | 危险 🔒 | 跳高 +0.4,重落地即碎 |
-| `pendulum` | 逆行钟摆 | 逆 | 稀有 | 置换冷却 ×0.6 |
-| `no_anchor` | 无锚 | 逆 | 危险 🔒 | 置换冷却 ×0.5,土狼 −0.04s |
-| `lubricate` | 润滑刻度 | 圆 | 常规 | 摩擦 ×0.85 |
-| `double_gate` | 双倍门 | 圆 | 稀有 | 加速门效果翻倍(钳 3.75×)|
-| `inertia_core` | 惯性核心 | 圆 | 危险 🔒 | 摩擦 ×0.7(极端滑行)|
-
-## 5. 剧情篇目(8)
+## 5. 剧情篇目(7)
 
 来源 `archive_data.gd` STORIES,与 `story/*.ks` 一一对应;全文见 `story.md`。
 
@@ -133,12 +113,11 @@
 |---|---|---|---|
 | `prologue.ks` | 序幕 · 空白与降临 | 七个拍子——空白、降临、相认、规则、缺口、约定、出发 | 空白 / 降临 / 相认 / 规则 / 缺口 / 约定 / 出发 |
 | `act1.ks` | 第一幕 · 开演 | 引力排练开演之前,四个几何体的约定 | 巨构降临 / 分位规则 / 各自出发 |
-| `rogue_intro.ks` | 重跑 · 序说 | 单人重跑——每一局,选中谁,谁就走一遍只属于自己的路 | 另一种演法 / 刻度残留 / 红色刻度与落幕 / 第五刻度闪现 |
-| `rogue_dash.ks` | 重跑 · 疾之章 | 原来我一直跑,不是怕孤独追上我 | — |
-| `rogue_spring.ks` | 重跑 · 跃之章 | 以前我为别人折叠坠落,这一次,为自己折一次 | — |
-| `rogue_fall.ks` | 重跑 · 逆之章 | 你们管这叫孤独,我管这叫安静 | — |
-| `rogue_roll.ks` | 重跑 · 圆之章 | 一个人滚,更快 | — |
-| `epilogue.ks` | 尾声 · 全员归位 | 四门归位之后的回声,与第五个形状的刻度 | — |
+| `act2.ks` | 第二幕 · 开演 | 第五刻度落地成双:界量天,边量地,边界之内彼此为家 | 第五刻度登场 / 界与边自报家门 / 边界之问 / 第二幕开演 |
+| `act3.ks` | 第三幕 · 开演 | 独自一人时,我还算什么——巨构把问题拆成四份 | 四条岔路 / 各自一句 / 问题发下 / 第三幕开演 |
+| `act4.ks` | 第四幕 · 开演 | 我能背叛自己的形状吗——巨构第一次用路提问 | 给错的路 / 四份答案 / 第四幕开演 |
+| `act5.ks` | 第五幕 · 开演 | 刻度密得数不清——代价一直摆在眼前 | 最深处的刻度 / 代价可见 / 铺向五门 / 最终幕开演 |
+| `epilogue.ks` | 落幕 · 全员归位 | 五门归位之后的回声:第一幕的旧话,与更深处一闪的两形 | — |
 
 ## 6. 关卡与幕
 
@@ -146,18 +125,19 @@
 
 | 序 | 幕名 | 标题 | 状态 |
 |---|---|---|---|
-| 0 | **第一幕** | 各自的路上 | ✅ v0.38.0 六场 |
-| 1 | **第二幕** | 界与边 | ✅ v0.44.0 六场 |
-| 2 | **第三幕** | 分岔 | ✅ v0.44.0 五场 |
-| 3 | **第四幕** | 蜕变 | ✅ v0.44.0 五场 |
-| 4 | **第五幕** | 刻度的真相 | ✅ v0.44.0 四场(终关接尾声)|
+| 0 | **第一幕** | 各自的路上 | ✅ 六场 native(用户重摆中)|
+| 1 | **第二幕** | 界与边 | ✅ 六场 native(用户重摆中)|
+| 2 | **第三幕** | 分岔 | ✅ 五场 native |
+| 3 | **第四幕** | 蜕变 | ✅ 五场 native |
+| 4 | **第五幕** | 刻度的真相 | ✅ 四场 native(终关接尾声)|
 
-### 6.2 在演关卡:正戏五幕 26 场(v0.44.0)
+### 6.2 在演关卡:正戏五幕 26 场(v0.45.0 原生换代)
 
-组件语义 v4(who 集合 × faces 四型,层概念已退役)× 全机关物;
-逐关七维登记见 `docs/story/seven_dimensions.md`,逐关规格源
-`tools/author_acts.py`(第二~五幕,改关重跑);作关纪律 = 引擎原生
-schema + grid_check / reach_check 双门禁逐关过线。
+`levels_native/<幕>/<场>.tscn` = NativeLevel 根 + Decor/Solid TileMapLayer +
+机关/门/信标/提示场景实例拖摆;**所见即所玩,零运行时装配**(v0.46.0 起机关
+场景壳自带正典帧预览)。逐关七维登记见 `docs/story/seven_dimensions.md`;
+作关契约与图位表 = `levels.md`;门禁 = native_check / flow_check /
+recalltest / dualtest / trait_check。
 
 ### 6.4 七幕主纲(`story.md` §1.5,叙事骨架)
 
@@ -176,19 +156,15 @@ schema + grid_check / reach_check 双门禁逐关过线。
 | 名称 | 英文 / 代码 | 说明 |
 |---|---|---|
 | 几何构成 | GEOMETRIC CONSTRUCT | 游戏名;仓库 `geometric-construct` |
-| 重跑 | RE-RUN | 肉鸽模式名(暂休眠)|
+| ~~重跑~~ | ~~RE-RUN~~ | ~~肉鸽模式名~~ v0.45.0 清退 |
 | 剧目 | REPERTOIRE | 主页一级目录(幕列表),二级为关卡列 |
 | 档案几何 | ARCHIVE GEOMETRY(`ArchivePanel`)| 五页签全面档案库:几何体 / 建筑物图鉴 / 机关图鉴 / 键位指南(多端一册)/ 剧情回顾 |
 | 召回 | R 键 / 检查点召回 | 回到最近记录点(不重置关卡;区别于暂停页重开)|
 | 属性标尺 v2 | — | 六属性:基础速度 / 弹性 / 跳高 / 重量 / 负载 / 门后极速;基准 2.0,-1.0 = 关闭 |
 
-**组件语义 v4**(`component.gd`,v0.44.1;层概念已退役):
-
-| 字段 | 取值 | 语义 |
-|---|---|---|
-| faces | full / top / bottom / none | 四面实心 / 仅顶面单向 / 仅底面(逆的天花板)/ 无碰撞纯装饰 |
-| who | 几何体下标集合(空 = 全员)| 专属 / 分组实体域;装饰件不参与三档 |
-| id | 关内唯一(缺省 401 起自动编)| 调试 / 高亮指向 / 编辑器引用 |
+~~**组件语义 v4**(`component.gd`)~~:v0.45.0 随 JSON 管线清退
+(faces 三用途全部有原生等价:装饰 = 无物理 TileMapLayer、单向 = One Way
+多边形、逆天花 = one_way_direction 反向;who = TileSet 多物理层;id = 删除)。
 
 **高亮三档**(机关物,FocusDriver):专属(受控者色描边脉冲)/ 共享(常亮)/ 无关(幽灵暗度)。
 
@@ -197,24 +173,23 @@ schema + grid_check / reach_check 双门禁逐关过线。
 | 资产 | 数量 | 路径 | 说明 |
 |---|---|---|---|
 | 几何体肖像 svg | 5 | `assets/svg/characters/` | dash / spring / fall / roll / pair |
-| 图鉴插图 png | **43** | `assets/archive/` | 建筑 15 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200 |
+| 图鉴插图 png | **43** | `assets/archive/` | 建筑 15 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200;**v0.46.0 全量重绘**(构成主义统一法相,源生成器 `tools/redraw/`) |
 | ~~图鉴 aseprite 源~~ | ~~33~~ | ~~`assets/art/tiles_v2/`~~ | v0.39.0 清退(三套自研分层系统退役);assets/archive PNG 为孤本 |
-| ~~关卡美术层~~ | ~~30~~ | ~~`assets/levels/`~~ | v0.39.0 清退:地图皮与语义层 PNG 全退,渲染 = 引擎原生节点分层(v0.43.0,levels.md §0) |
-| 机关精灵图库 | 12 源 + 12 条带 | `assets/art/mech/` | 限时桥/传送/弹射/琴键/加速门/推箱/动板/拉杆/曲面 buff + 爆点/尘/碎片动画,200×200 共 39 帧(v0.30.0,供机关 _draw→AnimatedSprite2D 迁移与图鉴动帧取用;气闸 4 帧随 v0.36 孤儿清退移除——「气闸」语义 = 踩踏开关多开关布局,由 LeverGate levers 承载)|
+| ~~关卡美术层~~ | ~~30~~ | ~~`assets/assets/levels/`~~ | v0.39.0 清退:地图皮与语义层 PNG 全退,渲染 = 引擎原生节点分层(v0.43.0,levels.md §0) |
+| ~~机关精灵图库~~ | ~~12 源 + 12 条带~~ | ~~`assets/art/mech/`~~ | v0.46.0 清退(死库存:为已废弃的 _draw→AnimatedSprite2D 迁移备料,39 帧零引用);运行时唯一机关素材 = assets/archive 正典帧 |
 
 | 游戏图标 | 7 | `icon.png`(256)+ `icon_192` + `icon_fg/bg/mono_432`(源 `assets/art/icon_construct.aseprite`)| 构成徽章 v3:墨底幽灵菱线 + 构成红斜面菱芯 + 四纸白卫星(菱/三角/圆/方);432 母版 ×4 整数导出,安全区内构图(v0.28.1,Android 启动器四字段已接线)|
-| svg 图标 | **69** | `assets/svg/` | arrows 7 / audio 4 / buttons 18 / characters 5 / icons 14 / keys 10 / objects 5 / ui 6 |
-| svg 场景物件 | 5 | `assets/svg/objects/` | exit-door / platform / portal / spike / spring |
+| svg 图标 | **18** | `assets/svg/` | 在用四类:characters 5 / keys 7 / icons 1 / buttons 5;v0.46.0 重绘 + 瘦身(孤儿 51 枚删除,全套经 `tools/redraw/spec_icons.py` 再生成)|
+| 关卡图块集 | 1 | `assets/tiles/native_tiles.png` | 224 格 16×14,gen_tiles.lua 直出;TileSet = `data/tiles/native_tileset.tres` |
 | 字体 | 1 | `assets/fonts/NotoSansSC-VF.ttf` | 思源黑体可变字重(全游戏唯一字体)|
-| 剧情脚本 | 8 | `story/*.ks` | 与 §5 篇目一一对应 |
-| 关卡 JSON | 26 | `levels/act1..act5/*.json` | 正戏五幕(v0.44.0;~~pair_trial~~ 已清退)|
+| 剧情脚本 | 7 | `story/*.ks` | 与 §5 篇目一一对应 |
+| 关卡场景 | 27 | `levels_native/` | 五幕 26 场 + dev/probe 探针(v0.45.0;~~levels/*.json 26~~ 已清退)|
 
 ## 9. 权威来源对照
 
 - 几何体:`scripts/data/geometries.gd`(名册)· `characters.md`(属性唯一权威)
 - 图鉴三页签:`scripts/data/archive_data.gd`
-- 词条:`scripts/data/run_modifiers.gd` · `roguelike.md`(系统设计)
-- 关卡与幕:`scripts/data/level_data.gd` · `levels.md`(数据规范)
-- 分层与组件:`scripts/data/component.gd` · `levels.md` §7
+- 关卡与幕:`scripts/data/level_data.gd` · `levels.md`(原生作关契约 v1)
+- 原生关卡:`levels_native/*.tscn` · 机关场景壳 `scenes/world/mechanisms/` · 方案存档 `native-levels.md`
 - 剧情:`story/*.ks` · `story.md`(§1.5 七幕主纲)
 - 术语:`docs/design/glossary.md`(三域定义 / 机关规划名对照 / 命名纪律)

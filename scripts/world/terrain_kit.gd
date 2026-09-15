@@ -1,26 +1,23 @@
 class_name TerrainKit
-## 机关物共享静态件(磁界位 / 高亮描边 / 光影遮挡体)。
+## 机关物共享静态件(正典帧布局 / 高亮描边 / 光影遮挡体)。
 ## 纯静态,无状态;地形石板已改 TileMapLayer 摆位(native-levels.md)。
-
-## 磁力边界碰撞位(伍·界/边专用;共享层为 bit1,本位为特权位)。
-const BOUNDARY_BIT := 1 << 30
 
 
 ## 机关正典帧适配(native-levels.md 素材化):把 200×200 图鉴画布上的
 ## **非透明占位框**精确映射到机关区域 zone——占位框铺满、机关碰撞区
 ## = 视觉区(所见即所碰)。构成主义平色块允许非均匀拉伸(可变宽
 ## 板条 / 覆盖带按实例尺寸拉满,不糊不空)。
-static func mech_sprite(tex: Texture2D, zone: Rect2) -> Sprite2D:
+## 布局作用于**既有**精灵:场景烘焙的 Visual 节点、@tool 编辑器预览与
+## 运行时走同一条布局路径,编辑器所见即运行时所见。
+static func mech_layout(spr: Sprite2D, tex: Texture2D, zone: Rect2) -> void:
 	var img: Image = tex.get_image()
 	if img.is_compressed():
 		img.decompress()
 	var used: Rect2 = Rect2(img.get_used_rect())
-	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false
 	spr.scale = zone.size / used.size
 	spr.position = zone.position - used.position * spr.scale
-	return spr
 
 
 ## 专属高亮描边(高亮三档,levels.md §7):几何体专属色 2px 外框 +

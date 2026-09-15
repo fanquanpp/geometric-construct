@@ -1,7 +1,8 @@
 # 第二阶段架构化重构 · 施工图(REFACTOR BLUEPRINT)
 
 > 状态:**v2.0(2026-09-13 修订:§九 外部方案甄别 + §十 第三阶段排序;v1.0 = 2026-09-12 定稿)** · 本文是"系统资产普查 / 依赖关系普查 /
-> 文档职责普查"的结论与逐文件施工图,是第二阶段架构化重构的唯一执行依据。
+> 文档职责普查"的结论与逐文件施工图,是第二阶段架构化重构的执行依据(**v0.45.0 起转历史档案**:JSON 管线与
+> 肉鸽已清退,现行架构唯一正典 = ARCHITECTURE.md,门禁表见 §七 换代版)。
 > 效力:Phase 0 的冻结清单与各 Phase 排期**须用户逐项拍板**后生效;
 > 本文本身是文档,不改任何代码。
 > 上游依据:用户《全系统重构与策划体系拆分方案》(2026-09-12);
@@ -25,6 +26,10 @@
 ---
 
 ## 二、目标系统划分(12 玩法系统 + 4 基础设施)与现状映射
+
+> **v0.45.0 判词(2026-09-15)**:04 的 JSON 管线(level_def/component/
+> level_builder)与 06 肉鸽全家已随作关换代**整体清退**;本表保留为
+> v1.0 拍板快照,现行落点以 ARCHITECTURE.md 为准。
 
 | # | 目标系统 | 现有落点(实仓) | 缺口 / 迁移动作 |
 |---|---|---|---|
@@ -371,18 +376,16 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
 > 本节为 tests/ 全量门禁的现役状态;新批次验收清单照此挑,连续多批
 > 未跑的门禁要么修活要么正式退役入档。
 
-| 门禁 | 跑法 | 状态(2026-09-14 盘点) |
+| 门禁 | 跑法 | 状态(2026-09-15 v0.46.0 盘点) |
 |---|---|---|
-| grid_check | `--script` | ✅ 现役 · 36 关 warns=17 基线 |
-| reach_check | `--script` | ✅ 现役 · 可玩性主门禁 |
-| rogue_check | `--script` | ✅ 现役 · 走查机器人 28 片段 |
+| native_check | `--path . res://tests/native_check.tscn` | ✅ 现役 · 原生关卡装载/静息门禁(v0.45 换代) |
+| flow_check | `--path . res://tests/flow_check.tscn` | ✅ 现役 · 通关流转(27 关) |
+| recalltest | `-- --recalltest` | ✅ 现役 · 召回链路 |
+| dualtest | `-- --dualtest` | ✅ 现役 · N1 五链路 |
 | trait_check | `--script` | ✅ 现役 · 物理仿真 |
-| layer_check | `--script` | ✅ 复活(v0.39.0,headless 补亮 CharacterManager.I) |
-| mover_check | `--script` | ✅ 复活(v0.39.1,补亮 + 按内容选样) |
-| modifier_check | `--script` | ✅ 现役 · 词条六组断言 |
-| ambience_check | `--script` | ✅ 现役 · 音频峰值/RMS |
-| transition_check | `--script` | ✅ 现役 · 转场五式 |
-| 流转钩子(recalltest / dualtest / nettest / autotest / --*shot) | 项目旗标 | ✅ 现役 · 分派真身 shot_harness.boot()(v0.39.1 下沉) |
+| nettest | `-- --nettest` | ✅ 现役 · LAN+ENet 回环 |
+| ambience_check / transition_check | `--script` | ✅ 现役 · 音频峰值 / 转场五式 |
+| grid_check / reach_check / rogue_check / mover_check / modifier_check | — | ☠️ 已随 v0.45.0 作关换代清退(旧数据源不存在) |
 | level_shot / story_shot / win_shot / shot_all(.tscn) | 编辑器场景 | 🗄 分镜素材,随用随开,非门禁 |
 
 **硬规矩(联网核对 godot#85062 后立)**:headless 退出码对 SCRIPT ERROR

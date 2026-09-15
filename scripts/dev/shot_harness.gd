@@ -1,9 +1,9 @@
 extends RefCounted
 ## 开发验证钩子执行器(统合重构终案 Sprint 4 自 main.gd 迁出;v0.39.1 起
 ## 旗标解析与分派一并下沉):--*shot / --autotest / --recalltest /
-## --tourshot / --trialshot 等命令行分镜与自测的唯一实现。经 Main._dev_harness()
+## --tourshot 等命令行分镜与自测的唯一实现。经 Main._dev_harness()
 ## 软引用装载,导出包剥离 scripts/dev/* 后 load 失败 → 钩子整体关闭。
-## Main 只保留游戏侧旋钮解析(--debug-grid/--zoom/--leveljson)与
+## Main 只保留游戏侧旋钮解析(--debug-grid/--zoom)与
 ## debug_* 运行时成员;run_perf_log:Android debug 真机自动 PERF 日志。
 
 var m: Main
@@ -243,7 +243,7 @@ func run_tour_shot() -> void:
 	await m.get_tree().create_timer(0.4).timeout
 	var wps: Array = []
 	var root: Node = m._level_root
-	for idx: int in m.game_flow.level_def["roster"]:
+	for idx: int in m.game_flow.level_info["roster"]:
 		var mk := root.get_node_or_null(NodePath("Spawn%d" % idx)) as Marker2D
 		if mk != null:
 			wps.append(["spawn%d" % idx, mk.global_position])

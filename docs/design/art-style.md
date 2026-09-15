@@ -32,8 +32,8 @@
 - 构成主义母题库:红色小方块标记、细线分隔条(rule)、大号数字编号(01/02…)、
   角部刻度、雪佛龙折角、几何圆环、取景框角标、斜切三角 / 梯形巨面。
 - 字体:NotoSansSC 可变字重;标题 900(+2 字距)、正文 400、注释 330。
-- SVG 素材:仅 flat 单样式;由 `tools/gen_svgs.py` 生成,禁手改;
-  ThorVG 不支持 `<text>`,字母用折线字形。
+- SVG 素材:仅 flat 单样式;在用 18 枚直改 `assets/svg/`(v0.46.0 重绘),
+  全套再生源 = `tools/redraw/spec_icons.py`;ThorVG 不支持 `<text>`,字母用折线字形。
 
 ## 3. 动效法则(MOTION RULES)
 
@@ -152,7 +152,7 @@ M8b 补充档 ≤12px 限巨构大落差坠落 / 复合事件(实机手感回写
 - **亮度模型**:`最终色 = 本体色 ×(环境档 + 光照档)`。
   受光区 ≈ AMBIENT + SUN ≈ 1.0(色板还原,附轻微冷暖分离:环境冷档、
   光暖纸白);阴影区只剩 AMBIENT(压暗 ≈30%)。
-- **rig**(LevelBuilder.build() 装配,参数常量在文件头):
+- **rig**(世界场景装配,参数常量在文件头):
   `CanvasModulate(LIGHT_AMBIENT 冷色压暗)` + `DirectionalLight2D`
   (rotation ≈ -40°,光来自左上 → 影子投向右下,沿袭旧硬投影 offset(7,8)
   的方向约定;`shadow_filter = NONE` 硬边,符合禁模糊纪律)。

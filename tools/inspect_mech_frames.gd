@@ -1,6 +1,6 @@
 extends SceneTree
 ## 机关正典帧占位检测:输出每张 PNG 的尺寸与非透明包围框(像素),
-## 供 TerrainKit.mech_sprite 精确适配机关区域。一次性工具。
+## 供 TerrainKit.mech_layout 精确适配机关区域。一次性工具。
 
 const FILES := [
 	"mech_speed_gate", "mech_speed_gate_f2",

@@ -1,7 +1,7 @@
 # 特殊建筑物设计 · STRUCTURES
 
 > 状态:现行(v0.36,记录点信标实装;注册表代码 v0.31.1 撤除)· 数据源:`scripts/entities/*`、`scripts/world/mechanisms/*`
-> (kind 路由实际落点 = LevelBuilder 装配与机制脚本自身;本文保留生命周期契约与登记纪律)
+> (kind 路由实际落点 = 场景实例拖摆与机制脚本自身,v0.45 原生换代;本文保留生命周期契约与登记纪律)
 > 关卡里除地面平台外的一切可交互构件,统一在本文登记;新构件先立项再实现。
 > v0.13 增补:§0 组件语义统一 + §5 新增动态构件(开关门 / 限时桥)。
 
@@ -75,22 +75,25 @@
 ## 6. 命名与登记规则
 
 - 新构件:实体脚本进 `scripts/entities/`,地图机关进
-  `scripts/world/mechanisms/`(按 §7 生命周期契约实现,LevelBuilder 装配);
+  `scripts/world/mechanisms/`(按 §7 生命周期契约实现;场景壳 = 正典帧
+  Visual + @tool 预览,所见即所得,见 levels.md §0);
   渲染辅助进 `scripts/world/render/`。
-- LevelDef 新字段必须可被 JSON 同构表达(未来数据互通的前置)。
+- ~~LevelDef 新字段 JSON 同构~~ 已随 v0.45 JSON 管线清退;机关参数一律
+  `@export`(R2,Inspector 直调)。
 - 构件外观 ~~引擎侧 `_draw()` 程序化绘制~~ → **2026-09-15 用户令:`_draw`
-  制图计划废止**,新机关按素材化设计(机关素材库 39 帧已在库
-  `assets/art/mech/`,本就为 _draw→AnimatedSprite2D 迁移备料;
-  作关换代方案 native-levels.md §2);过渡期既有 `_draw` 外观保留到 M4。
+  制图计划废止**,新机关按素材化设计:正典帧 = `assets/archive/mech_*.png`
+  (v0.46 构成主义重绘),场景壳烘焙 Visual 精灵 + `@tool` 预览;
+  `_draw` 只留动态状态绘制(高亮脉冲 / 弹射箭头 / 预警闪,AGENTS R1 豁免)。
+  (旧备料库 art/mech 39 帧已随 v0.46 清退。)
 - 本文档同步追加"外观 / 物理 / 演出"三行,缺一不收。
 
 ## 7. 机制生命周期契约与标签(v0.23.0,统合重构终案 Sprint 2)
 
 一切地图机关(`scripts/world/mechanisms/`)遵循统一契约。
 (v0.31.1 注:原 `MechanismRegistry` kind→脚本注册表因从未接线被撤除——
-实装路由一直在 LevelBuilder 装配与机制脚本自身;契约本身不受影响。)
-新机制三步:新建脚本(按需实现钩子)→ LevelBuilder 装配分支登记 →
-本文档补条目。
+实装路由 v0.45 起 = 场景实例,契约钩子不变。)
+新机制三步:建场景壳(脚本 + 正典帧 Visual + @tool 预览)→
+`levels_native/` 拖摆验收 → 本文档补条目。
 
 ### 生命周期(鸭子类型,机制脚本可选实现)
 
@@ -137,6 +140,7 @@ StringName 直书于 Comp.tags 与 levels 数据。)
 | 物理 | Area2D 触发区(72×96,玩家层),零碰撞;触碰按**体身份键**(`body_key`)登记召回落点(`roster.checkpoints`,最近触碰语义;双体两半各占一键,characters.md §5) |
 | 演出 | 触碰即 `arrive` 音 + 亮灯;死亡重生与 R 召回回最近信标(无记录点回出生点);联机主机权威,客机经 `EV_CHECKPOINT` 复现亮灯,召回走既有 `net_recall` 通路 |
 
-- 数据契约:LevelDef.checkpoints = `[{pos: Vector2 召回落点}]`,JSON 同构。
+- 数据契约:checkpoint_beacon 场景实例摆位即数据(召回落点 = 实例坐标,
+  联机按 beacon_id 寻址)。
 - 触发区惯例(2026-09-13 联网核对):保持 monitoring 常开 + 布尔记账防重放,
   不在 body_entered 回调里改物理状态。

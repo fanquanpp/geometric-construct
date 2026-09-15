@@ -103,7 +103,7 @@ StoryLayer / BootIntro / TitleMark / adaptive / ui.gd(字体部分)。
 - **Spacing/Grid**:1 格=100px 世界;UI 侧 8px 基准栅格(提案,Phase 4
   定稿);对话框 1/4 屏(正典)。
 - **Shape/Border**:直角、1–2px 边框、硬高光条 40%×3px(正典 §7)。
-- **Icon**:`assets/svg/` 68 枚扁平库;新增走 gen_svgs 管线。
+- **Icon**:`assets/svg/` 18 枚在用扁平库(v0.46 重绘瘦身);新增走 tools/redraw 管线。
 - **Motion**:六种基础动作 + 档位(fx-light-uiux.md 卷四);UI Motion
   Grammar(页面进出场四拍:切线→块定位→标题落位→内容展开)。
 - **Sound**:UI 音事件化(`UI_Focus/Hover/Click/Confirm/Cancel/Back/

@@ -35,8 +35,7 @@ func build(p, page: Control) -> void:
 		b.add_theme_constant_override("h_separation", 10)
 		b.add_theme_stylebox_override("pressed",
 			Ui.sb(Color(Palette.I.ink_3, 1.0), 0, Color(Palette.I.paper, 0.55), 1, 10, 6))
-		b.icon = Ui.icon("buttons/story-flat.svg") if ResourceLoader.exists(
-			"res://assets/svg/buttons/story-flat.svg") else Ui.icon("buttons/play-flat.svg")
+		b.icon = Ui.icon("buttons/play-flat.svg")
 		b.pivot_offset = Vector2(12, 29)
 		Ui.wire_button(b, "ui_page")
 		b.pressed.connect(func() -> void:

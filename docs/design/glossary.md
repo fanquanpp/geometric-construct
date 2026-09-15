@@ -12,8 +12,8 @@
 | 名词域 | 定义 | 代码落点 |
 |---|---|---|
 | **几何体**(Geometry) | 自机可控角色。玩家直接操纵的、有性格与命运的形状 | `GeometryDef`(数据)/ `Player`(实体)/ `scripts/data/geometries.gd`(名册) |
-| **建筑物**(Building) | 构成地图的静态结构:地面、墙壁、普通三角斜坡、梯形坡道、下凹坎等。不可交互、不可机关化,只提供地形 | `LevelDef.platforms / ramps` + `TerrainKit.slab_node`(引擎原生节点分层) |
-| **机关物**(Mechanism) | 地图内嵌的机关或道具:移动平台、电梯平台、光电门、加速坡道、音符地板、跃迁门、压力感应器、反重力门等。改变规则或运动的构件 | `scripts/entities/*` + `LevelBuilder` 内部类(登记表见 structures.md) |
+| **建筑物**(Building) | 构成地图的静态结构:地面、墙壁、普通三角斜坡、梯形坡道、下凹坎等。不可交互、不可机关化,只提供地形 | `levels_native/*.tscn` 的 Solid/Decor TileMapLayer(引擎原生节点分层) |
+| **机关物**(Mechanism) | 地图内嵌的机关或道具:移动平台、电梯平台、光电门、加速坡道、音符地板、跃迁门、压力感应器、反重力门等。改变规则或运动的构件 | `scenes/world/mechanisms/*.tscn` 场景实例(登记表见 structures.md) |
 
 判定口诀:**能被操控的是几何体;踩上去只是站着的建筑物;改变规则或自己会动的机关物。**
 

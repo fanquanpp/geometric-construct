@@ -67,13 +67,13 @@ var _doors: Dictionary:
 var net_session: NetSession      # 会话中枢(Main 创建,两端路径一致才能 RPC 寻址)
 var net_room_layer: NetRoomLayer # 房间流程页(流程带 30)
 
-## _level_def 真身同在 GameFlow(域未就绪回退原默认值)。
-var _level_def: Dictionary:
+## _level_info 真身同在 GameFlow(域未就绪回退原默认值)。
+var _level_info: Dictionary:
 	get:
-		return game_flow.level_def if game_flow != null else null
+		return game_flow.level_info if game_flow != null else null
 	set(value):
 		if game_flow != null:
-			game_flow.level_def = value
+			game_flow.level_info = value
 
 # ———— 自动化测试 ————
 ## 测试模式:屏蔽真实键盘的切换/重开/暂停输入,避免外部按键干扰自动验证。
@@ -398,9 +398,9 @@ func _physics_process(_delta: float) -> void:
 	if archive_panel.is_open or settings_panel.is_open:
 		return
 	if _state == State.PLAYING:
-		# 状态空窗守卫:转场窗口期 _state 已是 PLAYING 而 _level_def
+		# 状态空窗守卫:转场窗口期 _state 已是 PLAYING 而 _level_info
 		# 尚未装配时,本帧无可玩数据——整帧跳过,防 Nil 逐帧报错
-		if _level_def == null:
+		if _level_info == null:
 			return
 		_check_deaths()
 		if debug_solo:
@@ -414,9 +414,9 @@ func _physics_process(_delta: float) -> void:
 		# 数字键按名册位直达(v0.21.0):KEY_1..5 = roster[0..4] 的几何体;
 		# 双子(伍)同位两具 —— 再按同键即换另一半。旧实现映射槽位,
 		# 双体展开后第 6 具(边)永远够不到。
-		for i in mini(_level_def.roster.size(), 5):
+		for i in mini(_level_info.roster.size(), 5):
 			if _key_pressed(KEY_1 + i):
-				switch_to_geo(int(_level_def.roster[i]))
+				switch_to_geo(int(_level_info.roster[i]))
 
 		if Input.is_action_just_pressed("recall"):
 			recall_active()
@@ -464,7 +464,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func _check_deaths() -> void:
-	roster.check_deaths(_level_def)
+	roster.check_deaths(_level_info)
 
 
 func _restart_level() -> void:

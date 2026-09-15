@@ -10,12 +10,11 @@ extends Area2D
 ## 不在 body_entered 回调里改物理状态。
 
 @export var beacon_id := 0    # 关内序号(联机事件寻址)
-## 信标精灵(图鉴正典两帧:灭 / 亮);200 画布 ×0.5,底缘贴地。
-const T_OFF := preload("res://assets/archive/mech_checkpoint.png")
+## 信标精灵 = 场景烘焙 Visual(图鉴正典两帧:灭/亮;亮灯换 f2 贴图)。
 const T_ON := preload("res://assets/archive/mech_checkpoint_f2.png")
 var _on := false              # 亮灯态(任一半体登记即亮)
 var _lit := {}                # body_key -> true(已登记半体,防重复演出)
-var _spr: Sprite2D
+@onready var _spr: Sprite2D = $Visual
 
 
 func _ready() -> void:
@@ -31,13 +30,7 @@ func _ready() -> void:
 		cs.shape = RectangleShape2D.new()
 	cs.shape.size = Vector2(72, 96)
 	cs.position = Vector2(0, -32)
-	_spr = Sprite2D.new()
-	_spr.texture = T_OFF
-	_spr.scale = Vector2(0.5, 0.5)
-	_spr.position = Vector2(0, -50)
-	add_child(_spr)
 	body_entered.connect(_on_body_entered)
-	z_index = 3
 
 
 func _on_body_entered(body: Node2D) -> void:

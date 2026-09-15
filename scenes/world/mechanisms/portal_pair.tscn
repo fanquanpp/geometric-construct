@@ -1,6 +1,17 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/mechanisms/portal_pair.gd" id="1"]
+[ext_resource type="SpriteFrames" path="res://data/mech/portal_frames.tres" id="2"]
 
 [node name="PortalPair" type="Node2D"]
+z_index = 4
 script = ExtResource("1")
+[node name="DoorA" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("2")
+autoplay = "default"
+scale = Vector2(0.79646, 1.504425)
+[node name="DoorB" type="AnimatedSprite2D" parent="."]
+position = Vector2(240, 0)
+sprite_frames = ExtResource("2")
+autoplay = "default"
+scale = Vector2(0.79646, 1.504425)

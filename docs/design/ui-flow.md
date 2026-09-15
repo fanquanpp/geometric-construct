@@ -148,5 +148,5 @@ Boot > StoryLayer > 面板带(35–38,`is_open` 早退)> 菜单二级面板
   `Main.State`(Screen)/ Director(Flow)。
 - 与公共前置「输入抽象(输入槽)」的关系:UiRouter 消费同一抽象,
   两者可同期重构(触屏虚拟键 = 一种 input_source)。
-- 重构验收:§5 四项隐患(R1–R4)全部消解 + `--rogueshot` / `--menushot`
+- 重构验收:§5 四项隐患(R1–R4)全部消解 + `--panelshot` / `--menushot`
   截图回归无差异。
