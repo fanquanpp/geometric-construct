@@ -1,14 +1,14 @@
 # 几何构成 GEOMETRIC CONSTRUCT
 
-> 仓库 **geometric-construct** · 构成主义几何肉鸽游戏 · **Godot 4.7**(GDScript 2.0)
+> 仓库 **geometric-construct** · 构成主义几何平台闯关 · **Godot 4.7**(GDScript 2.0)
 
 致敬《Thomas Was Alone》的 platformer 底子,以**构成主义**为美术与演出语言:
 五位几何体——**疾**(红方 · 冲刺/爬墙)、**跃**(黄竖长方 · 强反弹/承载)、
 **逆**(蓝镜像方 · 重力置换)、**圆**(橙圆球 · 惯性滚动/切线飞跃)、
 **伍**(紫三角双子「界/边」· 磁力边界)——
 各持一种"形状即性格"的能力,合作闯关、抵达终点门。
-**第一幕「各自的路上」六场在演**(2026-09-15 原生编辑器作关重制);
-第二~五幕占位重制中(剧本档案保留,关卡随批续作)。
+**正戏五幕 26 场全量在演**(2026-09-15 起以原生编辑器作关:
+TileMapLayer 摆位 + 机关场景实例,`levels_native/`)。
 
 当前版本 **v0.45.0**(唯一来源 `scripts/core/version.gd`,变更明细见 [CHANGELOG.md](CHANGELOG.md))。
 
@@ -34,9 +34,9 @@
   (终点门吸入 3 帧 / 限时桥 1s 循环 / 传送对规划条目 3 帧);
   手柄支持(十字键翻页 / LB·RB 切页 / B 返回)+ 安全区自适应版面;
   条目走纯数据表 `ArchiveData`,新增条目零代码。
-- **坐标化辅助设计**(levels.md §8,Dimensions 量尺表已生效):
-  净空 / 走道 / 坡度 / 台阶全从量尺表推导;zones 分区坐标系与
-  `--gridcheck` 校验器已定稿待实装。
+- **图块集**(assets/tiles/,100px 网格):由 aseprite 绘制导出,
+  `data/tiles/native_tileset.tres` 配物理层——共享 + 逐角色专属;
+  单向踏面 / 逆天花板为碰撞多边形原生属性(所见即所碰)。
 - **机制**:二段跳、踩头承载与超载减半、重力置换(逆)、纯滚动与
   曲面板切线飞跃(圆)、爬墙(疾)、磁力边界(伍双子,唯逆可穿)、
   加速门(2.5×)、移动构件(摆渡 / 电梯)、动态构件(限时桥 / 开关门——
@@ -93,7 +93,7 @@
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 代码结构与分层规范(唯一权威) |
 | [docs/DESIGN.md](docs/DESIGN.md) | 设计速查表 + `docs/design/` 分类档案索引 |
 | [docs/ASSETS.md](docs/ASSETS.md) | 游戏内名称名词与资产统计速查(几何体 / 建筑 / 机关 / 词条 / 剧情 / 关卡)|
-| [docs/ROADMAP.md](docs/ROADMAP.md) | 后续方向:地图编辑分享 / 同屏双人 / 联机 / 肉鸽 |
+| [docs/design/levels.md](docs/design/levels.md) · [docs/design/native-levels.md](docs/design/native-levels.md) | 关卡作关契约与原生作关换代方案档案 |
 | [docs/UPDATE.md](docs/UPDATE.md) | 版本号 / 存档兼容 / 内容包 / 发版检查单 |
 | [CHANGELOG.md](CHANGELOG.md) | 全部版本变更记录 |
 
