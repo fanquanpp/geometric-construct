@@ -122,7 +122,7 @@ geometric-construct/
 │                            #   全套图标可经 tools/redraw/spec_icons.py 再生成
 ├── tools/
 │   ├── gen_tiles.lua        # 图块集生成器(assets/tiles 唯一来源)
-│   ├── build_native_levels.py  # 二~五幕场景生成器(act2_src/*.json 转译)
+│   ├── restyle_native_acts.gd  # 二~五幕图块重摆(幂等;act2/s01 跳过)
 │   ├── redraw/              # 素材重绘生成器 + 校验器(v0.46.0 入库)
 │   ├── inspect_mech_frames.gd  # 机关正典帧占位框实测(一次性)
 │   └── scan_tiles.gd        # 图块集逐格审计
