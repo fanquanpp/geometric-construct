@@ -415,8 +415,6 @@ func run_recall_test() -> void:
 	m.switch_to_geo(4)
 	await m.get_tree().physics_frame
 	var jie: Player = m.players[m.view_slot()]
-	print("DBG jie ph=", jie.pair_half, " g=", jie.gravity_dir,
-		" pos=", jie.position, " spawn=", jie.spawn_pos)
 	var ok_jie: bool = jie.pair_half == 0 and jie.gravity_dir == -1
 	jie.position = jie.spawn_pos + Vector2(600, 0)
 	await _recall_keypress()
