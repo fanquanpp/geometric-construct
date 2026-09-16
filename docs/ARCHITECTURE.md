@@ -113,8 +113,11 @@ geometric-construct/
 ├── assets/
 │   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入)
 │   ├── archive/             # 档案几何示例图(200×200 PNG,图鉴唯一运行时
-│   │                        #   素材;v0.46.0 构成主义全量重绘,生成器
+│   │                        #   素材;v0.48.0 平涂重构,生成器
 │   │                        #   tools/gen_archive.lua,PNG 为孤本可直改)
+│   ├── brand/               # 品牌图标:Android 启动器 192 + 自适应
+│   │                        #   前景/背景/单色 432(源 icon_construct.aseprite)
+│   ├── fx/                  # 转场 shader(sweep / block_dissolve)
 │   ├── tiles/               # 关卡图块集 native_tiles.png(tools/gen_tiles.lua 直出)
 │   ├── fonts/               # NotoSansSC 可变字体
 │   └── ui/                  # UI 图标图集 icons.png(64px 网格 5 列,
