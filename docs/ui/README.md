@@ -1,6 +1,6 @@
 # UI/UX 图册 · UI GALLERY
 
-> v0.29.1 全量界面截图归档 · **v0.47.1 全量重截**(v0.46 素材重绘后全屏刷新;boot 两屏未受影响沿用旧图):每屏 1280×720 设计稿基准,标注入口、主要
+> v0.29.1 全量界面截图归档 · **v0.47.1 全量重截** · **v0.48.1 重截受素材重构影响的 12 屏**(v0.48 SVG 退役图集化 / 档案平涂插画 / 纯文字署名;boot 标记屏与设置、房间页无图标调用沿用):每屏 1280×720 设计稿基准,标注入口、主要
 > 按钮/交互与状态对应。规范权威 = `docs/design/ui-flow.md`(六大 UX 空间、
 > 页面规范模板、九态 UNKNOWN 链)与 `docs/ui/00-ui-master-plan.md`;
 > 本图册是**视觉验收基准**,改任何 UI 前先对照,改完必须重截对应屏。
@@ -13,7 +13,7 @@
 | 图 | 内容 | 交互 |
 |---|---|---|
 | ![boot](ui_01_boot_mark.png) | 红色标记块硬立 + 「几何构成」逐字落位 | 点按/任意键跳过 |
-| ![boot2](ui_01b_boot_full.png) | 英文名 + 定位语 + 刻线横扫;底部引擎署名(**Godot 官方 logo**,非游戏图标) | — |
+| ![boot2](ui_01b_boot_full.png) | 英文名 + 定位语 + 刻线横扫;底部引擎署名(**POWERED BY GODOT ENGINE 纯文字**;v0.48.0 起 logo 退役,CC BY 出处保留) | — |
 
 ## 标题菜单 MENU(Main.State.MENU)
 
@@ -28,7 +28,7 @@
 |---|---|
 | ![geo](ui_05_archive_geo.png) | 几何体档案页签(左列五位,右详情:肖像/数值/台词) |
 | ![keys](ui_10_archive_keys.png) | 键位指南页签(**多端一册**:键鼠/手柄/触屏同册对照) |
-| ![bld](ui_11_archive_bld.png) | 建筑页签(v0.46 重绘正典帧;左列图鉴,右规格/要点) |
+| ![bld](ui_11_archive_bld.png) | 建筑页签(v0.48 平涂重构正典帧;左列图鉴,右规格/要点) |
 | ![mech](ui_11b_archive_mech.png) | 机关页签(同构;动态帧 f2/portal 见 `--panelshot`) |
 | ![story](ui_12_archive_story.png) | 剧情回顾页签(全文本阅读器,台词按角色着色) |
 | ![storylist](ui_12b_archive_story_list.png) | 剧情目录页(五幕 + 落幕篇目,节拍预览) |
