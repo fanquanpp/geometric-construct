@@ -20,11 +20,11 @@
 | 幕(七幕主纲) | 7(5 已演 + 序幕/落幕剧本)| `story.md` §1.5 |
 | 关卡(在演) | 26(五幕全战役 native)+ dev/probe 探针 | `levels_native/act1..act5/*.tscn` | v0.45 换代:JSON 26 关管线退役(归档 git 历史);一/二幕用户重摆中 |
 | ~~测试道~~ | ~~2~~ | ~~trial_v5 / pair_trial~~ | v0.44.0 清退(测试关内容清退令)|
-| 图鉴插图(入引擎) | 43 张 png(**v0.46.0 构成主义全量重绘**)| `assets/archive/` |
+| 图鉴插图(入引擎) | 43 张 png(**v0.48.0 生成器重构**,平涂构成主义)| `assets/archive/` |
 | 图块集(入引擎) | 1(native_tiles.png,224 格 16 列×14 行)| `assets/tiles/` | v0.45 原生作关唯一图块素材,图位契约 levels.md §0;PNG 为孤本,生成器 `tools/gen_tiles.lua` 同批入库;**不在 v0.46 重绘轮**(坐标契约与物理层绑定,以 e6c5b1d 审计终态为准) |
-| aseprite 源 | 4 个(icon_construct 1 + native_tiles 1 + ui 卡框 2)| `assets/art/`、`assets/art/ui/` | v0.46.0 清退 mech 精灵源 12 + strip 12(死库存);v0.39.0 清退:地图皮源 30(levels/)+ 图鉴源 33(tiles_v2/)|
+| aseprite 源 | 5 个(icon_construct 1 + native_tiles 1 + icons 1 + ui 卡框 2)| `assets/art/`、`assets/art/ui/` | v0.48.0 起 icons.aseprite = 全部 UI 图标的唯一源;v0.46.0 清退 mech 精灵源 12 + strip 12;v0.39.0 清退地图皮源 30 + 图鉴源 33 |
 | 音频数据 .tres | 34(data/music 6 + data/sfx 28)| `data/music/`、`data/sfx/` | M-7/M-8 数值资源化(v0.38):BGM motif 与音效规格全 @export,Inspector 直调 |
-| svg 图标 | 18 个(在用 4 类)| `assets/svg/` | v0.46.0 重绘并瘦身:孤儿 51 枚删除;全套 69 枚可经 `tools/redraw/spec_icons.py` 再生成 |
+| ~~svg 图标~~ | ~~18~~ | ~~`assets/svg/`~~ | **v0.48.0 SVG 全面退役**(用户令):UI 图标 = `assets/ui/icons.png` 图集(aseprite 源 `assets/art/icons.aseprite`,生成器 `tools/gen_icons.lua`) |
 | 字体 | 1(NotoSansSC-VF)| `assets/fonts/` |
 
 ## 1. 几何体(角色)
@@ -179,7 +179,7 @@ recalltest / dualtest / trait_check。
 | ~~机关精灵图库~~ | ~~12 源 + 12 条带~~ | ~~`assets/art/mech/`~~ | v0.46.0 清退(死库存:为已废弃的 _draw→AnimatedSprite2D 迁移备料,39 帧零引用);运行时唯一机关素材 = assets/archive 正典帧 |
 
 | 游戏图标 | 7 | `icon.png`(256)+ `icon_192` + `icon_fg/bg/mono_432`(源 `assets/art/icon_construct.aseprite`)| 构成徽章 v3:墨底幽灵菱线 + 构成红斜面菱芯 + 四纸白卫星(菱/三角/圆/方);432 母版 ×4 整数导出,安全区内构图(v0.28.1,Android 启动器四字段已接线)|
-| svg 图标 | **18** | `assets/svg/` | 在用四类:characters 5 / keys 7 / icons 1 / buttons 5;v0.46.0 重绘 + 瘦身(孤儿 51 枚删除,全套经 `tools/redraw/spec_icons.py` 再生成)|
+| UI 图标图集 | 1(18 格)| `assets/ui/icons.png` | v0.48.0 替代全部 SVG;源 = `assets/art/icons.aseprite`(gen_icons.lua)|
 | 关卡图块集 | 1 | `assets/tiles/native_tiles.png` | 224 格 16×14,gen_tiles.lua 直出;TileSet = `data/tiles/native_tileset.tres` |
 | 字体 | 1 | `assets/fonts/NotoSansSC-VF.ttf` | 思源黑体可变字重(全游戏唯一字体)|
 | 剧情脚本 | 7 | `story/*.ks` | 与 §5 篇目一一对应 |

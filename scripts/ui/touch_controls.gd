@@ -47,9 +47,9 @@ func _ready() -> void:
 
 	# 切换已重构(v0.17.2):直接点按左上队伍 chips 切换,不再设切换按钮。
 	# —— 右上:召回 / 暂停(方盘按钮行,图标 + 文字标签) ——
-	_add_button("buttons/recall-flat.svg", "buttons/recall-flat-on.svg",
+	_add_button("buttons/recall", "buttons/recall-on",
 		"recall", "召回")
-	_add_button("buttons/pause-flat.svg", "buttons/pause-flat-on.svg",
+	_add_button("buttons/pause", "buttons/pause-on",
 		"pause", "暂停")
 
 	# —— 左下:左右方向轮盘(拉满自动加速) ——

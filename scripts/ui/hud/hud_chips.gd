@@ -109,7 +109,7 @@ func _rebuild_chips(roster: Array) -> void:
 			Ui.BODY, Color(Palette.I.paper, 0.75), HORIZONTAL_ALIGNMENT_LEFT)
 		hb.add_child(lab)
 		var check := TextureRect.new()
-		check.texture = Ui.icon("icons/check-flat.svg")
+		check.texture = Ui.icon("icons/check")
 		check.custom_minimum_size = Vector2(18, 18)
 		check.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		check.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED

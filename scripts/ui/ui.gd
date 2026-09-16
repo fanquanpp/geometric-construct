@@ -269,8 +269,42 @@ static func _button_scale(b: Button, target: float) -> void:
 
 
 # ———— 纹理小工具 ————
+# 图标唯一源 = assets/ui/icons.png(aseprite 源 assets/art/icons.aseprite,
+# 生成器 tools/gen_icons.lua;v0.48.0 起 SVG 全面退役)。键 = 图标名
+# (无扩展名),图集 64px 网格 5 列。
+const ICON_ATLAS := preload("res://assets/ui/icons.png")
+const ICON_CELLS := {
+	"characters/dash": Vector2i(0, 0),
+	"characters/spring": Vector2i(1, 0),
+	"characters/fall": Vector2i(2, 0),
+	"characters/roll": Vector2i(3, 0),
+	"characters/pair": Vector2i(4, 0),
+	"keys/key-a": Vector2i(0, 1),
+	"keys/key-d": Vector2i(1, 1),
+	"keys/key-space": Vector2i(2, 1),
+	"keys/key-shift": Vector2i(3, 1),
+	"keys/key-tab": Vector2i(4, 1),
+	"keys/key-r": Vector2i(0, 2),
+	"keys/key-esc": Vector2i(1, 2),
+	"icons/check": Vector2i(2, 2),
+	"buttons/play": Vector2i(3, 2),
+	"buttons/recall": Vector2i(4, 2),
+	"buttons/recall-on": Vector2i(0, 3),
+	"buttons/pause": Vector2i(1, 3),
+	"buttons/pause-on": Vector2i(2, 3),
+}
 
 static func icon(rel: String) -> Texture2D:
 	if not _icons.has(rel):
-		_icons[rel] = load("res://assets/svg/" + rel)
+		var tex: Texture2D = null
+		var cell: Variant = ICON_CELLS.get(rel)
+		if cell != null:
+			var at := AtlasTexture.new()
+			at.atlas = ICON_ATLAS
+			var c: Vector2i = cell
+			at.region = Rect2(c.x * 64, c.y * 64, 64, 64)
+			tex = at
+		else:
+			push_warning("Ui.icon: 未知图标 %s" % rel)
+		_icons[rel] = tex
 	return _icons[rel]

@@ -90,6 +90,15 @@ func _draw() -> void:
 	if Palette.I == null:
 		return   # 编辑器极早期:静态资源未就绪,下帧重试
 	if pts.size() < 2:
+		if Engine.is_editor_hint():
+			# 未配置占位:虚线斜面提示"这里将是一段曲面"(pts 逐点编辑)
+			var hcol := Color(Palette.I.dim, 0.7)
+			for i in 6:
+				var t0 := i / 6.0
+				draw_line(Vector2(t0 * 200.0, -t0 * 100.0),
+					Vector2((t0 + 0.08) * 200.0, -(t0 + 0.08) * 100.0), hcol, 2.0)
+			draw_line(Vector2(-10, 0), Vector2(210, 0),
+				Color(Palette.I.paper, 0.25), 2.0)
 		return
 	# 顶缘亮线(正典帧贴包围盒下衬之上,保持曲线可读)
 	draw_polyline(pts, Color(Palette.I.paper, 0.35), 2.0)

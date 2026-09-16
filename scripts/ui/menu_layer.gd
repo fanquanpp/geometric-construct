@@ -151,7 +151,7 @@ func _ready() -> void:
 	for i in 4:
 		var s := 34.0 + i * 10.0
 		var ico: TextureRect = _floaters_node(i)
-		ico.texture = Ui.icon("characters/%s-flat.svg" % Geometries.ALL[i].slug)
+		ico.texture = Ui.icon("characters/%s" % Geometries.ALL[i].slug)
 		ico.position = Vector2(xs[i] * 1280.0, ys[i] * 720.0)
 		_floaters.append(ico)
 		_floater_seed.append({"spin": (0.22 if i % 2 == 0 else -0.16) * (1.0 + i * 0.12),

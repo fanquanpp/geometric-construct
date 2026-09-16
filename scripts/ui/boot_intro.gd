@@ -121,20 +121,12 @@ func _ready() -> void:
 	_sweep.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stage.add_child(_sweep)
 
-	# —— 引擎署名(底部):Godot 图标 + 名称 logo(CC BY 4.0 署名要求)
-	# 这里必须是 Godot 引擎官方 logo(署名对象是引擎),不是游戏图标 ——
-	# v0.28.1 曾错挂 icon.png,被用户指出纠正。
+	# —— 引擎署名(底部):POWERED BY GODOT ENGINE 纯文字(CC BY 署名;
+	# v0.48.0 SVG 全面退役,官方 logo svg 随之移除,文字署名保留出处)。
 	var godot_row := HBoxContainer.new()
 	godot_row.add_theme_constant_override("separation", 10)
 	godot_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	godot_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	var gd_icon := TextureRect.new()
-	gd_icon.texture = load("res://Godot_logo_icon.svg")
-	gd_icon.custom_minimum_size = Vector2(34, 34)
-	gd_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	gd_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	gd_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	godot_row.add_child(gd_icon)
 	var gd_label := Ui.l("POWERED BY GODOT ENGINE", 14, Ui.LIGHT, Color(Palette.I.paper, 0.55),
 		HORIZONTAL_ALIGNMENT_CENTER, false, 3)
 	gd_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER

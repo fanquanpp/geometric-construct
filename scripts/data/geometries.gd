@@ -2,7 +2,7 @@ class_name Geometries
 ## 几何体数据注册表(场景资源强制约束 R2 / REFACTOR §八 M-4):
 ## 装载 data/characters/*.tres(GeometryDef 资源)。
 ## 新增几何体:在 data/characters/ 追加一份 .tres(参照 dash.tres),
-## 在 _PATHS 尾部登记下标,并提供 assets/svg/characters/<slug>-flat.svg;
+## 在 _PATHS 尾部登记下标,并提供 icons.png 图集 characters/<slug> 格;
 ## 规范见 docs/UPDATE.md(内容包章节)。下标只能尾部追加(存档按位掩码)。
 
 ## 标尺换算:1.0 属性单位 = 100 px(1 格)。结构性单位常量(非调参数值)。

@@ -113,12 +113,12 @@ func _ready() -> void:
 
 	# 门上悬浮的几何体徽标 / 到站勾
 	_icon = Sprite2D.new()
-	_icon.texture = Ui.icon("characters/%s-flat.svg" % Geometries.ALL[geo_index].slug)
+	_icon.texture = Ui.icon("characters/%s" % Geometries.ALL[geo_index].slug)
 	_icon.position = Vector2(0, -size.y / 2.0 - 30)
 	_icon.scale = Vector2(0.62, 0.62)
 	add_child(_icon)
 	_check = Sprite2D.new()
-	_check.texture = Ui.icon("icons/check-flat.svg")
+	_check.texture = Ui.icon("icons/check")
 	_check.position = Vector2(0, -size.y / 2.0 - 30)
 	_check.scale = Vector2(0.5, 0.5)
 	_check.visible = false
@@ -213,7 +213,7 @@ func _editor_sync(force: bool) -> void:
 	var box := Node2D.new()
 	box.name = "EditorPreview"
 	var badge := Sprite2D.new()
-	badge.texture = Ui.icon("characters/%s-flat.svg" % Geometries.ALL[geo_index].slug)
+	badge.texture = Ui.icon("characters/%s" % Geometries.ALL[geo_index].slug)
 	badge.position = Vector2(0, -size.y / 2.0 - 30)
 	badge.scale = Vector2(0.62, 0.62)
 	box.add_child(badge)

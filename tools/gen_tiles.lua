@@ -8,8 +8,9 @@
 -- 兼容:图位 (0,0)(1,0)(2,0)(0,1)(1,1) 语义与 v0.45 占位版一致,
 --       现役六场场景零改动直换。
 
-local spr = app.activeSprite
-if not spr then error("no active sprite") end
+-- v2:自建全尺寸画布(1600×1400 = 224 格),不再依赖外部工作文件
+-- (旧工作文件停留在 40 格时代,曾导致 PNG 被裁成 400×1000 的事故)。
+local spr = Sprite(1600, 1400, ColorMode.RGB)
 
 local W, H = spr.width, spr.height
 local img = Image(W, H, spr.colorMode)
@@ -32,10 +33,10 @@ local YEL   = C(232, 179, 58)   -- #E8B33A
 local BLU   = C(78, 134, 216)   -- #4E86D8
 local ORG   = C(224, 126, 46)   -- #E07E2E
 -- PAPER·30% 平色混合(over 各底色,顶缘线 art-style §6)
-local EDGE_S = C(98, 100, 104)   -- over 石板
-local EDGE_L = C(105, 109, 116)  -- over 亮面板
-local EDGE_M = C(112, 116, 126)  -- over 动板亮面板
-local EDGE_I = C(87, 88, 89)     -- over INK2
+local EDGE_S = C(128, 128, 122)   -- over 石板(纸白 45% 调,v2 提亮)
+local EDGE_L = C(138, 138, 132)  -- over 亮面板(纸白 48% 调,v2)
+local EDGE_M = C(144, 146, 152)  -- over 动板亮面板(v2)
+local EDGE_I = C(112, 112, 108)  -- over INK2(v2 提亮)
 
 -- ── 基元 ──────────────────────────────────────────────────────────
 local function px(x, y, c) img:drawPixel(x, y, c) end
@@ -415,45 +416,48 @@ end
 -- ══ R4–R7 · 地形 16 邻接族(全碰撞;暴露面画边,供手拼 / 地形集) ═══
 -- 石板族(主地形)+ 亮面板族(高台/奖励层)+ 墨块族(深井/背景实体)
 do
-  local function terraF(cx, cy, n, e, s, w, body, edge, side)
+  local function terraF(cx, cy, n, e, s, w, body, edge, side, lit)
     local ox, oy = T(cx, cy)
     fill(ox, oy, 100, 100, body)
-    if n then hline(ox, oy, 100, edge, 3) end
+    if n then
+      hline(ox, oy, 100, edge, 4)
+      fill(ox, oy + 4, 100, 9, lit)   -- v2 顶受光带(§6.1 panel 顶部受光)
+    end
     if s then hline(ox, oy + 96, 100, side, 4) end
     if w then vline(ox, oy, 100, side, 4) end
     if e then vline(ox + 96, oy, 100, side, 4) end
     return ox, oy
   end
-  local function family(col0, body, edge, side)
-    terraF(col0 + 0, 4, true, false, false, true, body, edge, side)   -- 顶左角
-    terraF(col0 + 1, 4, true, false, false, false, body, edge, side)  -- 顶边
-    terraF(col0 + 2, 4, true, true, false, false, body, edge, side)   -- 顶右角
-    terraF(col0 + 3, 4, true, true, true, true, body, edge, side)     -- 孤块
-    terraF(col0 + 0, 5, false, false, false, true, body, edge, side)  -- 左边
-    terraF(col0 + 1, 5, false, false, false, false, body, edge, side) -- 中心
-    terraF(col0 + 2, 5, false, true, false, false, body, edge, side)  -- 右边
-    terraF(col0 + 3, 5, true, false, true, false, body, edge, side)   -- 横条·独
-    terraF(col0 + 0, 6, false, false, true, true, body, edge, side)   -- 底左角
-    terraF(col0 + 1, 6, false, false, true, false, body, edge, side)  -- 底边
-    terraF(col0 + 2, 6, false, true, true, false, body, edge, side)   -- 底右角
-    terraF(col0 + 3, 6, false, true, false, true, body, edge, side)   -- 竖条·独
+  local function family(col0, body, edge, side, lit)
+    terraF(col0 + 0, 4, true, false, false, true, body, edge, side, lit)   -- 顶左角
+    terraF(col0 + 1, 4, true, false, false, false, body, edge, side, lit)  -- 顶边
+    terraF(col0 + 2, 4, true, true, false, false, body, edge, side, lit)   -- 顶右角
+    terraF(col0 + 3, 4, true, true, true, true, body, edge, side, lit)     -- 孤块
+    terraF(col0 + 0, 5, false, false, false, true, body, edge, side, lit)  -- 左边
+    terraF(col0 + 1, 5, false, false, false, false, body, edge, side, lit) -- 中心
+    terraF(col0 + 2, 5, false, true, false, false, body, edge, side, lit)  -- 右边
+    terraF(col0 + 3, 5, true, false, true, false, body, edge, side, lit)   -- 横条·独
+    terraF(col0 + 0, 6, false, false, true, true, body, edge, side, lit)   -- 底左角
+    terraF(col0 + 1, 6, false, false, true, false, body, edge, side, lit)  -- 底边
+    terraF(col0 + 2, 6, false, true, true, false, body, edge, side, lit)   -- 底右角
+    terraF(col0 + 3, 6, false, true, false, true, body, edge, side, lit)   -- 竖条·独
     -- 内角四件(凹角刻痕标记)
-    local ox, oy = terraF(col0 + 0, 7, false, false, false, false, body, edge, side)
+    local ox, oy = terraF(col0 + 0, 7, false, false, false, false, body, edge, side, lit)
     hline(ox, oy, 54, edge, 3); vline(ox, oy, 54, side, 4)
     fill(ox + 54, oy + 54, 6, 6, edge)
-    ox, oy = terraF(col0 + 1, 7, false, false, false, false, body, edge, side)
+    ox, oy = terraF(col0 + 1, 7, false, false, false, false, body, edge, side, lit)
     hline(ox + 46, oy, 54, edge, 3); vline(ox + 96, oy, 54, side, 4)
     fill(ox + 40, oy + 54, 6, 6, edge)
-    ox, oy = terraF(col0 + 2, 7, false, false, false, false, body, edge, side)
+    ox, oy = terraF(col0 + 2, 7, false, false, false, false, body, edge, side, lit)
     hline(ox, oy + 96, 54, side, 4); vline(ox, oy + 46, 54, side, 4)
     fill(ox + 54, oy + 40, 6, 6, side)
-    ox, oy = terraF(col0 + 3, 7, false, false, false, false, body, edge, side)
+    ox, oy = terraF(col0 + 3, 7, false, false, false, false, body, edge, side, lit)
     hline(ox + 46, oy + 96, 54, side, 4); vline(ox + 96, oy + 46, 54, side, 4)
     fill(ox + 40, oy + 40, 6, 6, side)
   end
-  family(0, SLAB, EDGE_S, INK)                       -- 石板族(主地形)
-  family(4, PANEL, EDGE_L, INK2)                     -- 亮面板族(高台)
-  family(8, INK3, EDGE_I, INK)                       -- 墨块族(深井)
+  family(0, SLAB, EDGE_S, INK, PANEL)                -- 石板族(主地形)
+  family(4, PANEL, EDGE_L, INK2, MOVP)               -- 亮面板族(高台)
+  family(8, INK3, EDGE_I, INK, C(43, 49, 62))        -- 墨块族(深井)
 
   -- ── 12–15 列 · 坡面 / 幕差分族 ──
   -- 坡件:踏面 = PAPER·30% 斜缘线 + 内侧受光带;碰撞配三角多边形

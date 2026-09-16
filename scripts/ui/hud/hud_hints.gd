@@ -39,7 +39,7 @@ func rebuild(def: Dictionary) -> void:
 
 	var add_key := func(key_name: String):
 		var ico := TextureRect.new()
-		ico.texture = Ui.icon("keys/%s-flat.svg" % key_name)
+		ico.texture = Ui.icon("keys/%s" % key_name)
 		ico.custom_minimum_size = Vector2(26, 26)
 		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED

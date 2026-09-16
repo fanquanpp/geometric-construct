@@ -16,29 +16,21 @@ extends Node2D
 var a: Player
 var b: Player
 
+## 编辑器占位跨度(所见即所指):磁界两端运行时锚定双子,编辑器内
+## 无法预知——用占位线标出"这里会有一道磁界",方向与长度可摆。
+@export var hint_span := Vector2(320, 0)
+
 var _seg_a := Vector2.ZERO   # 端点(全局坐标;本节点恒在原点)
 var _seg_b := Vector2.ZERO
 var _active := false         # 线是否张成(收线时 false,只画不拦)
 
 
 func _ready() -> void:
-	z_index = 4
-	process_physics_priority = -10   # 先于各玩家的 _physics_process 执行
-
-
-func _physics_process(dt: float) -> void:
-	if a == null or b == null or not is_instance_valid(a) or not is_instance_valid(b):
-		return
-	# 任一半死亡 / 进门:磁界收线(两端并拢 = 不再阻隔任何人)
-	if a.dying or b.dying or a.in_exit or b.in_exit:
-		_active = false
+	if Engine.is_editor_hint():
 		queue_redraw()
 		return
-	_seg_a = a.boundary_anchor()
-	_seg_b = b.boundary_anchor()
-	_active = true
-	_project_bodies(dt)
-	queue_redraw()
+	z_index = 4
+	process_physics_priority = -10   # 先于各玩家的 _physics_process 执行
 
 
 ## 阻挡判定 + 速度投影:几何体本帧的运动轨迹若穿越磁界线(按自身
@@ -84,6 +76,18 @@ func _project_bodies(dt: float) -> void:
 
 
 func _draw() -> void:
+	if Engine.is_editor_hint():
+		# 编辑器占位:伍色虚折线 + 端点方块(构成主义硬边,#8455A6)
+		var hcol := Color(0.518, 0.333, 0.651, 0.85)
+		var hpb := hint_span
+		draw_line(Vector2.ZERO, hpb, hcol, 2.5)
+		var hn := Vector2(-hpb.y, hpb.x).normalized() * 7.0
+		for i in 5:
+			var hm := hpb * ((i + 0.5) / 5.0)
+			draw_line(hm - hn, hm + hn, hcol, 2.0)
+		draw_rect(Rect2(Vector2(-4, -4), Vector2(8, 8)), hcol)
+		draw_rect(Rect2(hpb - Vector2(4, 4), Vector2(8, 8)), hcol)
+		return
 	if a == null or b == null or not _active:
 		return
 	var col: Color = a.def.color

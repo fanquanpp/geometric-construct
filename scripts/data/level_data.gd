@@ -86,19 +86,19 @@ const SCENES: Array[Dictionary] = [
 static var ACTS: Array[Dictionary] = [
 	{"name": "第一幕", "title": "各自的路上",
 		"hint": "疾与跃的入门六场:初速 / 折返 / 门厅 / 高墙 / 折叠 / 合演",
-		"icon": "buttons/play-flat.svg", "levels": [0, 1, 2, 3, 4, 5]},
+		"icon": "buttons/play", "levels": [0, 1, 2, 3, 4, 5]},
 	{"name": "第二幕", "title": "界与边",
 		"hint": "伍入队:边界是为了保护,还是为了隔开?",
-		"icon": "buttons/play-flat.svg", "levels": [6, 7, 8, 9, 10, 11]},
+		"icon": "buttons/play", "levels": [6, 7, 8, 9, 10, 11]},
 	{"name": "第三幕", "title": "分岔",
 		"hint": "独自一人时,我还算什么?(作关重制中)",
-		"icon": "buttons/play-flat.svg", "levels": [12, 13, 14, 15, 16]},
+		"icon": "buttons/play", "levels": [12, 13, 14, 15, 16]},
 	{"name": "第四幕", "title": "蜕变",
 		"hint": "我能背叛自己的形状吗?(作关重制中)",
-		"icon": "buttons/play-flat.svg", "levels": [17, 18, 19, 20, 21]},
+		"icon": "buttons/play", "levels": [17, 18, 19, 20, 21]},
 	{"name": "第五幕", "title": "刻度的真相",
 		"hint": "最深处的密刻,代价一直摆在眼前。(作关重制中)",
-		"icon": "buttons/play-flat.svg", "levels": [22, 23, 24, 25]},
+		"icon": "buttons/play", "levels": [22, 23, 24, 25]},
 ]
 
 

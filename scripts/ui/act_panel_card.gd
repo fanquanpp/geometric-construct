@@ -142,7 +142,7 @@ func _populate_rows(idx: int) -> void:
 		# 图标限宽 28:SVG 原始尺寸会把行高撑到 ~80px,
 		# 六行关卡的卡片总高超出 720 设计稿被上下裁切(真机实测修复)
 		b.add_theme_constant_override("icon_max_width", 28)
-		b.icon = Ui.icon("characters/%s-flat.svg" % Geometries.get_def(meta["focus"]).slug)
+		b.icon = Ui.icon("characters/%s" % Geometries.get_def(meta["focus"]).slug)
 		b.text = "%02d   %s" % [k + 1, meta["name"]]
 		b.pivot_offset = Vector2(12, 27)
 		b.self_modulate = Color(1, 1, 1, 1.0 if unlocked else 0.45)

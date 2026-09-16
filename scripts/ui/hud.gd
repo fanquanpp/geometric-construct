@@ -108,7 +108,7 @@ func _ready() -> void:
 	# —— 通关画面:四几何体徽标行(数据驱动)+ 文案双端自适应 ——
 	for c in Geometries.ALL:
 		var ico := TextureRect.new()
-		ico.texture = Ui.icon("characters/%s-flat.svg" % c.slug)
+		ico.texture = Ui.icon("characters/%s" % c.slug)
 		ico.custom_minimum_size = Vector2(52, 52)
 		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
