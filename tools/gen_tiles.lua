@@ -1043,7 +1043,8 @@ end
 
 -- ── 收尾:挂到图层并保存 + 出预览 PNG ─────────────────────────────
 spr:newCel(spr.layers[1], 1, img, Point(0, 0))
-spr:saveAs(spr.filename)
+-- v2 自建画布无文件名,saveAs(spr.filename) 落空(实测报 can't save ""):源直存正典位
+spr:saveAs("C:/Atian/Project/speed-rouge/assets/art/tiles/native_tiles.aseprite")
 app.command.SaveFileCopyAs {
   filename = "C:/Atian/Project/speed-rouge/.shots/tiles_preview.png"
 }

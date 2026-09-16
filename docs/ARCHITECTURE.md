@@ -10,7 +10,7 @@
 ```
 geometric-construct/
 ├── project.godot            # 引擎配置(主场景 scenes/Main.tscn)
-├── icon.svg                 # 项目图标(构成主义红方标记)
+├── icon.png                 # 项目图标(构成主义红方标记)
 ├── scenes/                  # 全部场景文件(v0.31.0 起多场景组合,禁单场景巨石)
 │   ├── Main.tscn            # 组合根:根 Node2D + core/main.gd(main.gd 按
 │   │                        #   既定装配顺序实例化下列子系统场景,顺序即行为)
@@ -114,16 +114,16 @@ geometric-construct/
 │   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入)
 │   ├── archive/             # 档案几何示例图(200×200 PNG,图鉴唯一运行时
 │   │                        #   素材;v0.46.0 构成主义全量重绘,生成器
-│   │                        #   tools/redraw/,PNG 为孤本可直改)
+│   │                        #   tools/gen_archive.lua,PNG 为孤本可直改)
 │   ├── tiles/               # 关卡图块集 native_tiles.png(tools/gen_tiles.lua 直出)
 │   ├── fonts/               # NotoSansSC 可变字体
-│   └── svg/                 # 在用图标 18 枚(仅 flat 单样式,见 docs/DESIGN.md):
-│                            #   characters / keys / icons / buttons 四类;
-│                            #   全套图标可经 tools/redraw/spec_icons.py 再生成
+│   └── ui/                  # UI 图标图集 icons.png(64px 网格 5 列,
+│                            #   tools/gen_icons.lua 直出;Ui.icon 切格)
 ├── tools/
 │   ├── gen_tiles.lua        # 图块集生成器(assets/tiles 唯一来源)
 │   ├── restyle_native_acts.gd  # 二~五幕图块重摆(幂等;act2/s01 跳过)
-│   ├── redraw/              # 素材重绘生成器 + 校验器(v0.46.0 入库)
+│   ├── gen_icons.lua        # UI 图标图集生成器(assets/ui/icons.png 唯一来源)
+│   ├── gen_archive.lua      # 档案插图生成器(assets/archive 43 PNG 唯一来源)
 │   ├── inspect_mech_frames.gd  # 机关正典帧占位框实测(一次性)
 │   └── scan_tiles.gd        # 图块集逐格审计
 ├── tests/                   # 开发用截图 / 验证场景(shot_*.tscn;

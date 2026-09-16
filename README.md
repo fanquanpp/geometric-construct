@@ -9,7 +9,7 @@
 各持一种"形状即性格"的能力,合作闯关、抵达终点门。
 **正戏五幕 26 场全量在演**。
 
-当前版本 **v0.48.0**(唯一来源 `scripts/core/version.gd`,变更明细见 [CHANGELOG.md](CHANGELOG.md))。
+当前版本 **v0.48.1**(唯一来源 `scripts/core/version.gd`,变更明细见 [CHANGELOG.md](CHANGELOG.md))。
 
 ## 当前内容
 

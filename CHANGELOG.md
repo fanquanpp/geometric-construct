@@ -3,6 +3,29 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.48.1(2026-09-17 · 生成器断链修复 + 死管线清退 + 文档换代收口)
+
+> v0.48.0 收尾批:工具链断链修复、被取代管线清退、七份文档残留换代。
+
+### 修复
+- **gen_tiles.lua v2 源同步断裂**:自建画布后 `spr:saveAs(spr.filename)`
+  落空(匿名精灵文件名为空串,实测报 can't save "")——图块 aseprite 源
+  不再随生成器更新。改直存正典位 `assets/art/tiles/native_tiles.aseprite`
+  (对齐 gen_icons.lua 惯例);运行时 PNG 仍由源导出,本批不动。
+
+### 移除
+- **tools/redraw/ Python 管线整体清退**(build / kit / crosscheck /
+  verify / sheets / spec_archive 六件):SVG 已随 v0.48.0 退役、档案插图
+  已由 `tools/gen_archive.lua` 接管,管线无再生对象;历史见 git。
+- 本地杂物:build/ 陈旧 0.45.0 debug apk(gitignored)。
+
+### 变更
+- **七份文档 v0.48 残留换代**:UPDATE(内容包 / 素材管线 / 验收单改
+  图集表述)、ARCHITECTURE(icon.png / assets/ui 树 / 生成器两行)、
+  ASSETS(肖像源与图鉴行)、ui-master-plan(Ui.icon 两处)、
+  redraw-lighting(UI 图标层行)、assets/art/README(「废止」表述失实,
+  改现役源库说明)。
+
 ## v0.48.0(2026-09-16 · 素材全面重构 + SVG 退役 + 编辑器可见性补齐)
 
 > **用户拍板:①SVG 全面禁用 ②现有素材全部不符合风格化要求,瓦片+精灵重构

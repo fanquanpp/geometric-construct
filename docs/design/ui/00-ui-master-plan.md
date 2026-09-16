@@ -51,7 +51,7 @@ CanvasLayer 层带实测与 ui-flow.md §1 完全一致(无漂移);
 
 `Ui.l`(文本)/ `Ui.sb`(StyleBox)/ `Ui.poster_label` / `Ui.tag` /
 `Ui.rule`(肉鸽已复用)/ `Ui.wire_button`(25 按钮统一接线)/
-`Ui.icon`(svg 库)/ `ui HEAD/正典调色板 → Palette`(Phase 2 已下沉)。
+`Ui.icon`(图集切格)/ `ui HEAD/正典调色板 → Palette`(Phase 2 已下沉)。
 **缺口**(本规范新增 backlog,见卷四):Card / List / Dialog(确认框) /
 Toast / Badge / Progress / Empty-State / DetailPage 模板 / Header 模板。
 
@@ -103,7 +103,7 @@ StoryLayer / BootIntro / TitleMark / adaptive / ui.gd(字体部分)。
 - **Spacing/Grid**:1 格=100px 世界;UI 侧 8px 基准栅格(提案,Phase 4
   定稿);对话框 1/4 屏(正典)。
 - **Shape/Border**:直角、1–2px 边框、硬高光条 40%×3px(正典 §7)。
-- **Icon**:`assets/svg/` 18 枚在用扁平库(v0.46 重绘瘦身);新增走 tools/redraw 管线。
+- **Icon**:`assets/ui/icons.png` 图集(v0.48.0 SVG 退役;`tools/gen_icons.lua` 直出,`Ui.icon` ICON_CELLS 切格)。
 - **Motion**:六种基础动作 + 档位(fx-light-uiux.md 卷四);UI Motion
   Grammar(页面进出场四拍:切线→块定位→标题落位→内容展开)。
 - **Sound**:UI 音事件化(`UI_Focus/Hover/Click/Confirm/Cancel/Back/

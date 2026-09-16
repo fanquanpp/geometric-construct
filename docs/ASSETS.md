@@ -43,12 +43,13 @@
 | 柒 | 待定 | 待定 | — | — | C5(高音 do) | 待定 | — | — |
 
 - 伍占**两个编号、一座几何体**:界 / 边必定同时存在,切换循环中各占一位。
-- 平面肖像源:`assets/svg/characters/{dash,spring,fall,roll,pair}-flat.svg`(5 张)。
+- 平面肖像源:`assets/ui/icons.png` 图集 `characters/*` 格(5 枚;
+  aseprite 源 `assets/art/icons.aseprite`,生成器 `tools/gen_icons.lua`)。
 
 ## 2. 建筑物图鉴(地形、景观与 Kit 构件 · 15)
 
 来源 `archive_data.gd` BUILDINGS;`bld_*` 已随 v0.46.0 构成主义重绘
-(PNG 孤本直改,生成器 `tools/redraw/`)。
+(PNG 孤本直改,生成器 `tools/gen_archive.lua`)。
 
 | id | 中文名 | 英文副题 | 分类 | 一句话 |
 |---|---|---|---|---|
@@ -172,8 +173,8 @@ recalltest / dualtest / trait_check。
 
 | 资产 | 数量 | 路径 | 说明 |
 |---|---|---|---|
-| 几何体肖像 svg | 5 | `assets/svg/characters/` | dash / spring / fall / roll / pair |
-| 图鉴插图 png | **43** | `assets/archive/` | 建筑 15 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200;**v0.46.0 全量重绘**(构成主义统一法相,源生成器 `tools/redraw/`) |
+| ~~几何体肖像 svg~~ | ~~5~~ | ~~`assets/svg/characters/`~~ | v0.48.0 退役 → 图集 `characters/*` 格(`assets/ui/icons.png`,生成器 `tools/gen_icons.lua`) |
+| 图鉴插图 png | **43** | `assets/archive/` | 建筑 15 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200;**v0.46.0 全量重绘**(构成主义统一法相;v0.48.0 平涂重构,生成器 `tools/gen_archive.lua`) |
 | ~~图鉴 aseprite 源~~ | ~~33~~ | ~~`assets/art/tiles_v2/`~~ | v0.39.0 清退(三套自研分层系统退役);assets/archive PNG 为孤本 |
 | ~~关卡美术层~~ | ~~30~~ | ~~`assets/assets/levels/`~~ | v0.39.0 清退:地图皮与语义层 PNG 全退,渲染 = 引擎原生节点分层(v0.43.0,levels.md §0) |
 | ~~机关精灵图库~~ | ~~12 源 + 12 条带~~ | ~~`assets/art/mech/`~~ | v0.46.0 清退(死库存:为已废弃的 _draw→AnimatedSprite2D 迁移备料,39 帧零引用);运行时唯一机关素材 = assets/archive 正典帧 |
