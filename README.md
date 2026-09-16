@@ -23,19 +23,21 @@
   镜头双人双取景动态缩放,roster chips 双人描边高亮(P1 纸白 / P2 橙)。
 - **原生作关**(levels.md / native-levels.md):TileSet 多物理层 =
   角色专属碰撞(共享 + 专属,出生算定);单向踏面 / 逆天花板 =
-  碰撞多边形原生属性;机关物**高亮三档**保留(专属描边脉冲 /
-  共享常亮 / 无关幽灵暗化)。
+  碰撞多边形原生属性;机关 = 场景实例拖摆,场景壳自带正典帧图形 +
+  `@tool` 参数联动(编辑器内所见即所得);机关物**高亮三档**保留
+  (专属描边脉冲 / 共享常亮 / 无关幽灵暗化)。
 - **档案几何**(ui-flow.md §3,五页签全面档案库):几何体档案 ×
   建筑物图鉴 × 机关图鉴 × **键位指南(多端一册,`ArchiveData.CONTROLS`)** ×
-  剧情回顾;图鉴示例图为 200×200 孤本 PNG 直改
-  (`assets/archive/` 唯一入引擎目录,规格见
-  art-style.md §6.1),动态构件以**多帧精灵**在图鉴内循环播放
-  (终点门吸入 3 帧 / 限时桥 1s 循环 / 传送对规划条目 3 帧);
+  剧情回顾;图鉴示例图为 200×200 孤本 PNG
+  (`assets/archive/` 唯一入引擎目录,**v0.46 构成主义全量重绘**,
+  统一左上受光法相,规格见 art-style.md §6.1),动态构件以**多帧精灵**
+  在图鉴内循环播放(终点门吸入 3 帧 / 限时桥 1s 循环 / 传送对规划条目 3 帧);
   手柄支持(十字键翻页 / LB·RB 切页 / B 返回)+ 安全区自适应版面;
   条目走纯数据表 `ArchiveData`,新增条目零代码。
-- **图块集**(assets/tiles/,100px 网格):由 aseprite 绘制导出,
-  `data/tiles/native_tileset.tres` 配物理层——共享 + 逐角色专属;
-  单向踏面 / 逆天花板为碰撞多边形原生属性(所见即所碰)。
+- **图块集**(assets/tiles/,100px 网格):由 `tools/gen_tiles.lua`
+  生成器直出(PNG 孤本同名覆盖),224 图位含地形 16 邻接三族 / 过渡件 /
+  坡面幕差分族;`data/tiles/native_tileset.tres` 配物理层——共享 +
+  逐角色专属;单向踏面 / 逆天花板为碰撞多边形原生属性(所见即所碰)。
 - **机制**:二段跳、踩头承载与超载减半、重力置换(逆)、纯滚动与
   曲面板切线飞跃(圆)、爬墙(疾)、磁力边界(伍双子,唯逆可穿)、
   加速门(2.5×)、移动构件(摆渡 / 电梯)、动态构件(限时桥 / 开关门——
@@ -78,12 +80,14 @@
 
 ## 开发与验证
 
-开发用 CLI 截图 / 自动验收钩子(`godot --path . -- --autotest=<关卡号>` 等):
-`--autotest` / `--autoshot` / `--menushot` / `--panelshot`(档案几何全页签) /
-`--doorshot` / `--introshot` / `--tourshot`(巨构巡航) /
-`--recalltest`(召回链路自测) / `--dualtest`(双人五链路) / `--nettest` /
-`--perflog` / `--level=`。
-自动验证场景见 `tests/`(机制断言 + 截图);发版规范与检查单见 `docs/UPDATE.md`。
+开发用 CLI 截图 / 自测钩子(`godot --path . -- <钩子>`,user args 在 `--` 后):
+分镜 `--autoshot` / `--menushot` / `--panelshot`(档案几何全页签) /
+`--doorshot` / `--introshot` / `--tourshot`(关卡巡航)等;
+自测 `--recalltest`(召回链路)/ `--dualtest`(双人五链路)/
+`--nettest`(LAN+ENet 回环)。
+**现役门禁**:`tests/native_check`(27 关装载/静息)+ `tests/flow_check`
+(通关流转)+ `--recalltest` / `--dualtest` + `tests/trait_check`(物理仿真)。
+发版规范与检查单见 `docs/UPDATE.md`。
 
 ## 文档索引
 
