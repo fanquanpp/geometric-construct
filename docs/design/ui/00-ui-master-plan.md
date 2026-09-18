@@ -104,6 +104,9 @@ StoryLayer / BootIntro / TitleMark / adaptive / ui.gd(字体部分)。
   定稿);对话框 1/4 屏(正典)。
 - **Shape/Border**:直角、1–2px 边框、硬高光条 40%×3px(正典 §7)。
 - **Icon**:`assets/ui/icons.png` 图集(v0.48.0 SVG 退役;`tools/gen_icons.lua` 直出,`Ui.icon` ICON_CELLS 切格)。
+- **Decor 素材**:UI 装饰件(角刻框 / 取景框 / 触屏轮盘底形)像素素材化
+  (v0.49.0;`assets/ui/*.png`,源 `assets/art/ui/`,`tools/gen_ui.lua`
+  直出,消费端 NEAREST);`_draw` 只留动态状态(高亮 / 进度 / 方向点亮)。
 - **Motion**:六种基础动作 + 档位(fx-light-uiux.md 卷四);UI Motion
   Grammar(页面进出场四拍:切线→块定位→标题落位→内容展开)。
 - **Sound**:UI 音事件化(`UI_Focus/Hover/Click/Confirm/Cancel/Back/

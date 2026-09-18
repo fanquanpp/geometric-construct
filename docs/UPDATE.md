@@ -79,6 +79,8 @@
 - [ ] `--menushot` / `--panelshot`(档案几何全页签)/ `--autoshot=0` / `--tourshot` 截图人工过目(风格锚定不跑偏)
 - [ ] 新增图标走 `tools/gen_icons.lua` 图集管线(改格 → 再生成 →
 	  `ICON_CELLS` 登记);新增图鉴插图改 `tools/gen_archive.lua` 再生成
-	  `assets/archive/` PNG(v0.48.0 生成器直出,孤本可直改)
+	  `assets/archive/` PNG(v0.48.0 生成器直出,孤本可直改);
+	  新增 UI 装饰件改 `tools/gen_ui.lua` 再生成 `assets/ui/` PNG
+	  (v0.49.0 生成器直出:角刻框 / 取景框 / 触屏轮盘底形)
 - [ ] Android:导出段显式 `texture_format/etc2_astc=true`(export_presets.cfg 已声明)、`rendering/viewport/hdr_2d` 关闭
 - [ ] Android 真机抽查:`--perflog` 基线 + `dumpsys gfxinfo` 帧时间无异常 jank

@@ -361,8 +361,44 @@ class WheelPad extends Control:
 	var _finger := -1
 	var _returning := false      # 浮动模式:松手后滑回待位点的过渡
 
+	# —— v0.49 素材化:底盘 / 点亮箭 / 滑钮 = stick_* 纹理(源
+	# assets/art/ui/ · tools/gen_ui.lua 直出,NEAREST 像素纪律);
+	# 动态态(点亮 / 冲刺 / 浮待位淡出)= 换纹理 + 位移 + modulate,零 _draw
+	const TEX_BASE := preload("res://assets/ui/stick_base.png")
+	const TEX_BASE_ON := preload("res://assets/ui/stick_base_sprint.png")
+	const TEX_ARROW := preload("res://assets/ui/stick_arrow.png")
+	const TEX_ARROW_ON := preload("res://assets/ui/stick_arrow_red.png")
+	const TEX_KNOB := preload("res://assets/ui/stick_knob.png")
+	const TEX_KNOB_ON := preload("res://assets/ui/stick_knob_sprint.png")
+	const CANON := Vector2(252, 84)        # 纹理正典画布(HW=120 / HH=36)
+	const ARROW_R_POS := Vector2(229, 34)  # 右箭盒左上角(正典坐标)
+	const ARROW_L_POS := Vector2(11, 34)   # 左箭盒左上角(flip_h)
+	const KNOB_TEX := 54.0                 # 滑钮纹理直径
+	const KNOB_CANON_R := 26.0             # 纹理正典半径(setup 按 _knob_r 缩放)
+
+	var _base: TextureRect
+	var _arrow_l: TextureRect
+	var _arrow_r: TextureRect
+	var _knob: TextureRect
+
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_base = _visual(TEX_BASE)
+		_arrow_r = _visual(TEX_ARROW)
+		_arrow_l = _visual(TEX_ARROW)
+		_arrow_l.flip_h = true
+		_knob = _visual(TEX_KNOB)
+
+	## 纹理件工厂:NEAREST + 忽略纹理下限(随 setup 缩放)
+	func _visual(tex: Texture2D) -> TextureRect:
+		var tr := TextureRect.new()
+		tr.texture = tex
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_SCALE
+		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(tr)
+		return tr
 
 	## 布局:半宽 / 半高与待位圆心(画布坐标)。
 	func setup(p_half_w: float, p_half_h: float, center: Vector2) -> void:
@@ -375,7 +411,31 @@ class WheelPad extends Control:
 		_travel = half_w - _knob_r - 12.0
 		size = Vector2(half_w, half_h) * 2.0 + Vector2(12, 12)
 		position = _center - size / 2.0
-		queue_redraw()
+		_layout_visuals()
+
+	## 纹理件随 setup 尺寸重排:底盘整体 NEAREST 拉伸,箭盒位置乘同一
+	## 缩放跟随(暗箭在底盘内同步缩放,点亮箭精确盖上),滑钮按半径等比
+	func _layout_visuals() -> void:
+		var sc := size / CANON
+		_base.size = size
+		_base.position = Vector2.ZERO
+		_arrow_r.position = ARROW_R_POS * sc
+		_arrow_l.position = ARROW_L_POS * sc
+		var ks := KNOB_TEX * (_knob_r / KNOB_CANON_R)
+		_knob.size = Vector2(ks, ks)
+		_apply_state()
+
+	## 动态态上屏:冲刺换纹理,点亮方向显隐,滑钮随行程
+	func _apply_state() -> void:
+		_base.texture = TEX_BASE_ON if sprinting else TEX_BASE
+		_knob.texture = TEX_KNOB_ON if sprinting else TEX_KNOB
+		_arrow_r.texture = TEX_ARROW_ON if sprinting else TEX_ARROW
+		_arrow_l.texture = _arrow_r.texture
+		_arrow_r.visible = strength > 0.0
+		_arrow_l.visible = strength < 0.0
+		var ks := _knob.size.x
+		_knob.position = Vector2(size.x / 2.0 + _knob_x, size.y / 2.0) \
+			- Vector2(ks, ks) / 2.0
 
 	## 浮动模式:左半屏空白处按下 → 轮盘就地展开。返回是否接管了这次按下。
 	func float_begin(finger: int, pos: Vector2) -> bool:
@@ -436,8 +496,7 @@ class WheelPad extends Control:
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tw.tween_callback(func() -> void:
 			_returning = false
-			_center = _home
-			queue_redraw())
+			_center = _home)
 
 	## 滑钮跟随手指(仅水平),并注入移动 / 加速动作。
 	## 输入精度(v0.13.6):死区重映射 —— 跨出死区输出从 0 平滑起步,
@@ -463,16 +522,18 @@ class WheelPad extends Control:
 			Input.action_press("move_right", s)
 		else:
 			_release_move()
-		queue_redraw()
+		_apply_state()
 
 	## 拉到最大自动加速(滞回阈值,防止在边缘来回抖动)。
 	func _update_sprint(pull: float) -> void:
 		if not sprinting and pull >= SPRINT_ON:
 			sprinting = true
 			Input.action_press("sprint")
+			_apply_state()
 		elif sprinting and pull < SPRINT_OFF:
 			sprinting = false
 			Input.action_release("sprint")
+			_apply_state()
 
 	func _release_move() -> void:
 		Input.action_release("move_left")
@@ -489,55 +550,10 @@ class WheelPad extends Control:
 		position = _center - size / 2.0
 		_release_move()
 		Input.action_release("sprint")
-		queue_redraw()
+		_layout_visuals()
 
 	func _process(_delta: float) -> void:
-		if _finger != -1:
-			queue_redraw()
-
-	func _draw() -> void:
-		var c := size / 2.0
-		# 浮动模式待位时更淡(提示"可以在这里按住"),激活 / 固定时常态
+		# 浮动模式待位更淡(提示"可以在这里按住"),激活 / 固定时常态
 		var idle_a := 0.18 if (wheel_mode == MODE_FLOAT and _finger == -1) else 1.0
-		# 扁六边形轮廓(拉满加速时描红)
-		var edge := Color(Palette.I.red, 0.9) if sprinting else Color(Palette.I.paper, 0.34 * idle_a)
-		var hex := PackedVector2Array([
-			c + Vector2(-half_w, 0), c + Vector2(-half_w * 0.46, -half_h),
-			c + Vector2(half_w * 0.46, -half_h), c + Vector2(half_w, 0),
-			c + Vector2(half_w * 0.46, half_h), c + Vector2(-half_w * 0.46, half_h),
-			c + Vector2(-half_w, 0),
-		])
-		draw_polyline(hex, edge, 2.0, true)
-		# 水平中线 + 中心刻度:强调只有左右一个维度
-		# 绘制精度(v0.13.6):全部图元开抗锯齿、圆弧细分为 72 段,
-		# 高 DPI 下边缘无锯齿、圆更圆;颜色 / 粗细 / 形状(样式)一律不动
-		draw_line(c + Vector2(-half_w * 0.7, 0), c + Vector2(half_w * 0.7, 0),
-			Color(Palette.I.paper, 0.10 * idle_a), 1.5, true)
-		draw_circle(c, 2.5, Color(Palette.I.paper, 0.35 * idle_a), true, -1.0, true)
-		# 左右方向箭头(沿中线,随方向点亮)
-		for dir: int in [-1, 1]:
-			var tip := c + Vector2(dir * (half_w - 13.0), 0)
-			var wing := 8.0
-			var tri := PackedVector2Array([
-				tip + Vector2(dir * wing, 0),
-				tip + Vector2(-dir * wing * 0.5, -wing),
-				tip + Vector2(-dir * wing * 0.5, wing),
-			])
-			var lit := signf(strength) == dir
-			var col := Palette.I.paper if lit else Color(Palette.I.paper, 0.4 * idle_a)
-			if lit and sprinting:
-				col = Palette.I.red
-			# 多边形本身无抗锯齿:沿闭合边缘补一圈同色 AA 描边,边缘平滑
-			draw_colored_polygon(tri, col)
-			draw_polyline(PackedVector2Array(
-				[tri[0], tri[1], tri[2], tri[0]]), col, 1.4, true)
-		# 滑钮(仅沿横轴;拉满加速时描红)
-		var knob := c + Vector2(_knob_x, 0)
-		var ring := Color(Palette.I.paper, 0.85 * idle_a)
-		if sprinting:
-			ring = Palette.I.red
-		elif strength != 0.0:
-			ring = Color(Palette.I.paper, 0.95)
-		draw_circle(knob, _knob_r, Color(Palette.I.ink_2, 0.80 * idle_a), true, -1.0, true)
-		draw_arc(knob, _knob_r, 0.0, TAU, 72, ring, 2.0, true)
-		draw_circle(knob, 3.5, Color(Palette.I.paper, 0.9 * idle_a), true, -1.0, true)
+		_base.modulate.a = idle_a
+		_knob.modulate.a = idle_a

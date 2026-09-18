@@ -22,13 +22,16 @@ func build(p, page: Control) -> void:
 
 	# 左侧:几何肖像(aseprite 200×200 → 2× 整数放大,NEAREST 保像素)
 	# 衬板无投影(v0.19.2:几何体形象不带黑色阴影,衬板只做墨色托底)
+	# v0.49 素材化:衬板 = ColorRect(R0 引擎自带),取景角标 = viewfinder.png
 	var zone := Control.new()
 	zone.position = Vector2(60, 118)
 	zone.size = Vector2(400, 400)
 	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	zone.draw.connect(func() -> void:
-		zone.draw_rect(Rect2(0, 0, 400, 400), Color(Palette.I.ink_3, 0.85))
-	)
+	var backing := ColorRect.new()
+	backing.color = Color(Palette.I.ink_3, 0.85)
+	backing.size = Vector2(400, 400)
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	zone.add_child(backing)
 	page.add_child(zone)
 	portrait_zone = zone
 
@@ -41,16 +44,12 @@ func build(p, page: Control) -> void:
 	_portrait_tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(_portrait_tex)
 
-	# 取景角标(盖在图上的兄弟层)
-	var corners := Control.new()
+	# 取景角标素材(盖在图上的兄弟层)
+	var corners := TextureRect.new()
+	corners.texture = load("res://assets/ui/viewfinder.png")
 	corners.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	corners.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	corners.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	corners.draw.connect(func() -> void:
-		for cnr: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
-			var ox := 200.0 + cnr.x * 200.0
-			var oy := 200.0 + cnr.y * 200.0
-			corners.draw_line(Vector2(ox, oy), Vector2(ox - cnr.x * 22.0, oy), Palette.I.paper, 3.0)
-			corners.draw_line(Vector2(ox, oy), Vector2(ox, oy - cnr.y * 22.0), Palette.I.paper, 3.0))
 	zone.add_child(corners)
 
 	# 右侧:信息栏(VBox 排版,杜绝绝对坐标互相遮挡);挂在 geo 页容器内,

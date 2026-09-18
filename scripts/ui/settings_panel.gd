@@ -18,7 +18,7 @@ var _tween: Tween
 @onready var _root: Control = %Root
 @onready var _shade: ColorRect = %Shade
 @onready var _content: Control = %Content
-@onready var _frame: Control = %Frame
+@onready var _frame: NinePatchRect = %Frame
 @onready var _scroll: ScrollContainer = %Scroll
 @onready var _foot: HBoxContainer = %Foot
 var _wheel_fixed_btn: Button
@@ -141,17 +141,8 @@ func _apply_styles() -> void:
 	_shade.color = Palette.I.ink
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# 全屏页(档案几何同语言):细线外框 + 四角红刻 + 左置大标题 + 规线
-	_frame.draw.connect(func() -> void:
-		_frame.draw_rect(Rect2(Vector2.ZERO, _frame.size),
-			Color(Palette.I.paper, 0.16), false, 1.0)
-		for corner: Vector2 in [Vector2(0, 0), Vector2(_frame.size.x, 0),
-				Vector2(0, _frame.size.y), Vector2(_frame.size.x, _frame.size.y)]:
-			var sx := -1.0 if corner.x == 0.0 else 1.0
-			var sy := -1.0 if corner.y == 0.0 else 1.0
-			_frame.draw_line(corner, corner + Vector2(-sx * 18.0, 0),
-				Palette.I.red, 3.0)
-			_frame.draw_line(corner, corner + Vector2(0, -sy * 18.0),
-				Palette.I.red, 3.0))
+	# —— 外框已素材化(v0.49):场景侧 NinePatchRect + panel_frame.png,
+	# 源 assets/art/ui/panel_frame.aseprite(gen_ui.lua 直出),_draw 弃用
 	(%TitleLabel as Label).text = "设 置"
 	Ui.style(%TitleLabel, 40, Ui.TITLE, Palette.I.paper,
 		HORIZONTAL_ALIGNMENT_LEFT)

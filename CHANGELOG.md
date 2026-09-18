@@ -3,6 +3,46 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.49.0(2026-09-18 · UI/UX 全量像素画绘制:装饰素材化 + _draw 清退)
+
+> 全部 UI 静态装饰改 aseprite 像素素材(平涂构成主义,宪法内),五处
+> 程序化 `_draw` 装饰清退;触屏轮盘整体纹理化。管线对齐 gen_icons 惯例:
+> 源 `assets/art/ui/` + 生成器 `tools/gen_ui.lua` 直出 PNG 到 `assets/ui/`。
+
+### 新增
+- **tools/gen_ui.lua**:UI 装饰素材生成器,九件直出(源 + 成品双落盘)——
+  `intro_card_frame`(开场卡框:墨底+纸边+顶缘线+红角刻 16×3,右下硬投影
+  8×10 一并入图)/ `panel_frame`(面板外框九宫格:纸线 α.16 + 红角刻
+  18×3,设置与档案共用)/ `viewfinder`(档案取景角标 400×400,纸白
+  22×3)/ `stick_base(_sprint)` / `stick_arrow(_red)` / `stick_knob(_sprint)`
+  (触屏轮盘底形六件:扁六边形底盘 / 点亮方向箭 / 滑钮,冲刺变体描红)。
+
+### 变更
+- **开场卡**(hud.gd):`_draw` 装饰清退 → StyleBoxTexture 承载
+  intro_card_frame(纹理边距 16/16/24/26;内容边距随投影越界右 8 / 下 10),
+  NEAREST 像素纪律。
+- **设置 / 档案面板外框**(settings_panel / archive_panel):`_draw` 清退 →
+  场景侧 NinePatchRect + panel_frame(tscn 换型 Control → NinePatchRect,
+  patch 边距 18 四向)。
+- **档案取景角标**(codex / geo 两页):`_draw` 清退 → 衬板 / 硬投影 =
+  ColorRect(R0 引擎自带纯色块),角标 = viewfinder.png 置顶 TextureRect;
+  几何页「衬板无投影」拍板(v0.19.2)维持,仅图鉴 / 机关页带投影。
+- **触屏轮盘**(touch_controls.gd WheelPad):`_draw` 整体清退 → 底盘 /
+  滑钮 / 点亮箭全纹理件(setup 尺寸 NEAREST 等比拉伸,箭盒位置乘缩放跟随);
+  动态态 = 换纹理(冲刺描红)+ 显隐(方向点亮)+ modulate(浮待位淡出),
+  交互 / 输入 / 手感零改动。
+- **art-style 宪法随改**:§2 新增「UI 装饰素材」条款(平涂硬边、零抗锯齿、
+  NEAREST、静态装饰零 `_draw`);§5 审计例外「两处」→「三处」。
+- **画册重截 8 屏**(docs/ui):档案五屏 + 设置 + 开场卡,README 重截记录
+  换代;ARCHITECTURE 素材树与生成器行、ASSETS 台账、ui-master-plan
+  Decor 行、art README 随改。
+
+### 边界
+- 动态状态绘制按 R1 豁免保留:边缘指示器箭头、置换锚闪刻度带、档案
+  属性进度条、点按回包(TapRing)、构成主义转场。
+- 文字排版不动(NotoSansSC 四权重宪法);纯色矩形仍走 StyleBoxFlat /
+  ColorRect(R0:引擎自带优先,过度素材化否决)。
+
 ## v0.48.1(2026-09-17 · 生成器断链修复 + 死管线清退 + 文档换代收口)
 
 > v0.48.0 收尾批:工具链断链修复、被取代管线清退、七份文档残留换代。

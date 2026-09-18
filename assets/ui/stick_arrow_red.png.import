@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jejyfqym4xsw"
-path="res://.godot/imported/icon_192.png-3f3338df2b178ca6595fb2ae77911e70.ctex"
+uid="uid://hogiyrof80mh"
+path="res://.godot/imported/stick_arrow_red.png-5fd3b676cf138c2e5ca039a6fd3ac565.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/brand/icon_192.png"
-dest_files=["res://.godot/imported/icon_192.png-3f3338df2b178ca6595fb2ae77911e70.ctex"]
+source_file="res://assets/ui/stick_arrow_red.png"
+dest_files=["res://.godot/imported/stick_arrow_red.png-5fd3b676cf138c2e5ca039a6fd3ac565.ctex"]
 
 [params]
 

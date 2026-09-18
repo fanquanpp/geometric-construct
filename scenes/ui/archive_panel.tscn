@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/archive_panel.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/panel_frame.png" id="2"]
 
 [node name="ArchivePanel" type="CanvasLayer"]
 layer = 35
@@ -24,7 +25,7 @@ offset_right = 1280.0
 offset_bottom = 720.0
 mouse_filter = 2
 
-[node name="Frame" type="Control" parent="Root/Content"]
+[node name="Frame" type="NinePatchRect" parent="Root/Content"]
 unique_name_in_owner = true
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -33,6 +34,12 @@ offset_top = 16.0
 offset_right = -16.0
 offset_bottom = -16.0
 mouse_filter = 2
+texture = ExtResource("2")
+patch_margin_left = 18
+patch_margin_top = 18
+patch_margin_right = 18
+patch_margin_bottom = 18
+texture_filter = 1
 
 [node name="AnimTimer" type="Timer" parent="."]
 unique_name_in_owner = true

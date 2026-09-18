@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/settings_panel.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/panel_frame.png" id="2"]
 
 [node name="SettingsPanel" type="CanvasLayer"]
 layer = 38
@@ -22,9 +23,15 @@ mouse_filter = 2
 unique_name_in_owner = true
 mouse_filter = 2
 
-[node name="Frame" type="Control" parent="Root/Content"]
+[node name="Frame" type="NinePatchRect" parent="Root/Content"]
 unique_name_in_owner = true
 mouse_filter = 2
+texture = ExtResource("2")
+patch_margin_left = 18
+patch_margin_top = 18
+patch_margin_right = 18
+patch_margin_bottom = 18
+texture_filter = 1
 
 [node name="TitleLabel" type="Label" parent="Root/Content"]
 unique_name_in_owner = true

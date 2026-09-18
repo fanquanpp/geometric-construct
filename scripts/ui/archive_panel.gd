@@ -48,16 +48,8 @@ func _ready() -> void:
 	_anim_timer.timeout.connect(_on_anim_tick)
 	_root.resized.connect(_fit_content)
 
-	# 外框 + 角部刻度(与主菜单同语言)
-	var frame: Control = %Frame
-	frame.draw.connect(func() -> void:
-		frame.draw_rect(Rect2(Vector2.ZERO, frame.size), Color(Palette.I.paper, 0.16), false, 1.0)
-		for corner: Vector2 in [Vector2(0, 0), Vector2(frame.size.x, 0),
-				Vector2(0, frame.size.y), Vector2(frame.size.x, frame.size.y)]:
-			var sx := -1.0 if corner.x == 0.0 else 1.0
-			var sy := -1.0 if corner.y == 0.0 else 1.0
-			frame.draw_line(corner, corner + Vector2(-sx * 18.0, 0), Palette.I.red, 3.0)
-			frame.draw_line(corner, corner + Vector2(0, -sy * 18.0), Palette.I.red, 3.0))
+	# 外框 + 角部刻度(与主菜单同语言)—— 已素材化(v0.49):场景侧
+	# NinePatchRect + panel_frame.png,源 assets/art/ui/(gen_ui.lua 直出)
 
 	_build_header()
 	# 五页签构建器装配(scripts/ui/archive/,数据驱动页 = 动态生成豁免)

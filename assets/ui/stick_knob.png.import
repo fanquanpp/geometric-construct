@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jejyfqym4xsw"
-path="res://.godot/imported/icon_192.png-3f3338df2b178ca6595fb2ae77911e70.ctex"
+uid="uid://dxjr5lccip8b7"
+path="res://.godot/imported/stick_knob.png-0654ddd9fca5a2b858cee075f699042a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/brand/icon_192.png"
-dest_files=["res://.godot/imported/icon_192.png-3f3338df2b178ca6595fb2ae77911e70.ctex"]
+source_file="res://assets/ui/stick_knob.png"
+dest_files=["res://.godot/imported/stick_knob.png-0654ddd9fca5a2b858cee075f699042a.ctex"]
 
 [params]
 

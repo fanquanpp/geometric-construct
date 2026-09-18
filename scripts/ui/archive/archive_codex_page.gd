@@ -66,15 +66,24 @@ func build(p, page: Control) -> void:
 	page.add_child(detail)
 
 	# 详情图:400×400(2× 整数放大,NEAREST)+ 硬投影 + 取景角标
+	# v0.49 素材化:投影 / 衬板 = ColorRect 纯色块(R0 引擎自带),
+	# 取景角标 = viewfinder.png(源 assets/art/ui/ · gen_ui.lua 直出)
 	var zone := Control.new()
 	zone.position = Vector2.ZERO
 	zone.size = Vector2(400, 400)
 	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	zone.draw.connect(func() -> void:
-		zone.draw_rect(Rect2(8, 8, 400, 400), Color(0, 0, 0, 0.4))
-		zone.draw_rect(Rect2(0, 0, 400, 400), Color(Palette.I.ink_3, 0.85))
-	)
 	detail.add_child(zone)
+	var shadow := ColorRect.new()
+	shadow.color = Color(0, 0, 0, 0.4)
+	shadow.position = Vector2(8, 8)
+	shadow.size = Vector2(400, 400)
+	shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	zone.add_child(shadow)
+	var backing := ColorRect.new()
+	backing.color = Color(Palette.I.ink_3, 0.85)
+	backing.size = Vector2(400, 400)
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	zone.add_child(backing)
 	var tex := TextureRect.new()
 	tex.size = Vector2(400, 400)
 	tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -82,15 +91,12 @@ func build(p, page: Control) -> void:
 	tex.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(tex)
-	var corners := Control.new()
+	# 取景角标素材(盖在图上的兄弟层,角刻不随插图遮挡)
+	var corners := TextureRect.new()
+	corners.texture = load("res://assets/ui/viewfinder.png")
 	corners.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	corners.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	corners.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	corners.draw.connect(func() -> void:
-		for cnr: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
-			var ox := 200.0 + cnr.x * 200.0
-			var oy := 200.0 + cnr.y * 200.0
-			corners.draw_line(Vector2(ox, oy), Vector2(ox - cnr.x * 22.0, oy), Palette.I.paper, 3.0)
-			corners.draw_line(Vector2(ox, oy), Vector2(ox, oy - cnr.y * 22.0), Palette.I.paper, 3.0))
 	zone.add_child(corners)
 
 	# 图下:规格注记 + 机关两态切换

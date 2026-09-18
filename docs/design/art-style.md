@@ -36,6 +36,11 @@
   `assets/ui/icons.png` 图集(aseprite 源 `assets/art/icons.aseprite`,
   生成器 `tools/gen_icons.lua`,64px 网格 × 18 格,透明底);
   字母字形一律折线,消费入口 = `Ui.icon`(键名无扩展名)。
+- UI 装饰素材(v0.49.0 起):角刻框 / 取景框 / 触屏轮盘底形等构成母题
+  一律 aseprite 素材化(源 `assets/art/ui/*.aseprite`,生成器
+  `tools/gen_ui.lua` 直出 PNG 到 `assets/ui/`,平涂硬边、零抗锯齿);
+  消费端一律 `TEXTURE_FILTER_NEAREST`(像素纪律:禁柔化)。
+  `_draw` 只留动态状态绘制(高亮脉冲 / 进度 / 方向点亮),静态装饰零 `_draw`。
 
 ## 3. 动效法则(MOTION RULES)
 
@@ -77,10 +82,12 @@ M8b 补充档 ≤12px 限巨构大落差坠落 / 复合事件(实机手感回写
 	  aseprite 素材 + 原生编辑器摆放(`native-levels.md` 提案,M4 定稿);
 	  地图皮管线已清退(历史契约随 §6.2 删除);
 	  除此之外无游离的像素素材引用
-- [ ] aseprite 例外两处 = 档案几何插图(§6.1,仅 assets/archive/,
+- [ ] aseprite 例外三处 = 档案几何插图(§6.1,仅 assets/archive/,
 	  源已清退、PNG 为孤本)+ 原生作关图块集(assets/tiles/native_tiles.png,
-	  源 assets/art/tiles/,坐标契约 levels.md §0);其余像素素材不得
-	  被地图与实体引用
+	  源 assets/art/tiles/,坐标契约 levels.md §0)+ UI 装饰素材家族
+	  (v0.49.0:角刻框 / 取景框 / 触屏轮盘底形,assets/ui/*.png,
+	  源 assets/art/ui/,tools/gen_ui.lua 直出,消费端 NEAREST);
+	  其余像素素材不得被地图与实体引用
 
 ## 6. 美术素材规范 · MAP ART(v0.39.0 修订:节点分层为唯一管线;2026-09-15 拍板制作侧换代 → native-levels.md,本节为迁移期现状)
 

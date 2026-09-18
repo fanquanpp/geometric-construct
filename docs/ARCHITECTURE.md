@@ -122,10 +122,13 @@ geometric-construct/
 │   ├── fonts/               # NotoSansSC 可变字体
 │   └── ui/                  # UI 图标图集 icons.png(64px 网格 5 列,
 │                            #   tools/gen_icons.lua 直出;Ui.icon 切格)
+│                            #   + UI 装饰素材 9 件(角刻框/取景框/触屏
+│                            #   轮盘底形,tools/gen_ui.lua 直出,NEAREST)
 ├── tools/
 │   ├── gen_tiles.lua        # 图块集生成器(assets/tiles 唯一来源)
 │   ├── restyle_native_acts.gd  # 二~五幕图块重摆(幂等;act2/s01 跳过)
 │   ├── gen_icons.lua        # UI 图标图集生成器(assets/ui/icons.png 唯一来源)
+│   ├── gen_ui.lua           # UI 装饰素材生成器(assets/ui 九件唯一来源)
 │   ├── gen_archive.lua      # 档案插图生成器(assets/archive 43 PNG 唯一来源)
 │   ├── inspect_mech_frames.gd  # 机关正典帧占位框实测(一次性)
 │   └── scan_tiles.gd        # 图块集逐格审计

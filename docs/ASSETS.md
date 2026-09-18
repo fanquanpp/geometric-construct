@@ -181,6 +181,7 @@ recalltest / dualtest / trait_check。
 
 | 游戏图标 | 7 | `icon.png`(256,根)+ `assets/brand/`:`icon_192` + `icon_fg/bg/mono_432`(源 `assets/art/icon_construct.aseprite`)| 构成徽章 v3:墨底幽灵菱线 + 构成红斜面菱芯 + 四纸白卫星(菱/三角/圆/方);432 母版 ×4 整数导出,安全区内构图(v0.28.1,Android 启动器四字段已接线)|
 | UI 图标图集 | 1(18 格)| `assets/ui/icons.png` | v0.48.0 替代全部 SVG;源 = `assets/art/icons.aseprite`(gen_icons.lua)|
+| UI 装饰素材 | 9 | `assets/ui/` | v0.49.0 像素画绘制:开场卡框 / 面板框九宫格 / 取景角标 / 触屏轮盘底形×6;源 = `assets/art/ui/*.aseprite`(gen_ui.lua 直出),消费端 NEAREST |
 | 关卡图块集 | 1 | `assets/tiles/native_tiles.png` | 224 格 16×14,gen_tiles.lua 直出;TileSet = `data/tiles/native_tileset.tres` |
 | 字体 | 1 | `assets/fonts/NotoSansSC-VF.ttf` | 思源黑体可变字重(全游戏唯一字体)|
 | 剧情脚本 | 7 | `story/*.ks` | 与 §5 篇目一一对应 |

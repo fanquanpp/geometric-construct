@@ -74,20 +74,9 @@ func _ready() -> void:
 		_narration.anchor_top = 0.68
 		_narration.anchor_bottom = 0.80
 
-	# —— 开场卡装饰(硬投影 / 顶缘亮线 / 四角红刻度):画在 draw 回调,
-	# 先于 stylebox 渲染,正好垫在底板之下 ——
-	_intro_card.draw.connect(func() -> void:
-		var r := Rect2(Vector2.ZERO, _intro_card.size)
-		# 硬投影(整体位移的实心暗块,无模糊)
-		_intro_card.draw_rect(Rect2(r.position + Vector2(8, 10), r.size), Color(0, 0, 0, 0.42))
-		# 顶缘亮线与四角红色刻度(与档案页外框同语言)
-		_intro_card.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(Palette.I.paper, 0.30))
-		for corner: Vector2 in [Vector2(0, 0), Vector2(r.size.x, 0),
-				Vector2(0, r.size.y), Vector2(r.size.x, r.size.y)]:
-			var sx := -1.0 if corner.x == 0.0 else 1.0
-			var sy := -1.0 if corner.y == 0.0 else 1.0
-			_intro_card.draw_line(corner, corner + Vector2(-sx * 16.0, 0), Palette.I.red, 3.0)
-			_intro_card.draw_line(corner, corner + Vector2(0, -sy * 16.0), Palette.I.red, 3.0))
+	# —— 开场卡装饰(硬投影 / 顶缘亮线 / 四角红刻度)已并入卡框素材
+	# intro_card_frame.png(v0.49,源 assets/art/ui/ · gen_ui.lua 直出),
+	# 由 _apply_styles 的 StyleBoxTexture 一次承载,_draw 弃用 ——
 	_intro_card.resized.connect(_layout_intro_skip)
 
 	# —— 卡片右上角跳过按钮:样式 + 统一微交互 ——
@@ -135,8 +124,20 @@ func _apply_styles() -> void:
 	Ui.style(_narration, 22, Ui.HEAD, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, true, 6)
 
 	%Shade.color = Color(Palette.I.ink, 0.55)
-	_intro_card.add_theme_stylebox_override("panel",
-		Ui.sb(Palette.I.ink_2, 0, Color(Palette.I.paper, 0.18), 1, 36, 20))
+	# 开场卡框素材(墨底+纸边+顶缘线+红角刻+右下硬投影 8×10 一并入图):
+	# 控件矩形 = 卡体 + 投影越界区,内容边距随之右移 8 / 下移 10
+	var intro_frame := StyleBoxTexture.new()
+	intro_frame.texture = load("res://assets/ui/intro_card_frame.png")
+	intro_frame.set_texture_margin(SIDE_LEFT, 16.0)
+	intro_frame.set_texture_margin(SIDE_TOP, 16.0)
+	intro_frame.set_texture_margin(SIDE_RIGHT, 24.0)   # 16 角刻 + 8 投影
+	intro_frame.set_texture_margin(SIDE_BOTTOM, 26.0)  # 16 角刻 + 10 投影
+	intro_frame.set_content_margin(SIDE_LEFT, 36.0)
+	intro_frame.set_content_margin(SIDE_TOP, 20.0)
+	intro_frame.set_content_margin(SIDE_RIGHT, 44.0)
+	intro_frame.set_content_margin(SIDE_BOTTOM, 30.0)
+	_intro_card.add_theme_stylebox_override("panel", intro_frame)
+	_intro_card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # 像素纪律:禁柔化
 	%TitleBlock.color = Palette.I.red
 	%IntroRule.color = Palette.I.red
 	Ui.style(_intro_num, 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
