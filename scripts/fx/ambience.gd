@@ -33,6 +33,10 @@ const FADE := 0.12   # 收音防咔哒(秒)
 const MOTIFS := {
 	"prologue": "res://data/music/prologue.tres",
 	"act1": "res://data/music/act1.tres",
+	"act2": "res://data/music/act2.tres",
+	"act3": "res://data/music/act3.tres",
+	"act4": "res://data/music/act4.tres",
+	"act5": "res://data/music/act5.tres",
 }
 static var _motif_cache := {}
 
@@ -151,8 +155,11 @@ func _exit_tree() -> void:
 	Sfx.beat_clock_stop()
 
 
-## 切换章节 / 主角 motif(章节切换、进肉鸽时由 Main 调用);重启节拍时钟。
+## 切换章节 motif(换幕 / 回菜单时由 Main 调用,audio.md §3);重启节拍时钟。
 func set_motif(motif_name: String) -> void:
+	# 同曲续播短路:幕内切关 / 回菜单重复寻址不重置节拍与延迟环(幕内不断歌)
+	if motif_name == _motif_name and not _motif.is_empty():
+		return
 	var res := _load_motif(motif_name)
 	if res == null:
 		push_warning("Ambience: motif 不存在 %s" % motif_name)

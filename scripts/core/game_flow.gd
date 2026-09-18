@@ -41,9 +41,10 @@ func start_level(index: int, intro := true) -> void:
 	collect_players()
 	main._state = Main.State.PLAYING
 	Sfx.play("start")
-	# 幕归属由 LevelData.ACTS 推导(v0.15 序章扩容后不再按下标硬编码)
+	# 幕归属由 LevelData.ACTS 推导(v0.15 序章扩容后不再按下标硬编码);
+	# BGM 随幕热切(motif 画像 act1..act5,dev 探针等越界回落第一幕)
 	var act_i := LevelData.act_index_of(current)
-	main._ambience_motif("act1")
+	main._ambience_motif("act%d" % clampi(act_i + 1, 1, LevelData.ACTS.size()))
 
 	main._menu.visible = false
 	main._menu.close_act_panel()
@@ -113,6 +114,7 @@ func return_to_menu() -> void:
 func show_menu() -> void:
 	main._state = Main.State.MENU
 	main.dual_mode = false   # 退出即散伙:回菜单后普通开局不受残留双活态影响
+	main._ambience_motif("prologue")   # 菜单 = 序章圣咏(同名短路续播不重置)
 	clear_level()
 	main._hud.visible = false
 	main.touch_controls.set_in_game(false)
@@ -250,6 +252,7 @@ func net_peer_lost() -> void:
 func net_host_lost(was_in_game: bool) -> void:
 	main.get_tree().paused = false
 	main._pause.close()
+	main._ambience_motif("prologue")   # 断线弹回菜单,同 show_menu 回序章圣咏
 	clear_level()
 	main._hud.visible = false
 	main.touch_controls.set_in_game(false)

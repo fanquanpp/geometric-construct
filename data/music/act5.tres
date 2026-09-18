@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="AmbienceMotif" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ambience_pad.gd" id="1_act5p"]
+[ext_resource type="Script" path="res://scripts/data/ambience_motif.gd" id="2_act5m"]
+[ext_resource type="Script" path="res://scripts/data/ambience_step.gd" id="3_act5s"]
+
+[sub_resource type="Resource" id="Resource_a5pad1"]
+script = ExtResource("1_act5p")
+notes = Array[String](["C3", "G3", "D4"])
+vol = 0.07
+
+[sub_resource type="Resource" id="Resource_a5pad2"]
+script = ExtResource("1_act5p")
+beat = 4.0
+notes = Array[String](["A2", "E3", "C4"])
+vol = 0.07
+
+[sub_resource type="Resource" id="Resource_a5pad3"]
+script = ExtResource("1_act5p")
+beat = 8.0
+notes = Array[String](["F3", "C4", "A4"])
+vol = 0.07
+
+[sub_resource type="Resource" id="Resource_a5pad4"]
+script = ExtResource("1_act5p")
+beat = 12.0
+notes = Array[String](["G3", "D4", "B4"])
+vol = 0.07
+
+[sub_resource type="Resource" id="Resource_a5s1"]
+script = ExtResource("3_act5s")
+note = "C5"
+dur_beats = 2.0
+wave = "bell"
+vol = 0.09
+
+[sub_resource type="Resource" id="Resource_a5s2"]
+script = ExtResource("3_act5s")
+beat = 4.0
+note = "G4"
+dur_beats = 1.5
+wave = "bell"
+vol = 0.07
+
+[sub_resource type="Resource" id="Resource_a5s3"]
+script = ExtResource("3_act5s")
+beat = 8.0
+note = "E5"
+dur_beats = 2.0
+wave = "bell"
+vol = 0.075
+
+[sub_resource type="Resource" id="Resource_a5s4"]
+script = ExtResource("3_act5s")
+beat = 12.0
+note = "D5"
+dur_beats = 1.5
+wave = "bell"
+vol = 0.06
+
+[sub_resource type="Resource" id="Resource_a5s5"]
+script = ExtResource("3_act5s")
+beat = 15.0
+note = "A4"
+wave = "bell"
+vol = 0.05
+
+[resource]
+script = ExtResource("2_act5m")
+id = "act5"
+bpm = 58.0
+wind = 0.7
+drone = Array[float]([65.41, 98.0, 130.81, 164.81])
+pads = Array[ExtResource("1_act5p")]([SubResource("Resource_a5pad1"), SubResource("Resource_a5pad2"), SubResource("Resource_a5pad3"), SubResource("Resource_a5pad4")])
+steps = Array[ExtResource("3_act5s")]([SubResource("Resource_a5s1"), SubResource("Resource_a5s2"), SubResource("Resource_a5s3"), SubResource("Resource_a5s4"), SubResource("Resource_a5s5")])

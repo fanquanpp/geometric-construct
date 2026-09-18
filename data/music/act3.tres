@@ -1,0 +1,93 @@
+[gd_resource type="Resource" script_class="AmbienceMotif" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ambience_pad.gd" id="1_act3p"]
+[ext_resource type="Script" path="res://scripts/data/ambience_motif.gd" id="2_act3m"]
+[ext_resource type="Script" path="res://scripts/data/ambience_step.gd" id="3_act3s"]
+
+[sub_resource type="Resource" id="Resource_a3pad1"]
+script = ExtResource("1_act3p")
+notes = Array[String](["F3", "C4", "E4"])
+
+[sub_resource type="Resource" id="Resource_a3pad2"]
+script = ExtResource("1_act3p")
+beat = 8.0
+notes = Array[String](["G3", "D4", "A4"])
+
+[sub_resource type="Resource" id="Resource_a3s0"]
+script = ExtResource("3_act3s")
+note = "C4"
+wave = "sine"
+vol = 0.08
+
+[sub_resource type="Resource" id="Resource_a3s1"]
+script = ExtResource("3_act3s")
+beat = 0.75
+note = "E4"
+wave = "sine"
+vol = 0.08
+
+[sub_resource type="Resource" id="Resource_a3s2"]
+script = ExtResource("3_act3s")
+beat = 1.5
+note = "G4"
+wave = "sine"
+vol = 0.08
+
+[sub_resource type="Resource" id="Resource_a3s3"]
+script = ExtResource("3_act3s")
+beat = 2.25
+note = "B4"
+dur_beats = 2.0
+wave = "bell"
+vol = 0.06
+
+[sub_resource type="Resource" id="Resource_a3s4"]
+script = ExtResource("3_act3s")
+beat = 6.0
+note = "A4"
+vol = 0.08
+
+[sub_resource type="Resource" id="Resource_a3s4b"]
+script = ExtResource("3_act3s")
+beat = 8.0
+note = "G4"
+wave = "sine"
+vol = 0.08
+
+[sub_resource type="Resource" id="Resource_a3s5"]
+script = ExtResource("3_act3s")
+beat = 8.75
+note = "E4"
+wave = "sine"
+vol = 0.08
+
+[sub_resource type="Resource" id="Resource_a3s6"]
+script = ExtResource("3_act3s")
+beat = 9.5
+note = "C4"
+wave = "sine"
+vol = 0.08
+
+[sub_resource type="Resource" id="Resource_a3s7"]
+script = ExtResource("3_act3s")
+beat = 10.25
+note = "A3"
+dur_beats = 2.0
+wave = "bell"
+vol = 0.06
+
+[sub_resource type="Resource" id="Resource_a3s8"]
+script = ExtResource("3_act3s")
+beat = 14.0
+note = "E5"
+dur_beats = 1.5
+wave = "bell"
+vol = 0.05
+
+[resource]
+script = ExtResource("2_act3m")
+id = "act3"
+bpm = 74.0
+drone = Array[float]([87.31, 130.81, 174.61, 220.0])
+pads = Array[ExtResource("1_act3p")]([SubResource("Resource_a3pad1"), SubResource("Resource_a3pad2")])
+steps = Array[ExtResource("3_act3s")]([SubResource("Resource_a3s0"), SubResource("Resource_a3s1"), SubResource("Resource_a3s2"), SubResource("Resource_a3s3"), SubResource("Resource_a3s4"), SubResource("Resource_a3s4b"), SubResource("Resource_a3s5"), SubResource("Resource_a3s6"), SubResource("Resource_a3s7"), SubResource("Resource_a3s8")])

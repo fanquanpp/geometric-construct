@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="AmbienceMotif" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ambience_pad.gd" id="1_act2p"]
+[ext_resource type="Script" path="res://scripts/data/ambience_motif.gd" id="2_act2m"]
+[ext_resource type="Script" path="res://scripts/data/ambience_step.gd" id="3_act2s"]
+
+[sub_resource type="Resource" id="Resource_a2pad1"]
+script = ExtResource("1_act2p")
+notes = Array[String](["D3", "A3", "E4"])
+
+[sub_resource type="Resource" id="Resource_a2pad2"]
+script = ExtResource("1_act2p")
+beat = 8.0
+notes = Array[String](["C3", "G3", "D4"])
+
+[sub_resource type="Resource" id="Resource_a2s1"]
+script = ExtResource("3_act2s")
+note = "D3"
+vol = 0.1
+
+[sub_resource type="Resource" id="Resource_a2s2"]
+script = ExtResource("3_act2s")
+beat = 2.5
+note = "A4"
+dur_beats = 1.5
+wave = "bell"
+vol = 0.07
+
+[sub_resource type="Resource" id="Resource_a2s3"]
+script = ExtResource("3_act2s")
+beat = 6.0
+note = "E3"
+vol = 0.09
+
+[sub_resource type="Resource" id="Resource_a2s4"]
+script = ExtResource("3_act2s")
+beat = 8.5
+note = "E5"
+dur_beats = 2.0
+wave = "bell"
+vol = 0.06
+
+[sub_resource type="Resource" id="Resource_a2s5"]
+script = ExtResource("3_act2s")
+beat = 13.0
+note = "A4"
+dur_beats = 1.5
+wave = "bell"
+vol = 0.055
+
+[resource]
+script = ExtResource("2_act2m")
+id = "act2"
+bpm = 62.0
+wind = 0.85
+drone = Array[float]([73.42, 110.0, 146.83, 164.81])
+pads = Array[ExtResource("1_act2p")]([SubResource("Resource_a2pad1"), SubResource("Resource_a2pad2")])
+steps = Array[ExtResource("3_act2s")]([SubResource("Resource_a2s1"), SubResource("Resource_a2s2"), SubResource("Resource_a2s3"), SubResource("Resource_a2s4"), SubResource("Resource_a2s5")])

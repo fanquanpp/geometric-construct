@@ -3,6 +3,41 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.50.0(2026-09-19 · BGM 五幕画像补齐:程序化制作 + 按幕热切接线)
+
+> 五幕战役此前只有序章 / 第一幕两首 BGM,`game_flow` 把所有幕硬编码播
+> act1。本次按 audio.md §3「motif = 章节音乐画像」补齐第二~五幕四首
+> 程序化曲(零音频文件,数据 `data/music/act2..5.tres`),并修正接线。
+
+### 新增
+- **四首幕曲**(Ambience 运行时合成,全 C 大调自然音级,sus2/add9/开放
+  排列声位,水位对齐全局基准 ≈-16 dBFS 峰 / ≈-26 dBFS RMS,AMBCHECK
+  六首 ALL PASS):
+  - **act2「界与边」**62 BPM:低问高答对答体(tri 低音问 / bell 高音答),
+    D-sus2 ⇄ Csus2 双垫 =「界(隔)与边(通)」两极对话;风 0.85 极简留白。
+  - **act3「分岔」**74 BPM:上下行双岔四音琶音(sine)对称 + bell 收束,
+    Fmaj7 无三音开放垫 = 梦核七和弦色彩。
+  - **act4「蜕变」**80 BPM:同一「三音上行 + 五度翻」动机在 A 重心与
+    E 重心各陈述一次 =「用出不像自己的能力」;全剧最快推进。
+  - **act5「刻度的真相」**58 BPM:序章 Cadd9 / act1 Am / act3 F / 属 G
+    四垫全剧合流(重叠厚声场),五声 bell 每 4 拍钟点 = 刻度走针,首尾
+    回收序章素材(C-G drone 尾音换 E = 真相显形)。
+
+### 变更
+- **按幕热切接线**(game_flow.start_level):`LevelData.act_index_of`
+  推导 motif(act1..act5;dev 探针等越界回落第一幕)——替换 v0.15 起
+  「注释说推导、实现硬编码 act1」欠账。
+- **回菜单切回序章圣咏**:show_menu / net_host_lost(断线弹回)两处
+  `set_motif("prologue")`——菜单 = 序章空间;此前通关回菜单仍播上一幕曲。
+- **同名续播短路**(ambience.set_motif):同 motif 重复寻址不重置节拍与
+  延迟环——幕内切关 BGM 不断歌。
+- 验收:ambience_check 六 motif + 热切换 ALL PASS;native_check(27 场)/
+  flow_check PASS;菜单 / 入关冒烟零脚本错误。
+
+### 清理
+- audio.md §3 画像清单换代:「肉鸽按主角」四条 motif 规划随 v0.45.0
+  肉鸽删除一并清退(文档残留,`.tres` 表当时已删、条目漏改)。
+
 ## v0.49.0(2026-09-18 · UI/UX 全量像素画绘制:装饰素材化 + _draw 清退)
 
 > 全部 UI 静态装饰改 aseprite 像素素材(平涂构成主义,宪法内),五处
