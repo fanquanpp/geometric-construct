@@ -1,11 +1,6 @@
 class_name BootIntro
 extends CanvasLayer
-## 开屏动画:游戏名揭示 —— 墨色底 → 红色标记块硬立 →
-## 「几何构成」四个大字逐字折角落位(BACK 回弹)→ 英文名与定位语浮现 →
-## 红色刻线横扫基线 → 整层淡出交还标题菜单。
-## 与 TitleMark 同一套构成主义海报字语言;文字无慢速位移(亚像素取整会跳步),
-## 全部动效为入场落位(快速)与透明度过渡。
-## 任意点按 / 按键可跳过;总时长约 2.4s,播完自毁。
+
 
 var _root: Control
 var _chars: Array[Label] = []
@@ -23,8 +18,6 @@ func _ready() -> void:
 	layer = 60
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	# 自动化模式(--*shot / --autotest / --autoshot)跳过开屏,不挡截图钩子;
-	# --bootshot 例外:专为截取开屏动画本身,照常播放
 	var skip_boot := false
 	for a in OS.get_cmdline_user_args():
 		if a == "--bootshot":
@@ -41,14 +34,12 @@ func _ready() -> void:
 	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_root)
 
-	# 墨色底:盖住引擎启动到首帧之间的任何闪烁
 	var bg := ColorRect.new()
 	bg.color = Palette.I.ink
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(bg)
 
-	# —— 居中舞台(随可见区尺寸自适应) ——
 	var stage := Control.new()
 	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(stage)
@@ -62,7 +53,6 @@ func _ready() -> void:
 	fit.call()
 	_root.resized.connect(fit)
 
-	# —— 红色标记块(先于大字硬立) ——
 	_mark = ColorRect.new()
 	_mark.color = Palette.I.red
 	_mark.size = Vector2(26, 26)
@@ -71,7 +61,6 @@ func _ready() -> void:
 	_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stage.add_child(_mark)
 
-	# —— 游戏名:逐字大标(TitleMark 的独立排版,横向居中) ——
 	var font := Ui.weight(900, 2)
 	var title := Version.GAME_TITLE
 	var fs := 118
@@ -98,7 +87,6 @@ func _ready() -> void:
 		_chars.append(lb)
 		x += widths[i] + gap
 
-	# —— 英文名 + 定位语 ——
 	_en = Ui.l(Version.GAME_TITLE_EN, 22, Ui.LIGHT, Color(Palette.I.paper, 0.85),
 		HORIZONTAL_ALIGNMENT_CENTER)
 	_en.position = Vector2(0, 402)
@@ -113,7 +101,6 @@ func _ready() -> void:
 	_tag.modulate.a = 0.0
 	stage.add_child(_tag)
 
-	# —— 基线扫掠刻线 ——
 	_sweep = ColorRect.new()
 	_sweep.color = Color(Palette.I.red, 0.9)
 	_sweep.size = Vector2(0, 3)
@@ -121,8 +108,6 @@ func _ready() -> void:
 	_sweep.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stage.add_child(_sweep)
 
-	# —— 引擎署名(底部):POWERED BY GODOT ENGINE 纯文字(CC BY 署名;
-	# v0.48.0 SVG 全面退役,官方 logo svg 随之移除,文字署名保留出处)。
 	var godot_row := HBoxContainer.new()
 	godot_row.add_theme_constant_override("separation", 10)
 	godot_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -140,7 +125,6 @@ func _ready() -> void:
 	_play()
 
 
-## 入场演出 → 停留 → 淡出自毁;点按 / 按键跳过。
 func _play() -> void:
 	for lb in _chars:
 		lb.modulate.a = 0.0
@@ -154,11 +138,11 @@ func _play() -> void:
 
 	var tw := create_tween()
 	tw.set_parallel(true)
-	# 标记块:硬立(短促 BACK)
+
 	tw.tween_property(_mark, "modulate:a", 1.0, 0.10).set_delay(0.15)
 	tw.tween_property(_mark, "scale", Vector2.ONE, 0.26) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT).set_delay(0.15)
-	# 大字:逐字折角落位,落定一声轻打点
+
 	for i in _chars.size():
 		var delay := 0.34 + i * 0.11
 		var lb := _chars[i]
@@ -170,7 +154,7 @@ func _play() -> void:
 		ctw.tween_property(lb, "rotation_degrees", 0.0, 0.30) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(delay)
 		ctw.chain().tween_callback(func() -> void: Sfx.play("ui_page"))
-	# 英文名 / 定位语浮现 → 刻线横扫 → 停留 → 整层淡出
+
 	tw.tween_property(_en, "modulate:a", 1.0, 0.30).set_delay(0.86)
 	tw.tween_property(_tag, "modulate:a", 1.0, 0.30).set_delay(1.00)
 	tw.tween_property(_godot_row, "modulate:a", 1.0, 0.35).set_delay(1.10)
@@ -186,7 +170,6 @@ func _play() -> void:
 	Sfx.play("start")
 
 
-## 任意输入跳过:直接进入淡出。
 func _input(event: InputEvent) -> void:
 	if _done:
 		return

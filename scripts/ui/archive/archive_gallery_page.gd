@@ -1,15 +1,13 @@
 class_name ArchiveGalleryPage
 extends RefCounted
-## 档案 · 剧情回顾目录页构建器(v0.39.3 自 archive_panel.gd 页签拆分迁入,
-## 逐行平移):仿建筑 / 机关页的主从布局——左条目列表(各幕剧情)+ 右详情
-## (标题 / 副题 / 拍子规格 / 阅读全文);阅读全文进全文本阅读器(story 页)。
 
-var panel  # ArchivePanel
+
+var panel
 
 
 func build(p, page: Control) -> void:
 	panel = p
-	# 左列:条目列表(与建筑 / 机关页同款坐标与行语言)
+
 	var list_panel := PanelContainer.new()
 	list_panel.position = Vector2(48, 116)
 	list_panel.size = Vector2(300, 520)
@@ -51,7 +49,6 @@ func build(p, page: Control) -> void:
 		col.position = Vector2(58.0, 10.0)
 		b.add_child(col)
 
-	# 右列:详情区(标题 / 副题 / 拍子规格 / 阅读全文)
 	var detail := Control.new()
 	detail.position = Vector2(376, 116)
 	detail.size = Vector2(836, 540)
@@ -97,8 +94,6 @@ func build(p, page: Control) -> void:
 	Ui.wire_button(read_btn, "ui_open")
 	text.add_child(read_btn)
 
-	# 页脚就地关闭(v0.44.2,键位页同款双端纪律):目录页不在翻页型
-	# 页签里(无 btn_row),触屏用户必须有就地关闭路径。
 	var foot := PanelContainer.new()
 	foot.position = Vector2(376, 648)
 	foot.size = Vector2(836, 44)
@@ -127,7 +122,6 @@ func build(p, page: Control) -> void:
 	refresh()
 
 
-## 剧情详情刷新(选中行同步 + 拍子装填 + 阅读按钮接线)。
 func refresh() -> void:
 	var entries: Array = ArchiveData.STORIES
 	var idx: int = clampi(int(panel._sel["gallery"]), 0, entries.size() - 1)

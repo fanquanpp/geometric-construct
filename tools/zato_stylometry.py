@@ -1,10 +1,5 @@
-# ZATO 八维文体统计(二轮细读 · 一次性分析工具,REFACTOR Phase 7 精神可退役)
-# 用法:python tools/zato_stylometry.py [ZATO_CN_PATCH_DIR]
-# 输出:各章八维剖面(句长/停顿密度/描述对白比/断句率/特殊标记/场景切换)
-# 解析约定(对照仓库 tl/chinese/*.rpy 双语格式):
-#   译文行 = 4 空格缩进、非 # 开头、形如 `<tag> "中文{...} 英文灰字"` 或 `"中文..."`;
-#   英文原文在行内 {size=-8}{color=#999999} ... 之后,剥离后再计量;
-#   角色行 = 引号前有标识符(g / a ehh / up / i);旁白描述行 = 直接以引号开头。
+
+
 import re, sys, glob, os, json, io
 
 DIR = sys.argv[1] if len(sys.argv) > 1 else r"C:\Atian\Project\ZATO-CN-Patch\tl\chinese"
@@ -14,8 +9,8 @@ CN  = re.compile(r"[\u4e00-\u9fff]")
 LINE = re.compile(r'^\s{4,5}(?:([A-Za-z_][\w ]*?) )?"(.*)"\s*$')
 
 def clean(text):
-    text = ENG.sub("", text)          # 剥英文灰字
-    text = TAG.sub("", text)          # 剥 rpy 标记
+    text = ENG.sub("", text)
+    text = TAG.sub("", text)
     return text.strip()
 
 rows = {}
@@ -38,7 +33,7 @@ for path in sorted(glob.glob(os.path.join(DIR, "ep*.rpy"))):
         if "{w=" in body: w_n += 1
         if "{cps=0}" in body: cps0 += 1
         if tag == "extend":
-            ext_n += 1                # 延续行:上一句的拆行,单独计数
+            ext_n += 1
             continue
         if tag:
             dial_n += 1

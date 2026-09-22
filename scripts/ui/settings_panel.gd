@@ -1,14 +1,6 @@
 class_name SettingsPanel
 extends CanvasLayer
-## 设置面板:操控 / 音频两组设置,改完立即生效并持久化(SettingsManager)。
-## 可从标题菜单或暂停菜单进入;Esc 返回;与几何档案同一套构成主义面板语言
-## (细线外框 + 红色角刻度 + 平面色块,无渐变无圆角)。
-##
-## 操控 CONTROL
-##   轮盘位置 —— 固定位置:钉在左下角;按下位置:按住左半屏空白处就地展开
-##   触感反馈 —— 按下虚拟按键 / 轮盘展开时轻震
-## 音频 AUDIO
-##   音效音量 / 环境音量 —— 滑杆 0-100%,拖动即时试听
+
 
 signal closed
 
@@ -38,7 +30,6 @@ func _ready() -> void:
 	_apply_styles()
 	var body: VBoxContainer = %Body
 
-	# ———— 操控 ————
 	body.add_child(_section_label("操控 CONTROL"))
 	body.add_child(_caption("轮盘位置(移动端):固定在左下角,或在左半屏按下处展开;"
 		+ "两种模式下,右半屏点按均为跳跃"))
@@ -60,7 +51,6 @@ func _ready() -> void:
 
 	body.add_child(_rule())
 
-	# ———— 画面(仅桌面;移动端全屏独占,不渲染本分区) ————
 	if not OS.has_feature("mobile"):
 		body.add_child(_section_label("画面 VIDEO"))
 		var res_row := HBoxContainer.new()
@@ -82,7 +72,6 @@ func _ready() -> void:
 		body.add_child(_row("全屏", _fs_btn))
 		body.add_child(_rule())
 
-	# ———— 音频 ————
 	body.add_child(_section_label("音频 AUDIO"))
 	_sfx_slider = _volume_slider()
 	_sfx_slider.value_changed.connect(func(v: float) -> void:
@@ -104,7 +93,6 @@ func _ready() -> void:
 
 	body.add_child(_rule())
 
-	# ———— 无障碍(fx-light §4.4:减动效——关 stagger/脉冲/抖动,保留硬切)————
 	body.add_child(_section_label("无障碍 ACCESSIBILITY"))
 	var motion_btn := _toggle_btn()
 	motion_btn.button_pressed = SettingsManager.reduced_motion
@@ -115,9 +103,6 @@ func _ready() -> void:
 
 	body.add_child(_rule())
 
-	# —— 底部:版本信息 + 关闭 ——
-	# 直接装进场景骨架的 %Foot 行(v0.44.2 修复:旧版内层再套一个 HBox,
-	# 容器把子项按最小宽排 → spacer 失效,关闭钮紧跟版本号而非靠右)
 	_foot.add_theme_constant_override("separation", 12)
 	var ver := Ui.l("%s · %s" % [Version.GAME_TITLE_EN, Version.full_string()],
 		12, Ui.LIGHT, Palette.I.dim)
@@ -135,14 +120,11 @@ func _ready() -> void:
 	_foot.add_child(close_btn)
 
 
-## 场景骨架的样式施加(颜色经 Palette、文字经 Ui;场景文件零色值)。
 func _apply_styles() -> void:
 	_root.theme = Ui.make_theme()
 	_shade.color = Palette.I.ink
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# 全屏页(档案几何同语言):细线外框 + 四角红刻 + 左置大标题 + 规线
-	# —— 外框已素材化(v0.49):场景侧 NinePatchRect + panel_frame.png,
-	# 源 assets/art/ui/panel_frame.aseprite(gen_ui.lua 直出),_draw 弃用
+
 	(%TitleLabel as Label).text = "设 置"
 	Ui.style(%TitleLabel, 40, Ui.TITLE, Palette.I.paper,
 		HORIZONTAL_ALIGNMENT_LEFT)
@@ -155,8 +137,6 @@ func _apply_styles() -> void:
 	_fit_content()
 
 
-## 全屏页适配(档案几何同款):内容固定 1280×720 设计稿,整体等比缩放居中,
-## 安全区内缩(刘海屏避让);窗口 / 分辨率变化经 Root.resized 重算。
 func _fit_content() -> void:
 	var vp := _content.get_viewport()
 	if vp == null:
@@ -170,7 +150,7 @@ func _fit_content() -> void:
 	_content.pivot_offset = Adaptive.DESIGN * 0.5
 	_content.scale = Vector2(sc, sc)
 	_content.position = Vector2(ins.x, ins.y) + (avail - Adaptive.DESIGN * sc) * 0.5
-	# 页内布局:标题区 40..104,内容 118..foot,foot 贴底
+
 	%TitleLabel.position = Vector2(64, 40)
 	%TitleSub.position = Vector2(66, 92)
 	%TitleRule.position = Vector2(64, 116)
@@ -183,8 +163,6 @@ func _fit_content() -> void:
 	_foot.position = Vector2(64, Adaptive.DESIGN.y - 76)
 	_foot.size = Vector2(Adaptive.DESIGN.x - 128, 46)
 
-
-# ———— 行 / 控件工厂 ————
 
 func _section_label(text: String) -> Control:
 	var col := VBoxContainer.new()
@@ -209,7 +187,6 @@ func _rule() -> Control:
 	return Ui.rule(0, 1, Color(Palette.I.paper, 0.10))
 
 
-## 标签在左、控件在右的一行。
 func _row(label_text: String, ctl: Control, extra: Control = null) -> HBoxContainer:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 12)
@@ -240,7 +217,7 @@ func _mode_btn(text: String) -> Button:
 func _toggle_btn() -> CheckButton:
 	var c := CheckButton.new()
 	c.toggle_mode = true
-	Ui.wire_button(c, "")   # 开关音按新状态在 toggled 自播(on/off 两音)
+	Ui.wire_button(c, "")
 	return c
 
 
@@ -251,7 +228,7 @@ func _volume_slider() -> HSlider:
 	s.step = 0.05
 	s.custom_minimum_size = Vector2(200, 28)
 	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	# 构成主义滑轨:细平轨 + 红色已选段(默认抓手图标保留,可拖)
+
 	var track := Ui.sb(Color(Palette.I.paper, 0.16), 0, null, 0, 0, 0)
 	track.content_margin_top = 3
 	track.content_margin_bottom = 3
@@ -261,12 +238,10 @@ func _volume_slider() -> HSlider:
 	fill.content_margin_bottom = 3
 	s.add_theme_stylebox_override("grabber_area", fill)
 	s.add_theme_stylebox_override("grabber_area_highlight", fill)
-	# 棘轮刻度音:拖动跨过步进格即一声轻咔哒(音量滑杆拖动本身即试听)
+
 	s.value_changed.connect(func(_v: float) -> void: Sfx.play("ui_slider"))
 	return s
 
-
-# ———— 打开 / 关闭 ————
 
 func open() -> void:
 	_refresh_res()
@@ -295,7 +270,6 @@ func close() -> void:
 	closed.emit()
 
 
-## 把 SettingsManager 的当前值刷进控件(每次打开都同步,避免外部改动失联)。
 func _sync_from_settings() -> void:
 	_wheel_fixed_btn.set_pressed_no_signal(SettingsManager.wheel_mode
 		== SettingsManager.WHEEL_FIXED)
@@ -336,7 +310,7 @@ func _refresh_res() -> void:
 
 func _set_wheel(mode: String) -> void:
 	SettingsManager.set_wheel_mode(mode)
-	# 按钮状态由 toggle_mode 自动跟随;另一颗按钮取消按下态
+
 	_wheel_fixed_btn.set_pressed_no_signal(mode == SettingsManager.WHEEL_FIXED)
 	_wheel_float_btn.set_pressed_no_signal(mode == SettingsManager.WHEEL_FLOAT)
 	var m = Main.I

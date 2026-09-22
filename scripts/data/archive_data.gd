@@ -1,25 +1,9 @@
 class_name ArchiveData
-## 「档案几何」数据表(纯数据层,无节点逻辑 —— 分层规则:data 仅标准库)。
-## 「档案几何」(ArchivePanel)五个页签的全部条目来源:
-##   GEOMETRIES 直接引用 Geometries.ALL(几何属性唯一权威在 geometry_def);
-##   BUILDINGS / MECHS 为土建构件图鉴条目(建筑 = 地形与景观,机关 = 可交互构件);
-##   STORIES 为剧情回顾目录(与 story/*.ks 一一对应);
-##   CONTROLS 为键位指南(多端一册,与 project.godot 输入映射对表)。
-## 示例图片:assets/archive/*.png,统一 200×200 画布(= 2×2 格,
-## 1 格 = Geometries.UNIT_PX 100px),调色板与 art-style.md §1 同源;
-## aseprite 工程源已随 v0.39.0 清退,PNG 为孤本。
-## 条目字段:
-##   id       图片名(assets/archive/<id>.png;机关附加帧后缀 _f2/_f3 …)
-##   name/en  名称与英文副题;tag 分类小签
-##   desc     功能介绍(2–3 句);facts = [标签, 值] 语义规格行
-##   tips     使用要点;state1/state2 机关两态帧标签(仅手动切换的两态机关)
-##   anim     动态精灵(可选):{frames: [图后缀…], ms: 单帧毫秒,
-##            states: [帧标签…]} —— 面板内以 Timer 循环播放(规划中构件、
-##            周期/演出型机关),有 anim 时不再出两态切换按钮
+
 
 const IMG_DIR := "res://assets/archive/"
 
-# ———— 建筑图鉴(地形构件与景观) ————
+
 const BUILDINGS := [
 	{"id": "bld_slab_full", "name": "实心石板", "en": "SLAB · FULL", "tag": "地形",
 		"desc": "最基础的承重构件:四面实心,构成关卡的可站立地形与墙体。以「格」为单元拼装,顶缘纸白亮线即承重面,左缘红刻度每 480px 一处标定尺度。",
@@ -90,7 +74,7 @@ const BUILDINGS := [
 		"tips": ["与终点门(机关)分工:门厅门是建筑,终点门是玩法", "TOWER / HALL 的收口件,冠下净空按巨构档"]},
 	]
 
-# ———— 机关图鉴(可交互构件;双帧 = 两态静帧) ————
+
 const MECHS := [
 	{"id": "mech_exit_door", "name": "终点门", "en": "EXIT DOOR", "tag": "机关 · 目标",
 		"anim": {"frames": ["", "_f2", "_f3"], "ms": 650, "states": ["待命", "到站", "吸入"]},
@@ -155,7 +139,7 @@ const MECHS := [
 		"tips": ["与置换 / 加速门组合 = 长直线捷径", "门膛亮度与虚线相位即「可入」信号"]},
 ]
 
-# ———— 剧情回顾目录(与 story/*.ks 一一对应;回看走全文本阅读器) ————
+
 const STORIES := [
 	{"kind": "prologue", "title": "序幕 · 空白与降临",
 		"sub": "七个拍子——空白、降临、相认、规则、缺口、约定、出发",
@@ -180,9 +164,6 @@ const STORIES := [
 ]
 
 
-# ———— 键位指南(多端一册;「键位」页签数据源,与 project.godot 输入映射对表) ————
-# kind: pc / pad = 键帽芯片行,touch = 触屏操作行(无键帽,note 即操作说明)。
-# 行字段:act 动作名;keys 键帽文本列表(touch 区留空);note 补充说明(可省)。
 const CONTROLS := [
 	{"title": "PC · 键鼠", "en": "KEYBOARD & MOUSE", "kind": "pc", "rows": [
 		{"act": "移动", "keys": ["A", "D", "←", "→"]},

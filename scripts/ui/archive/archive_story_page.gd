@@ -1,10 +1,8 @@
 class_name ArchiveStoryPage
 extends RefCounted
-## 档案 · 全文本阅读器页构建器(v0.39.3 自 archive_panel.gd 页签拆分迁入,
-## 逐行平移):从 Konado 剧本资源读取对话节点,仅取普通对话行;按源行号
-## 跳变切段,段首配拍名;台词按角色着色。不重播对话演出。
 
-var panel  # ArchivePanel
+
+var panel
 
 var _title: Label
 var _sub: Label
@@ -12,7 +10,6 @@ var _scroll: ScrollContainer
 var _list: VBoxContainer
 
 
-## 全文本阅读器骨架(内容按剧本在 open_story 时装填)。
 func build(p, page: Control) -> void:
 	panel = p
 	var zone := Control.new()
@@ -85,7 +82,7 @@ func build(p, page: Control) -> void:
 	back.text = "« 返回目录"
 	back.custom_minimum_size = Vector2(150, 40)
 	back.add_theme_font_size_override("font_size", 15)
-	Ui.wire_button(back, "")   # 返回目录即翻页,ui_page 由 _switch_tab 播
+	Ui.wire_button(back, "")
 	back.pressed.connect(func() -> void: panel._switch_tab("gallery"))
 	foot_row.add_child(back)
 	var close_btn := Button.new()
@@ -99,9 +96,6 @@ func build(p, page: Control) -> void:
 	vb.add_child(foot)
 
 
-## 打开一段剧本的全文本:从 Konado 剧本资源读取对话节点(导出包内 .ks 已
-## 加密重映射,只能走资源解密路径,不能读原文),仅取普通对话行;
-## 按源行号跳变(≥3 行 = 越过分拍注释)切段,段首配拍名;台词按角色着色。
 func open_story(story: Dictionary) -> void:
 	_title.text = str(story["title"])
 	_sub.text = str(story["sub"])
@@ -131,7 +125,6 @@ func open_story(story: Dictionary) -> void:
 	panel._apply_tab()
 
 
-## 分拍题头:红色短线 + "第 N 拍 · 名"(拍名列表对不上时只给序号)。
 func beat_header(n: int, beats: Array) -> void:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 10)
@@ -151,7 +144,6 @@ func beat_header(n: int, beats: Array) -> void:
 	_list.add_child(hb)
 
 
-## 一行台词:角色色块 + 角色名(几何体按其色,旁白纸白减淡)+ 正文自动换行。
 func story_line(who: String, text: String) -> Control:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 12)

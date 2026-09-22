@@ -1,29 +1,12 @@
 class_name NetSession
 extends Node
-## 联机会话中枢(net.md §2/§6/§7):主机权威拓扑的同步编排。
-##
-## 拓扑(listen-server,D2/D3):物理与判定只在主机算;客户端一切几何体
-## remote_driven(不发本地物理,只跟随快照 + 速度外推),输入 60Hz 不可靠
-## 上传,主机侧经 RemoteInputSource 注入客机绑定体。
-##
-## 同步规格(net.md §6):
-##   运动   —— 主机 20Hz 不可靠快照(pos/vel/gravity_dir/facing),客机端
-##             速度外推 + 指数靠拢(平滑 20Hz 步进);
-##   事件   —— 死亡/到站/离站/进门/强化/封印/过关 走可靠 RPC,远端复现
-##             Main 既有回调;
-##   movers —— 零带宽:主机随快照携带关卡时钟 t,客机端指数靠拢,动平台
-##             / 限时桥按共享时钟取值(Mover/TimedBridge);
-##   生成   —— 无 MultiplayerSpawner:两端由同一关卡场景同步装载
-##             (版本 + 关卡哈希门禁 D7 保证一致),缺省 spawn 全免。
-##
-## 本节点由 Main 创建(path 两端一致,RPC 才能寻址),process_mode ALWAYS
-## (暂停期间联机心跳不断)。
+
 
 signal members_changed()
-signal net_message(msg: String)          # 房间 UI 的状态/toast 行
-signal room_closed()                     # 对端掉线 / 房解散(UI 弹回)
-signal map_picked(index: int)            # 选图定档(两端;房间页转选角页)
-signal claims_changed()                  # 认领集变化(选角页重建 / HUD 描边)
+signal net_message(msg: String)
+signal room_closed()
+signal map_picked(index: int)
+signal claims_changed()
 
 enum Mode { NONE, LOBBY, CONNECTING, IN_GAME }
 
@@ -35,8 +18,8 @@ const EV_BUFFED := 5
 const EV_SEAL := 6
 const EV_COMPLETE := 7
 const EV_BACK := 8
-const EV_LEVER := 9     # arg = 关内门序号(LeverGate.gate_id),arg2 = 门态(1 开)
-const EV_CHECKPOINT := 10   # arg = 关内信标序号(CheckpointBeacon.beacon_id)
+const EV_LEVER := 9
+const EV_CHECKPOINT := 10
 
 static var I: NetSession
 
@@ -44,27 +27,26 @@ var mode: int = Mode.NONE
 var room_name := ""
 var beacon: LanBeacon
 
-var _clock := 0.0            # 关卡共享时钟(主机累计 / 客机靠拢)
+var _clock := 0.0
 var _clock_target := 0.0
 var _tick := 0
-var _client_slots: Array = []    # 主机侧:客机绑定的 players 下标
-var _own_slots: Array = []       # 本侧绑定的 players 下标
-var _net_active := -1            # 本侧当前操控体(players 下标;联机用)
-var _remote_srcs := {}           # 主机侧:slot -> RemoteInputSource
-var _client_active := 0          # 主机侧:客机上报的当前操控体
+var _client_slots: Array = []
+var _own_slots: Array = []
+var _net_active := -1
+var _remote_srcs := {}
+var _client_active := 0
 var _connect_deadline := 0
 
-## —— 选图选角(v0.36.0,net.md §8):主机选图 → 双方各认领 1–3 位 →
-## 名册位全覆盖才可开演;未走选图流程(自动化钩子 / 旧调用点)退回对半分。
-const MAX_PICKS := 3               # 每人最多认领的名册位(覆盖率不足时自动放宽到 ⌈n/2⌉)
 
-var pick_level := -1               # 已选定的关卡下标(-1 未选)
-var _host_geo: Array = []          # 主机认领的几何体下标(权威在主机)
-var _client_geo: Array = []        # 客机认领的几何体下标
-var _own_geo: Array = []           # 开局后:本侧绑定的几何体下标
-var _other_geo: Array = []         # 开局后:对侧绑定的几何体下标
+const MAX_PICKS := 3
 
-@onready var _m = null           # Main.I 快照(_ready 时取)
+var pick_level := -1
+var _host_geo: Array = []
+var _client_geo: Array = []
+var _own_geo: Array = []
+var _other_geo: Array = []
+
+@onready var _m = null
 
 
 func _enter_tree() -> void:
@@ -89,9 +71,6 @@ func _ready() -> void:
 	multiplayer.server_disconnected.connect(_on_server_gone)
 
 
-# ———————————————— 会话生命周期 ————————————————
-
-## 主机建房:ENet 服务 + LAN 信标(net.md §4.2)。
 func host_room(p_room_name: String) -> bool:
 	leave_silent()
 	var peer := PeerFactory.create_host(NetConfig.ENET_PORT)
@@ -101,17 +80,15 @@ func host_room(p_room_name: String) -> bool:
 	multiplayer.multiplayer_peer = peer
 	room_name = p_room_name
 	mode = Mode.LOBBY
-	# 主机手机保活(net.md §4.3-4):屏幕常亮
+
 	DisplayServer.screen_set_keep_on(true)
-	# 信标绑定失败 = 局内能玩但"附近房间"搜不到(net.md §4.3-2 类设备问题)
-	# 必须显式告知,不能静默吞掉 —— 用户会误以为一切正常。
+
 	if not beacon.start_host(room_name, NetConfig.ENET_PORT):
 		net_message.emit("注意:发现信标未启动,对手只能手动输 IP 直连")
 	net_message.emit("房间已创建 · 等待对手加入")
 	return true
 
 
-## 客机加入:ENet 连接(手动 IP 或附近房间列表双路径)。
 func join_room(ip: String, port := NetConfig.ENET_PORT) -> bool:
 	leave_silent()
 	var peer := PeerFactory.create_client(ip, port)
@@ -125,7 +102,6 @@ func join_room(ip: String, port := NetConfig.ENET_PORT) -> bool:
 	return true
 
 
-## 离开 / 解散:关 peer 与信标,回菜单由调用方(Main)驱动。
 func leave(reason := "") -> void:
 	var had := mode != Mode.NONE
 	leave_silent()
@@ -177,16 +153,11 @@ func in_game() -> bool:
 	return mode == Mode.IN_GAME
 
 
-## 本侧绑定的几何体下标集合(v0.36.0 起为选角认领的兜底,见 on_level_built):
-## 主机前 ⌈n/2⌉ 位、客机其余。纯函数,--nettest 有形状断言。
 static func split_roster(roster: Array) -> Array:
 	var mid := int(ceil(roster.size() / 2.0))
 	return [roster.slice(0, mid), roster.slice(mid, roster.size())]
 
 
-## 认领合法性(index 进/出):位属本关名册、未被对方持有、未超上限。
-## 纯函数,--nettest 有断言;上限 = MAX_PICKS 与 ⌈n/2⌉ 的较大者
-## (名册位多于 2×MAX_PICKS 时覆盖率优先,允许单侧多认领)。
 static func claim_ok(roster: Array, mine: Array, other: Array, index: int, on: bool) -> bool:
 	if not on:
 		return mine.has(index)
@@ -194,7 +165,6 @@ static func claim_ok(roster: Array, mine: Array, other: Array, index: int, on: b
 		and mine.size() < maxi(MAX_PICKS, int(ceil(roster.size() / 2.0)))
 
 
-## 开演条件:每个名册位都被某一方认领(全员有主,到站契约才可满足)。
 static func claims_cover(roster: Array, host_claims: Array, client_claims: Array) -> bool:
 	for g in roster:
 		if not (host_claims.has(int(g)) or client_claims.has(int(g))):
@@ -202,7 +172,6 @@ static func claims_cover(roster: Array, host_claims: Array, client_claims: Array
 	return true
 
 
-## —— 选角认领集访问(房间选角页 / HUD 双方描边的数据源) ——
 func host_claims_arr() -> Array:
 	return _host_geo
 
@@ -227,14 +196,12 @@ func other_geo_arr() -> Array:
 	return _other_geo
 
 
-## 主机侧:当前选图下认领是否覆盖齐全(开演钮解锁条件)。
 func can_start() -> bool:
 	if not (is_host() and pick_level >= 0 and pick_level < LevelData.count()):
 		return false
 	return claims_cover(LevelData.scene_roster(pick_level), _host_geo, _client_geo)
 
 
-## 主机选图:广播定档,两端房间页转选角页。
 func host_pick_level(index: int) -> void:
 	if not (is_host() and mode != Mode.NONE
 			and index >= 0 and index < LevelData.count()):
@@ -250,7 +217,6 @@ func rpc_map_picked(index: int) -> void:
 	map_picked.emit(index)
 
 
-## 主机认领 / 释放:本地权威仲裁 + 全量广播(2 人房,流量可忽略)。
 func host_toggle_claim(index: int, on: bool) -> void:
 	if not (is_host() and pick_level >= 0 and pick_level < LevelData.count()):
 		return
@@ -262,7 +228,6 @@ func host_toggle_claim(index: int, on: bool) -> void:
 	_claims_broadcast()
 
 
-## 客机认领 / 释放:发主机仲裁,以广播回包为准(不乐观本地生效)。
 func client_toggle_claim(index: int, on: bool) -> void:
 	if is_host():
 		return
@@ -302,11 +267,6 @@ func active_slot() -> int:
 	return _net_active
 
 
-## —— N2 绑定集内切换(net.md §8 首版:对半分绑定集合,集合内自由切) ——
-## 主机:在自己绑定体间切本地操控(物理 is_active);
-## 客机:切换输入上传目标槽(_net_active),画面跟随同步镜像。
-
-## 循环切换(dir = ±1):chips 直达走 switch_to_geo。
 func cycle_own_slot(dir: int) -> void:
 	if _own_slots.is_empty():
 		return
@@ -315,7 +275,6 @@ func cycle_own_slot(dir: int) -> void:
 	_select_own(idx)
 
 
-## chips / 数字键按几何体下标直达(绑定集内;双子同下标换另一半)。
 func switch_to_geo(index: int) -> void:
 	var cands: Array = []
 	for slot: int in _own_slots:
@@ -341,8 +300,6 @@ func _select_own(own_idx: int) -> void:
 		Sfx.play("switch")
 
 
-## 客机侧视角镜像:is_active 只作画面语义(名牌 / 芯片),物理不读
-## (remote_driven 提前 return);active_slot 供相机 / HUD / 磁界取景。
 func _mirror_view() -> void:
 	roster_active_mirror(_net_active)
 
@@ -354,7 +311,6 @@ func roster_active_mirror(slot: int) -> void:
 	_m._refresh_roster()
 
 
-## 本机"当前操控体"players 下标:主机 = roster 受控槽,客机 = 上传槽。
 func _view_slot_local() -> int:
 	return roster_active_local() if is_host() else _net_active
 
@@ -363,15 +319,11 @@ func roster_active_local() -> int:
 	return _m.roster.active_slot
 
 
-## 通关后两端回到房间(联机流转:不开下一关,回房间等待主机再开演)。
 func back_to_lobby() -> void:
 	if mode == Mode.IN_GAME:
 		mode = Mode.LOBBY
 
 
-# ———————————————— 关卡生命周期 ————————————————
-
-## 主机开演:可靠 RPC 令两端同步 start_level(同一关卡场景,D7 门禁)。
 func host_start_level(index: int) -> void:
 	if not (is_host() and mode != Mode.NONE):
 		return
@@ -386,8 +338,6 @@ func rpc_start_level(index: int) -> void:
 		_m.start_level(index, false)
 
 
-## 两端 start_level 装配完成后由 Main 调用:算定绑定、标注 remote_driven、
-## 注入输入源(§6 生成免 Spawner 的收尾)。
 func on_level_built() -> void:
 	if not is_net() or _m == null or _m.players.is_empty():
 		return
@@ -395,9 +345,7 @@ func on_level_built() -> void:
 	_clock = 0.0
 	_clock_target = 0.0
 	_tick = 0
-	# 绑定分边(v0.36.0):优先选角认领集(net.md §8);未走选图流程
-	# (--netauto 等自动化钩子 / 旧调用点)退回对半分——主机前 ⌈n/2⌉ 位。
-	# 按几何体下标分边再映射 players 槽:双子(伍)同下标两具同属一侧。
+
 	var own := my_claims()
 	var other := other_claims()
 	if own.is_empty() and other.is_empty():
@@ -414,8 +362,7 @@ func on_level_built() -> void:
 			_own_slots.append(i)
 		else:
 			_client_slots.append(i)
-	# 主机权威:主机端全部实体本地物理;客机绑定体吃远端输入源。
-	# 客机端全部实体 remote_driven(D2:只发输入、收状态)。
+
 	for i in _m.players.size():
 		var p: Player = _m.players[i]
 		if is_host():
@@ -424,7 +371,7 @@ func on_level_built() -> void:
 				else _remote_source_for(i)
 		else:
 			p.remote_driven = true
-			p.input_source = InputSource.local(0)   # 仅作占位:remote_driven 不读
+			p.input_source = InputSource.local(0)
 	_net_active = _own_slots[0] if not _own_slots.is_empty() else -1
 	_client_active = _client_slots[0] if not _client_slots.is_empty() else -1
 	_m.net_post_setup()
@@ -438,15 +385,9 @@ func _remote_source_for(slot: int) -> InputSource:
 	return _remote_srcs[slot]
 
 
-## 主机侧:客机当前操控体(players 下标,随 rpc_input 更新)。
-## 槽位契约与同屏双人 RosterController.dual_binds() 同形 ——
-## [{slot: 0/1, geo: 几何体下标}]:N2 房间 UI / 相机插槽按同一形状
-## 取"客机在看谁"(net.md §2 绑定集合同一数据源,N1 已联通)。
 func client_active_slot() -> int:
 	return _client_active
 
-
-# ———————————————— 客机输入上传(60Hz 不可靠) ————————————————
 
 func _physics_process(delta: float) -> void:
 	if mode == Mode.CONNECTING and Time.get_ticks_msec() > _connect_deadline:
@@ -462,7 +403,7 @@ func _physics_process(delta: float) -> void:
 		if _tick % NetConfig.STATE_HZ_DIV == 0:
 			_send_state()
 	else:
-		# 关卡时钟:向主机报告值指数靠拢(不回退硬跳,mover/限时桥平滑)
+
 		var diff: float = _clock_target - _clock
 		if absf(diff) > 2.0:
 			_clock = _clock_target
@@ -475,8 +416,7 @@ func _upload_input(_delta: float) -> void:
 	var slot := _net_active
 	if slot < 0 or slot >= _m.players.size():
 		return
-	# 客机本机操控 = 自己设备的 P1:桌面读分区动作(键盘分区让位 P2 语义),
-	# 触屏设备读全局动作(TouchControls 只注入既有动作,net.md §3 首版)。
+
 	var touch := Adaptive.is_touch_mode()
 	var axis := Input.get_axis("move_left" if touch else "p1_move_left",
 		"move_right" if touch else "p1_move_right")
@@ -489,13 +429,11 @@ func _upload_input(_delta: float) -> void:
 @rpc("any_peer", "call_remote", "unreliable_ordered", 1)
 func rpc_input(slot: int, axis: float, jump_edge: bool, jump_held: bool, sprint: bool) -> void:
 	if not is_host() or not _client_slots.has(slot):
-		return   # 主机钳制非法目标(D2:一切输入经主机校验)
+		return
 	_client_active = slot
 	var src: InputSource = _remote_source_for(slot)
 	src.feed_remote(clampf(axis, -1.0, 1.0), jump_edge, jump_held, sprint)
 
-
-# ———————————————— 主机状态快照(20Hz 不可靠) ————————————————
 
 func _send_state() -> void:
 	var m = _m
@@ -535,9 +473,6 @@ func rpc_state(t: float, data: PackedFloat32Array) -> void:
 		k += 8
 
 
-# ———————————————— 可靠事件(死亡 / 到站 / 过关流) ————————————————
-
-## 主机侧发事件;客机 rpc_event 复现同一 Main 回调链(net.md §6)。
 func emit_event(kind: int, arg := 0, arg2 := 0) -> void:
 	if is_host():
 		rpc_event.rpc(kind, arg, arg2)
@@ -584,7 +519,6 @@ func rpc_event(kind: int, arg: int, arg2 := 0) -> void:
 					b.net_apply_activate()
 
 
-## 客机召回请求:主机执行 teleport,快照回传落位。
 func request_recall(slot: int) -> void:
 	if not is_host():
 		rpc_recall.rpc_id(1, slot)
@@ -602,12 +536,10 @@ func _do_recall(slot: int) -> void:
 		_m.net_recall(slot)
 
 
-# ———————————————— 连接信号 ————————————————
-
 func _on_peer_connected(id: int) -> void:
 	if mode == Mode.NONE:
 		return
-	# 超员 / 局中途加入一律拒绝(首版 2 人,开局后不再放行)
+
 	var peers := multiplayer.get_peers().size()
 	if is_host() and (peers > NetConfig.MAX_PLAYERS - 1 or mode == Mode.IN_GAME):
 		multiplayer.multiplayer_peer.disconnect_peer(id)
@@ -621,12 +553,12 @@ func _on_peer_disconnected(_id: int) -> void:
 	if mode == Mode.NONE:
 		return
 	if is_host():
-		_client_geo.clear()   # 掉线方认领作废,选角页/开演条件随之刷新
+		_client_geo.clear()
 		_client_slots_clear()
 		claims_changed.emit()
 		members_changed.emit()
 		if _m != null:
-			_m.net_peer_lost()   # 局内:弹回房间;大厅:仅刷新
+			_m.net_peer_lost()
 	else:
 		pass
 
@@ -650,26 +582,21 @@ func _on_server_gone() -> void:
 		_m.net_host_lost(was_in_game)
 
 
-# ———————————————— --nettest 回环自测(headless) ————————————————
-## 同进程不能既是主机又是客机(一套 MultiplayerAPI),传输层回环用
-## 独立手动 poll 的裸 ENet peer 对(不接入 SceneMultiplayer 协议层)验证;
-## 完整两进程 RPC 链路由真机验收覆盖(net.md §4.3-2)。
-
 func run_self_test() -> void:
 	print("NETTEST: begin")
 	var fails := 0
-	# ① 门禁指纹自反
+
 	var h := NetConfig.payload_hash()
 	print("NETTEST hash ", "PASS" if not h.is_empty() else "FAIL", " (", h, ")")
 	if h.is_empty():
 		fails += 1
-	# ② 游戏建房(ENet 服务 + 信标)
+
 	if not host_room("nettest"):
 		print("NETTEST host FAIL")
 		get_tree().quit(1)
 		return
 	print("NETTEST host PASS (port=", NetConfig.ENET_PORT, ")")
-	# ③ 发现回环:单播 + 受限广播(Windows 回环广播不保证收,择一即过)
+
 	var disc := PacketPeerUDP.new()
 	disc.set_broadcast_enabled(true)
 	var offer_seen := false
@@ -697,7 +624,7 @@ func run_self_test() -> void:
 	if not offer_seen:
 		print("NETTEST discover FAIL")
 		fails += 1
-	# ④ ENet 传输回环:裸 peer 对手动 poll(端口 +2,避开游戏监听)
+
 	var raw_port := NetConfig.ENET_PORT + 2
 	var s_peer := ENetMultiplayerPeer.new()
 	var c_peer := ENetMultiplayerPeer.new()
@@ -714,7 +641,7 @@ func run_self_test() -> void:
 				both_up = true
 				break
 			await get_tree().create_timer(0.03).timeout
-	c_peer.put_packet("SRNET1-PROBE".to_utf8_buffer())   # 默认通道探包
+	c_peer.put_packet("SRNET1-PROBE".to_utf8_buffer())
 	var got := false
 	var deadline2 := Time.get_ticks_msec() + 2000
 	while Time.get_ticks_msec() < deadline2 and not got:
@@ -729,9 +656,7 @@ func run_self_test() -> void:
 		fails += 1
 	s_peer.close()
 	c_peer.close()
-	# ⑤ 分边与认领逻辑(v0.36.0 选图选角,net.md §8;纯函数 headless 可测)
-	# split_roster 形状:两侧平铺数组(v0.35.1 前曾双层嵌套,致客机绑定集
-	# 恒空 = 只有主机能控制的根因),并集覆盖名册、尺寸 ⌈n/2⌉/⌊n/2⌋。
+
 	var roster := [0, 1, 2, 3, 4]
 	var split := split_roster(roster)
 	var split_ok: bool = split.size() == 2 \
@@ -742,8 +667,7 @@ func run_self_test() -> void:
 		" host=", split[0], " client=", split[1])
 	if not split_ok:
 		fails += 1
-	# 认领规则:对方持有不可抢 / 未持有可领 / 释放须先持有 / 越界拒绝 /
-	# 上限拒绝;覆盖判定:全有主才可开演。
+
 	var claims_ok: bool = \
 		(not claim_ok(roster, [], [4], 4, true)) and \
 		claim_ok(roster, [], [4], 0, true) and \

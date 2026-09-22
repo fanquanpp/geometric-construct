@@ -1,7 +1,5 @@
 class_name LevelData
-## 关卡目录(原生编辑器作关,native-levels.md 提案 v1):每关一个 .tscn 场景,
-## 本表只登记幕-场结构与场景路径;关卡内容全在场景内编辑器摆位,这里零几何数据。
-## 幕-场序 = 解锁存档契约(progress/unlocked 按下标):一次排定,不得插删。
+
 
 const SCENES: Array[Dictionary] = [
 	{"path": "res://levels_native/act1/s01.tscn", "name": "疾 · 初速",
@@ -81,8 +79,8 @@ const SCENES: Array[Dictionary] = [
 		"roster": [0, 1], "focus": 0, "intro": ""},
 ]
 
-## 幕目录:主页剧目行按此渲染;levels 为空 = 尚未上演的占位幕。
-## 幕归属 / 场次号一律由本表推导(act_index_of / scene_no_of)。
+
+# 幕-场序按下标进存档契约(progress/unlocked),排定后不得插删。
 static var ACTS: Array[Dictionary] = [
 	{"name": "第一幕", "title": "各自的路上",
 		"hint": "疾与跃的入门六场:初速 / 折返 / 门厅 / 高墙 / 折叠 / 合演",
@@ -114,17 +112,14 @@ static func scene_name(index: int) -> String:
 	return str(SCENES[index]["name"])
 
 
-## 各关名册(联机认领 / 双人开演消费面;登记与场景 root.roster 保持一致)。
 static func scene_roster(index: int) -> Array:
 	return SCENES[index]["roster"]
 
 
-## 整条登记(菜单行 / 联机选图展示用:path/name/roster/focus/intro)。
 static func scene_meta(index: int) -> Dictionary:
 	return SCENES[index]
 
 
-## 关卡所属幕的下标(不在任何幕 = -1)。
 static func act_index_of(level: int) -> int:
 	for i in ACTS.size():
 		if (ACTS[i]["levels"] as Array).has(level):
@@ -132,7 +127,6 @@ static func act_index_of(level: int) -> int:
 	return -1
 
 
-## 关卡在所属幕内的场次号(1 起;不属于任何幕时退回全局序号)。
 static func scene_no_of(level: int) -> int:
 	var a := act_index_of(level)
 	if a < 0:
@@ -140,7 +134,6 @@ static func scene_no_of(level: int) -> int:
 	return (ACTS[a]["levels"] as Array).find(level) + 1
 
 
-## 战役最后一场下标(dev 探针关不计入;通关至此 = WIN)。
 static func campaign_last() -> int:
 	var last := 0
 	for a in ACTS.size():
@@ -149,7 +142,6 @@ static func campaign_last() -> int:
 	return last
 
 
-## 某幕的首场关卡下标(空幕 = -1)。
 static func first_level_of_act(act: int) -> int:
 	if act < 0 or act >= ACTS.size():
 		return -1

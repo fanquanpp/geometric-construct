@@ -1,9 +1,5 @@
 shader_type canvas_item;
-// 阶跃溶解转场(fx-light 卷三白名单 · 阶跃溶解,v0.37 登记实装)。
-// 逐块硬边:UV 分格,每格 hash 与阈值 step 比较——无平滑、无溶解渐变;
-// 阈值前沿 0.06 窗口内的块染构成红(前进波);肉鸽节奏用红色刻度块语言。
-// 联网核对(GodotShaders / dev.to):逐格 hash vs threshold 是 canvas_item
-// 块溶解的标准做法,Threshold 由 Tween 逐帧驱动。
+
 
 uniform float progress : hint_range(0.0, 2.0) = 0.0;
 uniform vec2 blocks = vec2(24.0, 14.0);

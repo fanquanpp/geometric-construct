@@ -1,7 +1,5 @@
 class_name PeerFactory
-## peer 创建唯一入口(net.md D1:ENet-only)。
-## WebSocketMultiplayerPeer 只留签名不实现 —— 无 Web 导出计划;
-## 中继(N3)以后复用 ENet 形态,接中继地址即可,不再有第三种创建路径。
+
 
 const ERR_TEXT := {
 	OK: "成功",

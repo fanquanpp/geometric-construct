@@ -1,91 +1,67 @@
 class_name GeometryDef
 extends Resource
-## 一个可操控几何体的完整定义(场景资源强制约束 R2 / REFACTOR §八 M-4):
-## 每位几何体一个 .tres(data/characters/<slug>.tres),数值在编辑器
-## Inspector 直调;resource 只作静态数据,运行时禁止写入(共享引用,
-## 一处写处处变)。
-##
-## 属性规范(glossary.md §4,v0.36.0):
-##   内部存储 = 物理倍率(0.0 – 2.0):1.0 = 标准物理基准,0.0 = 无该能力,
-##   2.0 = 物理上限;物理公式(px/s、格、反弹率)与本文件数值绑定。
-##   **基础值只属于几何体自己**;基础 ≤ 0 的能力 = "状态-1"
-##   (非禁用,是天生没有)。
-##   基础读数(存档/文档兼容记法)= 物理倍率 + 1.0(物理 0.0 → -1.0);
-##   跳高例外:读数 = 格数(标准跳 2.0 格 = 基准 2.0)。常规域读数
-##   -1.0 – 3.0。
-##
-## 标尺换算:1.0 属性单位 = 100 px(1 格)。
-##   跳高(格) = jump_units(独立属性,二段跳几何体统一 2.0 格/跳);
-##   关卡可跳台阶高度必须比 jump_units 低 0.1。
-##   弹性全员固定:0.5;跃为 2.0 固定(只决定落地反弹,不再决定跳高)。
+
 
 enum Shape { SQUARE, RECT, BALL, TRIANGLE }
 
-## 主动跳跃次数上限(二段跳:地面跳 1 次 + 空中跳 1 次)——结构性规则常量。
+
 const MAX_JUMPS := 2
 
-# ———— 身份 ————
+
 @export var index: int = 0
-@export var name: String = ""      # 单字代号,用于大字排版(Resource 无 name 属性,可安全占用)
-@export var full_name: String = ""  # 完整名(形态 + 色),档案页标题
-@export var slug: String = ""       # 对应 assets/ui/icons.png 图集字符格
-@export var note: String = "C4"     # 主题音符(C 大调音名):跳跃/落地音效变调基准
+@export var name: String = ""
+@export var full_name: String = ""
+@export var slug: String = ""
+@export var note: String = "C4"
 @export var shape: Shape = Shape.SQUARE
 @export var color: Color = Color.WHITE
-@export var role: String = ""       # 定位标签:速度型 / 弹性型 / 置换型 / 滚动型
-@export var quote: String = ""      # 切换时的台词
-@export var traits: Array = []      # 特性要点(Array[String]),档案页展示
+@export var role: String = ""
+@export var quote: String = ""
+@export var traits: Array = []
 
-# ———— 形体 ————
+
 @export var size: Vector2 = Vector2.ZERO
-@export var gravity_dir: int = 1    # 初始重力:1 = 常规(向下),-1 = 反重力(向上)
+@export var gravity_dir: int = 1
 @export var can_jump: bool = true
-@export var can_swap: bool = false  # 置换:跳跃键改为在上下平台间翻转
-@export var can_climb: bool = false # 爬墙:贴墙按住方向缓降滑壁,按住跳跃键向上爬
-@export var jump_units: float = 0.0 # 跳高(格/跳):二段跳统一 2.0 格;与弹性解耦
+@export var can_swap: bool = false
+@export var can_climb: bool = false
+@export var jump_units: float = 0.0
 
-# ———— 属性(0.0 – 2.0) ————
-@export var base_speed: float = 1.0     # 基础速度倍率(1.0 = 标准)
-@export var sprint_speed: float = 1.0   # 冲刺上限倍率;不可冲刺的几何体 = base_speed
-@export var buff_sprint_speed: float = 1.0 # 加速门后的速度上限倍率(永久)
+
+@export var base_speed: float = 1.0
+@export var sprint_speed: float = 1.0
+@export var buff_sprint_speed: float = 1.0
 @export var can_sprint: bool = true
-@export var bounce: float = 1.0         # 弹性:决定落地反弹;全员 0.5,跃 2.0 固定
-@export var weight: float = 1.0         # 重量:影响加速度、惯性、承载判定
-@export var carry: float = 1.0          # 负重力:头顶可承载的总重量
+@export var bounce: float = 1.0
+@export var weight: float = 1.0
+@export var carry: float = 1.0
 
-# ———— v0.16 新特性旗标(characters.md §1/§5;默认关,名册逐个开) ————
-## 顶弹翻倍(贰·跃):同伴站在本几何体顶部起跳时,该次跳跃高度 ×2。
+
 @export var can_top_boost := false
-## 可推动(肆·圆):其他几何体水平推挤时,本几何体受力滚动。
+
 @export var can_be_pushed := false
-## 磁界穿透(叁·逆):可任意穿过伍(界/边)的磁力边界。
+
 @export var can_pass_boundary := false
-## 双子(伍·界/边):true 时该名册位出生两个个体(characters.md §5)。
+
 @export var paired := false
-## 双体第二半的代号与台词("边");空 = 非双体或第一半。
+
 @export var name_half := ""
 @export var quote_half := ""
 
 
-## 起跳速度(派生量,不落盘):由跳高格数换算(跳高 = jump_units × 100 px)。
 var jump_v: float:
 	get:
 		return jump_v_for(jump_units) if can_jump else 0.0
 
 
-## 跳跃起跳速度换算:v₀ = √(2·g·h)。g 取全局手感资源。
 static func jump_v_for(units: float) -> float:
 	return sqrt(2.0 * MovementTuning.I.gravity * units * Geometries.UNIT_PX)
 
 
-## 该几何体一位出生几具身体(双体系统契约,characters.md §5):
-## 切换可用性 / 到站满员 / 名册体数统计的唯一权威;未来特殊几何体
-## (多体/共生)只需覆写派生规则,调用点不得再手写 2 或 paired 判断。
 func bodies() -> int:
 	return 2 if paired else 1
 
 
-## 底部长度 / 高度,单位:格。
 func bottom_units() -> float:
 	return size.x / Geometries.UNIT_PX
 
@@ -94,36 +70,20 @@ func height_units() -> float:
 	return size.y / Geometries.UNIT_PX
 
 
-## 标尺 v2 读数换算:物理倍率 → 展示读数(物理 0.0 → -1.0 关闭)。
 static func scale_reading(physical: float) -> float:
 	return -1.0 if physical <= 0.0 else physical + 1.0
 
 
-## 惯性读数(v0.16 显式化):与重量同源耦合,解耦轴预留(characters.md §1)。
 func inertia_reading() -> float:
 	return scale_reading(weight)
 
 
-## 摩擦读数 = μ / μ标准 × 2.0:标准材质 2.0,圆滚动 μ0.43 → 0.7(物理不变)。
 func friction_reading() -> float:
 	var t := MovementTuning.I
 	var mu := t.ball_mu_roll if shape == Shape.BALL else t.standard_mu
 	return snappedf(mu / t.standard_mu * 2.0, 0.1)
 
 
-## 档案页属性行(纯基础数据):
-##   {label, bar: true,  key, absent, base_read, hint} —— 数值条行
-##   (absent = 基础不具备 → 面板显示"状态-1");
-##   {label, bar: false, absent, value, hint} —— 派生/材质读数行;
-##   {label, text} —— 形体行。
-## 基础读数 = 标尺记法(物理 + 1.0,物理 0 → -1.0;glossary.md §4)。
-## 派生量一律按真实物理式换算:
-##   速度 → v = (读数−1.0) × RUN_SPEED(3.0 格/秒 = 300 px/s);
-##   跳高 → h = v₀² / 2g(起跳速度按能量守恒反推);
-##   弹性 → 反弹率 e = bounce × 0.5(牛顿碰撞定律 v′ = e·v);
-##   摩擦 → 减速度 a = μ·g(库伦摩擦,重量项视作材质差异)。
-## modifier(可选,依赖注入):属性解算函数 `func(def, key) -> float`
-## (data 层叶节点不反向依赖 UI;由消费方注入,缺省 = 直通原始值)。
 func stat_rows(modifier: Callable = Callable()) -> Array:
 	var hook := func(key: String, base: float) -> float:
 		if modifier.is_valid():
@@ -150,7 +110,7 @@ func stat_rows(modifier: Callable = Callable()) -> Array:
 
 	var climb_hint := "贴墙按住方向缓降 · 按住跳跃键爬升(单次 %.1f 格)" % MovementTuning.I.climb_units \
 		if can_climb else "不可攀墙"
-	# 攀墙值走词条钩子(注入式,见本函数头注);不可爬 = -1(状态-1 行)
+
 	var climb_eff: float = hook.call("climb_units", MovementTuning.I.climb_units) \
 		if can_climb else -1.0
 

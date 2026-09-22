@@ -1,15 +1,10 @@
 class_name Ui
-## 视觉主题唯一入口:字体 / StyleBox / 构成主义文字组件。
-## 调色板 SSOT = Palette(data/palette.tres,R2 数值资源化,颜色在此调)。
-## 美术锚点:极简主义 + 构成主义 + 几何图形 + 棱角分明锐利。
-##   - 无圆角、无渐变、无柔影:一切以平面色块、细线、大字构成。
-##   - 红色为全局强调色;角色色仅作为功能性点缀。
 
-# ———— 字体 ————
-static var BODY: Font    # 400 正文
-static var HEAD: Font    # 600 半粗
-static var TITLE: Font   # 900 特粗(标题)
-static var LIGHT: Font   # 330 细体
+
+static var BODY: Font
+static var HEAD: Font
+static var TITLE: Font
+static var LIGHT: Font
 
 static var _base: Font
 static var _weights := {}
@@ -21,18 +16,13 @@ static var _icons := {}
 static func init_font() -> void:
 	_base = load("res://assets/fonts/NotoSansSC-VF.ttf")
 	if _base is FontFile:
-		# 文字清晰度(v0.13.3):不同分辨率 / 缩放下保持锐利 —— 设置必须落在
-		# FontFile 上(FontVariation 没有这些属性,赋值会在运行时中断初始化,
-		# 字体全空导致开屏/菜单无文字,真机已踩坑):
-		# 灰度抗锯齿(彩色子像素在手机屏上出彩边)+ 常规 hinting(小字号笔画
-		# 更挺)+ 关闭子像素定位(CJK 密排字形对齐整数网格更脆)+
-		# 生成 mipmap(fit_design 缩小、镜头 zoom<1 的世界文字缩小时不糊)。
+
 		_base.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 		_base.hinting = TextServer.HINTING_NORMAL
 		_base.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
 		_base.generate_mipmaps = true
 	if _base == null:
-		# 字体缺失时退回系统字体
+
 		var sf := SystemFont.new()
 		sf.font_names = PackedStringArray([
 			"Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "SimHei", "Noto Sans CJK SC",
@@ -44,12 +34,10 @@ static func init_font() -> void:
 	LIGHT = weight(330)
 
 
-## OpenType 标签编码:'wght' → int。
 static func _tag(s: String) -> int:
 	return (s.unicode_at(0) << 24) | (s.unicode_at(1) << 16) | (s.unicode_at(2) << 8) | s.unicode_at(3)
 
 
-## 按字重(与可选字距)取 FontVariation。
 static func weight(w: int, spacing := 0) -> Font:
 	var key := "%d_%d" % [w, spacing]
 	if _weights.has(key):
@@ -65,8 +53,6 @@ static func weight(w: int, spacing := 0) -> Font:
 	_weights[key] = fv
 	return fv
 
-
-# ———— LabelSettings 预设 ————
 
 static func ls(size: int, font: Font, color: Color, outline = null, outline_size := 0,
 		shadow = null, shadow_off = null, shadow_size := 0, line_spacing := 0) -> LabelSettings:
@@ -90,7 +76,6 @@ static func ls(size: int, font: Font, color: Color, outline = null, outline_size
 	return settings
 
 
-## 快速建 Label:构成主义默认无阴影(纯平面)。
 static func l(text: String, size: int, font: Font = null, color = null,
 		align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT, shadow := false,
 		line_spacing := 0) -> Label:
@@ -104,8 +89,6 @@ static func l(text: String, size: int, font: Font = null, color = null,
 	return label
 
 
-## 对既有 Label 施加同款文字预设(场景内节点的样式入口,
-## 与 l() 共享 ls() 缓存——v0.32.0 hud 场景化新增)。
 static func style(label: Label, size: int, font: Font = null, color = null,
 		align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT, shadow := false,
 		line_spacing := 0) -> void:
@@ -121,9 +104,6 @@ static func style(label: Label, size: int, font: Font = null, color = null,
 		label.label_settings = ls(size, font, color, null, 0, null, null, 0, line_spacing)
 
 
-# ———— 构成主义文字组件 ————
-
-## 海报字:特粗平面大字 + 左侧红色方块标记(可选)。
 static func poster_label(text: String, size: int, color := Palette.I.paper,
 		mark := true, mark_color := Palette.I.red) -> Control:
 	var box := Control.new()
@@ -144,7 +124,6 @@ static func poster_label(text: String, size: int, color := Palette.I.paper,
 	return box
 
 
-## 构成主义细线分隔条。
 static func rule(width: float, thickness := 2, color = null) -> Control:
 	var bar := ColorRect.new()
 	bar.color = color if color != null else Color(Palette.I.paper, 0.28)
@@ -153,7 +132,6 @@ static func rule(width: float, thickness := 2, color = null) -> Control:
 	return bar
 
 
-## 小标签块:实色底 + 反白字(角色定位 / 章节编号)。
 static func tag(text: String, bg: Color, fg := Palette.I.paper, size := 14, pad_h := 10,
 		pad_v := 4) -> PanelContainer:
 	var panel := PanelContainer.new()
@@ -163,9 +141,6 @@ static func tag(text: String, bg: Color, fg := Palette.I.paper, size := 14, pad_
 	return panel
 
 
-# ———— StyleBox / Theme ————
-
-## 锐利 StyleBox:直角、1px 细线,构成主义平面化。
 static func sb(bg: Color, radius := 0, border = null, border_w := 1,
 		margin_h := 12, margin_v := 7) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
@@ -218,14 +193,6 @@ static func make_theme(size := 18) -> Theme:
 	return th
 
 
-# ———— 按钮微交互 ————
-
-## 统一按钮反馈:悬停/聚焦微抬 3%,按下压 97%,松开回弹;pivot 始终跟随尺寸居中。
-## 声音也在此统一接线(音效纪律 v0.21.1):悬停 ui_hover;点击( pressed )自动播
-## click_sfx,默认 "ui_click";传其他音名换语义音("ui_back" 返回 / "ui_error"
-## 拒绝 / "ui_page" 翻页),传 "" 退出自动点击音——用于处理器自播条件音效
-## (解锁判定 / 强化 buff / 开关 on·off)的按钮。新按钮一律走本函数,禁止
-## 手接 ui_hover / ui_click 后再 wire(会双响)。移动端按下另有触感反馈。
 static func wire_button(b: Button, click_sfx := "ui_click") -> void:
 	b.pivot_offset = b.size / 2.0
 	b.resized.connect(func() -> void: b.pivot_offset = b.size / 2.0)
@@ -240,8 +207,6 @@ static func wire_button(b: Button, click_sfx := "ui_click") -> void:
 		b.pressed.connect(func() -> void: Sfx.play(click_sfx))
 
 
-## 错误反馈(fx-light 卷二 Error 态视觉半边:沿轴抖动 + 红色刻度闪;
-## 音由调用方播 ui_error)。抖动受减动效门控(关抖动,保留红色闪)。
 static func error_feedback(node: Control) -> void:
 	if node == null or not is_instance_valid(node):
 		return
@@ -268,10 +233,6 @@ static func _button_scale(b: Button, target: float) -> void:
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
-# ———— 纹理小工具 ————
-# 图标唯一源 = assets/ui/icons.png(aseprite 源 assets/art/icons.aseprite,
-# 生成器 tools/gen_icons.lua;v0.48.0 起 SVG 全面退役)。键 = 图标名
-# (无扩展名),图集 64px 网格 5 列。
 const ICON_ATLAS := preload("res://assets/ui/icons.png")
 const ICON_CELLS := {
 	"characters/dash": Vector2i(0, 0),

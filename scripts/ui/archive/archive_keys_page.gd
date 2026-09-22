@@ -1,10 +1,8 @@
 class_name ArchiveKeysPage
 extends RefCounted
-## 档案 · 键位指南页构建器(v0.39.3 自 archive_panel.gd 页签拆分迁入,逐行平移):
-## PC 键鼠 / 手柄 / 触屏 / 界面导航四区块一册对照(数据 ArchiveData.CONTROLS),
-## 版面 = 红题头卡 + 双栏正文,超高整卡滚动;页脚就地关闭(双端纪律)。
 
-var panel  # ArchivePanel
+
+var panel
 
 
 func build(p, page: Control) -> void:
@@ -58,7 +56,7 @@ func build(p, page: Control) -> void:
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 44)
 	scroll.add_child(cols)
-	# 左栏 PC+手柄 / 右栏 触屏+界面:玩家只读自己那端,双端各占一栏好对照
+
 	var left := VBoxContainer.new()
 	left.add_theme_constant_override("separation", 20)
 	left.add_child(keys_section(ArchiveData.CONTROLS[0]))
@@ -72,8 +70,6 @@ func build(p, page: Control) -> void:
 	right.add_child(keys_section(ArchiveData.CONTROLS[3]))
 	cols.add_child(right)
 
-	# 页脚:翻阅提示 + 关闭按钮 —— 键位页不在翻页型页签里(无 btn_row),
-	# 触屏用户必须有就地关闭路径(双端纪律),文案随触屏模式自适应。
 	var foot := PanelContainer.new()
 	foot.add_theme_stylebox_override("panel",
 		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 10))
@@ -95,7 +91,6 @@ func build(p, page: Control) -> void:
 	vb.add_child(foot)
 
 
-## 一个键位区块:红线题头(名 + EN 副题)+ 若干操作行。
 func keys_section(sec: Dictionary) -> Control:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 7)
@@ -114,8 +109,6 @@ func keys_section(sec: Dictionary) -> Control:
 	return box
 
 
-## 一行操作:动作名(定宽对齐)+ 键帽芯片串 + 补充说明;
-## 触屏行无键帽,说明即操作本体(升为正文色)。
 func keys_row(row: Dictionary) -> Control:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 10)
@@ -137,7 +130,6 @@ func keys_row(row: Dictionary) -> Control:
 	return hb
 
 
-## 键帽芯片:亮墨底 + 纸白细边 + 微圆角,复刻实体键帽的「可按感」。
 func keycap(text: String) -> Control:
 	var cap := PanelContainer.new()
 	cap.add_theme_stylebox_override("panel",

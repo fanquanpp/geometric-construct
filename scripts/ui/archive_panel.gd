@@ -1,24 +1,13 @@
 class_name ArchivePanel
 extends CanvasLayer
-## 档案几何(v0.21.2 五页签):全面档案库 ——
-##   几何体 GEOMETRIES  左肖像(aseprite 200×200 × 2 整数放大)+ 右属性栏(标尺 v2)
-##   建筑物 BUILDINGS   图鉴主从页:左条目列表 + 右详情(图 / 功能介绍 / 语义规格 / 要点)
-##   机 关 MECHS        同建筑页布局;两态机关附静帧切换,动态机关/规划构件
-##                      以 aseprite 多帧精灵循环播放(anim 字段,Timer 驱动)
-##   键 位 CONTROLS     键位指南(多端一册):PC 键鼠 / 手柄 / 触屏 / 界面导航,
-##                      键帽芯片排版,超高可滚动(数据 ArchiveData.CONTROLS)
-##   剧 情 STORIES      剧情回顾目录 → 全文本阅读器(台词按角色着色,不重播对话)
-## 数据全部来自 data 层 ArchiveData(纯字典表);示例图 assets/archive/*.png。
-## 可从标题菜单或暂停菜单进入;A/D 切条目、Q/E 切页、1–5 直达几何体、滚轮/
-## 手柄十字键翻页、LB/RB 切页、Esc/B 逐级返回(阅读器→剧情→关闭)。
-## 层带 35(面板带),Overlay 型 is_open 约定;版面缩放避让安全区(刘海)。
+
 
 signal closed
 
-var current := 0              # 几何体页下标
+var current := 0
 var is_open := false
-var _tab := "geo"             # geo / bld / mech / gallery / story
-var _sel := {"geo": 0, "bld": 0, "mech": 0, "gallery": 0}   # 各图鉴页选中下标
+var _tab := "geo"
+var _sel := {"geo": 0, "bld": 0, "mech": 0, "gallery": 0}
 
 var _root: Control
 var _content: Control
@@ -27,16 +16,15 @@ var _index_label: Label
 var _hints: Label
 var _btn_row: HBoxContainer
 var _tab_btns := {}
-var _pages := {}              # tab 名 → 页根 Control
-var builders := {}            # tab 名 → 页构建器(v0.39.3 页签拆分,scripts/ui/archive/)
+var _pages := {}
+var builders := {}
 var _tween: Tween
-var _anim_timer: Timer        # 图鉴动态精灵循环(anim 条目)
+var _anim_timer: Timer
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	# 场景骨架样式施加(R1:壳在 scenes/ui/archive_panel.tscn;五页内容
 	# 由 ArchiveData 数据驱动动态生成,动态生成豁免)
 	_root = %Root
 	_shade = %Shade
@@ -47,9 +35,6 @@ func _ready() -> void:
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_anim_timer.timeout.connect(_on_anim_tick)
 	_root.resized.connect(_fit_content)
-
-	# 外框 + 角部刻度(与主菜单同语言)—— 已素材化(v0.49):场景侧
-	# NinePatchRect + panel_frame.png,源 assets/art/ui/(gen_ui.lua 直出)
 
 	_build_header()
 	# 五页签构建器装配(scripts/ui/archive/,数据驱动页 = 动态生成豁免)
@@ -76,7 +61,7 @@ func _build_header() -> void:
 	var header_sub := Ui.l("ARCHIVE GEOMETRY · 几何 × 建筑 × 机关 × 键位 × 剧情", 13, Ui.LIGHT, Palette.I.dim)
 	header_sub.position = Vector2(66, 88)
 	_content.add_child(header_sub)
-	# 条目计数:压在页签行上方右对齐(五页签后页签行变宽,原位会被顶开)
+
 	_index_label = Ui.l("", 16, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_RIGHT)
 	_index_label.anchor_left = 1.0
 	_index_label.anchor_right = 1.0
@@ -102,22 +87,15 @@ func _build_header() -> void:
 		_tab_btns[str(spec[0])] = b
 
 
-## 时钟到点:仅推进当前可见页的动态精灵(构建器各推各的)。
 func _on_anim_tick() -> void:
 	for kind in ["bld", "mech"]:
 		builders[kind].on_tick()
 
 
-## 打开全文本阅读器(gallery 页阅读按钮回调 → story 构建器装填)。
 func open_story(story: Dictionary) -> void:
 	builders["story"].open_story(story)
 
 
-# ———————————————— 页面框架:页签 / 翻页 / 输入 ————————————————
-
-## 在 _content 下建一个整页容器(默认隐藏),登记进 _pages。
-## mouse_filter 必须 IGNORE:整页 Control 默认 STOP,会盖住先加入的页签行
-## 吃掉全部触摸/点击(真机页签失灵的根因);IGNORE 不影响子控件收输入。
 func _make_page(tab: String) -> Control:
 	var page := Control.new()
 	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -135,7 +113,7 @@ func _tab_button(text: String) -> Button:
 	b.custom_minimum_size = Vector2(104, 44)
 	b.add_theme_font_size_override("font_size", 16)
 	b.add_theme_font_override("font", Ui.HEAD)
-	Ui.wire_button(b, "")   # 页签切换音在 _switch_tab 播(键盘 Q/E 切页同源)
+	Ui.wire_button(b, "")
 	return b
 
 
@@ -180,7 +158,7 @@ func _build_footer() -> void:
 
 
 func _switch_tab(tab: String) -> void:
-	# 页签按钮为 toggle 型:重复点击当前页签只回弹选中态,不重刷页面
+
 	for btn in _tab_btns:
 		(_tab_btns[btn] as Button).set_pressed_no_signal(str(btn) == tab)
 	if tab == _tab:
@@ -190,7 +168,6 @@ func _switch_tab(tab: String) -> void:
 	_apply_tab()
 
 
-## 当前页签是否为图鉴翻页型(几何体 / 建筑 / 机关)。
 func _is_paged(tab: String) -> bool:
 	return tab == "geo" or tab == "bld" or tab == "mech"
 
@@ -231,7 +208,7 @@ func _switch(dir: int) -> void:
 	_refresh_current()
 	if _tween != null:
 		_tween.kill()
-	# 翻页过渡:内容淡入 + 沿翻页方向轻推移(不透明遮罩恒在,主页绝不透出)
+
 	var geo: ArchiveGeoPage = builders["geo"]
 	_content.modulate.a = 0.35
 	geo.portrait_zone.position.x = 60.0 - 26.0 * dir
@@ -250,8 +227,6 @@ func _refresh_current() -> void:
 		builders[_tab].refresh()
 
 
-## 版面适配:fit_design 的安全区版 —— 缩放与居中都在「可见区 − 刘海/挖孔
-## 内缩」内进行,任意分辨率 / 宽高比 / 带 notch 设备上内容都不压边。
 func _fit_content() -> void:
 	var vp := _content.get_viewport()
 	if vp == null:
@@ -278,7 +253,7 @@ func open(index := 0, tab := "geo") -> void:
 	_apply_tab()
 	if _tween != null:
 		_tween.kill()
-	# 入场:遮罩先压上来(交叉淡化主页),内容层随后浮现
+
 	_shade.modulate.a = 0.0
 	_content.modulate.a = 0.0
 	_tween = create_tween()
@@ -296,7 +271,6 @@ func close() -> void:
 	closed.emit()
 
 
-## 逐级返回(Esc / B / Android 返回键同语义):阅读器先回剧情目录,再按才关。
 func go_back() -> void:
 	if _tab == "story":
 		_switch_tab("gallery")
@@ -312,7 +286,7 @@ func _input(event: InputEvent) -> void:
 		match k:
 			KEY_ESCAPE, KEY_C:
 				get_viewport().set_input_as_handled()
-				# 阅读器内先退回剧情目录,再按一次才关面板(返回语义逐级 pop)
+
 				if _tab == "story":
 					_switch_tab("gallery")
 				else:
@@ -335,7 +309,7 @@ func _input(event: InputEvent) -> void:
 					Sfx.play("ui_page")
 					builders["geo"].refresh()
 	elif event is InputEventJoypadButton and event.pressed:
-		# 手柄:十字键翻页 / LB·RB 切页 / B 返回(与 Esc 同语义)
+
 		match (event as InputEventJoypadButton).button_index:
 			JOY_BUTTON_DPAD_LEFT:
 				if _is_paged(_tab):
@@ -361,7 +335,6 @@ func _input(event: InputEvent) -> void:
 				_switch(1)
 
 
-## Q / E 循环切换五个页签(阅读器状态下先回目录再切)。
 func _cycle_tab(dir: int) -> void:
 	var tabs := ["geo", "bld", "mech", "keys", "gallery"]
 	var i := tabs.find(_tab)

@@ -1,9 +1,4 @@
--- UI 图标生成器(Aseprite Lua,可再生美术源;v0.48.0 SVG 全面退役)
--- 运行:aseprite -b --script tools/gen_icons.lua(自建画布,无需工作文件)
--- 规格:64×64 网格 × 5 列 × 4 行 = 320×256 图集,透明底;
---       色板 = data/palette.tres + art-style §1;硬边折线,零圆角零渐变;
---       字母字形 = 折线(替代旧 SVG <text> 折线字形方案)。
--- 消费:scripts/ui/ui.gd ICON_CELLS(键沿用旧 rel 名,调用点零改动)。
+
 
 local W, H = 320, 256
 local spr = Sprite(W, H, ColorMode.RGB)
@@ -74,7 +69,7 @@ local function chevU(cx, cy, s, t, c)
   poly({{cx - s, cy + s}, {cx, cy - s}, {cx + s, cy + s}}, c, t)
 end
 
--- ── 色板(art-style §1)──────────────────────────────────────────
+
 local INK3  = C(30, 34, 43)
 local PAPER = C(237, 234, 224)
 local RED   = C(224, 73, 47)
@@ -83,35 +78,35 @@ local BLU   = C(78, 134, 216)
 local ORG   = C(224, 126, 46)
 local PUR   = C(132, 85, 166)
 
--- ── 行 0 · 角色徽标(角色色平涂 + 纸白纹)────────────────────────
+
 do
   local ox, oy = 0, 0
-  -- 疾:红方 + 双右折角
+
   fill(ox + 10, oy + 10, 44, 44, RED)
   chevR(ox + 24, oy + 32, 10, 4, PAPER)
   chevR(ox + 40, oy + 32, 10, 4, PAPER)
-  -- 跃:黄竖板 + 上折角
+
   ox, oy = 64, 0
   fill(ox + 19, oy + 10, 26, 44, YEL)
   chevU(ox + 32, oy + 36, 11, 4, PAPER)
-  -- 逆:蓝方 + 中线镜像刻
+
   ox, oy = 128, 0
   fill(ox + 10, oy + 10, 44, 44, BLU)
   hline(ox + 16, oy + 30, 32, PAPER, 3)
   fill(ox + 40, oy + 14, 8, 8, PAPER)
   fill(ox + 16, oy + 42, 8, 8, PAPER)
-  -- 圆:橙几何圆 + 纸白芯
+
   ox, oy = 192, 0
   disc(ox + 32, oy + 32, 22, ORG)
   disc(ox + 32, oy + 32, 5, PAPER)
-  -- 伍:紫双三角(界尖朝下 / 边尖朝上)
+
   ox, oy = 256, 0
   tri(ox + 12, oy + 12, ox + 52, oy + 12, ox + 32, oy + 30, PUR)
   tri(ox + 12, oy + 52, ox + 52, oy + 52, ox + 32, oy + 34, PUR)
   hline(ox + 16, oy + 31, 32, PAPER, 2)
 end
 
--- ── 行 1-2 · 键帽(墨盖 + 纸缘 + 折线字形;字形用格内局部坐标)──
+
 local function keycap(gx, gy, glyph)
   fill(gx + 10, gy + 10, 44, 44, INK3)
   local edge = C(237, 234, 224, 140)
@@ -156,19 +151,19 @@ do
   end)
 end
 
--- ── 行 2(续)· check / play / recall(格内局部坐标)──────────────
+
 do
   local g = PAPER
-  -- check @ (2,2)
+
   poly({{138, 158}, {152, 174}, {182, 140}}, g, 4)
-  -- play @ (3,2)
+
   tri(216, 144, 216, 180, 248, 162, g)
-  -- recall @ (4,2)
+
   poly({{290, 144}, {262, 144}, {262, 176}, {294, 176}}, g, 4)
   poly({{286, 137}, {296, 144}, {286, 151}}, g, 4)
 end
 
--- ── 行 3(on 态 = 构成红)────────────────────────────────────────
+
 do
   local r = RED
   poly({{16, 208}, {42, 208}, {42, 240}, {12, 240}}, r, 4)
@@ -179,7 +174,7 @@ do
   fill(151, 208, 9, 32, RED)
 end
 
--- ── 收尾:挂图层 + 存 aseprite 源 + 出 PNG 图集 ─────────────────
+
 spr:newCel(spr.layers[1], 1, img, Point(0, 0))
 spr:saveAs("C:/Atian/Project/speed-rouge/assets/art/icons.aseprite")
 app.command.SaveFileCopyAs {

@@ -1,13 +1,8 @@
--- 档案几何插图生成器(Aseprite Lua,可再生美术源;v0.48.0 素材重构)
--- 运行:aseprite -b --script tools/gen_archive.lua
--- 规格:art-style §6.1 —— 200×200 统一画布,构成纪律 = body(基色+
---       内缘自阴影)/ panel(顶部受光)/ edge(纸白顶缘)/ motif(白主纹
---       + 墨色印刷错位);几何肖像不画硬投影、不加底部暗带;色板 §1。
--- 产出:assets/archive/ 43 张 PNG(15 建筑 + 5 肖像 + 23 机关帧,同名覆盖)。
+
 
 local pc = app.pixelColor
 local function C(r, g, b, a) return pc.rgba(r, g, b, a or 255) end
--- 色板(§1)
+
 local INK   = C(16, 18, 22)
 local INK2  = C(22, 25, 31)
 local INK3  = C(30, 34, 43)
@@ -104,14 +99,14 @@ local function chevR(im, cx, cy, s, t, c)
   poly(im, {{cx - s, cy - s}, {cx + s, cy}, {cx - s, cy + s}}, c, t)
 end
 
--- 构成纪律基座:body 平涂 + 内缘自阴影 + panel 顶受光带 + edge 纸白顶缘
+
 local function base(im, x, y, w, h, body, panel, shadow)
   fill(im, x, y, w, h, body)
-  fill(im, x + 3, y + 3, w - 6, h - 6, body)          -- 内缘自阴影留边
+  fill(im, x + 3, y + 3, w - 6, h - 6, body)
   fill(im, x + 5, y + 5, w - 10, h - 10, body)
-  fill(im, x + 4, y + 4, w - 8, math.max(8, h // 8), panel)  -- 顶受光带
-  hline(im, x, y, w, PAPER, 2)                        -- edge 纸白顶缘
-  hline(im, x, y + h - 3, w, shadow, 3)               -- 底暗带
+  fill(im, x + 4, y + 4, w - 8, math.max(8, h // 8), panel)
+  hline(im, x, y, w, PAPER, 2)
+  hline(im, x, y + h - 3, w, shadow, 3)
 end
 
 local OUT = "C:/Atian/Project/speed-rouge/assets/archive/"
@@ -124,7 +119,7 @@ local function emit(name, draw)
   spr:close()
 end
 
--- ═══ 建筑 15(bld_*)═══
+
 emit("bld_slab_full", function(im)
   base(im, 20, 60, 160, 80, SLAB, PANEL, DARKV)
   fill(im, 40, 118, 24, 8, DIM)
@@ -225,7 +220,7 @@ emit("bld_gate", function(im)
   base(im, 24, 176, 152, 10, PANEL, C(58, 66, 84), DARKV)
 end)
 
--- ═══ 几何肖像 5(geo_*;不画硬投影、不加底暗带,§6.1)═══
+
 emit("geo_dash", function(im)
   fill(im, 56, 56, 88, 88, RED)
   rstroke(im, 62, 62, 76, 76, C(255, 255, 255, 60), 2)
@@ -256,7 +251,7 @@ emit("geo_pair", function(im)
   fill(im, 94, 44, 12, 6, RED)
 end)
 
--- ═══ 机关 23(mech_*;图鉴帧 = 关卡内正典帧)═══
+
 emit("mech_exit_door", function(im)
   rstroke(im, 52, 20, 96, 150, PAPER, 3)
   fill(im, 64, 34, 72, 122, INK3)

@@ -1,7 +1,5 @@
 extends Node2D
-## 开发用:序幕/尾声剧情播放验证 —— 复现"点击序幕剧情弹出对话框卡死"。
-## 走与菜单按钮完全相同的 open_prologue() 路径,输出 Konado 内部状态与报错。
-## 运行:godot --path . res://tests/story_shot.tscn
+
 
 var OUT_DIR := ProjectSettings.globalize_path("res://.shots")
 
@@ -20,7 +18,6 @@ func _ready() -> void:
 	_dump_story_layer(main)
 	await _shot("story_open")
 
-	# 模拟空格推进(至多 60 次,直到解除暂停 = 正常结束)
 	var advances := 0
 	for i in 60:
 		await _press_advance()

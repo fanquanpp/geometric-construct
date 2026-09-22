@@ -1,24 +1,19 @@
 class_name SaveManager
-## 存档统一入口:版本化 + 旧档迁移。
-## 结构变更时递增 SAVE_VERSION,并在 _migrate 里补一条迁移分支;
-## 规范见 docs/UPDATE.md。
+
 
 const SAVE_VERSION := 5
 const SAVE_PATH := "user://speed-rouge.cfg"
-const LEGACY_PATH := "user://lonelyblocks.cfg"  # v1 存档(旧《孤独的方块》)
+const LEGACY_PATH := "user://lonelyblocks.cfg"
 
-static var I: SaveManager       # 全局引用
+static var I: SaveManager
 
-## 存档结构:
-##   meta/save_version   int    存档结构版本
-##   progress/unlocked   int    已解锁的最大关卡下标
-##   rogue/seen_act1..5  bool  幕开演剧已播(沿用历史节名,保旧档旗标)
+
 var unlocked := 0
 var seen_act1 := false
-var seen_act2 := false    # 第二幕开演剧已播
-var seen_act3 := false    # 第三幕
-var seen_act4 := false    # 第四幕
-var seen_act5 := false    # 第五幕
+var seen_act2 := false
+var seen_act3 := false
+var seen_act4 := false
+var seen_act5 := false
 
 
 func _init() -> void:
@@ -38,7 +33,7 @@ func load_save() -> void:
 		_load_flags(cfg)
 		_migrate(ver, cfg)
 		return
-	# 首次运行:尝试迁移 v1 旧档
+
 	if cfg.load(LEGACY_PATH) == OK and cfg.has_section_key("p", "unlocked"):
 		unlocked = int(cfg.get_value("p", "unlocked", 0))
 		_migrate(1, cfg)
@@ -76,7 +71,6 @@ func note_story(kind: String) -> void:
 	write_save()
 
 
-## 某段剧情是否已播过(回看不限,旗标只管"自动播放一次")。
 func story_seen(kind: String) -> bool:
 	match kind:
 		"act1":
@@ -92,7 +86,6 @@ func story_seen(kind: String) -> bool:
 	return false
 
 
-## 剧情旗标装载(沿用历史 "rogue/" 节名,保旧档可读)。
 func _load_flags(cfg: ConfigFile) -> void:
 	seen_act1 = bool(cfg.get_value("rogue", "seen_act1", false))
 	seen_act2 = bool(cfg.get_value("rogue", "seen_act2", false))
@@ -101,17 +94,15 @@ func _load_flags(cfg: ConfigFile) -> void:
 	seen_act5 = bool(cfg.get_value("rogue", "seen_act5", false))
 
 
-## 每个历史版本一条迁移分支;迁移后由调用方按当前结构重写。
 func _migrate(from_version: int, _cfg: ConfigFile) -> void:
 	if from_version < 2:
-		# v1 → v2:字段从 p/unlocked 迁到 progress/unlocked,无额外数据
+
 		pass
 	if from_version < 3:
-		# v2 → v3:新增肉鸽区段(残段 / 解锁 / 剧情旗标),全部默认值
+
 		pass
 	if from_version < 4:
-		# v3 → v4:序章由 4 场扩为 6 场(v0.15),第一幕关卡下标整体 +2;
-		# 旧档解锁进度若已进第一幕(≥4)同步后移,序章内进度不变
+
 		if unlocked >= 4:
 			unlocked += 2
 	unlocked = maxi(unlocked, 0)

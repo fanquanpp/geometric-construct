@@ -1,27 +1,22 @@
 extends RefCounted
-## 开发验证钩子执行器(统合重构终案 Sprint 4 自 main.gd 迁出;v0.39.1 起
-## 旗标解析与分派一并下沉):--*shot / --autotest / --recalltest /
-## --tourshot 等命令行分镜与自测的唯一实现。经 Main._dev_harness()
-## 软引用装载,导出包剥离 scripts/dev/* 后 load 失败 → 钩子整体关闭。
-## Main 只保留游戏侧旋钮解析(--debug-grid/--zoom)与
-## debug_* 运行时成员;run_perf_log:Android debug 真机自动 PERF 日志。
+
 
 var m: Main
 
-# ———— 开发旗标(原 Main 侧声明,v0.39.1 下沉;boot() 解析赋值) ————
+
 var _auto_shot := false
 var _shot_level := 0
 var _shot_dir := ""
 var _door_shot := false
-var _recall_shot := false       # --recalltest:召回链路自测(动作注册/按下/传送)
-var _transition_shot := false   # --transitionshot:三式转场覆盖/揭开分镜
-var _dual_test := false         # --dualtest:同屏双人自测(绑定/分区/禁切/死亡/到站)
+var _recall_shot := false
+var _transition_shot := false
+var _dual_test := false
 var _dual_shot := false
-var _room_shot := false   # --roomshot:房间流程页分镜(UI 图册)         # --dualshot:同屏双人视觉分镜(chips 双高亮/双取景)
-var _net_test := false          # --nettest:LAN 发现 / ENet 传输回环自测(net.md §4.3-2)
+var _room_shot := false
+var _net_test := false
 var _net_auto := false
 var _net_join := false
-var _net_join_ip := ""          # --netauto:主机自动化(自动建房 + 满员自动开演,联测用)
+var _net_join_ip := ""
 var _panel_shot := false
 var _set_shot := false
 var _act_shot := false
@@ -29,14 +24,13 @@ var _act_shot_idx := 0
 var _boot_shot := false
 var _intro_shot := false
 var _story_shot := false
-var _story_kind := "prologue"   # --storyshot=NAME:指定要截图/验证的剧本
+var _story_kind := "prologue"
 var _tour_shot := false
-var _tap_shot := false          # --tapshot:点按粒子反馈分镜(TouchControls 触点反馈)
+var _tap_shot := false
 var _perf_log := false
 var _auto_test := false
 
 
-## 旗标解析 + 减动效硬切 + 分派(原 Main._parse_auto_shot 主体,v0.39.1 下沉)。
 func boot(args: Array) -> void:
 	for raw: String in args:
 		if raw.begins_with("--autoshot="):
@@ -46,7 +40,7 @@ func boot(args: Array) -> void:
 			_shot_dir = raw.substr(10)
 		elif raw.begins_with("--autotest="):
 			_auto_test = true
-			m._auto_test = true   # game_flow 通关打印读 Main 侧
+			m._auto_test = true
 			_shot_level = raw.substr(11).to_int()
 		elif raw == "--menushot":
 			_auto_shot = true
@@ -97,15 +91,12 @@ func boot(args: Array) -> void:
 			_shot_level = raw.substr(8).to_int()
 	if _auto_shot and _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
-	# 分镜 / 自动化钩子统一减动效硬切(reveal/transition 走硬切分支,
-	# on_covered 照常触发):后台 / 被遮挡窗口的 Tween 冻结会把全屏黑幕
-	# 卡在 TransitionFX 层致截图全灭(v0.38 诊断定案);
-	# --transitionshot 例外——它验的就是转场动画本身。
+
 	if not _transition_shot:
 		SettingsManager.reduced_motion = true
 	if _auto_shot and args.has("--menushot"):
 		run_menu_shot()
-	# --introshot / --storyshot 自带开局流程,跳过通用 autoshot 以免抢关卡
+
 	if _auto_shot and not args.has("--menushot") \
 			and not _intro_shot and not _story_shot:
 		run_auto_shot()
@@ -147,15 +138,12 @@ func boot(args: Array) -> void:
 	if _perf_log:
 		run_perf_log()
 	elif OS.is_debug_build() and OS.has_feature("mobile"):
-		# Android debug 包自动开基线日志(真机无法传 user args,
-		# adb logcat 直接抓 PERF 行);桌面 debug 不受影响。
+
 		run_perf_log()
 	if _auto_test:
 		run_auto_test()
 
 
-## 性能基线日志(原 Main._run_perf_log,零改动迁入):每秒向 stdout 打
-## 一行 Performance 监视数据。
 func run_perf_log() -> void:
 	while m != null and m.is_inside_tree():
 		await m.get_tree().create_timer(1.0).timeout
@@ -169,7 +157,6 @@ func run_perf_log() -> void:
 		])
 
 
-## 截取设置面板。
 func run_set_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
@@ -180,7 +167,6 @@ func run_set_shot() -> void:
 	m.get_tree().quit()
 
 
-## 截取剧目二级菜单(关卡列)。
 func run_actshot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
@@ -191,7 +177,6 @@ func run_actshot() -> void:
 	m.get_tree().quit()
 
 
-## 截取开屏动画(标题落定瞬间)。
 func run_boot_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
@@ -202,7 +187,6 @@ func run_boot_shot() -> void:
 	m.get_tree().quit()
 
 
-## 截取章节开场卡。
 func run_intro_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
@@ -212,9 +196,6 @@ func run_intro_shot() -> void:
 	m.get_tree().quit()
 
 
-## 截取剧情对话框(序幕)。
-## 刻意先开局把相机带到关卡深处再开对话:验证变暗遮罩不再跟随相机
-## (follow_viewport 关闭后,遮罩恒定铺满屏幕,左右两侧都不会漏光)。
 func run_story_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
@@ -232,9 +213,6 @@ func run_story_shot() -> void:
 	m.get_tree().quit()
 
 
-## 巡航截图:沿关卡场景摆位的关键节拍传送受控几何体,逐点截图验收。
-## 节拍表 = 场景摆位本身(原生作关):出生点 + 记录点信标 + 出口门(抬高
-## 160px 目检,不踩门区,防误触 WIN)。
 func run_tour_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
@@ -270,7 +248,6 @@ func run_tour_shot() -> void:
 	m.get_tree().quit()
 
 
-## 截取档案几何(全部页签,含动态精灵)。
 func run_panel_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
@@ -282,13 +259,7 @@ func run_panel_shot() -> void:
 		m.archive_panel._switch(1)
 		await m.get_tree().create_timer(0.4).timeout
 		await _shot("panel_geo%d" % page)
-	# 页签真实点击回归:走 GUI 输入管线点「键位」页签中心(v0.19.1 教训:
-	# 整页容器默认 STOP 吞点击,open() 直调的分镜测不出,必须过一遍真实
-	# 输入命中测试)。v0.21.2 教训:① 坐标不能硬编码 —— 真机 = (设计+160)×2、
-	# 桌面窗口 = 设计×1.25,两套映射只对一端成立,改取按钮全局矩形中心;
-	# ② 桌面窗口里 parse_input_event(ScreenTouch) 不产生 GUI 点击(旧分镜
-	# 从未点中过)—— 桌面必须注入鼠标事件并做画布→窗口变换,真机触屏
-	# 回归仍由 adb 点按另行走查。
+
 	var keys_tab: Button = m.archive_panel._tab_btns["keys"]
 	var tab_center: Vector2 = keys_tab.get_global_rect().get_center()
 	var to_window: Transform2D = m.get_viewport().get_final_transform()
@@ -304,14 +275,13 @@ func run_panel_shot() -> void:
 	release.position = to_window * tab_center
 	Input.parse_input_event(release)
 	await m.get_tree().create_timer(0.4).timeout
-	# 一镜两用:既证明真实输入点按成功落在「键位」页签上(点击回归),
-	# 也是键位指南页的常规分镜(文档名沿用 panel_keys 惯例)。
+
 	await _shot("panel_keys")
-	# 建筑图鉴 + 机关图鉴(两态静帧 + 动态精灵各拍一帧)
+
 	m.archive_panel.open(0, "bld")
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("panel_bld0")
-	m.archive_panel._sel["bld"] = 6   # 梁(v0.36 Kit 构件补绘首批)
+	m.archive_panel._sel["bld"] = 6
 	m.archive_panel.builders["bld"].refresh()
 	await m.get_tree().create_timer(0.4).timeout
 	await _shot("panel_bld_beam")
@@ -323,11 +293,11 @@ func run_panel_shot() -> void:
 	m.archive_panel.builders["mech"].refresh()
 	await m.get_tree().create_timer(0.4).timeout
 	await _shot("panel_mech_f2")
-	m.archive_panel._sel["mech"] = ArchiveData.MECHS.size() - 1  # 传送对(规划中·动态)
+	m.archive_panel._sel["mech"] = ArchiveData.MECHS.size() - 1
 	m.archive_panel.builders["mech"].refresh()
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("panel_mech_portal")
-	# 剧情目录 + 全文本阅读器(序幕)
+
 	m.archive_panel.open(0, "gallery")
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("panel_gallery")
@@ -337,12 +307,6 @@ func run_panel_shot() -> void:
 	m.get_tree().quit()
 
 
-## 传送到出口门前,验证门的渲染与过关文字。
-## 召回链路自测(headless):动作注册 → 按下 → 召回至出生点;
-## v0.21.0 扩展双体链路:chips 同位再点即切另一半,界/边各回各的
-## 出生点(body_key 隔离),重力方向随各半基准复位。
-## 转场分镜(v0.37):三式各截「覆盖末帧」+「揭开中帧」——
-## 构成主义转场的验收 = 关键帧截图序列(motion.md §6 精神)。
 func run_transition_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = ".shots_v37"
@@ -374,7 +338,7 @@ func run_recall_test() -> void:
 	m.start_level(0, false)
 	await m.get_tree().create_timer(0.5).timeout
 	var fails := 0
-	# ① 单体(疾):召回出生点
+
 	var p: Player = m.players[m.view_slot()]
 	p.position = p.spawn_pos + Vector2(600, -300)
 	await _recall_keypress()
@@ -383,8 +347,7 @@ func run_recall_test() -> void:
 		" pos=", p.position, " spawn=", p.spawn_pos)
 	if not ok:
 		fails += 1
-	# ② 记录点信标:触碰登记(体身份键入账)→ 召回回信标落点
-	# (留在 L0:花名册 [0],与本段单体同几何;信标位置 = s01 场景摆位)
+
 	var cpr: Player = m.players[m.view_slot()]
 	var beacon: CheckpointBeacon = null
 	for n in m._level_root.get_children():
@@ -408,8 +371,7 @@ func run_recall_test() -> void:
 		" pos=", cpr.position, " beacon=", bpos)
 	if not ok_cp:
 		fails += 1
-	# ③④ 双子链路(合演关 L5:花名册 [疾, 伍]):切伍首切 = 界(pair_half 0,
-	# 候选首序),再切 = 边;界召回贴合容差 8px(天花板半体向上安放)。
+
 	m.start_level(5, false)
 	await m.get_tree().create_timer(0.5).timeout
 	m.switch_to_geo(4)
@@ -441,8 +403,6 @@ func run_recall_test() -> void:
 	m.get_tree().quit(0 if fails == 0 else 1)
 
 
-## 真实输入管线按一次 R(动作 recall):idle 协程直调 action_press 会错过
-## just_pressed 的物理帧比对,必须 parse_input_event + 物理帧等待;按后抬起。
 func _recall_keypress() -> void:
 	var ev := InputEventKey.new()
 	ev.physical_keycode = KEY_R
@@ -457,22 +417,20 @@ func _recall_keypress() -> void:
 	await m.get_tree().physics_frame
 
 
-## N1 同屏双人冒烟自测(--dualtest,headless):双活绑定 / 分区输入 /
-## 双活禁切 / 死亡保操控 / 双体到站登记,五链路一次走完。
 func run_dual_test() -> void:
 	m.start_level_dual(26)
 	await m.get_tree().create_timer(0.5).timeout
 	var fails := 0
-	var p1: Player = m.players[0]   # 疾 → P1 槽
-	var p2: Player = m.players[1]   # 跃 → P2 槽
-	# ① 双活绑定:双开 is_active + 各自输入槽
+	var p1: Player = m.players[0]
+	var p2: Player = m.players[1]
+
 	var ok_bind: bool = m.dual_mode and p1.is_active and p2.is_active \
 		and p1.input_source.slot == 0 and p2.input_source.slot == 1
 	print("DUALTEST bind ", "PASS" if ok_bind else "FAIL",
 		" dual=", m.dual_mode, " p1=", p1.is_active, " p2=", p2.is_active)
 	if not ok_bind:
 		fails += 1
-	# ② 分区输入:P1 右行 / P2 左行,两具互不牵连
+
 	var x1 := p1.position.x
 	var x2 := p2.position.x
 	Input.action_press("p1_move_right")
@@ -485,7 +443,7 @@ func run_dual_test() -> void:
 		" p1_dx=%.1f p2_dx=%.1f" % [p1.position.x - x1, p2.position.x - x2])
 	if not ok_input:
 		fails += 1
-	# ③ 双活禁切:chips 直达在双活下应无效(roster 不变、双开保持)
+
 	m.switch_to_geo(2)
 	await m.get_tree().physics_frame
 	var ok_noswitch: bool = m.players.size() == 2 \
@@ -493,30 +451,28 @@ func run_dual_test() -> void:
 	print("DUALTEST noswitch ", "PASS" if ok_noswitch else "FAIL")
 	if not ok_noswitch:
 		fails += 1
-	# ④ 死亡保操控:P2 的跃坠杀 → 重生回出生点,is_active 不丢
-	p2.position = Vector2(p2.position.x, 1550.0)   # probe kill_y = 1500
+
+	p2.position = Vector2(p2.position.x, 1550.0)
 	await m.get_tree().create_timer(1.2).timeout
 	var ok_death: bool = not p2.dying and p2.is_active \
-		and p2.position.distance_to(p2.spawn_pos) < 32.0   # 32px:含落地安放的物理沉降
+		and p2.position.distance_to(p2.spawn_pos) < 32.0
 	print("DUALTEST death ", "PASS" if ok_death else "FAIL",
 		" pos=", p2.position, " spawn=", p2.spawn_pos)
 	if not ok_death:
 		fails += 1
-	# ⑤ 双体到站登记:各自进各自门;全员未齐不误通关
-	# (0.2s 窗口断言双到站;seal 后 enter_exit 错峰吸入会把 arrived 翻 false)
+
 	var d0: ExitDoor = m._doors.get(p1.index)
 	var d1: ExitDoor = m._doors.get(p2.index)
 	p1.position = d0.position
 	p2.position = d1.position
 	await m.get_tree().create_timer(1.0).timeout
-	# 全员到站的不可逆判据 = 门封印(seal);seal 后 enter_exit 会把
-	# arrived 翻 false、in_exit 翻 true,所以这里不认 arrived 旗标。
+
 	var ok_arrive: bool = d0.sealed and d1.sealed
 	print("DUALTEST arrive ", "PASS" if ok_arrive else "FAIL",
 		" p1=", p1.arrived, " p2=", p2.arrived)
 	if not ok_arrive:
 		fails += 1
-	# ⑥ 封印吸入:全员到站 → 门封印 → enter_exit 错峰吸入 → 通关流转
+
 	await m.get_tree().create_timer(1.6).timeout
 	var ok_seal: bool = p1.in_exit and p2.in_exit \
 		and m._state != Main.State.PLAYING
@@ -529,15 +485,13 @@ func run_dual_test() -> void:
 	m.get_tree().quit(0 if fails == 0 else 1)
 
 
-## 同屏双人视觉分镜(--dualshot):双活开局后连拍——chips 双人描边
-## 高亮(P1 纸白 / P2 橙)、双人双取景构图、双体芯片「界 / 边」并示。
 func run_dual_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
 	m.start_level_dual(26)
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("dual_spawn")
-	# P1 右行 / P2 左行各走一段:双取景拉开 + 分区输入的可见证据
+
 	Input.action_press("p1_move_right")
 	Input.action_press("p2_move_left")
 	await m.get_tree().create_timer(0.8).timeout
@@ -548,9 +502,6 @@ func run_dual_shot() -> void:
 	m.get_tree().quit()
 
 
-## N2 客机自动化(--netjoin,headless 可用):广播发现附近房间 →
-## 自动加入第一个版本兼容的房间 → 等待主机开演(net.md §4.1:PC 客机
-## 发广播,手机当主机)。
 func run_net_join(ip := "") -> void:
 	await m.get_tree().create_timer(0.8).timeout
 	m._state = Main.State.ROOM
@@ -574,8 +525,6 @@ func run_net_join(ip := "") -> void:
 	m.get_tree().quit(1)
 
 
-## N2 房间流程页分镜(--roomshot):双人联接选择面板 → 房间四页
-## (选择 / 创建等待 / 加入搜索),配 UI 图册与 ui-flow 页面规范对照。
 func run_room_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
@@ -592,8 +541,7 @@ func run_room_shot() -> void:
 	m.net_room_layer.autostart_host()
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("room_host")
-	# 选图 / 选角两页(v0.36.0,net.md §8):主机定档 → 双方认领态分镜
-	# (headless 单机 = 仅主机侧"我方"认领,未认领位照常渲染)
+
 	m.net_room_layer._show_map()
 	await m.get_tree().create_timer(0.4).timeout
 	await _shot("room_map")
@@ -613,15 +561,13 @@ func run_room_shot() -> void:
 	m.get_tree().quit()
 
 
-## N2 主机自动化(--netauto,headless 可用):自动建房,对手加入即自动
-## 开演(首版固定试炼场)——供真机联测时 PC 端无人值守当主机。
 func run_net_auto() -> void:
 	await m.get_tree().create_timer(0.8).timeout
 	m._state = Main.State.ROOM
 	m._menu.visible = false
 	m.net_room_layer.open()
 	m.net_room_layer.autostart_host()
-	# 等对手加入 → 自动开演(最多 120s)
+
 	for i in 240:
 		await m.get_tree().create_timer(0.5).timeout
 		if NetSession.I != null and NetSession.I.in_game():
@@ -630,7 +576,7 @@ func run_net_auto() -> void:
 		if NetSession.I != null and NetSession.I.is_host() \
 				and NetSession.I.member_count() >= NetConfig.MAX_PLAYERS \
 				and m.net_room_layer.visible:
-			m.net_room_layer.visible = false   # 同「开演」钮:先收房间页
+			m.net_room_layer.visible = false
 			NetSession.I.host_start_level(0)
 	print("NETAUTO: timeout waiting for peer")
 	m.get_tree().quit(1)
@@ -650,8 +596,6 @@ func run_door_shot() -> void:
 	m.get_tree().quit()
 
 
-## 点按粒子反馈分镜(--tapshot):在屏内三点程序化触发 TouchControls
-## 的触点反馈(菱形回包 + 方块迸散),验证爆发与消散全程(开发验收用)。
 func run_tap_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
@@ -669,7 +613,6 @@ func run_tap_shot() -> void:
 	m.get_tree().quit()
 
 
-## 截取标题菜单画面。
 func run_menu_shot() -> void:
 	await m.get_tree().create_timer(1.0).timeout
 	await m.get_tree().process_frame
@@ -681,7 +624,6 @@ func run_menu_shot() -> void:
 	m.get_tree().quit()
 
 
-## 自动通关测试:一直向右走 + 周期性跳跃,打印关键事件直到超时。
 func run_auto_test() -> void:
 	m._unlocked = LevelData.count() - 1
 	print("TEST: begin level ", _shot_level)
@@ -708,7 +650,6 @@ func run_auto_shot() -> void:
 	await m.get_tree().create_timer(1.0).timeout
 	await _shot("a")
 
-	# 走一段 + 冲刺 + 跳一次(再补一跳二段),验证物理与出口渲染
 	m.debug_move = Vector2(1, 0)
 	await m.get_tree().create_timer(5.0).timeout
 	m.debug_move = Vector2.ZERO

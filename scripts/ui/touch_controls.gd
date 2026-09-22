@@ -1,41 +1,25 @@
 class_name TouchControls
 extends CanvasLayer
-## 移动端虚拟操控(自适应 + 安全区避让):
-##   左下 轮盘:左右方向模拟量 —— 轻推慢走、松手即停;拉到最大自动加速
-##   (替代加速按钮,PC 端仍用 Shift);
-##   屏幕任意空白处 点按 / 长按:跳跃(长按 = 按住,用于贴墙攀爬与高弹跳),
-##   轮盘触控区与右上小按钮除外;
-##   右上小按钮:切换 / 召回 / 暂停。
-## 全部输出经 Input.action_press 注入 InputMap 动作,与键盘 / 手柄同一条输入
-## 通路(player.gd 只读动作,不区分来源)。
-## 轮盘为扁平六边形轮廓:只暗示左右滑动,不产生纵向拖拽的错觉。
-## 布局锚定可见区四角并内避安全区,旋转 / 改变窗口时自动重排。
-##
-## 轮盘位置(设置面板可调,SettingsManager 持久化):
-##   fixed —— 固定在左下角,轮盘触控区外空白处点按 = 跳跃;
-##   float —— 触控域半屏划分(业界通行方案):左半屏 = 轮盘域,按住就地展开、
-##            松手滑回左下待位;右半屏 = 跳跃域,点按 / 长按跳跃 ——
-##            两域互不干扰,按住轮盘转向的同时,右半屏照样可跳(v0.10.1 修复:
-##            旧实现轮盘占用期间吞掉全屏跳跃触摸)。小按钮热区在两域之外。
+
 
 const ICON_SIZE_SMALL := 76.0
-const UI_STRIP_TOP := 200.0     # 顶层 UI 带:chips/提示/小按钮所在,禁跳
-## 触控热区外扩:视觉图标之外保留一圈余量(Material 建议目标 ≥48dp,
-## 热区应大于视觉元素,减少误触/空点)。
+const UI_STRIP_TOP := 200.0
+
+
 const HIT_MARGIN := 18.0
 
 var forced := false
 var in_game := false
 
 var _root: Control
-var _buttons := {}          # action -> {btn, label, icon_px, rect: Rect2}
+var _buttons := {}
 var _wheel: WheelPad
-var _jump_finger := -1      # 占据"空白处跳跃"的手指
+var _jump_finger := -1
 
 
 func _ready() -> void:
 	layer = 12
-	# 命令行 --touch 强制开启(桌面调试 / 截图)
+
 	forced = OS.get_cmdline_user_args().has("--touch")
 
 	_root = Control.new()
@@ -45,35 +29,25 @@ func _ready() -> void:
 	_root.resized.connect(_relayout)
 	get_viewport().size_changed.connect(_relayout)
 
-	# 切换已重构(v0.17.2):直接点按左上队伍 chips 切换,不再设切换按钮。
-	# —— 右上:召回 / 暂停(方盘按钮行,图标 + 文字标签) ——
 	_add_button("buttons/recall", "buttons/recall-on",
 		"recall", "召回")
 	_add_button("buttons/pause", "buttons/pause-on",
 		"pause", "暂停")
 
-	# —— 左下:左右方向轮盘(拉满自动加速) ——
 	_wheel = WheelPad.new()
 	_root.add_child(_wheel)
 	_wheel.wheel_mode = SettingsManager.wheel_mode
-	# 开发覆盖(--wheel=fixed / --wheel=float):自动化截图 / 调试不受存档设置影响
+
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--wheel="):
 			var m := a.substr(8)
 			if m == WheelPad.MODE_FIXED or m == WheelPad.MODE_FLOAT:
 				_wheel.wheel_mode = m
 
-	# 游戏初始在标题菜单;进入关卡时由 Main 开启
 	visible = false
 	_relayout.call_deferred()
 
 
-## 触控域划分(浮动轮盘模式,业界通行方案 —— 左半屏移动 / 右半屏跳跃):
-##   左半屏 = 轮盘域:按住就地展开浮动轮盘;轮盘占用中再来左半屏触摸不产生跳跃;
-##   右半屏 = 跳跃域:点按 / 长按跳跃,与轮盘是否被按住完全无关(互不干扰);
-##   顶层 UI 带(y < 200 画布px:chips / 提示行 / 重来 / 暂停 / 跳过键)禁跳;
-#   两域 exceptions:按在小按钮(重来 / 暂停)热区上时归按钮,
-##   不被任何域吞掉。固定轮盘模式维持原行为:轮盘触控区外空白处点按 = 跳跃。
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
@@ -82,23 +56,23 @@ func _input(event: InputEvent) -> void:
 		return
 	if t.pressed:
 		if _wheel != null and _wheel.wheel_mode == WheelPad.MODE_FLOAT:
-			# 按钮热区优先:两个域都让路,交给 TouchScreenButton 自行处理
+
 			if _is_on_button(t.position):
 				return
 			var vis := Adaptive.visible_size(get_viewport())
 			if t.position.x <= vis.x * 0.5:
-				# 左半屏 · 轮盘域(轮盘占用中则本次触摸落空,不跳跃)
+
 				_wheel.float_begin(t.index, t.position)
 				get_viewport().set_input_as_handled()
 				return
-			# 右半屏 · 跳跃域(顶层 UI 带除外)
+
 			if _jump_finger == -1 and t.position.y > UI_STRIP_TOP:
 				_jump_finger = t.index
 				Input.action_press("jump")
 				tap_burst_at(t.position)
 				get_viewport().set_input_as_handled()
 			return
-		# 固定模式:空白处按下 = 跳跃;轮盘触控区/顶层 UI 带/小按钮不抢占
+
 		if _jump_finger == -1 and t.position.y > UI_STRIP_TOP 			and not _pos_reserved(t.position):
 			_jump_finger = t.index
 			Input.action_press("jump")
@@ -109,7 +83,6 @@ func _input(event: InputEvent) -> void:
 		Input.action_release("jump")
 
 
-## 按下位置是否落在某个可见小按钮的热区内(热区 = 图标矩形外扩 HIT_MARGIN)。
 func _is_on_button(pos: Vector2) -> bool:
 	for action in _buttons:
 		var b: Dictionary = _buttons[action]
@@ -120,9 +93,7 @@ func _is_on_button(pos: Vector2) -> bool:
 	return false
 
 
-## 该位置已被其他控件占用(固定轮盘触控区 / 小按钮);隐藏的按钮不占热区。
-## 浮动模式不经过这里:触控域由 _input 按半屏整域划分,轮盘永不"占住"全屏,
-## 否则按住轮盘转向时第二根手指的跳跃会被吞掉(v0.10.1 修复的边界冲突)。
+# 浮动模式不查这里:轮盘不得占满半屏热区,否则按住转向时第二指跳跃被吞。
 func _pos_reserved(pos: Vector2) -> bool:
 	for action in _buttons:
 		var b: Dictionary = _buttons[action]
@@ -133,7 +104,6 @@ func _pos_reserved(pos: Vector2) -> bool:
 	return _wheel != null and _wheel.holds_point(pos)
 
 
-## 应用被系统抢占(切后台 / 来电)时 UP 事件可能丢失,立即松开全部输入。
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED \
 			or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
@@ -143,7 +113,6 @@ func _notification(what: int) -> void:
 			_wheel.force_release()
 
 
-## 进入 / 离开关卡:只在游戏进行中显示(触摸屏设备或强制开启时)。
 func set_in_game(on: bool) -> void:
 	in_game = on
 	if on:
@@ -153,7 +122,6 @@ func set_in_game(on: bool) -> void:
 		visible = false
 
 
-## 暂停菜单的"虚拟按键"开关:切换强制显示。
 func toggle() -> void:
 	forced = not forced
 	var on := in_game and (forced or DisplayServer.is_touchscreen_available())
@@ -166,17 +134,14 @@ func is_forced() -> bool:
 	return forced
 
 
-## 当前生效的轮盘模式(含开发覆盖);HUD / 关卡提示文案据此出词。
 func wheel_mode() -> String:
 	return _wheel.wheel_mode if _wheel != null else SettingsManager.wheel_mode
 
 
-## 单人阵容没有切换可言:v0.17.2 起切换走队伍 chips 点按,此钮已移除(接口保留兼容)。
 func set_switch_available(_on: bool) -> void:
 	pass
 
 
-## 设置面板改了轮盘模式后同步(切回固定时收拢浮动状态)。
 func refresh_settings() -> void:
 	if _wheel != null:
 		_wheel.wheel_mode = SettingsManager.wheel_mode
@@ -195,7 +160,6 @@ func _release_all() -> void:
 		_wheel.force_release()
 
 
-## 按可见区尺寸与安全区重排(旋转 / 改窗口自适应)。
 func _relayout() -> void:
 	if _root == null or _wheel == null:
 		return
@@ -205,15 +169,12 @@ func _relayout() -> void:
 	var top := ins.y
 	var right := ins.z
 
-	# 轮盘:扁平六边形,左缘避安全区;高度刻意压扁,只暗示左右滑动
 	var half_w := clampf(vis.x * 0.085, 108.0, 148.0)
 	var half_h := clampf(half_w * 0.30, 24.0, 40.0)
-	# v0.14.0:常驻位定在屏幕下四分之一处(中心 = 可见区高度 3/4,
-	# 拇指自然搭放的高度;v0.13.6 曾试下三分之一 2/3,仍偏高)
+
 	var wheel_center := Vector2(left + 26.0 + half_w, vis.y * 3.0 / 4.0)
 	_wheel.setup(half_w, half_h, wheel_center)
 
-	# 右上小按钮行:重来 / 暂停
 	var order := ["recall", "pause"]
 	var spacing := ICON_SIZE_SMALL + 14.0
 	for k in order.size():
@@ -225,13 +186,11 @@ func _relayout() -> void:
 			top + 92.0 + sz.y / 2.0) - sz / 2.0
 		b.btn.position = pos
 		b.rect = Rect2(pos, sz)
-		# 文字标签:钉在图标正下方
+
 		var label: Label = b.label
 		label.position = Vector2(pos.x + sz.x / 2.0 - 40.0, pos.y + sz.y + 4.0)
 
 
-## 生成一个 TouchScreenButton:常态 / 按下两态图标 + InputMap 动作,
-## 下挂一枚文字标签(存进 _buttons,由 _relayout 定位)。位置由 _relayout 决定。
 func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 		label_text: String) -> void:
 	var tex := Ui.icon(icon_rel)
@@ -240,13 +199,13 @@ func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 	btn.texture_normal = tex
 	btn.texture_pressed = tex_on
 	btn.action = action
-	# TouchScreenButton 是 Node2D:按图标原始尺寸缩放到位
+
 	var base := maxf(tex.get_width(), 1.0)
 	var s := ICON_SIZE_SMALL / base
 	btn.scale = Vector2(s, s)
 	btn.modulate = Color(1, 1, 1, 0.66)
 	btn.passby_press = true
-	# 触感反馈:按下瞬间轻震(受设置开关控制;桌面为无害空操作)
+
 	btn.pressed.connect(func() -> void: buzz(24))
 	_root.add_child(btn)
 	var label := Ui.l(label_text, 12, Ui.LIGHT, Color(Palette.I.paper, 0.8),
@@ -258,16 +217,11 @@ func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 		"rect": Rect2()}
 
 
-## 触感反馈(受设置开关控制;桌面无振动硬件时为无害空操作)。
 static func buzz(ms := 24) -> void:
 	if SettingsManager.vibration:
 		Input.vibrate_handheld(ms)
 
 
-## 点按位置的粒子反馈(FX-1 轻微反馈,presentation/00 卷八 · Fragment
-## 色块碎片):一圈向外扩张的菱形回包 + 纸白小方块迸散(含一枚构成红)。
-## 0.32s 内散尽,全部硬边方块无柔化;跳域点按(双模式)自动触发,
-## 开发钩子(--tapshot)亦可程序化调用。
 func tap_burst_at(pos: Vector2) -> void:
 	var burst := CPUParticles2D.new()
 	burst.one_shot = true
@@ -294,8 +248,6 @@ func tap_burst_at(pos: Vector2) -> void:
 	_root.add_child(ring)
 
 
-## 点按回包:向外扩张的 45° 方形轮廓(构成菱,与传送菱标/徽章同母题),
-## 0.28s 淡出 —— M2 微交互档、二次缓出(M1 白名单)、M9 时间驱动。
 class TapRing extends Node2D:
 	const DUR := 0.28
 	const R0 := 8.0
@@ -321,7 +273,7 @@ class TapRing extends Node2D:
 
 
 func _process(_delta: float) -> void:
-	# 按下高亮:压住的按钮更实、更亮(标签同步提亮)
+
 	for action in _buttons:
 		var b: Dictionary = _buttons[action]
 		var btn: TouchScreenButton = b.btn
@@ -332,49 +284,39 @@ func _process(_delta: float) -> void:
 		label.modulate.a = move_toward(label.modulate.a, ltarget, 0.12)
 
 
-## 左右方向轮盘:扁平六边形底盘,滑钮仅沿横轴移动。
-## 触控区为轮廓外扩的扁长条;死区内回中;拉到最大自动加速(带滞回防抖)。
-## 两种位置模式(设置面板切换):
-##   MODE_FIXED —— 底盘钉在左下角,触控区固定;
-##   MODE_FLOAT —— 待位时画在左下角(半透明提示),按住左半屏任意空白处
-##                  就地展开,松手滑回待位点。
 class WheelPad extends Control:
 	const MODE_FIXED := "fixed"
 	const MODE_FLOAT := "float"
 	const DEADZONE := 0.10
-	const SPRINT_ON := 0.96      # 拉到最大 → 自动加速
-	const SPRINT_OFF := 0.86     # 滞回:低于此才退出加速,避免边缘抖动
-	## 输出曲线 γ(>1):跨出死区后对归一行程做幂映射,轻推段灵敏度压低
-	## (微调 / 精确停边更细腻),拉满仍为 1.0 全速不变。样式与行程不变。
+	const SPRINT_ON := 0.96
+	const SPRINT_OFF := 0.86
+
 	const OUT_CURVE := 1.35
 
 	var wheel_mode := MODE_FIXED
-	var strength := 0.0          # 死区处理后的输出 -1..1
-	var sprinting := false       # 轮盘拉满触发的自动加速
-	var half_w := 120.0          # 六边形半宽
-	var half_h := 36.0           # 六边形半高(刻意压扁)
-	var _center := Vector2(160, 160)   # 待位点(固定模式 = 使用位置)
-	var _home := Vector2(160, 160)     # 左下角待位锚点(_relayout 刷新)
-	var _travel := 90.0          # 滑钮最大偏移
+	var strength := 0.0
+	var sprinting := false
+	var half_w := 120.0
+	var half_h := 36.0
+	var _center := Vector2(160, 160)
+	var _home := Vector2(160, 160)
+	var _travel := 90.0
 	var _knob_r := 26.0
-	var _knob_x := 0.0           # 原始滑钮偏移(画布 px)
+	var _knob_x := 0.0
 	var _finger := -1
-	var _returning := false      # 浮动模式:松手后滑回待位点的过渡
+	var _returning := false
 
-	# —— v0.49 素材化:底盘 / 点亮箭 / 滑钮 = stick_* 纹理(源
-	# assets/art/ui/ · tools/gen_ui.lua 直出,NEAREST 像素纪律);
-	# 动态态(点亮 / 冲刺 / 浮待位淡出)= 换纹理 + 位移 + modulate,零 _draw
 	const TEX_BASE := preload("res://assets/ui/stick_base.png")
 	const TEX_BASE_ON := preload("res://assets/ui/stick_base_sprint.png")
 	const TEX_ARROW := preload("res://assets/ui/stick_arrow.png")
 	const TEX_ARROW_ON := preload("res://assets/ui/stick_arrow_red.png")
 	const TEX_KNOB := preload("res://assets/ui/stick_knob.png")
 	const TEX_KNOB_ON := preload("res://assets/ui/stick_knob_sprint.png")
-	const CANON := Vector2(252, 84)        # 纹理正典画布(HW=120 / HH=36)
-	const ARROW_R_POS := Vector2(229, 34)  # 右箭盒左上角(正典坐标)
-	const ARROW_L_POS := Vector2(11, 34)   # 左箭盒左上角(flip_h)
-	const KNOB_TEX := 54.0                 # 滑钮纹理直径
-	const KNOB_CANON_R := 26.0             # 纹理正典半径(setup 按 _knob_r 缩放)
+	const CANON := Vector2(252, 84)
+	const ARROW_R_POS := Vector2(229, 34)
+	const ARROW_L_POS := Vector2(11, 34)
+	const KNOB_TEX := 54.0
+	const KNOB_CANON_R := 26.0
 
 	var _base: TextureRect
 	var _arrow_l: TextureRect
@@ -389,7 +331,6 @@ class WheelPad extends Control:
 		_arrow_l.flip_h = true
 		_knob = _visual(TEX_KNOB)
 
-	## 纹理件工厂:NEAREST + 忽略纹理下限(随 setup 缩放)
 	func _visual(tex: Texture2D) -> TextureRect:
 		var tr := TextureRect.new()
 		tr.texture = tex
@@ -400,7 +341,6 @@ class WheelPad extends Control:
 		add_child(tr)
 		return tr
 
-	## 布局:半宽 / 半高与待位圆心(画布坐标)。
 	func setup(p_half_w: float, p_half_h: float, center: Vector2) -> void:
 		half_w = p_half_w
 		half_h = p_half_h
@@ -413,8 +353,6 @@ class WheelPad extends Control:
 		position = _center - size / 2.0
 		_layout_visuals()
 
-	## 纹理件随 setup 尺寸重排:底盘整体 NEAREST 拉伸,箭盒位置乘同一
-	## 缩放跟随(暗箭在底盘内同步缩放,点亮箭精确盖上),滑钮按半径等比
 	func _layout_visuals() -> void:
 		var sc := size / CANON
 		_base.size = size
@@ -425,7 +363,6 @@ class WheelPad extends Control:
 		_knob.size = Vector2(ks, ks)
 		_apply_state()
 
-	## 动态态上屏:冲刺换纹理,点亮方向显隐,滑钮随行程
 	func _apply_state() -> void:
 		_base.texture = TEX_BASE_ON if sprinting else TEX_BASE
 		_knob.texture = TEX_KNOB_ON if sprinting else TEX_KNOB
@@ -437,7 +374,6 @@ class WheelPad extends Control:
 		_knob.position = Vector2(size.x / 2.0 + _knob_x, size.y / 2.0) \
 			- Vector2(ks, ks) / 2.0
 
-	## 浮动模式:左半屏空白处按下 → 轮盘就地展开。返回是否接管了这次按下。
 	func float_begin(finger: int, pos: Vector2) -> bool:
 		if wheel_mode != MODE_FLOAT or _finger != -1:
 			return false
@@ -446,7 +382,7 @@ class WheelPad extends Control:
 			return false
 		_finger = finger
 		_returning = false
-		# 展开圆心:按下点,内避屏幕边缘与安全区(留出半盘空间)
+
 		var ins := Adaptive.safe_insets(get_viewport())
 		_center = Vector2(
 			clampf(pos.x, ins.x + half_w + 10.0, vis.x * 0.5 - 6.0),
@@ -457,9 +393,6 @@ class WheelPad extends Control:
 		TouchControls.buzz(12)
 		return true
 
-	## 是否落在轮盘触控区。固定模式:轮廓外扩的扁长条。
-	## 浮动模式:恒为 false —— 触控域由 TouchControls 按半屏划分,
-	## 轮盘绝不在此占位,按住转向时右半屏跳跃不受影响。
 	func holds_point(pos: Vector2) -> bool:
 		if wheel_mode == MODE_FLOAT:
 			return false
@@ -486,7 +419,6 @@ class WheelPad extends Control:
 			if d != null and d.index == _finger:
 				_follow(d.position)
 
-	## 浮动模式松手:滑钮归零后,底盘滑回左下角待位点(0.16s)。
 	func _float_return() -> void:
 		if wheel_mode != MODE_FLOAT:
 			return
@@ -498,10 +430,6 @@ class WheelPad extends Control:
 			_returning = false
 			_center = _home)
 
-	## 滑钮跟随手指(仅水平),并注入移动 / 加速动作。
-	## 输入精度(v0.13.6):死区重映射 —— 跨出死区输出从 0 平滑起步,
-	## 消除旧版 0 → 0.14 的速度突跳;再走 γ 幂曲线压低轻推段灵敏度。
-	## 冲刺判定用原始行程 pull,阈值行为不变。
 	func _follow(pos: Vector2) -> void:
 		_knob_x = clampf(pos.x - _center.x, -_travel, _travel)
 		var pull := absf(_knob_x) / _travel
@@ -524,7 +452,6 @@ class WheelPad extends Control:
 			_release_move()
 		_apply_state()
 
-	## 拉到最大自动加速(滞回阈值,防止在边缘来回抖动)。
 	func _update_sprint(pull: float) -> void:
 		if not sprinting and pull >= SPRINT_ON:
 			sprinting = true
@@ -539,7 +466,6 @@ class WheelPad extends Control:
 		Input.action_release("move_left")
 		Input.action_release("move_right")
 
-	## 无条件复位(切后台 / 隐藏 / 退出):松开全部由轮盘注入的动作。
 	func force_release() -> void:
 		_finger = -1
 		strength = 0.0
@@ -553,7 +479,7 @@ class WheelPad extends Control:
 		_layout_visuals()
 
 	func _process(_delta: float) -> void:
-		# 浮动模式待位更淡(提示"可以在这里按住"),激活 / 固定时常态
+
 		var idle_a := 0.18 if (wheel_mode == MODE_FLOAT and _finger == -1) else 1.0
 		_base.modulate.a = idle_a
 		_knob.modulate.a = idle_a

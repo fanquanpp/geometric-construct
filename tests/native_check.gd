@@ -1,8 +1,4 @@
 extends Node2D
-## 原生作关门禁(native-levels.md §4):逐关装载关卡目录场景,断言——
-## ①玩家诞生数 = 名册体数(双子两具);②全员落地站稳;
-## ③每个名册成员都有专属终点门;④Spawn 摆位标记齐全。
-## 运行:godot --path . res://tests/native_check.tscn(退出码 0 = 过)
 
 
 func _ready() -> void:

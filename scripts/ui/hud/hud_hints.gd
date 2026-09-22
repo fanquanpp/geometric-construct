@@ -1,13 +1,10 @@
 class_name HudHints
 extends RefCounted
-## HUD 按键提示条域构建器(v0.39.4 自 hud.gd 域拆迁入,逐行平移):
-## 按当前关卡的角色能力动态生成;触屏设备显示操作文字(轮盘 / 点按),
-## 桌面显示键位图标;文案双端自适应(adapt_copy)。
-
-var hud  # Hud
 
 
-## 文案自适应:触屏设备把关卡提示里的键位词换成触屏说法。
+var hud
+
+
 func adapt_copy(text: String) -> String:
 	if not Adaptive.is_touch_mode():
 		return text
@@ -18,8 +15,6 @@ func adapt_copy(text: String) -> String:
 		.replace("Tab 切换操控", "点按切换键,操控")
 
 
-## 按键提示条:按当前关卡的角色能力动态生成。
-## 触屏设备显示操作文字(轮盘 / 按键),桌面显示键位图标。
 func rebuild(def: Dictionary) -> void:
 	assert(hud != null, "HudHints.hud 未接线(Hud._ready 赋值)——域拆回引回归防线")
 	var host: HBoxContainer = hud._hint_row
@@ -69,7 +64,7 @@ func rebuild(def: Dictionary) -> void:
 		add_key.call("key-shift")
 		add_text.call("冲刺")
 		add_sep.call()
-	# 切换提示按"体数"判断(双子一位两具):纯双子阵容也必须给出切换键
+
 	if Geometries.roster_body_total(def.roster) > 1:
 		add_key.call("key-tab")
 		add_text.call("切换")
@@ -81,7 +76,6 @@ func rebuild(def: Dictionary) -> void:
 	add_text.call("暂停")
 
 
-## 触屏提示条:与虚拟按键一一对应的纯文字说明(无键位图标)。
 func _rebuild_touch_hints(def: Dictionary) -> void:
 	var host: HBoxContainer = hud._hint_row
 	var can_jump := false
@@ -98,12 +92,12 @@ func _rebuild_touch_hints(def: Dictionary) -> void:
 		var c := Control.new()
 		c.custom_minimum_size = Vector2(10, 0)
 		host.add_child(c)
-	# 跳跃域文案随轮盘模式变化:固定 = 全屏点按;浮动 = 右半屏点按(左半屏归轮盘)
+
 	var m = Main.I
 	var mode: String = m.touch_controls.wheel_mode() \
 		if m != null and m.touch_controls != null else SettingsManager.wheel_mode
 	var jump_zone := "右半屏点按" if mode == SettingsManager.WHEEL_FLOAT else "点屏"
-	# 切换 / 重来 / 暂停都有实体按钮(左上 / 右上),提示条不再重复
+
 	add_text.call("轮盘 · 移动")
 	add_sep.call()
 	if can_jump:

@@ -1,27 +1,22 @@
 class_name NetRoomLayer
 extends CanvasLayer
-## 房间流程页(net.md §4/§7/§8,N2 同网直连):PICK 选择创建/加入 →
-## HOST 建房等待 → JOIN 搜索/手动 IP → LOBBY 已连接 → MAP 主机选图 →
-## ROLE 双方认领几何体(每人 1–3 位,名册位全覆盖才可开演)。
-## Flow 型页面(ui-flow.md):落流程带 30,
-## 不改玩法状态,只与 Main.State.ROOM 配合;Esc 由 Main 路由进 back_out()。
-## 版本门禁(D7):版本或关卡指纹不齐的房间标灰"版本不同"。
+
 
 enum Phase { NONE, PICK, HOST, JOIN, LOBBY, MAP, ROLE }
 
-var m: Main                    # Main(避免类型环引用,运行时注入)
+var m: Main
 
-var _status: Label             # 状态行(net_message / members_changed 刷新)
+var _status: Label
 var _phase: int = Phase.NONE
 
-# HOST 页
+
 var _host_start: Button
-# JOIN 页
+
 var _rooms_box: VBoxContainer
 var _ip_edit: LineEdit
-# LOBBY 页
+
 var _lobby_line: Label
-# ROLE 页
+
 var _role_start: Button
 
 var _toast_tw: Tween
@@ -37,13 +32,13 @@ var _toast_tw: Tween
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
-	# 会话信号 → 页面刷新(Main 先建 NetSession 再建本层,_ready 顺序成立)
+
 	NetSession.I.net_message.connect(_on_net_message)
 	NetSession.I.members_changed.connect(_on_members_changed)
 	NetSession.I.room_closed.connect(_on_room_closed)
 	NetSession.I.map_picked.connect(_on_map_picked)
 	NetSession.I.claims_changed.connect(_on_claims_changed)
-	# 场景骨架样式施加(R1:壳在 scenes/ui/net_room_layer.tscn,四页内容
+
 	# 由会话状态驱动动态重建,动态生成豁免)
 	_root.theme = Ui.make_theme()
 	_shade.color = Color(Palette.I.ink, 0.96)
@@ -55,34 +50,27 @@ func _ready() -> void:
 	Ui.style(_sub, 13, Ui.LIGHT, Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER)
 
 
-# ———————————————— 页面切换 ————————————————
-
-## 从菜单进入:默认落 PICK(创建 / 加入二选)。
 func open() -> void:
 	visible = true
 	_show_pick()
 
 
-## 分镜钩子(--roomshot):仅停发现信标,不动会话状态。
 func beacon_stop_only() -> void:
 	NetSession.I.beacon.stop()
 	_phase = Phase.NONE
 
 
-## 自动化钩子(--netauto):跳过选择页直接建房并展示等待页。
 func autostart_host() -> void:
 	visible = true
 	if NetSession.I.host_room("试炼房间"):
 		_show_host()
 
 
-## 自动化钩子(--netjoin):跳过选择页直接开始搜索附近房间。
 func autostart_join() -> void:
 	visible = true
 	_show_join()
 
 
-## 联机对局结束后回房:主机回 HOST 等待页,客机回 LOBBY 等待页。
 func reopen_after_game() -> void:
 	visible = true
 	if NetSession.I != null and NetSession.I.is_host():
@@ -91,7 +79,6 @@ func reopen_after_game() -> void:
 		_show_lobby()
 
 
-## Esc 路由(Main.ROOM 分支):逐级返回;离开会话即回标题菜单。
 func back_out() -> void:
 	match _phase:
 		Phase.PICK:
@@ -111,7 +98,7 @@ func back_out() -> void:
 			if NetSession.I.is_host():
 				_show_map()
 			else:
-				_show_lobby()   # 客机收起选角(认领保留),回等待页
+				_show_lobby()
 		_:
 			close_to_menu()
 
@@ -125,7 +112,7 @@ func close_to_menu() -> void:
 
 
 func toast_line(text: String) -> void:
-	# 房间未开时不弹(掉线提示走 MenuLayer.toast / net_host_lost 文案)
+
 	if not visible or _status == null:
 		return
 	_status.text = text
@@ -140,8 +127,6 @@ func toast_line(text: String) -> void:
 			_refresh_status_line())
 
 
-# ———————————————— 各页构建 ————————————————
-
 func _clear_body() -> void:
 	for c in _body.get_children():
 		c.queue_free()
@@ -152,11 +137,8 @@ func _title_of(t: String, s: String) -> void:
 	_sub.text = s
 
 
-## 状态行:常驻 _body 尾部,net_message / members_changed 驱动刷新。
-## 注意 queue_free 帧末才生效:换页后旧状态行仍"有效且挂着父",
-## 必须追加 is_queued_for_deletion 检查,否则复用垂死节点 = 状态行消失
-## (v0.37.0 修复;MAP/ROLE 两新页首次暴露)。
 func _ensure_status() -> void:
+	# 旧状态行 queue_free 帧末才失效,复用前必须查 is_queued_for_deletion。
 	if _status != null and is_instance_valid(_status) \
 			and _status.get_parent() == _body and not _status.is_queued_for_deletion():
 		return
@@ -193,8 +175,6 @@ func _big_btn(text: String, sub: String, on_press: Callable, disabled := false) 
 	return b
 
 
-# —— ① PICK:创建 / 加入 ——
-
 func _show_pick() -> void:
 	_phase = Phase.PICK
 	_title_of("跨设备双人", "LAN DIRECT · 创建房间或加入附近房间")
@@ -205,16 +185,14 @@ func _show_pick() -> void:
 		func() -> void: _enter_host()))
 	_body.add_child(_big_btn("加入房间", "搜索附近房间,或手动输入主机 IP",
 		func() -> void: _show_join()))
-	# 返回出口(v0.44.2):旧版选择页只有 Esc 能回标题,触屏用户被锁在页内
+
 	_body.add_child(_big_btn("返回", "回到标题菜单",
 		func() -> void: back_out()))
 
 
-# —— ② HOST:建房等待 ——
-
 func _enter_host() -> void:
 	if not NetSession.I.host_room("试炼房间"):
-		return   # 失败原因经 net_message → 状态行
+		return
 	_show_host()
 
 
@@ -238,8 +216,6 @@ func _show_host() -> void:
 	_refresh_status_line()
 	_refresh_host_btn()
 
-
-# —— ③ JOIN:搜索 / 手动 IP ——
 
 func _show_join() -> void:
 	_phase = Phase.JOIN
@@ -302,14 +278,12 @@ func _join_ip(ip: String) -> void:
 	_show_lobby()
 
 
-# —— ④ LOBBY:已连接等待开演 ——
-
 func _show_lobby() -> void:
 	_phase = Phase.LOBBY
 	_title_of("已连接", "LOBBY · 等待主机选图开演")
 	_clear_body()
 	_ensure_status()
-	# 已有选图认领时直接展示"你将操控谁";否则显示绑定集合兜底文案。
+
 	var names := PackedStringArray()
 	var ns: NetSession = NetSession.I
 	if ns != null and ns.pick_level >= 0 and ns.pick_level < LevelData.count():
@@ -327,8 +301,6 @@ func _show_lobby() -> void:
 		func() -> void: back_out()))
 	_refresh_status_line()
 
-
-# —— ⑤ MAP:主机选图(仅主机端;客机经 rpc_map_picked 直达选角页) ——
 
 func _show_map() -> void:
 	_phase = Phase.MAP
@@ -357,8 +329,6 @@ func _show_map() -> void:
 		func() -> void: _show_host()))
 	_refresh_status_line()
 
-
-# —— ⑥ ROLE:双方认领几何体(claim 上传主机仲裁,广播回包驱动重建) ——
 
 func _show_role() -> void:
 	var ns: NetSession = NetSession.I
@@ -397,8 +367,6 @@ func _show_role() -> void:
 	_refresh_role_btn()
 
 
-## 一枚选角芯片:几何体代号 + 认领态(我方纸白描边 / 对方橙描边 /
-## 未认领暗色),配几何体色托底。双子(伍)一枚芯片 = 界 / 边两具同属。
 func _role_chip(gi: int, mine: Array, other: Array) -> Button:
 	var cd: GeometryDef = Geometries.get_def(gi)
 	var side := 0 if mine.has(gi) else (1 if other.has(gi) else -1)
@@ -431,7 +399,6 @@ func _toggle_claim(gi: int, on: bool) -> void:
 		NetSession.I.host_toggle_claim(gi, on)
 	else:
 		NetSession.I.client_toggle_claim(gi, on)
-	# 主机本地仲裁后经 claims_changed 重建;客机等广播回包重建。
 
 
 func _refresh_role_line() -> void:
@@ -456,20 +423,16 @@ func _refresh_role_btn() -> void:
 		_role_start.disabled = not NetSession.I.can_start()
 
 
-# ———————————————— 会话信号 → 页面刷新 ————————————————
-
 func _on_members_changed() -> void:
 	_refresh_status_line()
 	_refresh_host_btn()
 
 
-## 选图定档(两端):主机本地点选 / 客机经广播,统一转选角页。
 func _on_map_picked(_index: int) -> void:
 	if visible:
 		_show_role()
 
 
-## 认领集变化(本机点按仲裁回执 / 对端广播 / 掉线清空):重建选角页。
 func _on_claims_changed() -> void:
 	if visible and _phase == Phase.ROLE:
 		_show_role()
@@ -485,11 +448,11 @@ func _on_net_message(msg: String) -> void:
 
 
 func _on_room_closed() -> void:
-	# 主机掉线由 Main.net_host_lost 弹回菜单;这里兜底关页
+
 	if visible:
 		close_to_menu()
 
 
 func _process(_delta: float) -> void:
-	# JOIN 页搜索周期刷新由 beacon 驱动;这里仅兜底刷新主机开演钮
+
 	_refresh_host_btn()

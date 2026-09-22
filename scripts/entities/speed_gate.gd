@@ -1,10 +1,7 @@
 @tool
 class_name SpeedGate
 extends Area2D
-## 加速门(光电门):穿过时立即把速度抬到门后上限,并永久提升速度上限
-## (对"圆"为 2.5×、"逆"为 2.0×,直至死亡重生)。
-## 视觉:门柱 + 顶梁 + 循环滚动的雪佛龙箭头,有人强化时箭头变红加速。
-## @tool:门框正典帧随 zone_size 实时重排(所见即所得)。
+
 
 @export var zone_size := Vector2(96, 190)
 
@@ -40,7 +37,7 @@ func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		_editor_sync(false)
 
-## 编辑器预览同步:zone_size 变化才重排(避免每帧重解码贴图)。
+
 func _editor_sync(force: bool) -> void:
 	var s := str(zone_size)
 	if not force and s == _sig:
@@ -51,7 +48,7 @@ func _editor_sync(force: bool) -> void:
 	TerrainKit.mech_layout(_spr_live, T_LIVE, zone)
 
 func _on_body_entered(body: Node2D) -> void:
-	# 联机:强化只在主机判定,客机经事件复现(net.md §6)
+
 	if NetSession.I != null and NetSession.I.is_net() and not NetSession.I.is_host():
 		return
 	if body is Player:

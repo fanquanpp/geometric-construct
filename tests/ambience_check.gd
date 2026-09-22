@@ -1,13 +1,9 @@
 extends SceneTree
-## ambience_check.gd — BGM 静音断言(audio.md §6 验收项,v0.37 落地)。
-## 用法:--headless --path . --script res://tests/ambience_check.gd
-## 对每个 motif 直接驱动 Ambience._fill 纯 DSP 管线(不依赖音频设备,
-## headless 可跑),断言:非静音(峰值达标)、无 NaN/Inf、动态范围合理、
-## motif 热切换不崩、声部上限不越界。
+
 
 func _init() -> void:
 	var fails := 0
-	var chunks := 48   # 48 × 2048 / 32000 ≈ 3.1s:足够 pad 完成起音
+	var chunks := 48
 	for motif_name in Ambience.MOTIFS.keys():
 		var amb := Ambience.new()
 		amb.set_motif(motif_name)
@@ -34,7 +30,7 @@ func _init() -> void:
 		if not ok:
 			fails += 1
 		amb.free()
-	# 热切换冒烟:连切全部 motif 不崩、延迟环重建正常
+
 	var amb2 := Ambience.new()
 	for i in 3:
 		for motif_name in Ambience.MOTIFS.keys():

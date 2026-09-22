@@ -1,9 +1,6 @@
 class_name EdgeIndicator
 extends Control
-## 双人超距方向指示(net.md §3「超距时给方向指示」):
-## 两取景点相距超出屏幕对角 1.4 倍且镜头已拉到下限时,在画面边缘
-## 指向另一方。纯 HUD 演出,不参与机制。
-## (v0.32.0 自 hud.gd 内部类抽出为独立场景:scenes/ui/edge_indicator.tscn)
+
 
 const TRIG_MULT := 1.4
 var _show := false
@@ -27,7 +24,7 @@ func _process(_delta: float) -> void:
 		_show = show_edge
 		queue_redraw()
 	elif show_edge:
-		queue_redraw()   # 呼吸脉冲需逐帧
+		queue_redraw()
 
 
 func _draw() -> void:
@@ -42,7 +39,7 @@ func _draw() -> void:
 	var dir := (to_p - from_p).normalized()
 	if dir == Vector2.ZERO:
 		return
-	# 求射线与画面内缩矩形的交点(边缘留白 46px)
+
 	var k := INF
 	if dir.x > 0.01:
 		k = minf(k, (vp.x - 46.0 - from_p.x) / dir.x)

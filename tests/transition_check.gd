@@ -1,8 +1,5 @@
 extends SceneTree
-## transition_check.gd — 构成主义转场层断言(v0.37,motion.md §2.3 实装)。
-## 用法:--headless --path . --script res://tests/transition_check.gd
-## 断言:四式转场 on_covered 恰好触发一次且收尾归零;同屏单飞(在飞拒绝);
-## 减动效 = 硬切(立即回调、零演出);两枚白名单 shader 可加载可实例化。
+
 
 const TransitionLayer := preload("res://scripts/fx/transition_fx.gd")
 
@@ -18,7 +15,6 @@ func _run() -> void:
 	root.add_child(fx)
 	await process_frame
 
-	# ① 四式:covered 恰好一次,结束后隐藏且不忙
 	for style in [TransitionFX.Style.FADE, TransitionFX.Style.SWEEP,
 			TransitionFX.Style.BLOCKS_RED, TransitionFX.Style.CORNERS,
 			TransitionFX.Style.CURTAIN]:
@@ -28,7 +24,7 @@ func _run() -> void:
 		if not ok:
 			_fail("%d transition 被拒(初始即忙?)" % style)
 			continue
-		# 轮询至收尾(上限 5s)
+
 		var guard := 0
 		while fx.is_busy() and guard < 600:
 			await process_frame
@@ -40,7 +36,6 @@ func _run() -> void:
 		else:
 			print("TRANSITION style %d PASS" % style)
 
-	# ② 同屏单飞:在飞期间第二次 transition 必须被拒
 	var calls := [0]
 	fx.transition(TransitionFX.Style.FADE, 0.3, func() -> void: calls[0] += 1)
 	var rejected: bool = not fx.transition(TransitionFX.Style.SWEEP, 0.1,
@@ -52,7 +47,6 @@ func _run() -> void:
 		print("TRANSITION single-flight PASS")
 		await _drain(fx)
 
-	# ③ 减动效:硬切——立即回调,零演出(帧间即收尾)
 	SettingsManager.reduced_motion = true
 	var cut := [0]
 	var t0 := Time.get_ticks_msec()
@@ -66,7 +60,6 @@ func _run() -> void:
 		_fail("减动效未退化为硬切")
 	await _drain(fx)
 
-	# ④ 白名单 shader 可加载(Material 实例化 + 参数写入)
 	for path in ["res://assets/fx/sweep_diagonal.gdshader",
 			"res://assets/fx/block_dissolve.gdshader"]:
 		var sh: Shader = load(path)

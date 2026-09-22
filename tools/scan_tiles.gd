@@ -1,6 +1,5 @@
 extends SceneTree
-## 图块集槽位扫描:输出每个 100×100 槽位的非透明占位(存在/空)。
-## 运行:godot --headless --path . --script res://tools/scan_tiles.gd
+
 
 func _initialize() -> void:
 	var tex: Texture2D = load("res://assets/tiles/native_tiles.png")

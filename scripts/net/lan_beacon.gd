@@ -1,28 +1,22 @@
 class_name LanBeacon
 extends Node
-## LAN 房间发现信标(net.md §4.2):主机侧应答 OFFER,客机侧受限广播
-## DISCOVER 收集"附近房间"。协议魔数 SRNET1;应答带版本 + 关卡哈希门禁(D7)。
-##
-## 平台注记:Android 上 PacketPeerUDP 发广播存在已知限制(godot#20216,
-## 能收不能发)——与定稿拓扑吻合:手机默认当主机(只收 DISCOVER、单播回
-## OFFER),广播发现由 PC 客机发起;手机作客机走手动 IP / 二维码兜底。
+
 
 signal rooms_changed()
 
 const DISCOVER_PKT := "SRNET1?DISCOVER"
 
-var _udp := PacketPeerUDP.new()          # 主机:绑信标端口收 DISCOVER
-var _client := PacketPeerUDP.new()       # 客机:广播 DISCOVER、收 OFFER
+var _udp := PacketPeerUDP.new()
+var _client := PacketPeerUDP.new()
 var _hosting := false
 var _seeking := false
 var _room_name := ""
 var _game_port := NetConfig.ENET_PORT
 var _accum := 0.0
-## 客机侧收集的房间 {ip: {room, ver, hash, n, max, port, seen}}
+
 var rooms := {}
 
 
-## —— 主机侧:绑定信标端口,应答发现 ——
 func start_host(room_name: String, game_port: int) -> bool:
 	stop()
 	_udp = PacketPeerUDP.new()
@@ -37,13 +31,12 @@ func start_host(room_name: String, game_port: int) -> bool:
 	return true
 
 
-## —— 客机侧:开始广播发现 ——
 func start_seek() -> void:
 	stop()
 	_client = PacketPeerUDP.new()
-	_client.set_broadcast_enabled(true)   # 广播前置(net.md §4.2 / 官方文档)
+	_client.set_broadcast_enabled(true)
 	_seeking = true
-	_accum = 999.0   # 立即发第一轮
+	_accum = 999.0
 	rooms.clear()
 
 
@@ -94,9 +87,7 @@ func _occupancy() -> int:
 
 
 func _broadcast() -> void:
-	# 多网卡机器(以太网 + WiFi + 热点适配器并存很常见):受限广播
-	# 只走默认路由,常落到错的网卡 —— 按每个本地网段各发一份,
-	# 再补全网广播(net.md D5:受限广播兜底 Manual IP 之外的第三重)。
+
 	for ip in NetConfig.local_ips():
 		var parts := ip.split(".")
 		var bcast := "%s.%s.%s.255" % [parts[0], parts[1], parts[2]]

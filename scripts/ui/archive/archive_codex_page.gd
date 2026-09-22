@@ -1,22 +1,18 @@
 class_name ArchiveCodexPage
 extends RefCounted
-## 档案 · 建筑 / 机关图鉴页构建器(v0.39.3 自 archive_panel.gd 页签拆分迁入,
-## 逐行平移):主从布局——左条目列表 + 右详情(图 / 功能介绍 / 语义规格 /
-## 要点);两态机关附静帧切换,动态机关以多帧精灵循环(壳的 AnimTimer 驱动,
-## 本构建器 on_tick() 推帧)。
 
-var panel  # ArchivePanel
-var kind := "bld"   # "bld" | "mech"
+
+var panel
+var kind := "bld"
 
 
 func build(p, page: Control) -> void:
 	panel = p
 	var entries: Array = ArchiveData.BUILDINGS if kind == "bld" else ArchiveData.MECHS
-	# 建筑条目少(6)行高些;机关条目多(10)行矮些,配合滚动不溢出
+
 	var row_h := 58 if kind == "bld" else 52
 	var icon_px := 50 if kind == "bld" else 44
 
-	# 左列:条目列表(缩略图 50×50 = 200×200 精确 1/4 + 名称)
 	var list_panel := PanelContainer.new()
 	list_panel.position = Vector2(48, 116)
 	list_panel.size = Vector2(300, 520)
@@ -49,7 +45,7 @@ func build(p, page: Control) -> void:
 			panel._sel[kind] = i
 			refresh())
 		list.add_child(b)
-		# 行内文字:绝对定位在缩略图右侧(20 边距 + 图标宽 + 10 间距)
+
 		var col := VBoxContainer.new()
 		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_theme_constant_override("separation", 1)
@@ -58,16 +54,12 @@ func build(p, page: Control) -> void:
 		col.position = Vector2(20.0 + icon_px + 10.0, (row_h - 30.0) * 0.5)
 		b.add_child(col)
 
-	# 右侧:详情区(纯排版容器,IGNORE 让事件落到真正的交互件上)
 	var detail := Control.new()
 	detail.position = Vector2(376, 116)
 	detail.size = Vector2(836, 540)
 	detail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_child(detail)
 
-	# 详情图:400×400(2× 整数放大,NEAREST)+ 硬投影 + 取景角标
-	# v0.49 素材化:投影 / 衬板 = ColorRect 纯色块(R0 引擎自带),
-	# 取景角标 = viewfinder.png(源 assets/art/ui/ · gen_ui.lua 直出)
 	var zone := Control.new()
 	zone.position = Vector2.ZERO
 	zone.size = Vector2(400, 400)
@@ -91,7 +83,7 @@ func build(p, page: Control) -> void:
 	tex.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(tex)
-	# 取景角标素材(盖在图上的兄弟层,角刻不随插图遮挡)
+
 	var corners := TextureRect.new()
 	corners.texture = load("res://assets/ui/viewfinder.png")
 	corners.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -99,7 +91,6 @@ func build(p, page: Control) -> void:
 	corners.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(corners)
 
-	# 图下:规格注记 + 机关两态切换
 	var under := HBoxContainer.new()
 	under.position = Vector2(0, 412)
 	under.size = Vector2(400, 44)
@@ -115,13 +106,12 @@ func build(p, page: Control) -> void:
 		state_toggle.toggle_mode = true
 		state_toggle.custom_minimum_size = Vector2(132, 34)
 		state_toggle.add_theme_font_size_override("font_size", 13)
-		Ui.wire_button(state_toggle, "")   # 开关音按新状态在 toggled 自播
+		Ui.wire_button(state_toggle, "")
 		state_toggle.toggled.connect(func(on: bool) -> void:
 			Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 			refresh())
 		under.add_child(state_toggle)
 
-	# 右列:名称 / 功能介绍 / 语义规格 / 要点
 	var text := VBoxContainer.new()
 	text.position = Vector2(432, 0)
 	text.size = Vector2(404, 540)
@@ -164,7 +154,6 @@ func build(p, page: Control) -> void:
 	refresh()
 
 
-## 壳的 AnimTimer 到点转发:仅当前可见页推帧。
 func on_tick() -> void:
 	var page: Control = panel._pages.get(kind)
 	if page == null or not page.visible:
@@ -175,7 +164,6 @@ func on_tick() -> void:
 	anim_show(int(refs["anim_idx"]) + 1)
 
 
-## 展示动态精灵的第 idx 帧(anim 条目;并按条目周期重启壳的时钟)。
 func anim_show(idx: int) -> void:
 	var refs: Dictionary = panel._pages[kind].get_meta("refs")
 	var anim: Dictionary = refs["anim"]
@@ -208,7 +196,7 @@ func refresh() -> void:
 	refs["anim"] = anim
 	refs["anim_idx"] = 0
 	if not anim.is_empty():
-		# 动态精灵条目:自动循环播放,不出两态切换按钮
+
 		if toggle != null:
 			toggle.visible = false
 		anim_show(0)
@@ -262,7 +250,6 @@ func refresh() -> void:
 		hb.add_child(tip)
 		(refs["tips"] as VBoxContainer).add_child(hb)
 
-	# 列表选中态
 	var list := refs["list"] as VBoxContainer
 	for i in list.get_child_count():
 		(list.get_child(i) as Button).set_pressed_no_signal(i == idx)

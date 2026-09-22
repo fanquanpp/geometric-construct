@@ -1,8 +1,6 @@
 class_name StoryLayer
 extends CanvasLayer
-## 剧情文字层:基于 Konado 插件(KND_DialogueManager 默认模板)。
-## 叠放在最上层,播放 res://story/*.ks 剧本;空格 / 回车 / 点击对话框推进,
-## `end` 结束后发出 finished 并自毁。世界树在播放期间由 Main 暂停。
+
 
 signal finished
 
@@ -29,7 +27,6 @@ func play(ks_path: String) -> void:
 		_finish()
 		return
 
-	# 由外部控制开始时机;屏蔽模板自带的报错浮层
 	_manager.init_onstart = false
 	_manager.autostart = false
 	_manager.check_visable = false
@@ -42,10 +39,6 @@ func play(ks_path: String) -> void:
 		return
 	_manager.start_dialogue_shot = shot
 
-	# —— 对话框排版:高度压到可见区 1/4,字号 / 边距随之收紧 ——
-	# 这些是 KonadoDialogueBox 的导出属性,必须在入树前赋值(_ready 时生效);
-	# update_dialogue_box_height 会在每句对话刷新边距,所以下边距与左右共用
-	# dialogue_margins,布局才不会被逐句重置。
 	var vis := Adaptive.visible_size(get_viewport())
 	var box_h := vis.y * 0.25
 	var box := _manager.get_node_or_null(
@@ -56,28 +49,22 @@ func play(ks_path: String) -> void:
 		box.dialogue_font_size = 20
 		box.dialogue_margins = 56
 		box.dialogue_height = clampi(int(box_h) - 104, 44, 96)
-		# 过渡节奏收快:出场/入场更利落(M2 面板档 0.3s)
+
 		box.fade_duration = 0.28
 		box.fade_trans_type = Tween.TRANS_CUBIC
 		box.fade_ease_type = Tween.EASE_OUT
 
 	add_child(_manager)
-	# Konado 模板内含自己的 CanvasLayer,层级(layer)是全局的,不随父节点——
-	# 模板默认 对话盒=10 会被 MenuLayer(20)/HUD(10) 盖住,表现为"只有旁白名字
-	# 飘着、没有文本框、暂停中无法退出"的假死。统一抬到全部游戏 UI 之上,
-	# 并保持模板内部上下顺序(背景 < 对话 < 覆盖层)。
-	# 同时必须关掉 follow_viewport:模板的背景层(变暗遮罩)默认跟随游戏相机,
-	# 相机在关卡里移动后遮罩整体偏移,屏幕一侧露出一条未压暗的亮带
-	# (移动端表现为"左边遮罩缺失");关掉后遮罩恒定铺满屏幕。
+
 	var cls := _manager.find_children("*", "CanvasLayer", true, false)
 	cls.sort_custom(func(a: Node, b: Node) -> bool:
 		return (a as CanvasLayer).layer < (b as CanvasLayer).layer)
 	for i in cls.size():
 		var cl := cls[i] as CanvasLayer
+		# 必须关:遮罩层若跟随相机,变暗遮罩会两侧漏光。
 		cl.follow_viewport_enabled = false
 		cl.layer = 46 + i
-	# 压暗背景(半透明墨色,保留底层画面轮廓),隐藏模板顶部功能条;
-	# 压暗层参与入场过渡:自全透明淡入(世界"让位"而不是"熄灭")
+
 	var bg := _manager.get_node_or_null(
 		"KonadoUI/CanvasLayer/ActingInterface/BackgroundLayer") as ColorRect
 	if bg != null:
@@ -88,8 +75,7 @@ func play(ks_path: String) -> void:
 	var bar := _manager.get_node_or_null("KonadoUI/CanvasLayer2/ColorRect")
 	if bar != null:
 		bar.visible = false
-	# 模板自带的盒背景是极淡的渐变,在墨色关卡里几乎不可见 ——
-	# 换成构成主义实心底板:墨色 + 顶缘细线,保证文本对比度
+
 	var box_bg := _manager.get_node_or_null(
 		"KonadoUI/CanvasLayer2/DialogueInterface/KonadoDialogueBox/dialogue_box_bg") as Panel
 	if box_bg != null:
@@ -99,7 +85,7 @@ func play(ks_path: String) -> void:
 		box_sb.border_color = Color(Palette.I.paper, 0.30)
 		box_sb.border_width_top = 2
 		box_bg.add_theme_stylebox_override("panel", box_sb)
-	# 文本容器撑满矮盒:内容垂直居中,避免文字贴顶、盒底大片留白
+
 	var container := _manager.get_node_or_null(
 		"KonadoUI/CanvasLayer2/DialogueInterface/KonadoDialogueBox/dialogue_container") as MarginContainer
 	if container != null:
@@ -109,16 +95,14 @@ func play(ks_path: String) -> void:
 			if n is VBoxContainer:
 				(n as VBoxContainer).alignment = BoxContainer.ALIGNMENT_CENTER
 
-	# —— 对话框右上角:跳过整段对话 ——
 	_add_skip_button(box, box_h)
 
 	_manager.shot_end.connect(_finish, CONNECT_ONE_SHOT)
-	# 逐句台词起头时来一声轻打字音,给推进节奏感(音量很低,不抢台词)
+
 	_manager.dialogue_line_start.connect(func(_node_id: String) -> void:
 		Sfx.play("story_next"))
 	_manager.init_dialogue()
 
-	# —— 入场过渡:压暗层先淡入 → 对话盒自底部升入(M1 CUBIC_OUT 硬减速停) ——
 	var enter := create_tween()
 	enter.set_parallel(true)
 	if bg != null:
@@ -133,9 +117,6 @@ func play(ks_path: String) -> void:
 	_manager.start_dialogue()
 
 
-## 对话框右上角的"跳过"按钮:骑在盒顶缘右上角,点击直接结束整段剧情。
-## 挂在 KonadoDialogueBox(全部游戏 UI 之上的层)下,随对话框显隐;
-## StoryLayer 是 PROCESS_MODE_ALWAYS,世界暂停时按钮仍可点。
 func _add_skip_button(box: Control, box_h: float) -> void:
 	var skip := Button.new()
 	skip.text = "跳过 »"
@@ -154,7 +135,7 @@ func _add_skip_button(box: Control, box_h: float) -> void:
 	skip.pressed.connect(func() -> void: _abort())
 	if box != null:
 		box.add_child(skip)
-		# 盒顶缘 = 屏幕底往上 box_h:按钮上缘高出顶缘 30px、下缘压住顶缘 12px
+
 		skip.anchor_left = 1.0
 		skip.anchor_right = 1.0
 		skip.anchor_top = 1.0
@@ -166,7 +147,7 @@ func _add_skip_button(box: Control, box_h: float) -> void:
 		skip.offset_top = -box_h - 30.0
 		skip.offset_bottom = -box_h + 12.0
 	else:
-		# 兜底:找不到对话框时退化为屏幕右上角
+
 		add_child(skip)
 		skip.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 		skip.grow_horizontal = Control.GROW_DIRECTION_BEGIN
@@ -176,7 +157,6 @@ func _add_skip_button(box: Control, box_h: float) -> void:
 		skip.offset_bottom = 66
 
 
-## Esc / 暂停键随时退出剧情(保险:即便 Konado 内部异常也不再把世界冻在暂停里)。
 func _unhandled_input(event: InputEvent) -> void:
 	if _done:
 		return
@@ -191,7 +171,6 @@ func _abort() -> void:
 	_finish()
 
 
-## 结束:通知 Main 恢复流程,延迟一帧自毁。
 func _finish() -> void:
 	if _done:
 		return
@@ -199,7 +178,7 @@ func _finish() -> void:
 	finished.emit()
 	if m != null:
 		m.on_story_finished()
-	# 稍作停留让淡出动画播完
+
 	get_tree().create_timer(0.6).timeout.connect(func() -> void:
 		if is_instance_valid(_manager):
 			_manager.queue_free()

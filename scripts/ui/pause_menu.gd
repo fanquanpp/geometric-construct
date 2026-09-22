@@ -1,8 +1,6 @@
 class_name PauseMenu
 extends CanvasLayer
-## 暂停菜单:继续 / 重开 / 档案几何 / 虚拟按键 / 返回标题。树暂停时仍可交互。
-## 结构骨架在 scenes/ui/pause_menu.tscn(R1 场景化,v0.33.0);本脚本负责
-## 行为与运行时样式施加(颜色经 Palette、文字经 Ui 工厂,场景零色值)。
+
 
 var m: Main
 
@@ -20,21 +18,18 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_apply_styles()
 
-	# —— 按钮接线(桌面端虚拟按键开关见 _toggle_touch)——
 	_resume.pressed.connect(func() -> void: m.resume_game())
 	_restart_btn.pressed.connect(func() -> void: m.restart_from_pause())
 	%ArchiveBtn.pressed.connect(func() -> void: m.open_archive())
 	%SettingsBtn.pressed.connect(func() -> void: m.open_settings())
 	_leave_btn.pressed.connect(func() -> void: m.quit_to_menu())
 	%TouchBtn.pressed.connect(func() -> void: _toggle_touch(%TouchBtn))
-	# 触屏设备虚拟按键本来就常驻,这个开关面向桌面端(真机上只会造成
-	# 「关了怎么还在」的误导);触摸屏设备直接隐藏(v0.44.2)
+
 	(%TouchBtn as Button).visible = not DisplayServer.is_touchscreen_available()
 	%EscHint.text = "点按按钮继续游戏" if DisplayServer.is_touchscreen_available() \
 		else "Esc · 继续游戏"
 
 
-## 场景骨架的样式施加(颜色经 Palette、文字预设经 Ui)。
 func _apply_styles() -> void:
 	_root.theme = Ui.make_theme()
 	_dim.color = Color(Palette.I.ink, 0.78)
@@ -55,7 +50,6 @@ func _apply_styles() -> void:
 		Ui.wire_button(b)
 
 
-## 虚拟按键开关:桌面端临时开启触摸按钮(触摸屏设备默认已显示)。
 func _toggle_touch(btn: Button) -> void:
 	if m == null or m.touch_controls == null:
 		return
@@ -64,8 +58,7 @@ func _toggle_touch(btn: Button) -> void:
 
 
 func open() -> void:
-	# 联机角色差异(net.md §5/§7):客机不能重开主机权威的关卡;
-	# 房内返回标题语义 = 离开房间
+
 	var client := NetSession.I != null and NetSession.I.is_net() \
 		and not NetSession.I.is_host()
 	_restart_btn.visible = not client
@@ -74,7 +67,7 @@ func open() -> void:
 	_root.visible = true
 	Sfx.play("pause")
 	_resume.grab_focus()
-	# 入场(M1/M2):压暗层快淡入,面板自下 26px 升入 + BACK 落位
+
 	if _open_tween != null:
 		_open_tween.kill()
 	_panel.pivot_offset = _panel.size / 2.0
@@ -91,7 +84,7 @@ func open() -> void:
 
 func close() -> void:
 	if _root.visible and _open_tween != null and _open_tween.is_running():
-		# 开场动画未播完就直接关:立刻定格,避免半透明残留
+
 		_open_tween.kill()
 		_dim.modulate.a = 1.0
 		_panel.modulate.a = 1.0
@@ -104,7 +97,7 @@ func _input(ev: InputEvent) -> void:
 		return
 	if ev is InputEventKey:
 		if ev.pressed and (ev.keycode == KEY_ESCAPE or ev.keycode == KEY_P):
-			# 档案几何 / 设置面板打开时,Esc 交给对应面板处理
+
 			if Main.I != null and Main.I.archive_panel != null \
 					and Main.I.archive_panel.is_open:
 				return

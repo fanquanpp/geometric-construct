@@ -1,10 +1,6 @@
 class_name DualPickCard
 extends Control
-## 双人试炼 · 联接方式选择卡片(net.md §1 前两档;R1 组合子场景,
-## scenes/ui/dual_pick_card.tscn):压暗层 + 居中卡片 + 橙色标题条 +
-## 同设备 / 跨设备两选项。
-## 行为边界(R3):本卡只发 same_pressed / cross_pressed 信号;
-## 开演与房间流转由宿主 MenuLayer 处理。设备置灰判断在 open_card(touch)。
+
 
 signal same_pressed
 signal cross_pressed
@@ -22,7 +18,7 @@ func _ready() -> void:
 	theme = Ui.make_theme()
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	# 真机旋转/分辨率变化重挂(与 open 重锚同款,横竖屏切换不残留旧矩形)
+
 	get_viewport().size_changed.connect(_reanchor_full)
 	_shade.color = Color(Palette.I.ink, 0.92)
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -44,8 +40,7 @@ func _ready() -> void:
 	%CrossBtn.pressed.connect(func() -> void: cross_pressed.emit())
 	_same.pressed.connect(func() -> void: same_pressed.emit())
 	Ui.style(%Hint, 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
-	# 返回出口(v0.44.2):旧版只有 Esc 能收卡,触屏用户点进来就出不去 ——
-	# 双端就地给一颗「返 回」,与 Android 返回键 / Esc 同语义(宿主收卡)。
+
 	var back: Button = %BackBtn
 	back.text = "返 回"
 	back.add_theme_font_size_override("font_size", 16)
@@ -53,7 +48,6 @@ func _ready() -> void:
 	back.pressed.connect(func() -> void: back_pressed.emit())
 
 
-## 打开联接方式选择:按设备态刷新同设备项文案与可用性(触屏置灰)。
 func open_card(touch: bool) -> void:
 	_open = true
 	_same.text = "同设备双人\n      %s" % (
@@ -61,11 +55,9 @@ func open_card(touch: bool) -> void:
 		else "同屏分键 · P1 键盘左区 + P2 右区 / 双手柄")
 	_same.disabled = touch
 	_same.modulate = Color(1, 1, 1, 0.42 if touch else 1.0)
-	# 底注双端自适应(v0.44.2):有就地返回钮后,Esc 提示只留给桌面
+
 	(%Hint as Label).text = "" if touch else "Esc 返回"
-	# 真机修复(v0.42.2,与 act_panel_card 同款):开卡瞬间视口可能仍是
-	# 布局一瞬间的旧矩形(竖屏残留/首帧未展开)→ 卡片偏左、遮罩半屏。
-	# 每次展开强制重锚全矩形并延迟二次确认(布局时序无关)。
+
 	_reanchor_full.call_deferred()
 	visible = true
 	_shade.modulate.a = 0.0
@@ -86,7 +78,6 @@ func close_card() -> void:
 	visible = false
 
 
-## 强制 Shade / Center 铺满当前视口(布局时序无关;act_panel_card 同款)。
 func _reanchor_full() -> void:
 	await get_tree().process_frame
 	var vis := get_viewport().get_visible_rect().size

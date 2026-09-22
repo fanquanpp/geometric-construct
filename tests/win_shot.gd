@@ -1,6 +1,5 @@
 extends Node2D
-## 开发用:直接把最后一关的角色全部送进出口,截图通关结算画面。
-## 运行:godot --path . res://tests/win_shot.tscn
+
 
 var OUT_PATH := ProjectSettings.globalize_path("res://.shots/win.png")
 
