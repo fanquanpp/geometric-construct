@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://ci0tecsjd3ggv" path="res://scripts/world/native_level.gd" id="1_nl"]
 [ext_resource type="TileSet" uid="uid://cynnbwn3k51o5" path="res://data/tiles/native_tileset.tres" id="3_ts"]
 [ext_resource type="PackedScene" path="res://scenes/world/checkpoint_beacon.tscn" id="4_bc"]
-[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="5_door"]
+[ext_resource type="PackedScene" uid="uid://qx6nh26q86sp" path="res://scenes/entities/exit_door.tscn" id="5_door"]
 [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/piano_tile.tscn" id="6_sc"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="14_hint"]
 
@@ -17,7 +17,7 @@ level_size = Vector2(3200, 2000)
 top_kill_y = -420
 
 [node name="Decor" type="TileMapLayer" parent="." unique_id=1125665061]
-tile_map_data = PackedByteArray("AAAAAA0AAAABAAAAAAABAA0AAAABAAAAAAACAA0AAAABAAAAAAADAA0AAAABAAAAAAAEAA0AAAABAAAAAAAFAA0AAAABAAAAAAAGAA0AAAABAAAAAAAHAA0AAAABAAAAAAAIAA0AAAABAAAAAAAJAA0AAAABAAAAAAAKAA0AAAABAAAAAAAPAA0AAAABAAAAAAAQAA0AAAABAAAAAAARAA0AAAABAAAAAAASAA0AAAABAAAAAAATAA0AAAABAAAAAAAUAA0AAAABAAAAAAAVAA0AAAABAAAAAAAWAA0AAAABAAAAAAAXAA0AAAABAAAAAAAYAA0AAAABAAAAAAAZAA0AAAABAAAAAAAaAA0AAAABAAAAAAAbAA0AAAABAAAAAAA=")
+tile_map_data = PackedByteArray("AAAAAA0AAAABAAAAAAABAA0AAAABAAAAAAACAA0AAAABAAAAAAADAA0AAAABAAAAAAAEAA0AAAABAAAAAAAFAA0AAAABAAAAAAAGAA0AAAABAAAAAAAHAA0AAAABAAAAAAAIAA0AAAABAAAAAAAJAA0AAAABAAAAAAAKAA0AAAABAAAAAAAPAA0AAAABAAAAAAAQAA0AAAABAAAAAAARAA0AAAABAAAAAAASAA0AAAABAAAAAAATAA0AAAABAAAAAAAUAA0AAAABAAAAAAAVAA0AAAABAAAAAAAWAA0AAAABAAAAAAAXAA0AAAABAAAAAAAYAA0AAAABAAAAAAAZAA0AAAABAAAAAAAaAA0AAAABAAAAAAAbAA0AAAABAAAAAAALAA0AAAAAAAAAAAAMAA0AAAAAAAAAAAA=")
 tile_set = ExtResource("3_ts")
 
 [node name="Solid" type="TileMapLayer" parent="." unique_id=1984725737]

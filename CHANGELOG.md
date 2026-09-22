@@ -26,6 +26,15 @@
 - ≈2313 行注释;等价性验证:86 文件与「HEAD 经同一剥离器处理」逐
   字节一致,差异仅 7 处回补文件且恰为回补行本身。
 
+### 修复
+- **export_presets.cfg 损坏还原**:手写 `#` 注释行被 Godot ConfigFile
+  误读为设置键,存回时编码损坏成乱码键,真键
+  `texture_format/etc2_astc=true`(Android 纹理格式)随之丢失;还原
+  正式键至 architectures 块后,乱码键删除。同批随提导出对话框侧改动
+  (导出路径 `../几何构造.apk/.exe`、`embed_pck=true`、去 vibrate
+  权限)与 act1/s01、act1/s04、act2/s01 编辑器重存(exit_door
+  ext_resource uid 补齐 + 装饰微调)。
+
 ### 验收
 - check-only 85/85 全绿;native_check 27 关 ALL PASS;flow_check
   PASS(exit 泄漏告警为已知上游噪音,exit code 权威);py_compile
