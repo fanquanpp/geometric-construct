@@ -3,7 +3,7 @@
 > 定位(REFACTOR Phase 6):每**正式关**登记七维——Gameplay / Narrative /
 > Character / Theme / Foreshadow / Symbol(测试道已随 v0.44.0 清退,免登记
 > 条款失效)。模板即本表;新正式关上线随批登记。
-> 出处:关卡实装 = `levels/act*/**.json` + `docs/design/levels.md`;
+> 出处:关卡实装 = `levels_native/<幕>/*.tscn`(原生摆位,levels.md)+ `docs/design/levels.md`;
 > 叙事字段解释权 = `bible.md`(卷五哲学问题 / 卷六伏笔账本);剧情库 =
 > `docs/story/scenes.md`。
 

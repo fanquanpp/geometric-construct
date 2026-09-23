@@ -37,7 +37,7 @@
   TileMapLayer 摆位 + 机关实例,摆放约定见 levels.md §1),并在
   `level_data.gd` 的 `SCENES` / `ACTS` 登记(路径 / 名录 / 幕-场序)。
   幕-场序 = 解锁存档契约,**只能尾部追加**,不得插入。
-  现行 = 第一幕六场在演(原生作关),二~五幕占位重制中。
+  现行 = 正戏五幕 26 场全量在演(levels.md §5)。
 - **几何体包**:在 `data/characters/` 追加一份 GeometryDef `.tres`
   (参照 `dash.tres`,全字段 Inspector 可调),并在
   `scripts/data/geometries.gd` 的 `PATHS` 尾部登记下标,再在图标图集
@@ -84,3 +84,19 @@
 	  (v0.49.0 生成器直出:角刻框 / 取景框 / 触屏轮盘底形)
 - [ ] Android:导出段显式 `texture_format/etc2_astc=true`(export_presets.cfg 已声明)、`rendering/viewport/hdr_2d` 关闭
 - [ ] Android 真机抽查:`--perflog` 基线 + `dumpsys gfxinfo` 帧时间无异常 jank
+
+## 6. 引擎与工具链风险(2026-09-24 联网调研增补)
+
+- **开发二进制 = Godot 4.8-dev5(dev 快照)**,而 `project.godot` features
+  仍标 4.7。dev5 存在**导出 APK 无法上传 Google Play** 的缺陷,官方已在
+  dev6(2026-09-15)修复;sideload / itch.io 渠道不受影响。**若未来上
+  Play:必须换 dev6+ 或回落 4.7.x stable,且导出模板版本须与编辑器
+  精确一致**;dev 快照官方定位为 pre-release,发版前应留意对应版本
+  发布公告的已知问题清单。
+- **Windows 发行 = Mobile 渲染方法 + D3D12 驱动**(本机开发默认)。
+  D3D12 在部分老 Intel GPU 上有崩溃历史(不支持 DX12 的机器直接起不来)。
+  若真机反馈打不开:`--rendering-driver vulkan`(或 `opengl3`,注意
+  Compatibility 渲染方法下 2D 光照 per-pixel 不可用,本作 PointLight2D
+  依赖 Forward+/Mobile,回落 Compatibility 需重估光照方案)。
+- 选型背书(维持现状即可):`etc2_astc=true`、双端 CPUParticles2D
+  (mobile 真机 GPU 粒子有崩溃报告)、LAN ENet 权限只需 INTERNET。

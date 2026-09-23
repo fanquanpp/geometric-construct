@@ -453,11 +453,15 @@ func _note_pitch() -> float:
 
 
 func quote_text() -> String:
-	return def.quote_half if pair_half == 1 and not def.quote_half.is_empty() 		else def.quote
+	if pair_half == 1 and not def.quote_half.is_empty():
+		return def.quote_half
+	return def.quote
 
 
 func display_name() -> String:
-	return def.name_half if pair_half == 1 and not def.name_half.is_empty() 		else def.name
+	if pair_half == 1 and not def.name_half.is_empty():
+		return def.name_half
+	return def.name
 
 
 func _base_gravity() -> int:

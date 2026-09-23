@@ -3,6 +3,46 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## 未发布(2026-09-24 · 全库洞察修复批:完整性清欠 + 关卡走查补强)
+
+> 对本地与远程全量勘察(四门禁复跑 + 26 关 tour 走查 + 图块/机关/信标
+> 密度审计 + 联网调研)后,集中修复探出的完整性与风险欠账。游戏内容
+> 侧:五幕 26 场全量在演的"完整版"面貌落实到玩家可见处与文档层。
+
+### 修复
+- **幕面板陈旧文案**:第三 / 四 / 五幕 hint 仍写「(作关重制中)」
+  (作关早已完成),玩家在主菜单幕列表悬停即见——改为各幕正题句。
+- **tests/shot_all.gd 坏引用**:仍调用早已改名 `archive_panel` 的
+  `geometry_panel`(运行即 SCRIPT ERROR 且协程中止挂死进程),改为
+  现名;另补 viewport 无渲染(headless 误用)时的空值护栏,不再崩在
+  save_png。
+- **player.gd 行内 tab 瑕疵**:quote_text / display_name 两行表达式
+  中缝双 tab(有效但脏),改写为分行 if。
+- **roster_controller.gd 死分支**:net_allowed_slots 双臂相同的
+  三元表达式收敛。
+
+### 关卡
+- **act5/s01 刻度长廊补记录点信标**:4800px 长廊原仅 1 信标(2400),
+  geo0 后段 2400→4450 无覆盖,且同宽度场次(act3/s05 / act5/s02 /
+  act5/s04)均为 2 信标——在 x≈3750 高台(实测地面 y=700)补
+  CheckpointBeacon1,节奏对齐;raycast 探针定位,触发区与行走带
+  重叠已核算。
+
+### 文档
+- UPDATE.md §3 陈旧的「二~五幕占位重制中」改为「五幕 26 场全量在演」;
+  新增 §6 引擎与工具链风险(dev5 导出 APK 无法上传 Google Play、
+  dev6 已修;Windows D3D12 回退路径与本作 2D 光照的渲染方法约束)。
+- story/scenes.md:判词与 §3 尾声章刷新至现行五门归位版 epilogue;
+  §4 / §5–8 rogue 剧本标注「已退役 · 历史档案」;序幕触发链路更正
+  为档案 · 剧情页阅读器。
+- story/seven_dimensions.md:头部出处仍引 v0.45 已退役的 JSON 管线
+  路径,改为 `levels_native/<幕>/*.tscn`。
+
+### 验收
+- check-only 85/85 全绿;native_check 27 关 ALL PASS;flow_check /
+  trait_check / --recalltest / --dualtest / --nettest 全 PASS;
+  26 关 tour 走查零脚本错误。
+
 ## 未发布(2026-09-22 · 全库代码注释极简化)
 
 > scripts / tests / tools / assets(fx shader)共 93 个代码文件的注释从

@@ -89,13 +89,13 @@ static var ACTS: Array[Dictionary] = [
 		"hint": "伍入队:边界是为了保护,还是为了隔开?",
 		"icon": "buttons/play", "levels": [6, 7, 8, 9, 10, 11]},
 	{"name": "第三幕", "title": "分岔",
-		"hint": "独自一人时,我还算什么?(作关重制中)",
+		"hint": "独自一人时,我还算什么?——四条独路,在路口并拢",
 		"icon": "buttons/play", "levels": [12, 13, 14, 15, 16]},
 	{"name": "第四幕", "title": "蜕变",
-		"hint": "我能背叛自己的形状吗?(作关重制中)",
+		"hint": "我能背叛自己的形状吗?——四次反着来的路",
 		"icon": "buttons/play", "levels": [17, 18, 19, 20, 21]},
 	{"name": "第五幕", "title": "刻度的真相",
-		"hint": "最深处的密刻,代价一直摆在眼前。(作关重制中)",
+		"hint": "最深处的密刻,代价一直摆在眼前——五门归位,落幕",
 		"icon": "buttons/play", "levels": [22, 23, 24, 25]},
 ]
 

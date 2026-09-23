@@ -42,8 +42,7 @@ func camera_targets() -> Array:
 func net_allowed_slots() -> Array:
 	if NetSession.I == null or not NetSession.I.in_game():
 		return []
-	return NetSession.I.own_slots_arr() if NetSession.I.is_host() \
-		else NetSession.I.own_slots_arr()
+	return NetSession.I.own_slots_arr()
 
 
 static func net_host_authority() -> bool:
