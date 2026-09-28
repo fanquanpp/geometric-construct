@@ -16,6 +16,7 @@ static func swap_burst(p: Player) -> void:
 	burst.scale_amount_min = 2.0
 	burst.scale_amount_max = 3.5
 	burst.color = p.def.color
+	burst.finished.connect(burst.queue_free)
 	p.add_child(burst)
 
 
@@ -33,6 +34,7 @@ static func air_burst(p: Player) -> void:
 	ring.scale_amount_min = 1.5
 	ring.scale_amount_max = 2.5
 	ring.color = Color(p.def.color, 0.8)
+	ring.finished.connect(ring.queue_free)
 	p.add_child(ring)
 
 
@@ -50,6 +52,7 @@ static func skid_burst(p: Player) -> void:
 	dust.scale_amount_min = 1.2
 	dust.scale_amount_max = 2.2
 	dust.color = Color(Palette.I.paper, 0.55)
+	dust.finished.connect(dust.queue_free)
 	p.add_child(dust)
 
 

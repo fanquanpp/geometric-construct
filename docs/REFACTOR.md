@@ -376,10 +376,11 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
 > 本节为 tests/ 全量门禁的现役状态;新批次验收清单照此挑,连续多批
 > 未跑的门禁要么修活要么正式退役入档。
 
-| 门禁 | 跑法 | 状态(2026-09-15 v0.46.0 盘点) |
+| 门禁 | 跑法 | 状态(2026-09-29 v0.51.0 盘点) |
 |---|---|---|
 | native_check | `--path . res://tests/native_check.tscn` | ✅ 现役 · 原生关卡装载/静息门禁(v0.45 换代) |
 | flow_check | `--path . res://tests/flow_check.tscn` | ✅ 现役 · 通关流转(27 关) |
+| stats_check | `--path . res://tests/stats_check.tscn` | ✅ 现役 · 存档 v5→v6 迁移 + 通关结算 + 原子写(备份/还原自洁,不污染真档) |
 | recalltest | `-- --recalltest` | ✅ 现役 · 召回链路 |
 | dualtest | `-- --dualtest` | ✅ 现役 · N1 五链路 |
 | trait_check | `--script` | ✅ 现役 · 物理仿真 |

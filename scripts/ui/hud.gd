@@ -15,6 +15,7 @@ var hints := HudHints.new()
 @onready var _level_num: Label = %NumLabel
 @onready var _level_total: Label = %TotalLabel
 @onready var _level_name: Label = %NameLabel
+@onready var _run_timer: Label = %TimerLabel
 @onready var _hint_row: HBoxContainer = %HintRow
 @onready var _net_badge: Label = %NetBadge
 @onready var _edge: Control = %Edge
@@ -103,6 +104,7 @@ func _apply_styles() -> void:
 	Ui.style(_level_num, 24, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	Ui.style(_level_total, 16, Ui.HEAD, Palette.I.dim)
 	Ui.style(_level_name, 22, Ui.HEAD, Palette.I.paper)
+	Ui.style(_run_timer, 15, Ui.HEAD, Color(Palette.I.dim, 0.9))
 	Ui.style(_net_badge, 13, Ui.HEAD, Palette.I.orange)
 	_narration.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	Ui.style(_narration, 22, Ui.HEAD, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, true, 6)
@@ -151,6 +153,10 @@ func _process(delta: float) -> void:
 		if _anchor_flash.t >= 0.14:
 			_anchor_flash.active = false
 			(_anchor_flash["ctl"] as Control).visible = false
+	var gf: GameFlow = Main.I.game_flow if Main.I != null else null
+	if gf != null:
+		var s := int(gf.run_ms / 100.0)
+		_run_timer.text = "%d:%02d.%d" % [s / 600, (s / 10) % 60, s % 10]
 
 
 func set_level_info(index: int, level_name: String, num_label := "") -> void:
@@ -164,6 +170,7 @@ func set_level_info(index: int, level_name: String, num_label := "") -> void:
 			if act >= 0 else LevelData.count())
 		_level_total.visible = true
 	_level_name.text = level_name
+	_run_timer.text = "0:00.0"
 
 
 func refresh_roster(roster: Array, active: int, exited_mask: int,
@@ -240,8 +247,13 @@ func show_complete(text := "归位。") -> void:
 	_complete_tween.chain().tween_property(_complete, "modulate:a", 0.0, 0.5)
 
 
-func show_win(on: bool) -> void:
+func show_win(on: bool, summary := "") -> void:
 	_win.visible = on
+	if not on:
+		return
+	%WinKicker.text = "GEOMETRIC CONSTRUCT · 五幕全演"
+	%WinSub.text = "四个几何体,各归其位。" if summary == "" \
+		else "四个几何体,各归其位。\n%s" % summary
 
 
 func fade_from_black() -> void:

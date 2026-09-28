@@ -32,6 +32,8 @@ var _auto_test := false
 
 
 func boot(args: Array) -> void:
+	if not args.is_empty():
+		m.dev_run = true
 	for raw: String in args:
 		if raw.begins_with("--autoshot="):
 			_auto_shot = true

@@ -6,6 +6,17 @@ var main: Main
 var current := -1
 var level_info: Dictionary = {}
 var complete_seq := 0
+var run_ms := 0
+var run_deaths := 0
+
+
+func _physics_process(delta: float) -> void:
+	if main != null and main._state == Main.State.PLAYING:
+		run_ms += int(delta * 1000.0)
+
+
+func note_death() -> void:
+	run_deaths += 1
 
 
 func start_level(index: int, intro := true) -> void:
@@ -17,6 +28,8 @@ func start_level(index: int, intro := true) -> void:
 	if main._pause != null:
 		main._pause.close()
 	current = clampi(index, 0, LevelData.count() - 1)
+	run_ms = 0
+	run_deaths = 0
 	clear_level()
 	main._doors.clear()
 	main._checkpoints.clear()
@@ -132,10 +145,16 @@ func check_complete() -> void:
 			if seq_n == complete_seq:
 				main.net_back_to_room())
 		return
-	if current + 1 > main._unlocked:
-		main._unlocked = mini(current + 1, LevelData.campaign_last())
-		main._save.unlocked = main._unlocked
-		main._save.write_save()
+	if not main._auto_test and not main.debug_solo and not main.dev_run:
+		if current + 1 > main._unlocked:
+			main._unlocked = mini(current + 1, LevelData.campaign_last())
+			main._save.unlocked = main._unlocked
+		main._save.add_play_ms(run_ms)
+		var record := main._save.mark_level_result(current, run_ms, run_deaths)
+		main._menu.set_unlocked(main._unlocked)
+		if record and run_ms > 0:
+			main._hud.narration("新纪录 · %s" % main._save.time_text(run_ms),
+				Palette.I.paper, 2.6)
 
 	complete_seq += 1
 	var seq := complete_seq
@@ -148,13 +167,20 @@ func after_complete() -> void:
 	if current >= LevelData.campaign_last():
 		main._state = Main.State.WIN
 		Sfx.play("fanfare")
-		main._hud.show_win(true)
+		main._hud.show_win(true, win_summary())
 
 		if not main.get_tree().paused:
 			main.get_tree().paused = true
 			main.show_story("epilogue")
 	else:
 		main._hud.transition_sweep(0.55, func() -> void: start_level(current + 1))
+
+
+func win_summary() -> String:
+	var s := main._save
+	return "落幕场最佳 %s · 旅程用时 %s · 摔碎 %d 次" % [
+		s.time_text(s.best_time_of(LevelData.campaign_last())),
+		s.long_time_text(s.total_play_ms), s.total_deaths]
 
 
 func open_net_room() -> void:

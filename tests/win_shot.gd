@@ -7,6 +7,7 @@ var OUT_PATH := ProjectSettings.globalize_path("res://.shots/win.png")
 func _ready() -> void:
 	var main := Main.new()
 	add_child(main)
+	main.debug_solo = true
 	await get_tree().process_frame
 	main.start_level(3, false)
 	await get_tree().create_timer(1.0).timeout
@@ -18,7 +19,7 @@ func _ready() -> void:
 	for p in main.players:
 		for d in doors:
 			if d.char_index == p.index:
-				p.position = d.center + Vector2(0, 4)
+				p.position = d.position + Vector2(0, 4)
 				break
 
 	await get_tree().create_timer(4.0).timeout

@@ -544,9 +544,9 @@ func die() -> void:
 	if Main.I != null and Main.I.camera_rig != null:
 		Main.I.camera_rig.kick(7.0)
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 0.0, 0.28)
+	tw.tween_property(self, "modulate:a", 0.0, 0.20)
 	tw.tween_callback(_reset_for_respawn)
-	tw.tween_property(self, "modulate:a", 1.0, 0.35)
+	tw.tween_property(self, "modulate:a", 1.0, 0.26)
 	tw.tween_callback(_finish_respawn)
 	Main.I.on_player_died(self)
 
@@ -639,6 +639,7 @@ func enter_exit(door: ExitDoor) -> void:
 	burst.scale_amount_min = 2.0
 	burst.scale_amount_max = 4.0
 	burst.color = def.color
+	burst.finished.connect(burst.queue_free)
 	door.add_child(burst)
 
 	var tw := create_tween()

@@ -75,7 +75,7 @@
 - [ ] `version.gd` 已按第 1 节规则升级
 - [ ] `CHANGELOG.md` 已补条目
 - [ ] 存档迁移:删掉 `user://speed-rouge.cfg` 与保留旧档两种情况下,游戏都能正常启动
-- [ ] `tests/native_check` / `tests/flow_check` / `-- --recalltest` / `-- --dualtest` / `tests/trait_check` 门禁全绿(现役关卡目录)
+- [ ] `tests/native_check` / `tests/flow_check` / `tests/stats_check` / `-- --recalltest` / `-- --dualtest` / `-- --nettest` / `tests/trait_check` 门禁全绿(现役关卡目录)
 - [ ] `--menushot` / `--panelshot`(档案几何全页签)/ `--autoshot=0` / `--tourshot` 截图人工过目(风格锚定不跑偏)
 - [ ] 新增图标走 `tools/gen_icons.lua` 图集管线(改格 → 再生成 →
 	  `ICON_CELLS` 登记);新增图鉴插图改 `tools/gen_archive.lua` 再生成

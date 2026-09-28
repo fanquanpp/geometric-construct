@@ -268,6 +268,8 @@ func show_act_hint(idx: int) -> void:
 
 func set_unlocked(unlocked: int) -> void:
 	_unlocked = unlocked
+	var save: SaveManager = SaveManager.I
+	var cleared: int = save.cleared_count() if save != null else unlocked
 	for i in _act_btns.size():
 		var act: Dictionary = LevelData.ACTS[i]
 		var playable: bool = not (act["levels"] as Array).is_empty()
@@ -276,4 +278,4 @@ func set_unlocked(unlocked: int) -> void:
 		b.self_modulate = Color(1, 1, 1, 1.0 if playable else 0.5)
 	if _act_btns.size() > 0:
 		_act_btns[0].grab_focus()
-	_chapter_hint.text = "剧目进度 · 已解锁 %d / %d 场" % [unlocked + 1, LevelData.count()]
+	_chapter_hint.text = "已归位 %d / %d 场" % [cleared, LevelData.campaign_last() + 1]

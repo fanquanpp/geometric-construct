@@ -119,7 +119,8 @@ func _populate_rows(idx: int) -> void:
 		var li: int = levels[k]
 		var meta: Dictionary = LevelData.scene_meta(li)
 		var unlocked := li <= _unlocked
-		var cleared := li < _unlocked
+		var save: SaveManager = SaveManager.I
+		var cleared := save.is_cleared(li) if save != null else li < _unlocked
 		var is_next := li == _unlocked
 
 		var b := Button.new()
@@ -144,8 +145,13 @@ func _populate_rows(idx: int) -> void:
 		_row_by_li[li] = b
 		_rows.add_child(b)
 
+		var status_text := "已通关"
+		if cleared:
+			var best := save.best_time_of(li) if save != null else -1
+			if best >= 0:
+				status_text = "已通关 · %s" % save.time_text(best)
 		var status := Ui.tag(
-			"已通关" if cleared else ("下一场" if is_next else "未解锁"),
+			status_text if cleared else ("下一场" if is_next else "未解锁"),
 			Color(Palette.I.paper, 0.10) if cleared
 				else (Palette.I.red if is_next else Color(Palette.I.paper, 0.05)),
 			Color(Palette.I.paper, 0.62) if cleared
@@ -153,7 +159,7 @@ func _populate_rows(idx: int) -> void:
 		b.add_child(status)
 		status.anchor_left = 1.0
 		status.anchor_right = 1.0
-		status.offset_left = -96
+		status.offset_left = -122
 		status.offset_right = -14
 		status.offset_top = (54.0 - 24.0) / 2.0
 	_level_hint.text = ""

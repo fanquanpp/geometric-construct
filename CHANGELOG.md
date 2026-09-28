@@ -3,6 +3,62 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.51.0(2026-09-29 · 商业化完善化批:进度留存系统 + 移动端生命周期硬标准)
+
+> 联网调研(Celeste/juice 方法论、Material 3 触控标准、Android 生命周期、
+> 存档容错、Godot 4.7 移动端专项)后对照全库差距,补齐商业化底线的
+> 三块:留存可视化、中断容错、长会话资源回收。手感三件套
+> (土狼时间 / 跳跃缓冲 / 可变跳高)经核查已在 player.gd 实装
+> (`_coyote`/`_jump_buffer`/`_jump_cut`,MovementTuning 可调),不欠账。
+
+### 新增
+- **关卡进度统计系统(存档 v5→v6,MINOR)**:SaveManager 增每场
+  `cleared` / `best_ms` / 累计死亡与全局 `total_deaths` / `total_play_ms`,
+  迁移分支按 unlocked 回填已通关标记;选关行标签升级为
+  「已通关 · 最佳用时」,破纪录结算时 HUD 旁白「新纪录 · m:ss」;
+  主菜单页脚改「已归位 X / 26 场」(分母排除 dev 探针场);
+  胜利画面 kicker 动态化(「五幕全演」,替换 v0.x 一幕时代残留的
+  「第一幕 完演」)+ 统计行(落幕场最佳 · 旅程用时 · 总摔碎)。
+- **HUD 速通计时器**:右上角 m:ss.d 实时走表(PLAYING 态计时,暂停
+  自动停表),关卡开场归零——对标 speed-rouge 品类的回放价值钩子。
+- **stats_check 门禁**:存档 v5→v6 迁移断言 + 净空通关结算断言
+  (cleared/best_ms/无 .tmp 残留)+ 真档备份还原自洁(字节级比对),
+  直接服务 UPDATE §5「删档/旧档双启动」检查单。
+
+### 变更
+- **存档原子写**:write_save 先写 `.tmp` 再 rename,进程中途被杀不再
+  半写损坏真档;load 遇损坏档(非 NOT_FOUND 的解析失败)自动备份为
+  `speed-rouge.cfg.corrupt-<时间戳>` 再按新档起步,数据可手工抢救。
+- **切后台自动暂停**:本机单局中 `APPLICATION_PAUSED`(移动端切后台/
+  来电)与 `APPLICATION_FOCUS_OUT`(桌面失焦)就地开暂停菜单,回前台
+  由玩家手动继续;联机对局与开发旗标运行不触发(ui-flow §4 已记)。
+- **死亡重生提速**:碎裂淡出 0.28s→0.20s、重组淡入 0.35s→0.26s,
+  全程 0.63s→0.46s,进入调研给出的「死亡→重生 <0.5s」商业区间
+  (死亡演出与音效不变)。
+
+### 修复
+- **一次性粒子六处泄漏清退**:swap/air/skid 三 burst、入 door 迸散
+  此前无 `finished→queue_free`,长关卡反复切换/二段跳/点按会积累
+  停摆 CPUParticles2D 节点(移动端长会话内存曲线隐患),全部补
+  自回收;exit_door 常驻复用实例与背景 motes 不在列。
+- **tests/win_shot.gd 坏引用**:ExitDoor 无 `center` 属性(与上一批
+  shot_all 的 geometry_panel 同类陈旧引用),改 `position`;补
+  `debug_solo = true`。
+- **测试写档污染根治**:flow_check / win_shot 补 `debug_solo`,
+  shot_harness 收到任意 dev 参数即置 `Main.dev_run`;通关结算与解锁
+  写档统一受 `_auto_test`/`debug_solo`/`dev_run` 三旗标门禁——
+  此前 --dualtest/--nettest 完成探针场会把测试成绩与解锁写进真档
+  (实测复现并清理)。
+
+### 验收
+- check-only 9/9 全绿(改动脚本+新门禁;ext_resource 报错=4.7 上游
+  噪音,exit code 权威);native_check 27 关 ALL PASS;flow_check
+  PASS;trait_check ALL PASS;--recalltest / --dualtest / --nettest
+  全 PASS;stats_check PASS 且真档字节级不变;菜单/幕面板重截目检
+  (页脚计数与行标签正确)。触控热区审计:轮盘 216-296px、召回/暂停
+  76px(≈46dp)达标的为轮盘与主按键,chips 为宽幅副路径(主切换路径
+  =轮盘),评估维持现状;真机触屏走查列入下次发版检查单。
+
 ## 未发布(2026-09-24 · 全库洞察修复批:完整性清欠 + 关卡走查补强)
 
 > 对本地与远程全量勘察(四门禁复跑 + 26 关 tour 走查 + 图块/机关/信标

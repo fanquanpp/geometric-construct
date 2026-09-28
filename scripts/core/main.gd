@@ -79,6 +79,7 @@ var _held_keys := {}
 
 
 var _auto_test := false
+var dev_run := false
 
 
 func _ready() -> void:
@@ -148,6 +149,14 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		_android_back()
+	elif what == NOTIFICATION_APPLICATION_PAUSED \
+			or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		if _state == State.PLAYING and not _auto_test and _is_local_session():
+			_open_pause()
+
+
+func _is_local_session() -> bool:
+	return NetSession.I == null or not NetSession.I.in_game()
 
 
 func _android_back() -> void:
@@ -486,6 +495,7 @@ func _ambience_motif(motif_name: String) -> void:
 
 func on_player_died(p: Player) -> void:
 
+	game_flow.note_death()
 	if NetSession.I != null and NetSession.I.is_host() and NetSession.I.in_game():
 		NetSession.I.emit_event(NetSession.EV_DIED, players.find(p))
 	roster.on_player_died(p)
