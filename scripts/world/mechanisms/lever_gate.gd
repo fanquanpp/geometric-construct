@@ -72,11 +72,17 @@ func _ready() -> void:
 		_pad_on.append(on)
 	_apply(_initial_open())
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		_editor_sync(false)
+		return
+	if _flash_t > 0.0:
+		_flash_t = maxf(_flash_t - delta, 0.0)
+		if _flash_t == 0.0:
+			queue_redraw()
 
 var _sig := ""
+var _flash_t := 0.0
 
 
 func _editor_sync(force: bool) -> void:
@@ -146,6 +152,7 @@ func _apply(open: bool) -> void:
 	_door_occ.visible = not open
 	if _door_spr != null:
 		_door_spr.visible = not open
+	_flash_t = 0.12
 	queue_redraw()
 
 
@@ -161,6 +168,8 @@ func _draw() -> void:
 	if door_item.is_empty():
 		return
 	var r: Rect2 = door_item["rect"]
+	if _flash_t > 0.0:
+		draw_rect(r, Color(Palette.I.paper, 0.45))
 	if _open:
 
 		draw_rect(r, Color(Palette.I.paper, 0.06))

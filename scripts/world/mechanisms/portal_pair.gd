@@ -66,7 +66,30 @@ func _on_enter(body: Node2D, end: Vector2) -> void:
 	var outward: Vector2 = (other - end).normalized()
 	_cooldown[body] = COOLDOWN
 	(body as Player).global_position = global_position + other + outward * EXIT_PUSH
+	_pulse(end, (body as Player).def.color)
+	_pulse(other, Color(Palette.I.paper, 0.9))
+	if Main.I != null and Main.I.camera_rig != null:
+		Main.I.camera_rig.kick(2.0)
 	Sfx.play("switch", -6.0)
+
+
+func _pulse(at: Vector2, col: Color) -> void:
+	var burst := CPUParticles2D.new()
+	burst.one_shot = true
+	burst.emitting = true
+	burst.amount = 12
+	burst.lifetime = 0.32
+	burst.explosiveness = 1.0
+	burst.spread = 180.0
+	burst.gravity = Vector2.ZERO
+	burst.initial_velocity_min = 70.0
+	burst.initial_velocity_max = 190.0
+	burst.scale_amount_min = 2.0
+	burst.scale_amount_max = 4.0
+	burst.color = col
+	burst.finished.connect(burst.queue_free)
+	add_child(burst)
+	burst.position = at
 
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():

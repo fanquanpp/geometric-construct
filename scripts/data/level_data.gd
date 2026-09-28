@@ -3,7 +3,7 @@ class_name LevelData
 
 const SCENES: Array[Dictionary] = [
 	{"path": "res://levels_native/act1/s01.tscn", "name": "疾 · 初速",
-		"roster": [0], "focus": 0,
+		"roster": [0], "focus": 0, "medals": [12000, 18000, 25000],
 		"intro": "A/D 移动,Space 跳过缺口。\n速度是他的答案。"},
 	{"path": "res://levels_native/act1/s02.tscn", "name": "疾 · 折返",
 		"roster": [0], "focus": 0,
@@ -118,6 +118,21 @@ static func scene_roster(index: int) -> Array:
 
 static func scene_meta(index: int) -> Dictionary:
 	return SCENES[index]
+
+
+# 时间奖牌现算(medals=[金,银,铜]ms,缺省/0=该档不评;真值只有 best_ms,
+# 阈值调整即时生效、零存档迁移)。登记法:场次条目加 "medals":[g,s,b]。
+static func medal_of(index: int, ms: int) -> int:
+	if index < 0 or index >= SCENES.size() or ms < 0:
+		return 0
+	var m: Array = SCENES[index].get("medals", [0, 0, 0])
+	if int(m[0]) > 0 and ms <= int(m[0]):
+		return 1
+	if int(m[1]) > 0 and ms <= int(m[1]):
+		return 2
+	if int(m[2]) > 0 and ms <= int(m[2]):
+		return 3
+	return 0
 
 
 static func act_index_of(level: int) -> int:

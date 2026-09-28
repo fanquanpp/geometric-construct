@@ -1,6 +1,105 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/backdrop.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/world/backdrop/deep_space.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/world/backdrop/geo_planes.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/world/backdrop/geo_sun.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/world/backdrop/geo_marks.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/world/backdrop/ridge_body.gd" id="6"]
 
 [node name="Backdrop" type="CanvasLayer"]
+layer = -10
 script = ExtResource("1")
+
+[node name="Sky" type="ColorRect" parent="."]
+unique_name_in_owner = true
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Deep" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.04, 0.2)
+repeat_size = Vector2(2600, 1300)
+repeat_times = 2
+
+[node name="DeepSpace" type="Node2D" parent="Deep"]
+script = ExtResource("2")
+
+[node name="Planes" type="Parallax2D" parent="."]
+unique_name_in_owner = true
+scroll_scale = Vector2(0.08, 0.4)
+repeat_size = Vector2(2600, 0)
+repeat_times = 3
+
+[node name="GeoPlanes" type="Node2D" parent="Planes"]
+script = ExtResource("3")
+
+[node name="Sun" type="Parallax2D" parent="."]
+unique_name_in_owner = true
+scroll_scale = Vector2(0.06, 0.12)
+
+[node name="GeoSun" type="Node2D" parent="Sun"]
+script = ExtResource("4")
+
+[node name="Marks" type="Parallax2D" parent="."]
+unique_name_in_owner = true
+scroll_scale = Vector2(0.12, 0.5)
+repeat_size = Vector2(2400, 2400)
+repeat_times = 2
+
+[node name="GeoMarks" type="Node2D" parent="Marks"]
+script = ExtResource("5")
+
+[node name="RidgeFar" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.32, 1)
+repeat_size = Vector2(2600, 0)
+repeat_times = 3
+
+[node name="RidgeBody" type="Node2D" parent="RidgeFar"]
+script = ExtResource("6")
+base_y = 1010.0
+color = Color(0.102, 0.117647, 0.14902, 1)
+ridge_seed = 1
+amplitude = 130.0
+
+[node name="RidgeNear" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.58, 1)
+repeat_size = Vector2(2600, 0)
+repeat_times = 3
+
+[node name="RidgeBody" type="Node2D" parent="RidgeNear"]
+script = ExtResource("6")
+base_y = 1075.0
+color = Color(0.0784314, 0.0901961, 0.117647, 1)
+ridge_seed = 5
+amplitude = 90.0
+
+[node name="MotesFar" type="CPUParticles2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(640, 760)
+amount = 22
+lifetime = 15.0
+preprocess = 15.0
+emission_shape = 3
+emission_rect_extents = Vector2(760, 30)
+direction = Vector2(0, -1)
+spread = 30.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 7.0
+initial_velocity_max = 22.0
+scale_amount_max = 2.2
+
+[node name="MotesNear" type="CPUParticles2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(640, 760)
+amount = 12
+lifetime = 10.0
+preprocess = 10.0
+emission_shape = 3
+emission_rect_extents = Vector2(760, 30)
+direction = Vector2(0, -1)
+spread = 30.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 7.0
+initial_velocity_max = 22.0
+scale_amount_max = 3.8

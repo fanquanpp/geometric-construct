@@ -159,6 +159,9 @@ Position → Shape → Character,且**声音+粒子+光+镜头+UI 五联同步�
 | 雪屑(滑雪带) | Dust | 世界(带上方缓降) | FX-0 常驻 | 12 粒/带 / 寿命 2.6s / 重力 14 / PAPER α0.30 | `AmbientParticles._build_snow` |
 | 管线滴水 | Dust(受重力变体) | 世界(法兰下坠落) | FX-0 常驻 | 2 点 ×2 粒 / 寿命 1.6s / 重力 900 / BLUE α0.45 直线坠落 | `AmbientParticles._build_drip` |
 | 点按反馈 | Fragment | 屏域(触点处) | FX-1 轻微反馈 | 10 方块迸散 + 菱形回包 0.28s / 寿命 0.32s / PAPER+1 构成红 | `TouchControls.tap_burst_at` |
+| 重着陆尘 | Dust | 落点足下 | FX-1 轻微反馈 | 10 方块迸散 / 寿命 0.3s / 冲击越快初速越高 / PAPER α0.50(impact>620 与屏震同步;reduced_motion 不发) | `PlayerCosmetics.land_dust`(v0.52.0) |
+| 传送脉冲 | Fragment | 两端门心 | FX-2 普通交互 | 12 方块迸散 ×2 端 / 寿命 0.32s / 入端=本体色·出端=PAPER + 2px 硬屏震 | `PortalPair._pulse`(v0.52.0) |
+| 杠杆开关光 | 光档位跳变 | 门矩形 | FX-1 轻微反馈 | 门矩形 PAPER α0.45 硬档位闪 0.12s(禁渐亮渐暗,一步到位) | `LeverGate._flash_t`(v0.52.0) |
 
 - 常驻发射器计数:Backdrop 屏域 motes 2 + 上表常驻 3 = **同屏 ≤6 达标**;
   点按反馈为 ≤0.35s 一次性演出(M6 时限内)。

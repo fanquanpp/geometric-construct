@@ -84,6 +84,27 @@ static func update_trail(p: Player, vel: Vector2) -> void:
 		p._trail.pop_front()
 
 
+static func land_dust(p: Player, impact: float) -> void:
+	var dust := CPUParticles2D.new()
+	dust.one_shot = true
+	dust.emitting = true
+	dust.amount = 10
+	dust.lifetime = 0.3
+	dust.explosiveness = 1.0
+	dust.spread = 150.0
+	dust.direction = Vector2(0, -1 * p.gravity_dir)
+	dust.gravity = Vector2(0, 340 * p.gravity_dir)
+	dust.initial_velocity_min = 50.0 + impact * 0.04
+	dust.initial_velocity_max = 110.0 + impact * 0.08
+	dust.scale_amount_min = 1.5
+	dust.scale_amount_max = 3.0
+	dust.color = Color(Palette.I.paper, 0.5)
+	dust.finished.connect(dust.queue_free)
+	p.get_parent().add_child(dust)
+	dust.global_position = p.global_position \
+		+ Vector2(0, p.def.size.y * 0.5 * p.gravity_dir)
+
+
 static func roll_loop_update(p: Player, vel: Vector2, on_floor: bool, dt: float) -> void:
 	if p._roll_loop == null:
 		return

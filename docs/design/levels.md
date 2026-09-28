@@ -66,7 +66,9 @@
 ## 2. 关卡目录(LevelData)
 
 - `SCENES`:每关一行 `{path, name, roster, focus, intro}` —— 登记即上剧目,
-  与场景 root 的导出值保持一致。
+  与场景 root 的导出值保持一致;可选 `"medals":[金,银,铜](ms)` 登记时间
+  奖牌阈值(缺省/0 = 该档不评;运行时由 `best_ms` 现算,零存档字段,
+  调阈值即时生效,v0.52.0;act1/s01 为示例档位,逐场调定)。
 - `ACTS`:幕表(levels 为空 = 尚未上演的占位幕);**幕-场序 = 解锁存档契约**
   (`progress/unlocked` 按下标),一次排定不得插删。
 - `dev/probe.tscn`:门禁专用探针关(疾+跃),不进剧目。

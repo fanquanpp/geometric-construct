@@ -11,6 +11,7 @@ var _floaters: Array = []
 var _floater_seed: Array = []
 var _t := 0.0
 var _act_idx := -1
+var _last_act := 0
 
 @onready var _root: Control = %Root
 @onready var _content: Control = %Content
@@ -182,6 +183,7 @@ func try_open_act(idx: int) -> void:
 	var levels: Array = act["levels"]
 	if not levels.is_empty():
 		Sfx.play("ui_click")
+		_last_act = idx
 		show_act_hint(idx)
 		_open_act_panel(idx)
 	else:
@@ -276,6 +278,6 @@ func set_unlocked(unlocked: int) -> void:
 		var b: Button = _act_btns[i]
 
 		b.self_modulate = Color(1, 1, 1, 1.0 if playable else 0.5)
-	if _act_btns.size() > 0:
-		_act_btns[0].grab_focus()
+	if _act_btns.size() > 0 and _root.visible:
+		_act_btns[clampi(_last_act, 0, _act_btns.size() - 1)].grab_focus()
 	_chapter_hint.text = "已归位 %d / %d 场" % [cleared, LevelData.campaign_last() + 1]

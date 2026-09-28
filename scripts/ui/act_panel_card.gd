@@ -12,6 +12,7 @@ signal wip_pressed(k: int)
 var _unlocked := 0
 var _open := false
 var _tween: Tween
+var _row_list: Array = []
 
 
 var _card_frame: Texture2D = load("res://assets/ui/card_frame.png")
@@ -68,6 +69,8 @@ func open_act(idx: int, unlocked: int) -> void:
 		else "点按场次开演 · 左下「返回剧目」退回"
 	_populate_rows(idx)
 	_open = true
+	_row_stagger()
+	_focus_next_row()
 
 	_reanchor_full.call_deferred()
 	visible = true
@@ -107,6 +110,7 @@ func is_open() -> bool:
 
 func _populate_rows(idx: int) -> void:
 	_row_by_li.clear()
+	_row_list.clear()
 	for c in _rows.get_children():
 		c.queue_free()
 	var act: Dictionary = LevelData.ACTS[idx]
@@ -143,18 +147,29 @@ func _populate_rows(idx: int) -> void:
 		b.pressed.connect(func() -> void:
 			level_pressed.emit(li))
 		_row_by_li[li] = b
+		_row_list.append(b)
 		_rows.add_child(b)
 
 		var status_text := "已通关"
+		var status_fg := Color(Palette.I.paper, 0.62)
 		if cleared:
 			var best := save.best_time_of(li) if save != null else -1
-			if best >= 0:
+			var medal := LevelData.medal_of(li, best) if save != null else 0
+			if save != null and save.is_perfect(li):
+				status_text = "完美 · %s" % save.time_text(maxi(best, 0))
+			elif medal > 0:
+				status_text = "%s · %s" % [["金", "银", "铜"][medal - 1],
+					save.time_text(best)]
+				status_fg = Palette.I.yellow if medal == 1 \
+					else (Color(Palette.I.paper, 0.85) if medal == 2
+						else Palette.I.orange)
+			elif best >= 0:
 				status_text = "已通关 · %s" % save.time_text(best)
 		var status := Ui.tag(
 			status_text if cleared else ("下一场" if is_next else "未解锁"),
 			Color(Palette.I.paper, 0.10) if cleared
 				else (Palette.I.red if is_next else Color(Palette.I.paper, 0.05)),
-			Color(Palette.I.paper, 0.62) if cleared
+			status_fg if cleared
 				else (Color.WHITE if is_next else Color(Palette.I.dim, 0.8)), 12, 8, 3)
 		b.add_child(status)
 		status.anchor_left = 1.0
@@ -167,6 +182,25 @@ func _populate_rows(idx: int) -> void:
 
 func error_feedback_row(li: int) -> void:
 	Ui.error_feedback(_row_by_li.get(li))
+
+
+func _row_stagger() -> void:
+	if SettingsManager.reduced_motion:
+		return
+	for i in _row_list.size():
+		var row: Button = _row_list[i]
+		row.modulate.a = 0.0
+		var tw := create_tween()
+		tw.tween_interval(minf(i * 0.04, 0.3))
+		tw.tween_property(row, "modulate:a", 1.0, 0.12)
+
+
+func _focus_next_row() -> void:
+	var next: Button = _row_by_li.get(_unlocked)
+	if next == null and not _row_list.is_empty():
+		next = _row_list[0]
+	if next != null:
+		next.grab_focus()
 
 
 func _add_wip_row(k: int) -> void:

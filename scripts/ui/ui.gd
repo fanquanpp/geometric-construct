@@ -38,6 +38,20 @@ static func _tag(s: String) -> int:
 	return (s.unicode_at(0) << 24) | (s.unicode_at(1) << 16) | (s.unicode_at(2) << 8) | s.unicode_at(3)
 
 
+static var _tabular: Font = null
+
+# 等宽数字变体(tnum):计时器/计数用,字形缺该特性时静默回落比例数字。
+static func tabular() -> Font:
+	if _tabular == null:
+		var fv := FontVariation.new()
+		fv.base_font = HEAD
+		var ot := {}
+		ot[_tag("tnum")] = 1
+		fv.variation_opentype = ot
+		_tabular = fv
+	return _tabular
+
+
 static func weight(w: int, spacing := 0) -> Font:
 	var key := "%d_%d" % [w, spacing]
 	if _weights.has(key):

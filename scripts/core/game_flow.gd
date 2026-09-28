@@ -134,7 +134,12 @@ func check_complete() -> void:
 	Sfx.play("complete")
 	if main._auto_test:
 		print("TEST: LEVEL COMPLETE ", current)
-	main._hud.show_complete("归位。" if current == LevelData.campaign_last() else "通过。")
+	var done_text := "通过。"
+	if run_deaths == 0:
+		done_text = "完美归位。"
+	elif current == LevelData.campaign_last():
+		done_text = "归位。"
+	main._hud.show_complete(done_text)
 
 	if NetSession.I != null and NetSession.I.is_net():
 		if NetSession.I.is_host():
@@ -152,9 +157,13 @@ func check_complete() -> void:
 		main._save.add_play_ms(run_ms)
 		var record := main._save.mark_level_result(current, run_ms, run_deaths)
 		main._menu.set_unlocked(main._unlocked)
+		var medal := LevelData.medal_of(current, run_ms)
 		if record and run_ms > 0:
 			main._hud.narration("新纪录 · %s" % main._save.time_text(run_ms),
 				Palette.I.paper, 2.6)
+		elif medal == 1:
+			main._hud.narration("金牌用时 · %s" % main._save.time_text(run_ms),
+				Palette.I.yellow, 2.6)
 
 	complete_seq += 1
 	var seq := complete_seq
@@ -178,9 +187,10 @@ func after_complete() -> void:
 
 func win_summary() -> String:
 	var s := main._save
-	return "落幕场最佳 %s · 旅程用时 %s · 摔碎 %d 次" % [
+	return "落幕场最佳 %s · 旅程用时 %s · 摔碎 %d 次 · 完美 %d / %d 场" % [
 		s.time_text(s.best_time_of(LevelData.campaign_last())),
-		s.long_time_text(s.total_play_ms), s.total_deaths]
+		s.long_time_text(s.total_play_ms), s.total_deaths,
+		s.perf_count(), LevelData.campaign_last() + 1]
 
 
 func open_net_room() -> void:

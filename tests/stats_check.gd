@@ -43,6 +43,9 @@ func _ready() -> void:
 	if not s.is_cleared(0):
 		ok = false
 		print("STATS FAIL: 通关未登记 cleared=%s" % [s.cleared])
+	if not s.is_perfect(0):
+		ok = false
+		print("STATS FAIL: 零死亡通关未登记完美标记")
 	var best := s.best_time_of(0)
 	if best < 500 or best > 60000:
 		ok = false

@@ -105,6 +105,7 @@ func _apply_styles() -> void:
 	Ui.style(_level_total, 16, Ui.HEAD, Palette.I.dim)
 	Ui.style(_level_name, 22, Ui.HEAD, Palette.I.paper)
 	Ui.style(_run_timer, 15, Ui.HEAD, Color(Palette.I.dim, 0.9))
+	_run_timer.add_theme_font_override("font", Ui.tabular())
 	Ui.style(_net_badge, 13, Ui.HEAD, Palette.I.orange)
 	_narration.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	Ui.style(_narration, 22, Ui.HEAD, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, true, 6)

@@ -1,7 +1,7 @@
 class_name SaveManager
 
 
-const SAVE_VERSION := 6
+const SAVE_VERSION := 7
 const SAVE_PATH := "user://speed-rouge.cfg"
 const LEGACY_PATH := "user://lonelyblocks.cfg"
 
@@ -18,6 +18,7 @@ var seen_act5 := false
 var cleared := {}
 var best_ms := {}
 var level_deaths := {}
+var perf := {}
 var total_deaths := 0
 var total_play_ms := 0
 
@@ -70,6 +71,8 @@ func write_save() -> void:
 		cfg.set_value("stats", "lv%d_best_ms" % li, best_ms[li])
 	for li: int in level_deaths:
 		cfg.set_value("stats", "lv%d_deaths" % li, level_deaths[li])
+	for li: int in perf:
+		cfg.set_value("stats", "lv%d_perf" % li, true)
 	cfg.set_value("stats", "total_deaths", total_deaths)
 	cfg.set_value("stats", "total_play_ms", total_play_ms)
 	var tmp := SAVE_PATH + ".tmp"
@@ -88,6 +91,8 @@ func mark_level_result(li: int, run_ms: int, run_deaths: int) -> bool:
 	cleared[li] = true
 	level_deaths[li] = int(level_deaths.get(li, 0)) + run_deaths
 	total_deaths += run_deaths
+	if run_deaths == 0:
+		perf[li] = true
 	var best := int(best_ms.get(li, -1))
 	var improved := best < 0 or (run_ms > 0 and run_ms < best)
 	if improved:
@@ -102,6 +107,14 @@ func add_play_ms(ms: int) -> void:
 
 func is_cleared(li: int) -> bool:
 	return cleared.has(li)
+
+
+func is_perfect(li: int) -> bool:
+	return perf.has(li)
+
+
+func perf_count() -> int:
+	return perf.size()
 
 
 func best_time_of(li: int) -> int:
@@ -165,7 +178,7 @@ func _load_flags(cfg: ConfigFile) -> void:
 func _load_stats(cfg: ConfigFile) -> void:
 	if not cfg.has_section("stats"):
 		return
-	var m := RegEx.create_from_string("^lv(\\d+)_(cleared|best_ms|deaths)$")
+	var m := RegEx.create_from_string("^lv(\\d+)_(cleared|best_ms|deaths|perf)$")
 	for key: String in cfg.get_section_keys("stats"):
 		var hit := m.search(key)
 		if hit == null:
@@ -179,6 +192,9 @@ func _load_stats(cfg: ConfigFile) -> void:
 				best_ms[li] = int(cfg.get_value("stats", key, -1))
 			"deaths":
 				level_deaths[li] = int(cfg.get_value("stats", key, 0))
+			"perf":
+				if bool(cfg.get_value("stats", key, false)):
+					perf[li] = true
 	total_deaths = int(cfg.get_value("stats", "total_deaths", 0))
 	total_play_ms = int(cfg.get_value("stats", "total_play_ms", 0))
 

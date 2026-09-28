@@ -322,6 +322,8 @@ func _physics_process(delta: float) -> void:
 			SettingsManager.haptic(40)
 			if Main.I != null and Main.I.camera_rig != null:
 				Main.I.camera_rig.kick(minf(1.6 + impact / 420.0, 4.6))
+			if not SettingsManager.reduced_motion:
+				PlayerCosmetics.land_dust(self, impact)
 		var eff_bounce := effective_bounce()
 		var carrying := _has_riders()
 		if carrying or impact <= MovementTuning.I.bounce_min or eff_bounce <= 0.0:
