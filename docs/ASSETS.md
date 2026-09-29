@@ -13,7 +13,7 @@
 
 | 类别 | 数量 | 权威来源 |
 |---|---|---|
-| 几何体(实装) | 5(疾 / 跃 / 逆 / 圆 / 界·边)| `scripts/data/geometries.gd` |
+| 几何体(实装) | 4(疾 / 跃 / 逆 / 界·边)| `scripts/data/geometries.gd` |
 | 几何体(待定) | 2(陆 / 柒)| `glossary.md` §1 |
 | 建筑物图鉴 | 15(6 既有 + 9 件 Kit 构件 v0.36 补绘)| `scripts/data/archive_data.gd` BUILDINGS |
 | 机关物图鉴 | 13(全部实装;传送对 v0.27 / 记录点信标 v0.36)| `archive_data.gd` MECHS |
@@ -23,7 +23,8 @@
 | 幕(七幕主纲) | 7(5 已演 + 序幕/落幕剧本)| `story.md` §1.5 |
 | 关卡(在演) | 26(五幕全战役 native)+ dev/probe 探针 | `levels_native/act1..act5/*.tscn` | v0.45 换代:JSON 26 关管线退役(归档 git 历史);一/二幕用户重摆中 |
 | ~~测试道~~ | ~~2~~ | ~~trial_v5 / pair_trial~~ | v0.44.0 清退(测试关内容清退令)|
-| 图鉴插图(入引擎) | 43 张 png(**v0.48.0 生成器重构**,平涂构成主义)| `assets/archive/` |
+| 图鉴插图(入引擎) | 42 张 png(**v0.48.0 生成器重构**,平涂构成主义;v0.55.0 删 geo_roll)| `assets/archive/` |
+| 地图整体图(编辑器占位) | 24 张 png(v0.55.0 新增,`tools/bake_level_maps.gd` 烘焙)| `assets/maps/` |
 | 图块集(入引擎) | 1(native_tiles.png,224 格 16 列×14 行)| `assets/tiles/` | v0.45 原生作关唯一图块素材,图位契约 levels.md §0;PNG 为孤本,生成器 `tools/gen_tiles.lua` 同批入库;**不在 v0.46 重绘轮**(坐标契约与物理层绑定,以 e6c5b1d 审计终态为准) |
 | aseprite 源 | 5 个(icon_construct 1 + native_tiles 1 + icons 1 + ui 卡框 2)| `assets/art/`、`assets/art/ui/` | v0.48.0 起 icons.aseprite = 全部 UI 图标的唯一源;v0.46.0 清退 mech 精灵源 12 + strip 12;v0.39.0 清退地图皮源 30 + 图鉴源 33 |
 | 音频数据 .tres | 34(data/music 6 + data/sfx 28)| `data/music/`、`data/sfx/` | M-7/M-8 数值资源化(v0.38):BGM motif 与音效规格全 @export,Inspector 直调 |
@@ -40,7 +41,6 @@
 | 壹 | **疾** | 红色正方形 | `E0492F` | 50 × 50 | C4(do) | 速度型 | 冲刺 / 二段跳 / 爬墙 | "他相信只要跑得够快,孤独就追不上他。" |
 | 贰 | **跃** | 黄色长方形(竖) | `E8B33A` | 80 × 40 | D4(re) | 弹性型 | 强反弹 / 承载 / 顶弹 | "把坠落折叠成上升,她从不害怕高度。" |
 | 叁 | **逆** | 蓝色镜像正方形 | `4E86D8` | 30 × 30 | E4(mi) | 置换型 | 重力置换 / 磁界穿透 | "对你们是天与地,对他只是两个可以落脚的面。" |
-| 肆 | **圆** | 橙色圆球形 | `E07E2E` | 52 × 52 | F4(fa) | 滚动型 | 惯性滚动 / 可推动 | "他不会跳,所以他从不回头。" |
 | 伍 | **界 / 边**(双子) | 紫正三角(地)/ 倒三角(顶)成对 | `8455A6` | 30 × 30 × 2 | G(sol)/ A(la) | 边界型 | 磁力边界 / 各自操控 | "我在上,量天的高度。""我在下,量地的厚度。" |
 | 陆 | 待定 | 待定 | — | — | B(si) | 待定 | 候选:梯形·分身 / 菱形·斜向冲刺 | — |
 | 柒 | 待定 | 待定 | — | — | C5(高音 do) | 待定 | — | — |
@@ -177,7 +177,7 @@ recalltest / dualtest / trait_check。
 | 资产 | 数量 | 路径 | 说明 |
 |---|---|---|---|
 | ~~几何体肖像 svg~~ | ~~5~~ | ~~`assets/svg/characters/`~~ | v0.48.0 退役 → 图集 `characters/*` 格(`assets/ui/icons.png`,生成器 `tools/gen_icons.lua`) |
-| 图鉴插图 png | **43** | `assets/archive/` | 建筑 15 + 几何体 5 + 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200;**v0.46.0 全量重绘**(构成主义统一法相;v0.48.0 平涂重构,生成器 `tools/gen_archive.lua`) |
+| 图鉴插图 png | **43** | `assets/archive/` | 建筑 15 + 几何体 4(geo_roll.png 已随删圆退役)+ 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200;**v0.46.0 全量重绘**(构成主义统一法相;v0.48.0 平涂重构,生成器 `tools/gen_archive.lua`) |
 | ~~图鉴 aseprite 源~~ | ~~33~~ | ~~`assets/art/tiles_v2/`~~ | v0.39.0 清退(三套自研分层系统退役);assets/archive PNG 为孤本 |
 | ~~关卡美术层~~ | ~~30~~ | ~~`assets/assets/levels/`~~ | v0.39.0 清退:地图皮与语义层 PNG 全退,渲染 = 引擎原生节点分层(v0.43.0,levels.md §0) |
 | ~~机关精灵图库~~ | ~~12 源 + 12 条带~~ | ~~`assets/art/mech/`~~ | v0.46.0 清退(死库存:为已废弃的 _draw→AnimatedSprite2D 迁移备料,39 帧零引用);运行时唯一机关素材 = assets/archive 正典帧 |

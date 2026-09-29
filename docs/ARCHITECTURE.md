@@ -24,14 +24,14 @@ geometric-construct/
 │   │                        #   (海报骨架 + ActPanelCard / DualPickCard 弹层子场景)
 │   │                        #   / pause_menu / settings_panel(骨架)/ archive_panel
 │   │                        #   / touch_controls / net_room_layer
-│   │                        #   / boot_intro / story_layer
+│   │                        #   (v0.56.0 删 boot_intro / story_layer)
 │   ├── fx/                  #   ambience
 │   └── net/                 #   net_session
 ├── data/                    # 静态数据资源 .tres(R2:数值权威,Inspector 直调;
 │   │                        #   resource 只作静态数据,禁运行时写入)
 │   ├── palette.tres         #   全局色板(Palette;procedural-art.md = 规范)
 │   ├── tuning/              #   movement_default.tres(手感 31 项,MovementTuning)
-│   └── characters/          #   dash / spring / fall / roll / pair.tres(GeometryDef)
+│   └── characters/          #   dash / spring / fall / pair.tres(GeometryDef;v0.55.0 删 roll)
 ├── scripts/
 │   ├── core/                # 总控与系统层
 │   │   ├── main.gd          #   状态机:MENU/PLAYING/PAUSED/TRANSITION/WIN,
@@ -92,9 +92,8 @@ geometric-construct/
 │   │   │                    #   v0.39.3 页签拆分;数据只读自 ArchiveData)
 │   │   ├── archive/         #   档案页构建器 ×5:geo(肖像+数值条)/ codex(建筑·机关
 │   │   │                    #   主从+两态/动态精灵)/ keys(键位一册)/ gallery(剧情目录)
-│   │   │                    #   / story(全文本阅读器)——RefCounted,数据驱动页豁免
+│   │   │                    #   (v0.56.0 删 gallery/story 页,现四页)——RefCounted
 │   │   ├── touch_controls.gd#   虚拟按键层(TouchScreenButton → InputMap 动作)
-│   │   ├── story_layer.gd   #   Konado 剧情层(story/*.ks,播放时暂停世界)
 │   │   └── pause_menu.gd    #   暂停菜单
 │   ├── fx/                  # 表现层辅助
 │   │   ├── sfx.gd           #   程序化芯片音效引擎(合成器 + 音效库,见"音频架构")
@@ -106,7 +105,6 @@ geometric-construct/
 │       ├── lan_beacon.gd     #   LAN 发现信标(版本+关卡哈希门禁 D7;多网卡按网段广播)
 │       ├── peer_factory.gd   #   ENet peer 唯一创建入口
 │       └── net_config.gd     #   端口/魔数/版本门禁常量
-├── story/                    # Konado KS 剧本(档案几何 · 剧情回顾页签可回看)
 │   ├── prologue.ks          #   序幕(标题菜单)
 │   ├── act1.ks ~ act5.ks    #   五幕开演剧(幕首进自动播放)
 │   └── epilogue.ks          #   尾声(通关画面播放)
@@ -117,7 +115,10 @@ geometric-construct/
 │   │                        #   tools/gen_archive.lua,PNG 为孤本可直改)
 │   ├── brand/               # 品牌图标:Android 启动器 192 + 自适应
 │   │                        #   前景/背景/单色 432(源 icon_construct.aseprite)
-│   ├── fx/                  # 转场 shader(sweep / block_dissolve)
+│   ├── fx/                  # backdrop_sky.gdshader(天幕;转场 shader 已于
+│   │                        #   v0.55.0 清退,TransitionFX 改引擎原生 _draw 几何)
+│   ├── maps/                # 地图整体图(编辑器占位孤本,烘焙器 tools/bake_level_maps.gd)
+│   ├── tools/level_audit.gd      # 关卡体检器(headless;可达性/门位/机关/高差,--fix 自动扶正)
 │   ├── tiles/               # 关卡图块集 native_tiles.png(tools/gen_tiles.lua 直出)
 │   ├── fonts/               # NotoSansSC 可变字体
 │   └── ui/                  # UI 图标图集 icons.png(64px 网格 5 列,
@@ -177,7 +178,7 @@ A 跳,X 冲刺,LB/RB 切换,Back 召回,Start 暂停。
 
 ## 剧情(Konado)
 
-剧本为 `story/*.ks`(KonadoScript);播放入口 StoryLayer(叠层 45),
+【v0.56.0 删剧情】剧本与 StoryLayer 已整体退役;历史见 docs/design/story.md。
 空格 / 回车 / 点击对话框推进,`end` 结束后恢复世界。新增剧情:追加 .ks,
 调用 `Main.show_story("名字")`。
 
@@ -190,8 +191,8 @@ A 跳,X 冲刺,LB/RB 切换,Back 召回,Start 暂停。
 - **播放**:`Sfx.play(name)`;每条音效带基础音量(db)与音高随机幅度
   (jitter,防连发疲劳;UI 音为 0 保持反馈稳定)。全部播放器
   PROCESS_MODE_ALWAYS,树暂停时 UI 音效照常。
-- **循环音**:`Sfx.loop_stream("roll")` 返回无缝循环流(整数周期对齐接缝),
-  调用方持有播放器连续调制音量/音高(圆球滚动轰鸣随速度变化)。
+- **循环音**:`Sfx.loop_stream(name)` 返回无缝循环流(整数周期对齐接缝),
+  调用方持有播放器连续调制音量/音高(v0.55.0 起无内建消费者,保留作通用循环音出口)。
 - **音效清单**:玩法 jump / jump2 / bounce / land / climb / swap / buff /
   die / enter / arrive / switch;流程 complete(过关号角)/ fanfare(通关)/
   start / restart / pause / resume;UI ui_click / ui_hover / ui_open /

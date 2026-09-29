@@ -78,14 +78,6 @@ func start_level(index: int, intro := true) -> void:
 		main.net_room_layer.visible = false
 		NetSession.I.on_level_built()
 
-	if act_i >= 0 and current == LevelData.first_level_of_act(act_i) \
-			and intro:
-		var kind := "act%d" % (act_i + 1)
-		if not main._save.story_seen(kind):
-			main._save.note_story(kind)
-			main.get_tree().paused = true
-			main.show_story(kind)
-
 
 func collect_players() -> void:
 	main.roster.collect_players(main._level_root)
@@ -184,10 +176,6 @@ func after_complete() -> void:
 		main._state = Main.State.WIN
 		Sfx.play("fanfare")
 		main._hud.show_win(true, win_summary())
-
-		if not main.get_tree().paused:
-			main.get_tree().paused = true
-			main.show_story("epilogue")
 	else:
 		main._hud.transition_sweep(0.55, func() -> void: start_level(current + 1))
 

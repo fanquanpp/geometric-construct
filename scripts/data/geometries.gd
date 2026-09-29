@@ -8,7 +8,6 @@ const PATHS: Array[String] = [
 	"res://data/characters/dash.tres",
 	"res://data/characters/spring.tres",
 	"res://data/characters/fall.tres",
-	"res://data/characters/roll.tres",
 	"res://data/characters/pair.tres",
 ]
 

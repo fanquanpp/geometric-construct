@@ -109,7 +109,6 @@ const SPECS := {
 	"resume": "res://data/sfx/resume.tres",
 	"start": "res://data/sfx/start.tres",
 	"restart": "res://data/sfx/restart.tres",
-	"story_next": "res://data/sfx/story_next.tres",
 	"ui_back": "res://data/sfx/ui_back.tres",
 	"ui_toggle_on": "res://data/sfx/ui_toggle_on.tres",
 	"ui_toggle_off": "res://data/sfx/ui_toggle_off.tres",
@@ -247,13 +246,6 @@ static func loop_stream(loop_name: String) -> AudioStreamWAV:
 		return _loops[loop_name]
 	var wav: AudioStreamWAV
 	match loop_name:
-		"roll":
-			wav = _render_loop([
-				{"w": "saw", "f0": 60.0, "vol": 0.4},
-				{"w": "saw", "f0": 66.6667, "vol": 0.4},
-				{"w": "sine", "f0": 40.0, "vol": 0.5},
-				{"w": "sine", "f0": 133.333, "vol": 0.15},
-			], 0.45, 6.6667)
 		_:
 			wav = _render_loop([{"w": "sine", "f0": 220.0, "vol": 0.5}], 0.5, 0.0)
 	_loops[loop_name] = wav

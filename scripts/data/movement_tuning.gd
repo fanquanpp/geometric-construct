@@ -26,7 +26,6 @@ static func _static_init() -> void:
 @export var accel_weight_k := 0.3
 @export var accel_min := 0.55
 @export var accel_ski_mult := 0.4
-@export var ball_accel_floor := 1.0
 
 
 @export var friction_base := 1.1
@@ -35,7 +34,6 @@ static func _static_init() -> void:
 @export var air_friction_mult := 0.28
 @export var ski_friction_mult := 0.12
 @export var standard_mu := 1.2667
-@export var ball_mu_roll := 0.43
 
 
 @export var overload_jump_ratio := 0.5

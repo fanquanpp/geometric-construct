@@ -251,10 +251,6 @@ static func char_shape(c: CanvasItem, shape: int, rect: Rect2, col: Color) -> vo
 	var sz := Vector2(minf(rect.size.x, rect.size.y), minf(rect.size.x, rect.size.y))
 	var body := Rect2(rect.get_center() - sz / 2.0, sz)
 	match shape:
-		GeometryDef.Shape.BALL:
-			ngon_fill(c, body.get_center(), sz.x * 0.48, 24, col)
-			c.draw_circle(body.get_center(), sz.x * 0.22, Color(Palette.I.paper, 0.9))
-			c.draw_circle(body.get_center(), sz.x * 0.09, Color(Palette.I.ink, 0.85))
 		GeometryDef.Shape.TRIANGLE:
 			c.draw_colored_polygon(PackedVector2Array([
 				Vector2(body.position.x, body.end.y),
@@ -277,7 +273,71 @@ static func char_shape(c: CanvasItem, shape: int, rect: Rect2, col: Color) -> vo
 				body.size.x, body.size.y * 0.24), Color(0, 0, 0, 0.18))
 
 
-# —— 图鉴配方(200×200 设计坐标,等比缩放进 rect) ——
+# —— 图鉴配方(200×200 设计坐标,等比缩放进 rect)——
+# v0.55.0 场景化重绘:每条示例 = 地台 + 幽灵格尺 + 构件正典形态 +
+# 角色剪影演示 + 动势标注,读图即懂玩法;构成主义纪律不变(全直角、
+# 取色经 Palette、透明度分档、单条图元远低于 5k 预算)。
+
+static func dashed_line(c: CanvasItem, a: Vector2, b: Vector2, col: Color,
+		w := 1.5, dash := 8.0, gap := 6.0) -> void:
+	var len := a.distance_to(b)
+	if len <= 0.0:
+		return
+	var d := (b - a) / len
+	var t := 0.0
+	while t < len:
+		var e := minf(t + dash, len)
+		c.draw_line(a + d * t, a + d * e, col, w)
+		t += dash + gap
+
+
+## 地台:底部承重石板 + 纸白顶缘 + 右侧红刻度,示例图统一落脚面。
+static func codex_stage(c: CanvasItem, R: Callable, paper: Color) -> void:
+	c.draw_rect(R.call(10, 164, 180, 16), Color(Palette.I.ink_2, 1.0))
+	c.draw_rect(R.call(10, 164, 180, 3), Color(paper, 0.5))
+	c.draw_rect(R.call(170, 167, 12, 3), Color(Palette.I.red, 0.55))
+
+
+## 格尺:中线十字幽灵虚线,标注「1 格 = 100px」的量尺语言。
+static func codex_grid(c: CanvasItem, R: Callable, P: Callable, paper: Color) -> void:
+	var g := Color(paper, 0.10)
+	dashed_line(c, P.call(100, 8), P.call(100, 156), g, 1.0, 5.0, 7.0)
+	dashed_line(c, P.call(12, 82), P.call(188, 82), g, 1.0, 5.0, 7.0)
+
+
+## 角色剪影:形状即性格的迷你注记(疾/跃/逆/伍),scale≈0.5 格档。
+static func codex_char(c: CanvasItem, P: Callable, slug: String, x: float,
+		y: float, s := 24.0, face_left := false) -> void:
+	var hs := s * 0.5
+	var o: Vector2 = P.call(x, y)
+	if slug == "dash":
+		var r := Rect2(o + Vector2(-hs, -hs), Vector2(s, s))
+		c.draw_rect(r, Palette.I.red)
+		c.draw_rect(Rect2(r.position, Vector2(s, 3.0)), Color(1, 1, 1, 0.5))
+		c.draw_rect(Rect2(r.position.x, r.end.y - s * 0.24, s, s * 0.24),
+			Color(0, 0, 0, 0.18))
+	elif slug == "spring":
+		var r2 := Rect2(o + Vector2(-hs, -s * 0.3), Vector2(s, s * 0.6))
+		c.draw_rect(r2, Palette.I.yellow)
+		c.draw_rect(Rect2(r2.position + Vector2(3, 3), Vector2(s * 0.4, 3)),
+			Color(1, 1, 1, 0.5))
+	elif slug == "fall":
+		var r3 := Rect2(o + Vector2(-hs, -hs), Vector2(s, s))
+		c.draw_rect(r3, Palette.I.blue)
+		c.draw_rect(Rect2(r3.position.x, r3.end.y - s * 0.24, s, s * 0.24),
+			Color(0, 0, 0, 0.22))
+		c.draw_rect(Rect2(r3.position.x, r3.position.y, s, 3.0),
+			Color(1, 1, 1, 0.28))
+	elif slug == "pair":
+		var w := s * 0.52
+		var h := s * 0.42
+		c.draw_colored_polygon(PackedVector2Array([
+			o + Vector2(-w, -s * 0.46), o + Vector2(w, -s * 0.46),
+			o + Vector2(0, -s * 0.04)]), Palette.I.blue)
+		c.draw_colored_polygon(PackedVector2Array([
+			o + Vector2(-w, s * 0.46), o + Vector2(w, s * 0.46),
+			o + Vector2(0, s * 0.04)]), Color(Palette.I.paper, 0.85))
+
 
 static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 	var k := rect.size.x / 200.0
@@ -291,233 +351,386 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 	var ink2 := Color(Palette.I.ink_2, 1.0)
 	var ink3 := Color(Palette.I.ink_3, 1.0)
 	if id.begins_with("bld_"):
+		codex_grid(c, R, P, paper)
 		match id:
 			"bld_slab_full":
-				c.draw_rect(R.call(30, 60, 140, 110), ink2)
-				c.draw_rect(R.call(30, 60, 140, 8), Color(paper, 0.5))
-				c.draw_rect(R.call(30, 60, 140, 22), Color(paper, 0.16))
-				for t in 5:
-					c.draw_rect(R.call(24, 66 + t * 22, 6, 8), Color(Palette.I.red, 0.85))
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(30, 122, 140, 60), ink2)
+				c.draw_rect(R.call(30, 122, 140, 8), Color(paper, 0.55))
+				c.draw_rect(R.call(30, 122, 140, 22), Color(paper, 0.14))
+				c.draw_rect(R.call(24, 128, 6, 8), Color(Palette.I.red, 0.85))
+				codex_char(c, P, "dash", 76, 110, 24)
+				DrawKit.chevron(c, P.call(120, 110), Vector2(1, 0), 16.0 * k,
+					Color(paper, 0.4), 2.5 * k)
 			"bld_slab_oneway":
-				c.draw_rect(R.call(30, 110, 140, 24), ink3)
-				c.draw_rect(R.call(30, 110, 140, 5), Color(paper, 0.65))
-				c.draw_line(P.call(40, 134), P.call(40, 160), Color(paper, 0.2), 2.0 * k)
-				c.draw_line(P.call(160, 134), P.call(160, 160), Color(paper, 0.2), 2.0 * k)
-				DrawKit.dashed_rect(c, R.call(20, 100, 160, 44), Color(paper, 0.25), 1.5 * k)
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(30, 100, 140, 20), ink3)
+				c.draw_rect(R.call(30, 100, 140, 5), Color(paper, 0.65))
+				codex_char(c, P, "dash", 76, 88, 22)
+				dashed_line(c, P.call(100, 128), P.call(100, 152),
+					Color(paper, 0.35), 2.0 * k)
+				c.draw_rect(R.call(88, 140, 24, 20), Color(paper, 0.10))
+				dashed_rect(c, R.call(88, 140, 24, 20), Color(paper, 0.3), 1.2 * k)
+				DrawKit.chevron(c, P.call(100, 148), Vector2(0, 1), 12.0 * k,
+					Color(paper, 0.45), 2.0 * k)
 			"bld_slab_ceiling":
-				c.draw_rect(R.call(30, 40, 140, 24), ink3)
-				c.draw_rect(R.call(30, 59, 140, 5), Color(Palette.I.blue, 0.8))
-				c.draw_line(P.call(100, 70), P.call(100, 120), Color(Palette.I.blue, 0.4), 2.0 * k)
-				DrawKit.chevron(c, P.call(100, 130), Vector2(0, 1), 22.0 * k,
-					Color(Palette.I.blue, 0.7), 3.0 * k)
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(30, 24, 140, 20), ink3)
+				c.draw_rect(R.call(30, 40, 140, 5), Color(Palette.I.blue, 0.8))
+				codex_char(c, P, "fall", 100, 62, 24)
+				dashed_line(c, P.call(52, 52), P.call(52, 148),
+					Color(Palette.I.blue, 0.4), 1.5 * k)
+				dashed_line(c, P.call(148, 52), P.call(148, 148),
+					Color(Palette.I.blue, 0.4), 1.5 * k)
+				DrawKit.chevron(c, P.call(128, 62), Vector2(1, 0), 14.0 * k,
+					Color(Palette.I.blue, 0.7), 2.5 * k)
 			"bld_ghost_frame":
-				DrawKit.dashed_rect(c, R.call(40, 40, 120, 120), Color(paper, 0.4), 2.0 * k)
+				dashed_rect(c, R.call(40, 40, 120, 120), Color(paper, 0.4), 2.0 * k)
 				c.draw_rect(R.call(56, 56, 88, 88), Color(paper, 0.06))
+				dashed_rect(c, R.call(64, 64, 72, 72), Color(paper, 0.22), 1.2 * k)
+				codex_char(c, P, "dash", 100, 118, 22)
+				codex_stage(c, R, paper)
 			"bld_back_tower":
-				c.draw_rect(R.call(60, 90, 80, 80), Color(paper, 0.10))
-				c.draw_rect(R.call(72, 56, 56, 34), Color(paper, 0.14))
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(60, 92, 80, 72), Color(paper, 0.10))
+				c.draw_rect(R.call(72, 56, 56, 36), Color(paper, 0.14))
 				c.draw_rect(R.call(84, 30, 32, 26), Color(paper, 0.18))
 				for wy in 3:
-					c.draw_rect(R.call(70 + 0, 100 + wy * 20, 14, 8), Color(Palette.I.ink, 0.6))
-					c.draw_rect(R.call(116, 100 + wy * 20, 14, 8), Color(Palette.I.ink, 0.6))
-				c.draw_rect(R.call(94, 20, 12, 10), Color(Palette.I.red, 0.9))
+					c.draw_rect(R.call(70, 100 + wy * 18, 14, 8), Color(Palette.I.ink, 0.6))
+					c.draw_rect(R.call(116, 100 + wy * 18, 14, 8), Color(Palette.I.ink, 0.6))
+				c.draw_rect(R.call(94, 22, 12, 8), Color(Palette.I.red, 0.9))
+				codex_char(c, P, "spring", 40, 152, 18)
 			"bld_pillar":
+				codex_stage(c, R, paper)
 				c.draw_rect(R.call(84, 36, 32, 128), ink2)
 				c.draw_rect(R.call(74, 24, 52, 12), ink3)
-				c.draw_rect(R.call(74, 164, 52, 12), ink3)
+				c.draw_rect(R.call(74, 152, 52, 12), ink3)
 				c.draw_rect(R.call(84, 36, 8, 128), Color(paper, 0.25))
 				c.draw_line(P.call(116, 36), P.call(108, 48), Color(Palette.I.red, 0.6), 2.0 * k)
+				codex_char(c, P, "dash", 46, 152, 20)
+				codex_char(c, P, "pair", 150, 152, 20)
 			"bld_beam":
-				c.draw_rect(R.call(34, 84, 132, 32), ink2)
-				c.draw_rect(R.call(34, 84, 132, 6), Color(paper, 0.5))
-				c.draw_rect(R.call(22, 88, 12, 24), ink3)
-				c.draw_rect(R.call(166, 88, 12, 24), ink3)
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(30, 76, 140, 30), ink2)
+				c.draw_rect(R.call(30, 76, 140, 6), Color(paper, 0.5))
+				c.draw_rect(R.call(18, 80, 12, 22), ink3)
+				c.draw_rect(R.call(170, 80, 12, 22), ink3)
 				for x in 4:
-					c.draw_rect(R.call(52 + x * 28, 96, 10, 8), Color(paper, 0.14))
+					c.draw_rect(R.call(46 + x * 28, 88, 10, 8), Color(paper, 0.14))
+				dashed_line(c, P.call(100, 24), P.call(100, 70),
+					Color(paper, 0.28), 1.5 * k)
+				DrawKit.arrow(c, P.call(64, 30), P.call(64, 70),
+					Color(paper, 0.4), 1.5 * k, 7.0 * k)
+				DrawKit.arrow(c, P.call(136, 30), P.call(136, 70),
+					Color(paper, 0.4), 1.5 * k, 7.0 * k)
+				codex_char(c, P, "spring", 100, 60, 20)
 			"bld_stair":
+				codex_stage(c, R, paper)
 				for st in 4:
-					c.draw_rect(R.call(30 + st * 34, 150 - st * 30, 34, 30), ink2)
-					c.draw_rect(R.call(30 + st * 34, 150 - st * 30, 34, 5),
+					c.draw_rect(R.call(26 + st * 36, 148 - st * 30, 36, 30), ink2)
+					c.draw_rect(R.call(26 + st * 36, 148 - st * 30, 36, 5),
 						Color(paper, 0.55))
+				codex_char(c, P, "dash", 62, 122, 20)
+				dashed_line(c, P.call(40, 142), P.call(40, 116),
+					Color(Palette.I.red, 0.55), 1.5 * k)
 			"bld_bridge":
-				c.draw_rect(R.call(20, 90, 160, 20), ink2)
-				c.draw_rect(R.call(20, 90, 160, 5), Color(paper, 0.6))
-				c.draw_rect(R.call(34, 110, 16, 60), ink3)
-				c.draw_rect(R.call(150, 110, 16, 60), ink3)
-				c.draw_line(P.call(100, 110), P.call(100, 170), Color(paper, 0.12), 2.0 * k)
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(20, 88, 160, 18), ink2)
+				c.draw_rect(R.call(20, 88, 160, 5), Color(paper, 0.6))
+				c.draw_rect(R.call(34, 106, 14, 58), ink3)
+				c.draw_rect(R.call(152, 106, 14, 58), ink3)
+				dashed_line(c, P.call(100, 106), P.call(100, 160),
+					Color(paper, 0.12), 2.0 * k)
+				for hz in 3:
+					c.draw_rect(R.call(60 + hz * 24, 118 + hz * 12, 14, 3),
+						Color(paper, 0.10))
+				codex_char(c, P, "dash", 100, 76, 20)
+				DrawKit.chevron(c, P.call(132, 78), Vector2(1, 0), 14.0 * k,
+					Color(paper, 0.4), 2.5 * k)
 			"bld_frame":
-				c.draw_rect(R.call(36, 60, 20, 110), ink2)
-				c.draw_rect(R.call(144, 60, 20, 110), ink2)
-				c.draw_rect(R.call(28, 40, 144, 20), ink2)
-				c.draw_rect(R.call(28, 40, 144, 5), Color(paper, 0.55))
-				DrawKit.dashed_rect(c, R.call(66, 74, 68, 96), Color(paper, 0.3), 2.0 * k)
+				c.draw_rect(R.call(36, 52, 20, 128), ink2)
+				c.draw_rect(R.call(144, 52, 20, 128), ink2)
+				c.draw_rect(R.call(28, 32, 144, 20), ink2)
+				c.draw_rect(R.call(28, 32, 144, 5), Color(paper, 0.55))
+				dashed_rect(c, R.call(66, 66, 68, 114), Color(paper, 0.3), 2.0 * k)
+				codex_stage(c, R, paper)
+				codex_char(c, P, "spring", 100, 150, 20)
+				DrawKit.brackets(c, R.call(62, 62, 76, 14), Color(Palette.I.red, 0.6),
+					6.0 * k, 1.5 * k)
 			"bld_ring":
-				DrawKit.ngon_line(c, P.call(100, 100), 62.0 * k, 4, Color(ink2, 1.0), 22.0 * k, PI / 4.0)
-				DrawKit.ngon_line(c, P.call(100, 100), 62.0 * k, 4, Color(paper, 0.5), 2.0 * k, PI / 4.0)
-				c.draw_rect(R.call(94, 94, 12, 12), Color(Palette.I.red, 0.85))
+				DrawKit.ngon_line(c, P.call(100, 92), 62.0 * k, 4,
+					Color(ink2, 1.0), 22.0 * k, PI / 4.0)
+				DrawKit.ngon_line(c, P.call(100, 92), 62.0 * k, 4,
+					Color(paper, 0.5), 2.0 * k, PI / 4.0)
+				c.draw_rect(R.call(94, 86, 12, 12), Color(Palette.I.red, 0.85))
+				codex_stage(c, R, paper)
+				DrawKit.chevron(c, P.call(100, 156), Vector2(1, 0), 16.0 * k,
+					Color(paper, 0.4), 2.5 * k)
+				DrawKit.chevron(c, P.call(132, 156), Vector2(1, 0), 16.0 * k,
+					Color(paper, 0.22), 2.5 * k)
 			"bld_hall":
-				c.draw_rect(R.call(20, 150, 160, 14), ink2)
-				c.draw_rect(R.call(20, 50, 14, 100), ink2)
-				c.draw_rect(R.call(166, 50, 14, 100), ink2)
-				c.draw_rect(R.call(20, 36, 160, 14), ink3)
-				c.draw_rect(R.call(90, 84, 20, 66), ink2)
-				DrawKit.dashed_rect(c, R.call(20, 30, 160, 134), Color(paper, 0.22), 1.5 * k)
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(16, 146, 168, 6), ink2)
+				c.draw_rect(R.call(16, 40, 14, 106), ink2)
+				c.draw_rect(R.call(170, 40, 14, 106), ink2)
+				c.draw_rect(R.call(16, 26, 168, 14), ink3)
+				c.draw_rect(R.call(90, 76, 20, 70), ink2)
+				codex_char(c, P, "dash", 56, 134, 16)
+				codex_char(c, P, "spring", 146, 134, 16)
 			"bld_corridor":
-				c.draw_rect(R.call(56, 30, 30, 140), ink2)
-				c.draw_rect(R.call(114, 30, 30, 140), ink2)
-				c.draw_rect(R.call(56, 30, 30, 140), Color(paper, 0.2), false, 2.0 * k)
-				c.draw_rect(R.call(114, 30, 30, 140), Color(paper, 0.2), false, 2.0 * k)
-				DrawKit.chevron(c, P.call(100, 100), Vector2(1, 0), 26.0 * k,
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(56, 24, 30, 140), ink2)
+				c.draw_rect(R.call(114, 24, 30, 140), ink2)
+				c.draw_rect(R.call(56, 24, 30, 140), Color(paper, 0.2), false, 2.0 * k)
+				c.draw_rect(R.call(114, 24, 30, 140), Color(paper, 0.2), false, 2.0 * k)
+				DrawKit.chevron(c, P.call(100, 60), Vector2(1, 0), 20.0 * k,
 					Color(paper, 0.35), 3.0 * k)
+				DrawKit.chevron(c, P.call(100, 100), Vector2(1, 0), 20.0 * k,
+					Color(paper, 0.25), 3.0 * k)
+				codex_char(c, P, "dash", 100, 140, 20)
 			"bld_dome":
-				c.draw_rect(R.call(40, 120, 24, 50), ink2)
-				c.draw_rect(R.call(136, 120, 24, 50), ink2)
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(40, 116, 24, 48), ink2)
+				c.draw_rect(R.call(136, 116, 24, 48), ink2)
 				c.draw_polyline(PackedVector2Array([
-					P.call(52, 120), P.call(52, 84), P.call(76, 60), P.call(100, 52),
-					P.call(124, 60), P.call(148, 84), P.call(148, 120)]),
+					P.call(52, 116), P.call(52, 80), P.call(76, 56), P.call(100, 48),
+					P.call(124, 56), P.call(148, 80), P.call(148, 116)]),
 					Color(paper, 0.6), 3.0 * k, true)
-				c.draw_rect(R.call(94, 40, 12, 12), Color(Palette.I.red, 0.85))
+				c.draw_rect(R.call(94, 38, 12, 10), Color(Palette.I.red, 0.85))
+				DrawKit.chevron(c, P.call(100, 88), Vector2(0, 1), 14.0 * k,
+					Color(paper, 0.3), 2.0 * k)
+				codex_char(c, P, "pair", 100, 148, 20)
 			"bld_gate":
-				c.draw_rect(R.call(36, 56, 26, 114), ink2)
-				c.draw_rect(R.call(138, 56, 26, 114), ink2)
-				c.draw_rect(R.call(28, 36, 144, 22), ink2)
-				c.draw_rect(R.call(28, 36, 144, 6), Color(Palette.I.red, 0.8))
-				c.draw_rect(R.call(60, 150, 80, 8), ink3)
-				DrawKit.dashed_rect(c, R.call(70, 66, 60, 104), Color(paper, 0.3), 2.0 * k)
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(36, 48, 26, 116), ink2)
+				c.draw_rect(R.call(138, 48, 26, 116), ink2)
+				c.draw_rect(R.call(28, 28, 144, 20), ink2)
+				c.draw_rect(R.call(28, 28, 144, 6), Color(Palette.I.red, 0.8))
+				c.draw_rect(R.call(60, 152, 80, 8), ink3)
+				dashed_rect(c, R.call(70, 58, 60, 106), Color(paper, 0.3), 2.0 * k)
+				codex_char(c, P, "dash", 100, 138, 20)
+				DrawKit.chevron(c, P.call(100, 96), Vector2(0, 1), 16.0 * k,
+					Color(Palette.I.red, 0.55), 2.5 * k)
 			_:
 				c.draw_rect(R.call(40, 40, 120, 120), ink2)
+				codex_stage(c, R, paper)
 	elif id.begins_with("mech_"):
+		codex_grid(c, R, P, paper)
 		match id:
 			"mech_exit_door":
+				codex_stage(c, R, paper)
 				var dcol: Color = Palette.I.orange if pose != 2 else Palette.I.paper
-				c.draw_rect(R.call(62, 40, 76, 120), Color(Palette.I.ink, 0.6))
-				c.draw_rect(R.call(62, 40, 76, 120), Color(dcol, 0.85), false, 3.0 * k)
-				c.draw_rect(R.call(70, 62, 60, 98), Color(dcol, 0.55 if pose > 0 else 0.25))
-				c.draw_rect(R.call(62, 40, 76, 10), Color(dcol, 0.85))
+				c.draw_rect(R.call(62, 36, 76, 128), Color(Palette.I.ink, 0.6))
+				c.draw_rect(R.call(62, 36, 76, 128), Color(dcol, 0.85), false, 3.0 * k)
+				c.draw_rect(R.call(70, 58, 60, 106), Color(dcol, 0.55 if pose > 0 else 0.25))
+				c.draw_rect(R.call(62, 36, 76, 10), Color(dcol, 0.85))
 				for t in 3:
-					c.draw_rect(R.call(66 + t * 24, 30, 12, 6), Color(Palette.I.red, 0.9))
-				if pose == 2:
-					c.draw_rect(R.call(70, 62, 60, 98), Color(paper, 0.4))
+					c.draw_rect(R.call(66 + t * 24, 26, 12, 6), Color(Palette.I.red, 0.9))
+				if pose == 1:
+					codex_char(c, P, "spring", 40, 152, 20)
+					DrawKit.chevron(c, P.call(54, 150), Vector2(1, 0), 12.0 * k,
+						Color(paper, 0.4), 2.0 * k)
+				elif pose == 2:
+					codex_char(c, P, "spring", 100, 92, 22)
 			"mech_speed_gate":
-				c.draw_rect(R.call(50, 30, 100, 140), Color(Palette.I.ink, 0.5))
-				c.draw_line(P.call(52, 30), P.call(52, 170), Color(paper, 0.5), 3.0 * k)
-				c.draw_line(P.call(148, 30), P.call(148, 170), Color(paper, 0.5), 3.0 * k)
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(50, 24, 100, 140), Color(Palette.I.ink, 0.5))
+				c.draw_line(P.call(52, 24), P.call(52, 164), Color(paper, 0.5), 3.0 * k)
+				c.draw_line(P.call(148, 24), P.call(148, 164), Color(paper, 0.5), 3.0 * k)
 				var cc := Color(Palette.I.red, 0.85) if pose == 1 else Color(paper, 0.5)
 				for t in 3:
-					DrawKit.chevron(c, P.call(68 + t * 26, 100), Vector2(1, 0),
+					DrawKit.chevron(c, P.call(68 + t * 26, 94), Vector2(1, 0),
 						26.0 * k, cc, 3.0 * k)
-			"mech_ramp":
-				c.draw_colored_polygon(PackedVector2Array([
-					P.call(30, 150), P.call(80, 90), P.call(120, 110), P.call(170, 60),
-					P.call(170, 170), P.call(30, 170)]), Color(Palette.I.ink_2, 0.9))
-				c.draw_polyline(PackedVector2Array([
-					P.call(30, 150), P.call(80, 90), P.call(120, 110), P.call(170, 60)]),
-					Color(paper, 0.7), 4.0 * k, true)
-				DrawKit.ngon_fill(c, P.call(100, 86), 12.0 * k, 16,
-					Color(Palette.I.yellow, 0.95))
-			"mech_mover":
-				c.draw_line(P.call(30, 120), P.call(170, 120), Color(paper, 0.2), 2.0 * k)
-				var px := 82.0 if pose == 1 else 60.0
-				c.draw_rect(R.call(px, 100, 80, 22), ink2)
-				c.draw_rect(R.call(px, 100, 80, 5), Color(paper, 0.6))
-				DrawKit.chevron(c, P.call(34, 120), Vector2(-1, 0), 14.0 * k,
-					Color(Palette.I.red, 0.7), 2.5 * k)
-				DrawKit.chevron(c, P.call(166, 120), Vector2(1, 0), 14.0 * k,
-					Color(Palette.I.red, 0.7), 2.5 * k)
-			"mech_lever_pad":
-				var h := 12.0 if pose == 1 else 26.0
-				c.draw_rect(R.call(40, 160 - h, 120, h),
-					Color(Palette.I.red, 0.8) if pose == 1 else ink3)
-				c.draw_rect(R.call(40, 160 - h, 120, h), Color(paper, 0.55), false, 2.0 * k)
-				c.draw_rect(R.call(30, 160, 140, 10), Color(paper, 0.3))
-				if pose != 1:
-					c.draw_rect(R.call(88, 150, 24, 8), Color(Palette.I.red, 0.9))
-			"mech_gate_door":
 				if pose == 1:
-					DrawKit.dashed_rect(c, R.call(60, 40, 80, 120), Color(paper, 0.45), 2.0 * k)
-					c.draw_rect(R.call(60, 40, 80, 120), Color(paper, 0.05))
-				else:
-					c.draw_rect(R.call(60, 40, 80, 120), ink2)
-					c.draw_rect(R.call(60, 40, 80, 120), Color(paper, 0.55), false, 2.0 * k)
-					c.draw_rect(R.call(60, 40, 80, 6), Color(paper, 0.5))
-			"mech_timed_bridge":
-				if pose == 1:
-					var x := 30.0
-					while x < 170.0:
-						c.draw_rect(R.call(x, 96, 14, 8), Color(paper, 0.4))
-						x += 28.0
-				else:
-					c.draw_rect(R.call(30, 90, 140, 22), ink2)
-					c.draw_rect(R.call(30, 90, 140, 5), Color(paper, 0.6))
-			"mech_piano_tile":
-				c.draw_rect(R.call(30, 92, 140, 22), Color(paper, 0.3) if pose == 1 else ink2)
-				c.draw_rect(R.call(30, 92, 140, 22),
-					Color(paper, 0.8 if pose == 1 else 0.4), false, 2.0 * k)
-				for t in 3:
-					c.draw_rect(R.call(52 + t * 30, 98, 5, 10),
-						Color(paper, 0.16 if pose == 1 else 0.25))
-				DrawKit.ngon_fill(c, P.call(100, 70), 10.0 * k, 12,
-					Color(paper, 0.85))
-				c.draw_rect(R.call(96, 76, 8, 14), Color(paper, 0.85))
-			"mech_checkpoint":
-				c.draw_rect(R.call(40, 160, 120, 8), Color(paper, 0.35))
-				c.draw_rect(R.call(97, 60, 6, 100), Color(paper, 0.5))
-				if pose == 1:
-					DrawKit.ngon_fill(c, P.call(100, 52), 14.0 * k, 4,
-						Color(Palette.I.yellow, 0.95), PI / 4.0)
-					DrawKit.ngon_line(c, P.call(100, 52), 24.0 * k, 12,
-						Color(Palette.I.yellow, 0.5), 2.0 * k)
-				else:
-					DrawKit.ngon_line(c, P.call(100, 52), 14.0 * k, 4,
-						Color(paper, 0.45), 2.0 * k, PI / 4.0)
-			"mech_push_box":
-				c.draw_rect(R.call(50, 50, 100, 100), ink3)
-				c.draw_rect(R.call(50, 50, 100, 100), Color(paper, 0.55), false, 2.0 * k)
-				c.draw_line(P.call(62, 62), P.call(138, 138), Color(paper, 0.18), 2.0 * k)
-				c.draw_line(P.call(138, 62), P.call(62, 138), Color(paper, 0.18), 2.0 * k)
-				c.draw_rect(R.call(56, 56, 88, 5), Color(paper, 0.4))
-				DrawKit.chevron(c, P.call(34, 100), Vector2(1, 0), 20.0 * k,
-					Color(paper, 0.55), 2.5 * k)
-			"mech_ski_patch":
-				c.draw_rect(R.call(30, 84, 140, 40), Color(Palette.I.blue, 0.2))
-				DrawKit.hatch45(c, R.call(30, 84, 140, 40), Color(Palette.I.blue, 0.35),
-					10.0 * k + 1.0, 1.5 * k)
-				c.draw_rect(R.call(30, 84, 140, 40), Color(Palette.I.blue, 0.55), false, 2.0 * k)
-				DrawKit.chevron(c, P.call(78, 104), Vector2(1, 0), 16.0 * k,
-					Color(paper, 0.6), 2.5 * k)
-				DrawKit.chevron(c, P.call(120, 104), Vector2(1, 0), 16.0 * k,
-					Color(paper, 0.6), 2.5 * k)
-			"mech_launch_pad":
-				c.draw_rect(R.call(40, 120, 120, 40), ink3)
-				c.draw_rect(R.call(40, 120, 120, 40), Color(paper, 0.5), false, 2.0 * k)
-				DrawKit.arrow(c, P.call(100, 116), P.call(100, 48),
-					Color(paper, 0.85), 3.0 * k, 12.0 * k)
-				if pose == 1:
-					c.draw_rect(R.call(40, 120, 120, 40), Color(paper, 0.25))
+					codex_char(c, P, "dash", 108, 142, 22)
 					for t in 3:
-						c.draw_rect(R.call(56 + t * 28, 108, 10, 6), Color(paper, 0.5))
+						c.draw_rect(R.call(38 - t * 12, 132 + t * 4, 10, 3),
+							Color(Palette.I.red, 0.7 - t * 0.18))
+				else:
+					codex_char(c, P, "dash", 40, 142, 22)
+					DrawKit.chevron(c, P.call(70, 142), Vector2(1, 0), 12.0 * k,
+						Color(paper, 0.4), 2.0 * k)
+			"mech_ramp":
+				codex_stage(c, R, paper)
+				c.draw_colored_polygon(PackedVector2Array([
+					P.call(24, 152), P.call(80, 88), P.call(120, 108), P.call(176, 52),
+					P.call(176, 164), P.call(24, 164)]), Color(Palette.I.ink_2, 0.9))
+				c.draw_polyline(PackedVector2Array([
+					P.call(24, 152), P.call(80, 88), P.call(120, 108), P.call(176, 52)]),
+					Color(paper, 0.7), 4.0 * k, true)
+				DrawKit.ngon_fill(c, P.call(96, 74), 10.0 * k, 16,
+					Color(Palette.I.yellow, 0.95))
+				codex_char(c, P, "dash", 66, 80, 20)
+				dashed_line(c, P.call(120, 108), P.call(160, 70),
+					Color(paper, 0.4), 2.0 * k)
+				DrawKit.chevron(c, P.call(148, 68), Vector2(1, -0.86), 14.0 * k,
+					Color(paper, 0.5), 2.5 * k)
+			"mech_mover":
+				codex_stage(c, R, paper)
+				c.draw_line(P.call(24, 116), P.call(176, 116), Color(paper, 0.2), 2.0 * k)
+				for t in 5:
+					c.draw_rect(R.call(28 + t * 32, 114, 4, 5), Color(paper, 0.3))
+				var px := 84.0 if pose == 1 else 56.0
+				c.draw_rect(R.call(px, 96, 76, 20), ink2)
+				c.draw_rect(R.call(px, 96, 76, 5), Color(paper, 0.6))
+				codex_char(c, P, "spring", px + 38, 84, 18)
+				DrawKit.chevron(c, P.call(30, 116), Vector2(-1, 0), 12.0 * k,
+					Color(Palette.I.red, 0.7), 2.0 * k)
+				DrawKit.chevron(c, P.call(170, 116), Vector2(1, 0), 12.0 * k,
+					Color(Palette.I.red, 0.7), 2.0 * k)
+			"mech_lever_pad":
+				codex_stage(c, R, paper)
+				var h := 12.0 if pose == 1 else 24.0
+				c.draw_rect(R.call(24, 152 - h, 64, h),
+					Color(Palette.I.red, 0.8) if pose == 1 else ink3)
+				c.draw_rect(R.call(24, 152 - h, 64, h), Color(paper, 0.55), false, 2.0 * k)
+				dashed_line(c, P.call(88, 146), P.call(116, 146),
+					Color(Palette.I.red, 0.4 if pose == 1 else 0.15), 1.5 * k)
+				if pose == 1:
+					c.draw_rect(R.call(116, 88, 56, 58), Color(paper, 0.05))
+					dashed_rect(c, R.call(116, 88, 56, 58), Color(paper, 0.4), 1.5 * k)
+				else:
+					c.draw_rect(R.call(116, 88, 56, 58), ink2)
+					c.draw_rect(R.call(116, 88, 56, 58), Color(paper, 0.5), false, 1.5 * k)
+				codex_char(c, P, "dash", 46, 130 if pose == 1 else 118, 18)
+				if pose != 1:
+					c.draw_rect(R.call(50, 146, 12, 6), Color(Palette.I.red, 0.9))
+			"mech_gate_door":
+				codex_stage(c, R, paper)
+				if pose == 1:
+					dashed_rect(c, R.call(60, 36, 80, 116), Color(paper, 0.45), 2.0 * k)
+					c.draw_rect(R.call(60, 36, 80, 116), Color(paper, 0.05))
+					codex_char(c, P, "dash", 100, 60, 20)
+					dashed_line(c, P.call(100, 72), P.call(100, 148),
+						Color(paper, 0.25), 1.5 * k)
+				else:
+					c.draw_rect(R.call(60, 36, 80, 116), ink2)
+					c.draw_rect(R.call(60, 36, 80, 116), Color(paper, 0.55), false, 2.0 * k)
+					c.draw_rect(R.call(60, 36, 80, 6), Color(paper, 0.5))
+				codex_char(c, P, "spring", 28, 142, 16)
+			"mech_timed_bridge":
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(16, 88, 30, 14), ink3)
+				c.draw_rect(R.call(154, 88, 30, 14), ink3)
+				if pose == 1:
+					var x := 52.0
+					while x < 148.0:
+						c.draw_rect(R.call(x, 92, 12, 6), Color(paper, 0.4))
+						x += 24.0
+					dashed_line(c, P.call(30, 96), P.call(170, 96),
+						Color(paper, 0.16), 1.0 * k)
+				else:
+					c.draw_rect(R.call(46, 86, 108, 20), ink2)
+					c.draw_rect(R.call(46, 86, 108, 5), Color(paper, 0.6))
+					codex_char(c, P, "dash", 100, 74, 18)
+				for t in 4:
+					var on := (t % 2) == pose
+					c.draw_rect(R.call(84 + t * 8, 22, 6, 6),
+						Color(Palette.I.red, 0.8) if on else Color(paper, 0.18))
+			"mech_piano_tile":
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(30, 96, 64, 18), Color(paper, 0.3) if pose == 1 else ink2)
+				c.draw_rect(R.call(30, 96, 64, 18),
+					Color(paper, 0.8 if pose == 1 else 0.4), false, 2.0 * k)
+				c.draw_rect(R.call(106, 78, 64, 18), ink2)
+				c.draw_rect(R.call(106, 78, 64, 18), Color(paper, 0.4), false, 2.0 * k)
+				codex_char(c, P, "spring", 58, 84 if pose == 1 else 82, 18)
+				for t in 3:
+					var ny := 52.0 - t * 12.0
+					c.draw_rect(R.call(58 + t * 14, ny, 6, 6),
+						Color(paper, 0.7 - t * 0.18))
+				DrawKit.ngon_fill(c, P.call(138, 58), 8.0 * k, 12,
+					Color(paper, 0.85))
+			"mech_checkpoint":
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(40, 156, 120, 8), Color(paper, 0.35))
+				c.draw_rect(R.call(97, 56, 6, 100), Color(paper, 0.5))
+				if pose == 1:
+					DrawKit.ngon_fill(c, P.call(100, 48), 14.0 * k, 4,
+						Color(Palette.I.yellow, 0.95), PI / 4.0)
+					DrawKit.ngon_line(c, P.call(100, 48), 26.0 * k, 12,
+						Color(Palette.I.yellow, 0.5), 2.0 * k)
+					codex_char(c, P, "dash", 100, 138, 20)
+					DrawKit.arrow(c, P.call(126, 120), P.call(112, 102),
+						Color(Palette.I.yellow, 0.7), 2.0 * k, 8.0 * k)
+				else:
+					DrawKit.ngon_line(c, P.call(100, 48), 14.0 * k, 4,
+						Color(paper, 0.45), 2.0 * k, PI / 4.0)
+					codex_char(c, P, "dash", 56, 138, 20)
+					dashed_line(c, P.call(66, 130), P.call(92, 122),
+						Color(paper, 0.25), 1.5 * k)
+			"mech_push_box":
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(24, 138, 152, 4), Color(paper, 0.14))
+				var bx := 66.0 if pose == 1 else 50.0
+				c.draw_rect(R.call(bx, 52, 84, 84), ink3)
+				c.draw_rect(R.call(bx, 52, 84, 84), Color(paper, 0.55), false, 2.0 * k)
+				c.draw_line(P.call(bx + 12, 64), P.call(bx + 72, 124),
+					Color(paper, 0.18), 2.0 * k)
+				c.draw_line(P.call(bx + 72, 64), P.call(bx + 12, 124),
+					Color(paper, 0.18), 2.0 * k)
+				c.draw_rect(R.call(bx + 6, 58, 72, 5), Color(paper, 0.4))
+				if pose == 1:
+					dashed_rect(c, R.call(24, 52, 84, 84), Color(paper, 0.2), 1.2 * k)
+					codex_char(c, P, "fall", 130, 100, 20)
+					DrawKit.chevron(c, P.call(120, 94), Vector2(-1, 0), 16.0 * k,
+						Color(paper, 0.5), 2.5 * k)
+				else:
+					codex_char(c, P, "fall", 158, 100, 20)
+					DrawKit.chevron(c, P.call(146, 94), Vector2(-1, 0), 14.0 * k,
+						Color(paper, 0.4), 2.5 * k)
+			"mech_ski_patch":
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(30, 132, 140, 32), Color(Palette.I.blue, 0.2))
+				DrawKit.hatch45(c, R.call(30, 132, 140, 32), Color(Palette.I.blue, 0.35),
+					10.0 * k + 1.0, 1.5 * k)
+				c.draw_rect(R.call(30, 132, 140, 32), Color(Palette.I.blue, 0.55), false, 2.0 * k)
+				codex_char(c, P, "dash", 74, 118, 20)
+				DrawKit.chevron(c, P.call(104, 148), Vector2(1, 0), 14.0 * k,
+					Color(paper, 0.6), 2.5 * k)
+				DrawKit.chevron(c, P.call(128, 148), Vector2(1, 0), 14.0 * k,
+					Color(paper, 0.35), 2.5 * k)
+				dashed_line(c, P.call(36, 110), P.call(76, 110),
+					Color(paper, 0.28), 1.5 * k)
+			"mech_launch_pad":
+				codex_stage(c, R, paper)
+				c.draw_rect(R.call(56, 132, 88, 32), ink3)
+				c.draw_rect(R.call(56, 132, 88, 32), Color(paper, 0.5), false, 2.0 * k)
+				DrawKit.arrow(c, P.call(100, 128), P.call(100, 44),
+					Color(paper, 0.85), 3.0 * k, 12.0 * k)
+				codex_char(c, P, "spring", 100, 118 if pose == 1 else 62, 20)
+				if pose == 1:
+					for t in 3:
+						c.draw_rect(R.call(88 + t * 8, 100 - t * 14, 6, 6),
+							Color(paper, 0.5 - t * 0.12))
+				else:
+					dashed_line(c, P.call(120, 60), P.call(120, 36),
+						Color(paper, 0.25), 1.5 * k)
+					dashed_line(c, P.call(80, 60), P.call(80, 36),
+						Color(paper, 0.25), 1.5 * k)
 			"mech_portal":
-				for dx in [46.0, 154.0]:
-					c.draw_rect(Rect2(ox + (dx - 22.0) * k, oy + 50.0 * k, 44.0 * k, 100.0 * k),
-						Color(Palette.I.ink, 0.65))
-					c.draw_rect(Rect2(ox + (dx - 22.0) * k, oy + 50.0 * k, 44.0 * k, 100.0 * k),
-						Color(paper, 0.6), false, 2.0 * k)
-					c.draw_rect(Rect2(ox + (dx - 3.0) * k, oy + 60.0 * k, 6.0 * k, 80.0 * k),
-						Color(Palette.I.blue, 0.5))
-				DrawKit.dashed_rect(c, R.call(20, 40, 160, 120), Color(paper, 0.18), 1.5 * k)
-				DrawKit.chevron(c, P.call(100, 100), Vector2(1, 0), 22.0 * k,
+				codex_stage(c, R, paper)
+				for pair_def in [[46.0, 0], [154.0, 1]]:
+					var dx: float = pair_def[0]
+					c.draw_rect(Rect2(ox + (dx - 22.0) * k, oy + 44.0 * k,
+						44.0 * k, 112.0 * k), Color(Palette.I.ink, 0.65))
+					c.draw_rect(Rect2(ox + (dx - 22.0) * k, oy + 44.0 * k,
+						44.0 * k, 112.0 * k), Color(paper, 0.6), false, 2.0 * k)
+					c.draw_rect(Rect2(ox + (dx - 3.0) * k, oy + 54.0 * k,
+						6.0 * k, 92.0 * k), Color(Palette.I.blue, 0.5))
+				dashed_rect(c, R.call(20, 36, 160, 128), Color(paper, 0.18), 1.5 * k)
+				codex_char(c, P, "dash", 46, 130, 18)
+				DrawKit.chevron(c, P.call(100, 96), Vector2(1, 0), 22.0 * k,
 					Color(Palette.I.blue, 0.8), 3.0 * k)
+				dashed_line(c, P.call(140, 70), P.call(176, 52),
+					Color(paper, 0.3), 1.5 * k)
 			_:
 				c.draw_rect(R.call(40, 40, 120, 120), ink2)
+				codex_stage(c, R, paper)
 	else:
 		var slug := id.trim_prefix("geo_")
 		for d in Geometries.ALL:
 			if d.slug == slug:
 				DrawKit.char_shape(c, d.shape, R.call(40, 40, 120, 120), d.color)
-				if d.shape == GeometryDef.Shape.BALL:
-					DrawKit.chevron(c, P.call(40, 160), Vector2(1, 0), 18.0 * k,
-						Color(paper, 0.4), 2.5 * k)
-					DrawKit.chevron(c, P.call(62, 160), Vector2(1, 0), 18.0 * k,
-						Color(paper, 0.25), 2.5 * k)
 				return
 		c.draw_rect(R.call(40, 40, 120, 120), ink2)

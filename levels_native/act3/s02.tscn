@@ -8,6 +8,8 @@
 [ext_resource type="Script" path="res://scripts/entities/exit_door.gd" id="6_86x7j"]
 [ext_resource type="Script" path="res://scripts/world/hint_marker.gd" id="8_a1fgn"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="14_hint"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
+[ext_resource type="Texture2D" path="res://assets/maps/act3_s02.png" id="emp_map"]
 
 [node name="LevelRoot" type="Node2D" unique_id=1655205341]
 script = ExtResource("1_nl")
@@ -53,3 +55,8 @@ z_index = 4
 position = Vector2(2000, 480)
 script = ExtResource("8_a1fgn")
 text = "为自己,折一次"
+[node name="EditorMap" type="Sprite2D" parent="." unique_id=1639367277]
+visible = false
+centered = false
+texture = ExtResource("emp_map")
+script = ExtResource("emp_scr")

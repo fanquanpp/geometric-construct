@@ -5,7 +5,7 @@ extends Node
 var main: Main
 var players: Array = []
 var active_slot := 0
-var doors := {}
+var doors := {}  # geo_index -> Array[ExitDoor](v0.55.1 支持同几何体双门)
 var checkpoints := {}
 var death_hinted := false
 
@@ -17,7 +17,10 @@ func collect_players(level_root: Node2D) -> void:
 		if n is Player:
 			players.append(n as Player)
 		elif n is ExitDoor:
-			doors[(n as ExitDoor).geo_index] = n
+			var k: int = (n as ExitDoor).geo_index
+			if not doors.has(k):
+				doors[k] = []
+			doors[k].append(n)
 
 	players.sort_custom(func(a: Player, b: Player) -> bool:
 		if a.index != b.index:
@@ -203,12 +206,15 @@ func check_all_arrived() -> void:
 			return
 
 	for idx in doors:
-		var d: ExitDoor = doors[idx]
-		if is_instance_valid(d):
-			d.sealed = true
+		for d: ExitDoor in doors[idx]:
+			if is_instance_valid(d):
+				d.sealed = true
 	for i in players.size():
 		var p: Player = players[i]
-		var door: ExitDoor = doors.get(p.index)
+		var door: ExitDoor = p.arrived_door
+		if door == null and doors.has(p.index):
+			var arr: Array = doors[p.index]
+			door = arr[0] if not arr.is_empty() else null
 		if door == null:
 			continue
 		var delay := 0.08 + 0.18 * i

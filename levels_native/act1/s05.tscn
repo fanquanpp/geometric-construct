@@ -12,6 +12,8 @@
 [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/portal_pair.tscn" id="10_sc"]
 [ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="11_sc"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="12_hint"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
+[ext_resource type="Texture2D" path="res://assets/maps/act1_s05.png" id="emp_map"]
 
 [node name="LevelRoot" type="Node2D"]
 script = ExtResource("1_nl")
@@ -46,3 +48,8 @@ size = Vector2(400, 40)
 [node name="HintMarker0" parent="." instance=ExtResource("12_hint")]
 position = Vector2(800, 1050)
 text = "跃:弹性 ×4,落弹即起"
+[node name="EditorMap" type="Sprite2D" parent="." unique_id=1413317064]
+visible = false
+centered = false
+texture = ExtResource("emp_map")
+script = ExtResource("emp_scr")

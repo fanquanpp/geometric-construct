@@ -105,17 +105,6 @@ static func land_dust(p: Player, impact: float) -> void:
 		+ Vector2(0, p.def.size.y * 0.5 * p.gravity_dir)
 
 
-static func roll_loop_update(p: Player, vel: Vector2, on_floor: bool, dt: float) -> void:
-	if p._roll_loop == null:
-		return
-	var spd := absf(vel.x)
-	var k := clampf(spd / (MovementTuning.I.run_speed * 2.5), 0.0, 1.0)
-	var target_db := lerpf(-46.0, -13.0, k) if on_floor else -60.0
-	p._roll_loop.volume_db = lerpf(p._roll_loop.volume_db, target_db,
-		1.0 - exp(-9.0 * dt))
-	p._roll_loop.pitch_scale = 0.72 + 0.6 * k
-
-
 static func squash_recover(p: Player, dt: float) -> void:
 	p._squash_x = move_toward(p._squash_x, 1.0, dt * 3.2)
 	p._squash_y = move_toward(p._squash_y, 1.0, dt * 3.2)
@@ -127,14 +116,9 @@ static func draw(p: Player, size: Vector2) -> void:
 		var t: Dictionary = p._trail[i]
 		var a := 0.16 * float(i + 1) / float(trail_n)
 		var ts: Vector2 = t["size"] * p.shrink
-		if p.def.shape == GeometryDef.Shape.BALL:
-			p.draw_circle(t["pos"] - p.position, ts.x / 2.0, Color(p.def.color, a * 0.7))
-		else:
-			p.draw_rect(Rect2(t["pos"] - p.position - ts / 2.0, ts), Color(p.def.color, a * 0.7))
+		p.draw_rect(Rect2(t["pos"] - p.position - ts / 2.0, ts), Color(p.def.color, a * 0.7))
 
-	if p.def.shape == GeometryDef.Shape.BALL:
-		draw_ball(p, size)
-	elif p.def.shape == GeometryDef.Shape.TRIANGLE:
+	if p.def.shape == GeometryDef.Shape.TRIANGLE:
 		draw_tri(p, size)
 	else:
 		draw_box(p, size)
@@ -192,37 +176,6 @@ static func draw_tri(p: Player, size: Vector2) -> void:
 
 	var apex_y := h * 0.86 if flat_top else -h * 0.86
 	p.draw_rect(Rect2(Vector2(-3.5, apex_y - 3.5), Vector2(7, 7)), Color(Palette.I.paper, 0.9))
-
-
-static func draw_ball(p: Player, size: Vector2) -> void:
-	var squash := Transform2D(
-		Vector2(size.x * 0.5, 0.0), Vector2(0.0, size.y * 0.5), Vector2.ZERO)
-	p.draw_set_transform_matrix(squash * Transform2D(p._roll_angle, Vector2.ZERO))
-
-	p.draw_circle(Vector2.ZERO, 1.0, p.def.color)
-
-	var half := PackedVector2Array([Vector2(-1.0, 0.0)])
-	for i in 17:
-		var a := PI * float(i) / 16.0
-		half.append(Vector2(cos(a), sin(a)))
-	half.append(Vector2(1.0, 0.0))
-	p.draw_colored_polygon(half, p.def.color.darkened(0.26))
-
-	p.draw_circle(Vector2.ZERO, 0.2, Palette.I.paper)
-	p.draw_circle(Vector2.ZERO, 0.085, Color(Palette.I.ink, 0.85))
-
-	if p.is_active:
-		var ring_out := PackedVector2Array()
-		var ring_in := PackedVector2Array()
-		for i in 33:
-			var a := TAU * float(i) / 32.0
-			ring_out.append(Vector2(cos(a), sin(a)))
-			ring_in.append(Vector2(cos(a), sin(a)) * 0.94)
-		for i in 32:
-			p.draw_colored_polygon(PackedVector2Array([
-				ring_out[i], ring_out[i + 1], ring_in[i + 1], ring_in[i]]),
-				Color(1, 1, 1, 0.85))
-	p.draw_set_transform_matrix(Transform2D())
 
 
 static func draw_name_tag(p: Player, size: Vector2) -> void:

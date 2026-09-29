@@ -490,7 +490,8 @@ func rpc_event(kind: int, arg: int, arg2 := 0) -> void:
 		EV_ARRIVED, EV_DEPARTED, EV_EXITED:
 			if arg >= 0 and arg < m.players.size():
 				var p: Player = m.players[arg]
-				var door = m._doors.get(p.index)
+				var arr: Array = m._doors.get(p.index, [])
+				var door = arr[0] if not arr.is_empty() else null
 				if door != null and kind == EV_ARRIVED:
 					p.arrive_at(door)
 				elif kind == EV_DEPARTED:
@@ -502,9 +503,9 @@ func rpc_event(kind: int, arg: int, arg2 := 0) -> void:
 				m.players[arg].apply_speed_gate()
 		EV_SEAL:
 			for idx in m._doors:
-				var d = m._doors[idx]
-				if is_instance_valid(d):
-					d.sealed = true
+				for d in m._doors[idx]:
+					if is_instance_valid(d):
+						d.sealed = true
 		EV_COMPLETE:
 			m.net_show_complete()
 		EV_BACK:

@@ -18,7 +18,7 @@ func _ready() -> void:
 			doors.append(n)
 	for p in main.players:
 		for d in doors:
-			if d.char_index == p.index:
+			if d.geo_index == p.index:
 				p.position = d.position + Vector2(0, 4)
 				break
 

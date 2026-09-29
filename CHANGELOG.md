@@ -1,6 +1,157 @@
 # 更新日志 · CHANGELOG
 
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
+
+## v0.56.0 · 删剧情 + 转场隐身修复 + 关卡体检常态化(2026-09-29)
+
+用户 PC 编辑器实测报障第三批:通关文字错位 / 地块高度不水平 / 多处死关 /
+不触发过关切换动画;并拍板「删除剧情以及相关设定,不再有剧情,缩减关卡流程」。
+
+### 移除 · 剧情系统整体退役(用户拍板:不再有剧情)
+
+- 删 `story/*.ks` 七份剧本、`story_layer`(场景+脚本)、`boot_intro`(场景+脚本)、
+  图鉴「剧情」页签(gallery/story 页脚本+STORIES 数据)、konado 播放链路上游。
+- main/game_flow:开演剧触发、落幕 epilogue、show_story 全删——流程变为
+  「菜单 → 选幕 → 直进关卡 → 通关即切下一关 → 通关结算」,无任何叙事停顿。
+- SaveManager:seen_act1..5 旗标与 rogue 段读写删除(旧档冗余键自然忽略)。
+- sfx story_next 条目删;--storyshot 分镜删;archive 页签四页(几何/建筑/
+  机关/键位)。BGM 歌词条与五幕章节结构保留(非剧情)。
+
+### 修复 · 过关切换动画「消失」(转场层体隐身,重案)
+
+- 根因:v0.55.0 转场去 shader 重写时,`_run_wipe` 只把子控件 visible=true,
+  **漏掉 TransitionFX 层体自身的 visible=true**(_ready 里置 false 后无人打开)
+  → 扫掠/碎块全程隐身,观感=硬切。桌面 transitionshot 帧对照实证:
+  修复前 0.26s 处应盖 87% 却全空;修复后暗楔+红前沿线清晰可见。
+- 门禁加盲区断言:transition_check 新增「SWEEP 飞行期间层体必须 visible」
+  (此前只断言 phase 属性推进,渲染失效漏网)。
+
+### 修复 · 通关文字错位(真根因)
+
+- v0.55.1 的整行容器被 `reset_size()` 缩瘪贴左。删除 reset_size,缩放动画
+  以容器中心为轴(pivot_offset)。
+
+### 工具 · 关卡体检器模型收紧 + 新增检查
+
+- 跳跃建模从「+1.1 格放水」收紧为真实 ceil(跃 2 格/伍 1 格),平跳跨距按
+  冲刺分档 5/3;严格模型下全 24 关仍 ALL PASS(前批门位修复经得起校验)。
+- 新增「地块高差台阶」检查:单向板表面与两侧地面错 1 格即报。
+
+### 门禁
+
+- native 25 关 / flow / trait / stats / transition(含层体断言)/ replay /
+  recall 4 链 / dualtest 七链路 / LEVELAUDIT ALL PASS。
+
+## v0.55.1 · 死关修复批:伍双面门 + 门位扶正 + 触屏按钮重构(2026-09-29)
+
+用户真机报障第二批:通关文字偏右 / 切换动画存疑 / 触屏按钮命中区在上半 / 门在
+建筑物里 / 平台无差分 / 很多关卡死关、机制失效。
+
+### 修复 · 伍关结构性死关(9 关)
+
+- 根因:伍(界/边)的终点门每关只有一扇,界在天花、边在地面,单门 Area 无法
+  同时罩住两体 → 全部伍关(合演/界与边六场/蜕变终场/第四层真相/落幕)结构性
+  无法过关。
+- doors 登记从 geo_index→门 改为 geo_index→门数组,Player 记 arrived_door,
+  到站吸入/封印/联机中继全部按数组化适配;同几何体多门合法。
+- 9 关补齐双面门:天花门(界)+ 地面门(边),位置由可达性 BFS 选定。
+
+### 修复 · 终点门嵌墙/压顶(15 扇)
+
+- 新门禁工具 `tools/level_audit.gd`(headless):100px 格网可达性 BFS(行走/
+  跳跃/同层跳距/下落漂移/置换倒挂/界的反重力上浮)+ 门体埋格体检 + 机关
+  落地体检 + 伍双面门断言;`--fix` 按可达集自动扶正门位/补门,直接改 tscn。
+- 首跑即揪出并修复:L5 双门压在悬挑板下、L6-L10 门嵌天花、L11 四门全嵌、
+  L15/L20/L22 嵌墙门。LEVELAUDIT ALL PASS。
+- 探索教训:静态 BFS 首版误报满屏(缺同层跳距建模、界的移动域、Spawn3_b
+  出生点),逐版收敛后与实机通关事实对齐。
+
+### 修复 · 触屏暂停/召回按钮
+
+- TouchScreenButton 手工命中矩形与自适应/安全区坐标脱节(实测命中区只剩
+  图标上半)。按 R0 改引擎 Button 控件:命中即整键、Pressed 三态样式、
+  图标 44px + 键帽 84px,动作语义保持 Input.action_* 管线不变。
+
+### 修复 · 通关文字偏右
+
+- HUD Complete 容器原为锚点式(从屏幕中心点向右生长)。改整行宽容器 +
+  Label 居中 + 红线 SHRINK_CENTER。
+
+### 变更 · 单向平台视觉差分
+
+- TerrainArt 单向板:顶缘纸白线提亮加粗(0.75/4px)+ 下缘新增幽灵虚线
+  (draw_dashed_line)——「自下可穿」的判定语言视觉化。
+
+### 门禁
+
+- LEVELAUDIT ALL PASS(新)+ native 25 关 / flow / trait / stats / transition /
+  replay / recall 4 链 / dualtest 七链路 全 PASS。
+
+## v0.55.0 · 删圆 + 图鉴场景化 + 地图整体图 + 移动端白屏根治(2026-09-29)
+
+用户令四合一:①删除角色几何体「圆」并清退一切相关;②图鉴优化迭代(特别是示例);
+③移动端重复体验关卡白屏 bug 依旧,根治;④程序化素材可烘焙 PNG 作编辑器整图占位。
+
+### 移除 · 删除「圆」(roll)
+
+- 删 `data/characters/roll.tres`;`Geometries.PATHS` 移除,名册 5 → 4
+  (疾/跃/逆/伍;pair 下标 4 → 3,`Shape` 枚举删 BALL、TRIANGLE 3 → 2)。
+- 机制清退:player 圆形碰撞/60° 贴坡/坡面切线加速/滚动自转/滚动轰鸣音
+  (player.gd、movement_core、player_cosmetics、ghost_recorder、piano_tile
+  连续琶音、sfx "roll" 循环、movement_tuning ball_mu_roll/ball_accel_floor
+  及 movement_default.tres 对应字段);`can_be_pushed` 数据位保留为通用族字段。
+- 关卡重排(24 关):删 roll 专属关 act3/s04「圆 · 长坡」、act4/s04「圆 · 回头」;
+  7 个混编关删 Spawn3/roll 终点门;11 个伍关 Spawn4/ExitDoor4 → Spawn3/ExitDoor3
+  重编号;ACTS 幕-场表同步(第三/四幕 5 → 4 场,levels 12-15/16-19/20-23)。
+- 存档 v7 → v8:`_migrate` 下标映射(旧 15/20 退役,16-19 左移 1,21-25 左移 2,
+  0-14 不动);真机旧档(0-14 关)零损失。
+- 叙事清退:七份剧本(序幕/act1-5/落幕)删 13 句「圆」台词、第五刻度 → 第四刻度、
+  五门 → 四门、四条岔路 → 三条岔路;menu Floater 图标、图鉴 tips(圆穿门/圆球贴坡/
+  圆琶音)、1–5 直达 → 1–4 等文案全量换代;docs 九份(glossary/levels/structures/
+  gameplay/audio/ASSETS/ARCHITECTURE/DESIGN/characters/bible/story/scenes/
+  seven_dimensions/entities)删圆行并登记删除说明。
+- 测试:trait_check 删 roll 生成与推圆段;shot_harness switch_to_geo(4→3)、
+  dualtest 场 26 → 24;win_shot 顺带修复陈旧属性名 char_index → geo_index。
+
+### 修复 · 移动端过关白屏根治(TransitionFX 弃 shader)
+
+- 根因:SWEEP/BLOCKS_RED 为 canvas_item shader(progress uniform)驱动,
+  白底 ColorRect 在安卓 Vulkan 上 shader 首用编译卡顿/失败时以 #FFFFFF 裸奔
+  = 全屏白。现两式改引擎原生 `_draw` 几何(SweepDraw 对角楔形 + 红前沿线 /
+  BlocksDraw 24×14 hash 网格,与 CurtainDraw 同款模式),shader 文件删除,
+  veil 不再挂任何 ShaderMaterial——任何平台失败下限 = 硬切,永不再白屏。
+- 门禁:transition_check 增「shader 清退 + veil 无材质 + SWEEP 相位满覆」断言;
+  replay_transition_check 断言改 active_style()==SWEEP,三腿 ALL PASS。
+
+### 修复 · 图鉴头像翻页不刷新(存量)
+
+- archive_geo_page 直接赋 `glyph_key` 属性不触发 queue_redraw,四页头像
+  全是疾(像素级实测同一颜色)。改走 `set_key()`;新坑入册 AGENTS.md 第 5 条。
+
+### 新增 · 图鉴示例场景化重绘(28 条)
+
+- DrawKit.codex 全量重写:每条示例 = 地台(承重板 + 纸白顶缘 + 红刻度)+
+  幽灵格尺(1 格 = 100px)+ 构件正典形态 + 角色剪影演示(疾/跃/逆/伍 迷你
+  注记)+ 动势标注(箭头/虚线目标态/节拍点);构成主义纪律不变。
+- 列表小图标随新配方自动换代;新增 dashed_line/codex_stage/codex_grid/
+  codex_char 静态助手。
+
+### 新增 · 地图整体图(编辑器整图占位)
+
+- `tools/bake_level_maps.gd`:窗口运行,SubViewport 按关卡 level_size 渲染
+  (roster=[] 纯地图皮,3 帧后冻结动件再采样),烘焙 `assets/maps/<act>_<场>.png`
+  24 张(488K,纸白底色);关卡改摆后重跑刷新。
+- `EditorMapPlaceholder`(@tool Sprite2D)注入 24 个关卡场景:仅编辑器可见
+  的整图 WYSIWYG 底图;运行时隐藏,画面仍由 TerrainArt 实时 `_draw` 承担。
+- procedural-art.md §1/§5 登记「PNG 只减不增」的唯一例外条款。
+
+### 门禁
+
+- native_check 25 关 / flow_check / trait_check(含存量破损修复,见下)/
+  stats_check(v8 迁移)/ recalltest 4 链 / dualtest 七链路 /
+  replay_transition_check 三腿 / transition_check 八断言 全 PASS。
+- 存量修复:trait_check 自 v0.54.0 起因 Stub 缺 backdrop/camera_rig 属性
+  每帧报错中断物理流(rider_of/顶弹全断),补 Stub 占位后 ALL PASS。
 发版规范见 docs/UPDATE.md。
 
 ## v0.54.1(2026-09-29 · 过关切关转场白屏硬切修复)

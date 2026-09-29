@@ -22,8 +22,6 @@ const SETTINGS_SCENE := preload("res://scenes/ui/settings_panel.tscn")
 const PAUSE_SCENE := preload("res://scenes/ui/pause_menu.tscn")
 const NET_SESSION_SCENE := preload("res://scenes/net/net_session.tscn")
 const NET_ROOM_SCENE := preload("res://scenes/ui/net_room_layer.tscn")
-const BOOT_SCENE := preload("res://scenes/ui/boot_intro.tscn")
-const STORY_SCENE := preload("res://scenes/ui/story_layer.tscn")
 
 var _state: State = State.MENU
 
@@ -159,8 +157,6 @@ func _ready() -> void:
 	_menu.set_unlocked(_unlocked)
 	_menu.visible = true
 	_hud.visible = false
-
-	add_child(BOOT_SCENE.instantiate())
 
 	_parse_auto_shot()
 
@@ -516,17 +512,6 @@ func quit_to_menu() -> void:
 		NetSession.I.leave("")
 		_hud.set_net_badge("")
 	_return_to_menu()
-
-
-func show_story(kind: String) -> void:
-	var story: StoryLayer = STORY_SCENE.instantiate()
-	story.m = self
-	add_child(story)
-	story.play("res://story/%s.ks" % kind)
-
-
-func on_story_finished() -> void:
-	get_tree().paused = false
 
 
 func _return_to_menu() -> void:

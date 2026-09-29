@@ -177,7 +177,13 @@ func _draw_solid(e: Dictionary) -> void:
 		if oneway and not bottom_ceiling:
 			draw_line(center + (top[0] as Vector2) + Vector2(0, 1.0),
 				center + (top[1] as Vector2) + Vector2(0, 1.0),
-				Color(Palette.I.paper, edge_alpha), 3.0)
+				Color(Palette.I.paper, 0.75), 4.0)
+			# 单向板差分:下缘幽灵虚线 = 「自下可穿」的判定语言
+			var obot := _poly_bottom_segment(polys[pi])
+			draw_dashed_line(
+				center + (obot[0] as Vector2) - Vector2(0, 2.0),
+				center + (obot[1] as Vector2) - Vector2(0, 2.0),
+				Color(Palette.I.paper, 0.22), 2.0, 10.0)
 		if bottom_ceiling:
 			var bot := _poly_bottom_segment(polys[pi])
 			draw_line(center + (bot[0] as Vector2) - Vector2(0, 1.0),

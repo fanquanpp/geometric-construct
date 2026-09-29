@@ -29,7 +29,7 @@
 	 通过(顶弹 / 可推动 / 跳高的物理仿真);
    - 真机(Android debug apk)触屏走查关键链路。
 5. **已知坑速查**(详见各记忆与 docs):GDScript 方法内不支持嵌套
-   `func`(用 lambda);**GDScript 无列表推导式**(`[x for y in arr]` 是语法错误,用循环或 `Array.map/filter`);场景里的全屏遮罩节点(`%Fade` 之类)默认态即不透明时,转场系统接管后必须显式退役,否则永久盖住世界画布(层序:HUD > 世界 > 背景);spawns 按下标索引;FontVariation 无渲染属性;
+   `func`(用 lambda);**GDScript 无列表推导式**(`[x for y in arr]` 是语法错误,用循环或 `Array.map/filter`);场景里的全屏遮罩节点(`%Fade` 之类)默认态即不透明时,转场系统接管后必须显式退役,否则永久盖住世界画布(层序:HUD > 世界 > 背景);字形控件直接赋 `glyph_key` 属性不触发重绘——翻页换图必须走 `set_key()`(属性赋值不 queue_redraw,v0.55.0 图鉴头像四页同图事故);spawns 按下标索引;FontVariation 无渲染属性;
    Rect2 无 is_empty();ThorVG 弧线 `A` 命令方向反直觉(用折线);
    MIUI adb tap 偶发双注入;`--quit-after` 单位是帧;Resource 共享
    引用(默认同一份数据,运行时写入串改全部使用者,`duplicate()`

@@ -2,7 +2,7 @@ class_name GeometryDef
 extends Resource
 
 
-enum Shape { SQUARE, RECT, BALL, TRIANGLE }
+enum Shape { SQUARE, RECT, TRIANGLE }
 
 
 const MAX_JUMPS := 2
@@ -80,8 +80,7 @@ func inertia_reading() -> float:
 
 func friction_reading() -> float:
 	var t := MovementTuning.I
-	var mu := t.ball_mu_roll if shape == Shape.BALL else t.standard_mu
-	return snappedf(mu / t.standard_mu * 2.0, 0.1)
+	return snappedf(t.standard_mu / t.standard_mu * 2.0, 0.1)
 
 
 func stat_rows(modifier: Callable = Callable()) -> Array:
@@ -146,7 +145,7 @@ func stat_rows(modifier: Callable = Callable()) -> Array:
 			"动量保持程度(与重量同源耦合,解耦预留)"},
 		{"label": "摩擦系数", "bar": false, "absent": false,
 			"value": hook.call("friction", friction_reading()), "hint":
-			"地面减速 a = μ·g(标准读数 2.0;滚动材质更低)"},
+			"地面减速 a = μ·g(标准读数 2.0;滑雪带例外)"},
 		{"label": "形体", "text": "%.2f × %.2f 格(%d × %d px)"
 			% [bottom_units(), height_units(), int(size.x), int(size.y)]},
 	]

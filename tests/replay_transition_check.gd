@@ -4,7 +4,7 @@ extends Node2D
 # 病史:shot_harness.boot 曾在无参启动(正常游玩)也强制 reduced_motion,
 # 过关切关退化 1 帧硬切=白屏过渡。本门禁以减动效关闭为前提,连闯三腿:
 # A=首关通关自动切下关;B=下关再通关;C=回菜单重进再通关。
-# 断言:每次过关后 SWEEP 必须起飞(fx busy 且挂 sweep shader)并完整收束。
+# 断言:每次过关后 SWEEP 必须起飞(fx busy 且活动式=SWEEP)并完整收束。
 
 const PROBE_IDX := 2
 
@@ -53,9 +53,7 @@ func _play_and_pass(index: int) -> void:
 	var waited := 0.0
 	var fx: TransitionFX = main._hud._fx
 	while waited < 6.0:
-		if fx.is_busy() and fx._mat.shader != null \
-				and fx._mat.shader.resource_path.ends_with(
-					"sweep_diagonal.gdshader"):
+		if fx.is_busy() and fx.active_style() == TransitionFX.Style.SWEEP:
 			swept = true
 			break
 		await get_tree().process_frame

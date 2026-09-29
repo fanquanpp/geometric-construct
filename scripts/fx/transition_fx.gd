@@ -6,15 +6,22 @@ signal covered
 
 enum Style { FADE, SWEEP, BLOCKS_RED, CORNERS, CURTAIN }
 
-const SWEEP_SHADER := preload("res://assets/fx/sweep_diagonal.gdshader")
-const BLOCKS_SHADER := preload("res://assets/fx/block_dissolve.gdshader")
+# v0.55.0 白屏根治:SWEEP/BLOCKS_RED 原为 canvas_item shader 驱动
+# (progress uniform + 白底 ColorRect),安卓 Vulkan 上 shader 首用编译
+# 卡顿或编译失败时,裸 ColorRect 以 #FFFFFF 底色直接全屏白=「过关白屏
+# 过渡」。现全部改为引擎原生 _draw 几何(与 CurtainDraw 同款模式),
+# 不存在「shader 画不出来」这一档;任何平台的失败下限=硬切,不再白屏。
+const COVER_INK := Color("0e1115")
+const EDGE_RED := Color(0.878, 0.286, 0.184)
 
 var _veil: ColorRect
-var _mat: ShaderMaterial
+var _sweep: SweepDraw
+var _blocks: BlocksDraw
 var _corners: Array[ColorRect] = []
 var _curtain: CurtainDraw
 var _busy := false
 var _seq := 0
+var _active_style := -1
 
 
 func _ready() -> void:
@@ -24,9 +31,11 @@ func _ready() -> void:
 	_veil.color = Color(0, 0, 0, 0)
 	_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_veil.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_mat = ShaderMaterial.new()
-	_veil.material = _mat
 	add_child(_veil)
+	_sweep = SweepDraw.new()
+	add_child(_sweep)
+	_blocks = BlocksDraw.new()
+	add_child(_blocks)
 	for i in 4:
 		var q := ColorRect.new()
 		q.color = Color("101216")
@@ -51,26 +60,31 @@ func is_busy() -> bool:
 	return _busy
 
 
+func active_style() -> int:
+	return _active_style
+
+
 func transition(style: int, dur: float, on_covered: Callable) -> bool:
 	if _busy:
 		return false
 	_busy = true
 	_seq += 1
 	var my := _seq
+	_active_style = style
 	if SettingsManager.reduced_motion:
 
 		_set_covered_look(style)
 		visible = true
 		on_covered.call()
 		covered.emit()
-		visible = false
+		_reset_all()
 		_busy = false
 		return true
 	match style:
 		Style.SWEEP:
-			_run_shader(SWEEP_SHADER, dur, my, on_covered)
+			_run_wipe(_sweep, dur, my, on_covered)
 		Style.BLOCKS_RED:
-			_run_shader(BLOCKS_SHADER, dur, my, on_covered)
+			_run_wipe(_blocks, dur, my, on_covered)
 		Style.CORNERS:
 			_run_corners(dur, my, on_covered)
 		Style.CURTAIN:
@@ -86,6 +100,7 @@ func reveal(style: int, dur: float) -> void:
 	_busy = true
 	_seq += 1
 	var my := _seq
+	_active_style = style
 	if SettingsManager.reduced_motion:
 		visible = false
 		_busy = false
@@ -97,7 +112,6 @@ func reveal(style: int, dur: float) -> void:
 			_open_corners(dur, my)
 		_:
 			_veil.color = Color(0, 0, 0, 1)
-			_veil.material = null
 			visible = true
 			var tw := create_tween()
 			tw.tween_property(_veil, "color:a", 0.0, dur)
@@ -107,9 +121,19 @@ func reveal(style: int, dur: float) -> void:
 func _finish(my: int) -> void:
 	if my != _seq:
 		return
+	_reset_all()
+	_busy = false
+
+
+func _reset_all() -> void:
 	visible = false
 	_veil.color = Color(0, 0, 0, 0)
-	_busy = false
+	_sweep.phase = 0.0
+	_sweep.visible = false
+	_blocks.phase = 0.0
+	_blocks.visible = false
+	_curtain.visible = false
+	_active_style = -1
 
 
 func _set_covered_look(style: int) -> void:
@@ -121,29 +145,26 @@ func _set_covered_look(style: int) -> void:
 			_curtain.phase = 1.0
 			_curtain.visible = true
 		_:
-			_veil.color = Color(0, 0, 0, 1)
+			_veil.color = COVER_INK
 
 
-func _run_shader(shader: Shader, dur: float, my: int,
+func _run_wipe(wipe: Control, dur: float, my: int,
 		on_covered: Callable) -> void:
-	_mat.shader = shader
-	_mat.set_shader_parameter("progress", 0.0)
-	_veil.color = Color.WHITE
-	visible = true
+	visible = true  # v0.55.2 修复:重写时丢了这行,层体隐身=扫掠/碎块全盲
+	wipe.phase = 0.0
+	wipe.visible = true
 	var tw := create_tween()
-	tw.tween_method(func(v: float) -> void:
-		_mat.set_shader_parameter("progress", v), 0.0, 1.0, dur)
+	tw.tween_method(func(v: float) -> void: wipe.phase = v, 0.0, 1.0, dur)
 	tw.tween_callback(func() -> void:
 		if my == _seq:
 			on_covered.call()
 			covered.emit())
-	tw.tween_method(func(v: float) -> void:
-		_mat.set_shader_parameter("progress", v), 1.0, 2.0, dur * 1.1)
+	tw.tween_method(func(v: float) -> void: wipe.phase = v, 1.0, 2.0,
+		dur * 1.1)
 	tw.tween_callback(func() -> void: _finish(my))
 
 
 func _run_fade(dur: float, my: int, on_covered: Callable) -> void:
-	_veil.material = null
 	_veil.color = Color(0, 0, 0, 0)
 	visible = true
 	var tw := create_tween()
@@ -181,7 +202,6 @@ func _corners_cover_instant() -> void:
 
 
 func _run_corners(dur: float, my: int, on_covered: Callable) -> void:
-	_veil.material = null
 	_veil.color = Color(0, 0, 0, 0)
 	var tw := create_tween()
 	tw.tween_method(_corners_slide, 0.0, 1.0, dur)
@@ -197,7 +217,6 @@ func _run_corners(dur: float, my: int, on_covered: Callable) -> void:
 
 
 func _run_curtain(dur: float, my: int, on_covered: Callable) -> void:
-	_veil.material = null
 	_veil.color = Color(0, 0, 0, 0)
 	visible = true
 	_curtain.visible = true
@@ -223,11 +242,93 @@ func _open_corners(dur: float, my: int) -> void:
 		_finish(my))
 
 
+class WipeDraw extends Control:
+	var phase := 0.0:
+		set(v):
+			phase = v
+			queue_redraw()
+
+
+	func _init() -> void:
+		set_anchors_preset(Control.PRESET_FULL_RECT)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		visible = false
+
+
+	func _cover_t() -> float:
+		return clampf(phase if phase <= 1.0 else 2.0 - phase, 0.0, 1.0)
+
+
+	func _edge_on() -> bool:
+		return phase > 0.002 and phase < 1.998
+
+
+## 对角扫掠:复刻原 sweep_diagonal.gdshader 的屏幕对角坐标
+## d=(u+v)/2 覆盖几何,前沿带红色描线。
+class SweepDraw extends WipeDraw:
+
+
+	func _draw() -> void:
+		var t := _cover_t()
+		if t <= 0.0:
+			return
+		var w := size.x
+		var h := size.y
+		var pts := PackedVector2Array([Vector2(0, 0)])
+		if t < 0.5:
+			pts.append(Vector2(2.0 * t * w, 0.0))
+			pts.append(Vector2(0.0, 2.0 * t * h))
+		else:
+			pts.append(Vector2(w, 0.0))
+			pts.append(Vector2(w, (2.0 * t - 1.0) * h))
+			pts.append(Vector2((2.0 * t - 1.0) * w, h))
+			pts.append(Vector2(0.0, h))
+		draw_colored_polygon(pts, COVER_INK)
+		if _edge_on():
+			var a := Vector2(w, (2.0 * t - 1.0) * h)
+			var b := Vector2((2.0 * t - 1.0) * w, h)
+			if t < 0.5:
+				a = Vector2(2.0 * t * w, 0.0)
+				b = Vector2(0.0, 2.0 * t * h)
+			draw_line(a, b, Color(EDGE_RED, 0.9), 3.0)
+
+
+## 碎块溶解:复刻原 block_dissolve.gdshader 的 24×14 hash 网格,
+## 前沿 0.06 带内的碎块向红提亮。
+class BlocksDraw extends WipeDraw:
+
+	const COLS := 24
+	const ROWS := 14
+
+
+	static func cell_hash(cx: int, cy: int) -> float:
+		var d := float(cx) * 127.1 + float(cy) * 311.7
+		return fposmod(sin(d) * 43758.5453, 1.0)
+
+
+	func _draw() -> void:
+		var t := _cover_t()
+		if t <= 0.0:
+			return
+		var cw := size.x / float(COLS)
+		var ch := size.y / float(ROWS)
+		for cy in ROWS:
+			for cx in COLS:
+				var h := cell_hash(cx, cy)
+				if h > t:
+					continue
+				var col := COVER_INK
+				if _edge_on() and h >= t - 0.06:
+					col = COVER_INK.lerp(Color(EDGE_RED, 1.0), 0.85)
+				draw_rect(Rect2(cx * cw, cy * ch, cw + 0.6, ch + 0.6), col)
+
+
 class CurtainDraw extends Control:
 	var phase := 0.0:
 		set(v):
 			phase = v
 			queue_redraw()
+
 
 	func _draw() -> void:
 		var w := size.x

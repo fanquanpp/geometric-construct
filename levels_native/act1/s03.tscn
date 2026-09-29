@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/ski_patch.tscn" id="8_sc"]
 [ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="11_sc"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="12_hint"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
+[ext_resource type="Texture2D" path="res://assets/maps/act1_s03.png" id="emp_map"]
 
 [node name="LevelRoot" type="Node2D" unique_id=1487196177]
 script = ExtResource("1_nl")
@@ -47,3 +49,8 @@ position = Vector2(1504, 1216)
 [node name="HintMarker0" parent="." unique_id=158872475 instance=ExtResource("12_hint")]
 position = Vector2(900, 1050)
 text = "Shift 冲刺 · 穿门更快"
+[node name="EditorMap" type="Sprite2D" parent="." unique_id=1867745198]
+visible = false
+centered = false
+texture = ExtResource("emp_map")
+script = ExtResource("emp_scr")

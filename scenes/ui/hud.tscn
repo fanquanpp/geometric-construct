@@ -164,20 +164,22 @@ text = "跳过 »"
 [node name="Complete" type="VBoxContainer" parent="Root"]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0)
-anchor_left = 0.5
 anchor_top = 0.3
-anchor_right = 0.5
+anchor_right = 1.0
 anchor_bottom = 0.3
-grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="CompleteLabel" type="Label" parent="Root/Complete"]
 unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 horizontal_alignment = 1
 
 [node name="CompleteRule" type="ColorRect" parent="Root/Complete"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 5)
+layout_mode = 2
 size_flags_horizontal = 4
 
 [node name="Win" type="Control" parent="Root"]

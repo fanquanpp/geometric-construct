@@ -8,12 +8,14 @@
 [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="8_door"]
 [ext_resource type="Script" path="res://scripts/world/hint_marker.gd" id="8_vk1o0"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="17_hint"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
+[ext_resource type="Texture2D" path="res://assets/maps/act5_s01.png" id="emp_map"]
 
 [node name="LevelRoot" type="Node2D" unique_id=1137823327]
 script = ExtResource("1_nl")
 level_name = "刻度长廊"
 intro_text = "第五幕开演:长廊两壁满是红色刻度,密得数不清。它量过很多次终点。"
-roster = Array[int]([0, 1, 2, 3])
+roster = Array[int]([0, 1, 2])
 level_size = Vector2(4800, 1200)
 kill_y = 1400.0
 top_kill_y = -420.0
@@ -36,9 +38,6 @@ position = Vector2(350, 880)
 [node name="Spawn2" type="Marker2D" parent="." unique_id=1439642555]
 position = Vector2(500, 880)
 
-[node name="Spawn3" type="Marker2D" parent="." unique_id=939911479]
-position = Vector2(650, 880)
-
 [node name="CheckpointBeacon0" type="Area2D" parent="." unique_id=69872290 instance=ExtResource("4_bc")]
 z_index = 3
 position = Vector2(2400, 850)
@@ -56,21 +55,15 @@ script = ExtResource("6_fic6d")
 
 [node name="ExitDoor1" type="Area2D" parent="." unique_id=1148045253 instance=ExtResource("8_door")]
 z_index = 3
-position = Vector2(3100, 770)
+position = Vector2(3150, 550)
 script = ExtResource("6_fic6d")
 geo_index = 1
 
 [node name="ExitDoor2" type="Area2D" parent="." unique_id=1481936728 instance=ExtResource("8_door")]
 z_index = 3
-position = Vector2(2350, 830)
+position = Vector2(2350, 650)
 script = ExtResource("6_fic6d")
 geo_index = 2
-
-[node name="ExitDoor3" type="Area2D" parent="." unique_id=1154394002 instance=ExtResource("8_door")]
-z_index = 3
-position = Vector2(1700, 770)
-script = ExtResource("6_fic6d")
-geo_index = 3
 
 [node name="HintMarker0" type="Node2D" parent="." unique_id=1953514877 instance=ExtResource("17_hint")]
 z_index = 4
@@ -83,3 +76,8 @@ z_index = 4
 position = Vector2(3700, 700)
 script = ExtResource("8_vk1o0")
 text = "这次呢?"
+[node name="EditorMap" type="Sprite2D" parent="." unique_id=2106319406]
+visible = false
+centered = false
+texture = ExtResource("emp_map")
+script = ExtResource("emp_scr")

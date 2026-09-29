@@ -228,7 +228,9 @@ func _dismiss_intro() -> void:
 
 func show_complete(text := "归位。") -> void:
 	_complete_label.text = text
-	_complete.reset_size()
+	# 全宽容器 + 居中 Label;缩放动画以中心为轴(不再 reset_size——
+	# 一缩就贴左,v0.55.1 用户报「通关文字错位」根因)。
+	_complete.pivot_offset = _complete.size / 2.0
 	_complete.scale = Vector2.ONE * 1.12
 	if _complete_tween != null:
 		_complete_tween.kill()

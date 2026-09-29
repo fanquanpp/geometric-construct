@@ -76,9 +76,7 @@ func strike(player: Player, impact: float) -> void:
 	var entering: bool = not _in_contact.get(bk, false)
 	_in_contact[bk] = true
 	if not entering:
-		var rolling: bool = player.def.shape == GeometryDef.Shape.BALL 				and absf(player.velocity.x) > 60.0
-		if not rolling or _last_played.has(bk) 					and now - _last_played[bk] < 0.075:
-			return
+		return
 	_last_played[bk] = now
 	_pulse = 0.4
 	queue_redraw()

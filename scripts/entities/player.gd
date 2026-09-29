@@ -66,9 +66,6 @@ var _skidding := false
 var _ramp_timer := 0.0
 var _squash_x := 1.0
 var _squash_y := 1.0
-var _roll_angle := 0.0
-var _roll_speed := 0.0
-var _roll_loop: AudioStreamPlayer
 var _trail: Array = []
 var _piano_touch: Array = []
 var _occluder: LightOccluder2D
@@ -89,15 +86,8 @@ func _ready() -> void:
 	z_index = 5
 	_climb_budget = (1.0 if def.can_climb else 0.0) * MovementTuning.I.climb_units * Geometries.UNIT_PX
 
-	if def.shape == GeometryDef.Shape.BALL:
-		floor_max_angle = deg_to_rad(60.0)
-
 	var shape_node := CollisionShape2D.new()
-	if def.shape == GeometryDef.Shape.BALL:
-		var circle := CircleShape2D.new()
-		circle.radius = def.size.x / 2.0
-		shape_node.shape = circle
-	elif def.shape == GeometryDef.Shape.TRIANGLE:
+	if def.shape == GeometryDef.Shape.TRIANGLE:
 
 		var poly := ConvexPolygonShape2D.new()
 		var hw := def.size.x * 0.5
@@ -119,13 +109,6 @@ func _ready() -> void:
 	_body_box = StyleBoxFlat.new()
 	_body_box.bg_color = def.color
 
-	if def.shape == GeometryDef.Shape.BALL:
-		_roll_loop = AudioStreamPlayer.new()
-		_roll_loop.stream = Sfx.loop_stream("roll")
-		_roll_loop.volume_db = -60.0
-		add_child(_roll_loop)
-		_roll_loop.play()
-
 
 func _init_occluder() -> void:
 	_occluder = LightOccluder2D.new()
@@ -133,13 +116,7 @@ func _init_occluder() -> void:
 	poly.cull_mode = OccluderPolygon2D.CULL_CLOCKWISE
 	var hw := def.size.x * 0.5
 	var hh := def.size.y * 0.5
-	if def.shape == GeometryDef.Shape.BALL:
-		var pts := PackedVector2Array()
-		for i in 18:
-			var a := TAU * float(i) / 18.0
-			pts.append(Vector2(cos(a) * hw, sin(a) * hh))
-		poly.polygon = pts
-	elif def.shape == GeometryDef.Shape.TRIANGLE:
+	if def.shape == GeometryDef.Shape.TRIANGLE:
 
 		poly.polygon = PackedVector2Array([
 			Vector2(-hw, -hh), Vector2(hw, -hh), Vector2(0, hh)]) \
@@ -204,23 +181,6 @@ func _physics_process(delta: float) -> void:
 		PlayerCosmetics.skid_burst(self)
 	elif move_input.x == 0.0 or absf(vel.x) < 40.0 or not on_ground:
 		_skidding = false
-
-	if def.shape == GeometryDef.Shape.BALL and on_ground \
-			and get_floor_angle() > deg_to_rad(4.0):
-		var n := get_floor_normal()
-		var t := Vector2(-n.y, n.x)
-		var dir := signf(move_input.x) if move_input.x != 0.0 else signf(vel.x)
-		if dir != 0.0 and t.x * dir < 0.0:
-			t = -t
-		var along := vel.dot(t)
-		var target_along := target_mult * MovementTuning.I.run_speed / maxf(absf(t.x), 0.35)
-		if dir == 0.0:
-			along = move_toward(along, 0.0,
-				MovementCore.friction_mu(self, ramp_buffed) * MovementTuning.I.gravity * dt)
-		else:
-			along = move_toward(along, dir * target_along,
-				MovementTuning.I.base_accel * MovementCore.accel_factor(self, ramp_buffed) * dt)
-		vel = t * along
 
 	if jump_pressed:
 		if def.can_jump:
@@ -349,13 +309,6 @@ func _physics_process(delta: float) -> void:
 			Sfx.play("bounce", 0.0, _note_pitch())
 		_swap_air = false
 
-	if def.shape == GeometryDef.Shape.BALL:
-		if now_on_floor:
-			_roll_speed = vel.x / (def.size.x * 0.5)
-		else:
-			_roll_speed = move_toward(_roll_speed, 0.0, 0.9 * dt)
-		_roll_angle += _roll_speed * dt
-
 	_was_on_floor = now_on_floor
 
 	var new_rider: Player = null
@@ -386,7 +339,7 @@ func _physics_process(delta: float) -> void:
 
 	MechanismSurface.piano_step(self, vel)
 
-	if def.shape != GeometryDef.Shape.BALL and now_on_floor and absf(vel.x) > 20.0:
+	if now_on_floor and absf(vel.x) > 20.0:
 		for i in get_slide_collision_count():
 			var col := get_slide_collision(i)
 			var other := col.get_collider() as Player
@@ -396,7 +349,6 @@ func _physics_process(delta: float) -> void:
 					PUSH_TRANSFER * dt)
 
 	PlayerCosmetics.update_trail(self, vel)
-	PlayerCosmetics.roll_loop_update(self, vel, now_on_floor, dt)
 	PlayerCosmetics.squash_recover(self, dt)
 
 
@@ -522,10 +474,6 @@ func _net_follow(dt: float) -> void:
 	input_x = 0.0
 	if absf(velocity.x) > 12.0:
 		facing = signf(velocity.x)
-	if def.shape == GeometryDef.Shape.BALL:
-		var target := velocity.x / (def.size.x * 0.5) if is_on_floor() else _roll_speed
-		_roll_speed = move_toward(_roll_speed, target, 6.0 * dt)
-		_roll_angle += _roll_speed * dt
 	MechanismSurface.piano_cosmetic(self)
 	PlayerCosmetics.squash_recover(self, dt)
 	PlayerCosmetics.update_trail(self, velocity)
@@ -542,8 +490,6 @@ func die() -> void:
 	dying = true
 	Sfx.play("die", 0.0, _note_pitch())
 	SettingsManager.haptic(60)
-	if _roll_loop != null:
-		_roll_loop.volume_db = -60.0
 	PlayerCosmetics.death_burst(self)
 	if Main.I != null and Main.I.camera_rig != null:
 		Main.I.camera_rig.kick(7.0)
@@ -569,8 +515,6 @@ func _reset_for_respawn() -> void:
 	_climbing = false
 	_climb_budget = MovementTuning.I.climb_units * Geometries.UNIT_PX
 	_ramp_timer = 0.0
-	_roll_angle = 0.0
-	_roll_speed = 0.0
 	_squash_x = 1.0
 	_squash_y = 1.0
 	for t in _piano_touch:
@@ -602,10 +546,14 @@ func recall_to(pos: Vector2) -> void:
 	_squash(1.15, 0.88)
 
 
+var arrived_door: ExitDoor
+
+
 func arrive_at(door: ExitDoor) -> void:
 	if arrived or in_exit or dying:
 		return
 	arrived = true
+	arrived_door = door
 	Sfx.play("arrive")
 	SettingsManager.haptic(30)
 	var tw := create_tween()
@@ -618,6 +566,7 @@ func depart_exit() -> void:
 	if in_exit or dying:
 		return
 	arrived = false
+	arrived_door = null
 	Main.I.on_player_departed(self)
 
 
@@ -629,8 +578,6 @@ func enter_exit(door: ExitDoor) -> void:
 	arrived = false
 	velocity = Vector2.ZERO
 	Sfx.play("enter")
-	if _roll_loop != null:
-		_roll_loop.volume_db = -60.0
 
 	var burst := CPUParticles2D.new()
 	burst.one_shot = true

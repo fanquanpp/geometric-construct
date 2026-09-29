@@ -23,8 +23,6 @@ var _act_shot := false
 var _act_shot_idx := 0
 var _boot_shot := false
 var _intro_shot := false
-var _story_shot := false
-var _story_kind := "prologue"
 var _tour_shot := false
 var _tap_shot := false
 var _perf_log := false
@@ -79,10 +77,6 @@ func boot(args: Array) -> void:
 			_boot_shot = true
 		elif raw == "--introshot":
 			_intro_shot = true
-		elif raw.begins_with("--storyshot"):
-			_story_shot = true
-			if raw.contains("="):
-				_story_kind = raw.substr(12)
 		elif raw == "--tourshot":
 			_tour_shot = true
 		elif raw == "--tapshot":
@@ -102,7 +96,7 @@ func boot(args: Array) -> void:
 		run_menu_shot()
 
 	if _auto_shot and not args.has("--menushot") \
-			and not _intro_shot and not _story_shot:
+			and not _intro_shot:
 		run_auto_shot()
 	if _door_shot:
 		run_door_shot()
@@ -135,8 +129,6 @@ func boot(args: Array) -> void:
 		run_boot_shot()
 	if _intro_shot:
 		run_intro_shot()
-	if _story_shot:
-		run_story_shot()
 	if _tour_shot:
 		run_tour_shot()
 	if _perf_log:
@@ -198,23 +190,6 @@ func run_intro_shot() -> void:
 	m.start_level(_shot_level, true)
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("intro")
-	m.get_tree().quit()
-
-
-func run_story_shot() -> void:
-	if _shot_dir.is_empty():
-		_shot_dir = "res://.shots"
-	await m.get_tree().create_timer(0.6).timeout
-	m.start_level(0, false)
-	await m.get_tree().create_timer(0.3).timeout
-	if not m.players.is_empty():
-		m.players[0].position = Vector2(2000, 850)
-		m.players[0].velocity = Vector2.ZERO
-	await m.get_tree().create_timer(0.4).timeout
-	m.get_tree().paused = true
-	m.show_story(_story_kind)
-	await m.get_tree().create_timer(1.6).timeout
-	await _shot("story_" + _story_kind)
 	m.get_tree().quit()
 
 
@@ -303,12 +278,6 @@ func run_panel_shot() -> void:
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("panel_mech_portal")
 
-	m.archive_panel.open(0, "gallery")
-	await m.get_tree().create_timer(0.5).timeout
-	await _shot("panel_gallery")
-	m.archive_panel.open_story(ArchiveData.STORIES[0])
-	await m.get_tree().create_timer(0.5).timeout
-	await _shot("panel_story")
 	m.get_tree().quit()
 
 
@@ -379,7 +348,7 @@ func run_recall_test() -> void:
 
 	m.start_level(5, false)
 	await m.get_tree().create_timer(0.5).timeout
-	m.switch_to_geo(4)
+	m.switch_to_geo(3)
 	await m.get_tree().physics_frame
 	var jie: Player = m.players[m.view_slot()]
 	var ok_jie: bool = jie.pair_half == 0 and jie.gravity_dir == -1
@@ -392,7 +361,7 @@ func run_recall_test() -> void:
 		" g=", jie.gravity_dir)
 	if not ok_jie:
 		fails += 1
-	m.switch_to_geo(4)
+	m.switch_to_geo(3)
 	await m.get_tree().physics_frame
 	var bian: Player = m.players[m.view_slot()]
 	var ok_bian: bool = bian.pair_half == 1 and bian.gravity_dir == 1
@@ -423,7 +392,7 @@ func _recall_keypress() -> void:
 
 
 func run_dual_test() -> void:
-	m.start_level_dual(26)
+	m.start_level_dual(24)
 	await m.get_tree().create_timer(0.5).timeout
 	var ok_cd: bool = m.race.phase == RaceController.Phase.COUNTDOWN
 	print("DUALTEST countdown-phase ", "PASS" if ok_cd else "FAIL",
@@ -470,8 +439,8 @@ func run_dual_test() -> void:
 	if not ok_death:
 		fails += 1
 
-	var d0: ExitDoor = m._doors.get(p1.index)
-	var d1: ExitDoor = m._doors.get(p2.index)
+	var d0: ExitDoor = m._doors[p1.index][0]
+	var d1: ExitDoor = m._doors[p2.index][0]
 	p1.position = d0.position
 	p2.position = d1.position
 	await m.get_tree().create_timer(0.6).timeout
@@ -490,7 +459,7 @@ func run_dual_test() -> void:
 	var wslot: int = m.race.winner
 	m.race.rematch()
 	await m.get_tree().create_timer(0.5).timeout
-	var ok_rematch: bool = m.race.phase == RaceController.Phase.COUNTDOWN 		and m.game_flow.current == 26 		and int(m.race.wins.get(wslot, 0)) == 1
+	var ok_rematch: bool = m.race.phase == RaceController.Phase.COUNTDOWN 		and m.game_flow.current == 24 		and int(m.race.wins.get(wslot, 0)) == 1
 	print("DUALTEST rematch ", "PASS" if ok_rematch else "FAIL",
 		" phase=", m.race.phase, " wins=", m.race.wins)
 	if not ok_rematch:
@@ -503,7 +472,7 @@ func run_dual_test() -> void:
 func run_dual_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
-	m.start_level_dual(26)
+	m.start_level_dual(24)
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("dual_spawn")
 

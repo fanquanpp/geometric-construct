@@ -5,13 +5,15 @@
 [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="5_door"]
 [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/portal_pair.tscn" id="11_sc"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="13_hint"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
+[ext_resource type="Texture2D" path="res://assets/maps/act1_s06.png" id="emp_map"]
 
 [node name="LevelRoot" type="Node2D" unique_id=1522327110]
 script = ExtResource("1_nl")
 level_name = "合演 · 双生阶"
 intro_text = "伍:一双两半,界在天花走,边在地面行。
 合演 = 各自的路,同一场。"
-roster = Array[int]([0, 4])
+roster = Array[int]([0, 3])
 level_size = Vector2(3400, 2000)
 top_kill_y = -420
 
@@ -27,18 +29,18 @@ tile_set = ExtResource("3_ts")
 [node name="Spawn0" type="Marker2D" parent="." unique_id=41523738]
 position = Vector2(300, 1275)
 
-[node name="Spawn4_a" type="Marker2D" parent="." unique_id=413880644]
+[node name="Spawn3_a" type="Marker2D" parent="." unique_id=413880644]
 position = Vector2(400, 615)
 
-[node name="Spawn4_b" type="Marker2D" parent="." unique_id=909196237]
+[node name="Spawn3_b" type="Marker2D" parent="." unique_id=909196237]
 position = Vector2(400, 1275)
 
 [node name="ExitDoor0" parent="." unique_id=1518277101 instance=ExtResource("5_door")]
-position = Vector2(2950, 1254)
+position = Vector2(2950, 1050)
 
-[node name="ExitDoor4" parent="." unique_id=1674781234 instance=ExtResource("5_door")]
-position = Vector2(3150, 1254)
-geo_index = 4
+[node name="ExitDoor3" parent="." unique_id=1674781234 instance=ExtResource("5_door")]
+position = Vector2(3150, 1050)
+geo_index = 3
 
 [node name="PortalPair0" parent="." unique_id=506605670 instance=ExtResource("11_sc")]
 a = Vector2(2400, 1275)
@@ -47,3 +49,12 @@ b = Vector2(1400, 640)
 [node name="HintMarker0" parent="." unique_id=840463425 instance=ExtResource("13_hint")]
 position = Vector2(700, 1050)
 text = "伍:一双两半 · 切换换半体"
+[node name="EditorMap" type="Sprite2D" parent="." unique_id=1949176852]
+visible = false
+centered = false
+texture = ExtResource("emp_map")
+script = ExtResource("emp_scr")
+
+[node name="ExitDoor4" parent="." unique_id=641230850 instance=ExtResource("5_door")]
+position = Vector2(1850, 650)
+geo_index = 3

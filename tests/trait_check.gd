@@ -8,6 +8,10 @@ class Stub:
 	var players: Array = []
 	var debug_move := Vector2.ZERO
 	var debug_jump := false
+	# v0.54.0 起 player 落地脉冲会探 Main.I.backdrop/camera_rig,
+	# 属性缺失会在 Stub 上每帧报错中断物理流——必须置 null 占位。
+	var backdrop = null
+	var camera_rig = null
 
 	func slot_actions() -> bool:
 		return false
@@ -20,7 +24,6 @@ var _airborne := false
 var _floor: StaticBody2D
 var _spring: Player
 var _dash: Player
-var _roll: Player
 var _jump_y := 0.0
 var _min_y := 0.0
 
@@ -48,15 +51,11 @@ func _initialize() -> void:
 	_floor.position = Vector2(1000, 950)
 	root.add_child(_floor)
 	_spring = _spawn(1, Vector2(500, 910))
-	_roll = _spawn(3, Vector2(900, 924))
 	_dash = _spawn(0, Vector2(300, 924))
 	_dash.is_active = true
 
 	if not _spring.def.can_top_boost:
 		print("TRAIT CHECK FAIL: spring.can_top_boost 未置位")
-		_fails += 1
-	if not _roll.def.can_be_pushed:
-		print("TRAIT CHECK FAIL: roll.can_be_pushed 未置位")
 		_fails += 1
 
 
@@ -116,21 +115,8 @@ func _process(_delta: float) -> bool:
 		3:
 			_eval_jump_if_apex(400.0, 50.0, "TOP-BOOST-JUMP", func() -> void:
 
-				_dash.position = Vector2(700, 924)
-				_dash.velocity = Vector2.ZERO
-				Input.action_press("move_right")
-				_settle = 0
 				_phase = 4)
 		4:
-			_settle += 1
-			if _roll.velocity.x > 30.0:
-				print("TRAIT PUSH PASS: 圆获得滚动速度 vel.x=%.0f" % _roll.velocity.x)
-				_phase = 5
-			elif _settle >= 240:
-				print("TRAIT CHECK FAIL: 圆未被推动 vel.x=%.0f" % _roll.velocity.x)
-				_fails += 1
-				_phase = 5
-		5:
 			if _fails == 0:
 				print("TRAIT CHECK ALL PASS")
 				quit(0)

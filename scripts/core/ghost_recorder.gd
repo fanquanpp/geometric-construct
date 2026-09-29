@@ -180,9 +180,7 @@ class GhostDraw extends Node2D:
 			var def: GeometryDef = Geometries.ALL[idx]
 			var pos: Vector2 = s["pos"]
 			var col := Color(def.color, 0.30)
-			if def.shape == GeometryDef.Shape.BALL:
-				draw_circle(pos, def.size.x * 0.5, col)
-			elif def.shape == GeometryDef.Shape.TRIANGLE:
+			if def.shape == GeometryDef.Shape.TRIANGLE:
 				var w := def.size.x * 0.5
 				var h := def.size.y * 0.5
 				var half: int = s["pair_half"]

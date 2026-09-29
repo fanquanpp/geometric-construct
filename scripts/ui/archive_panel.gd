@@ -7,7 +7,7 @@ signal closed
 var current := 0
 var is_open := false
 var _tab := "geo"
-var _sel := {"geo": 0, "bld": 0, "mech": 0, "gallery": 0}
+var _sel := {"geo": 0, "bld": 0, "mech": 0}
 
 var _root: Control
 var _content: Control
@@ -43,8 +43,6 @@ func _ready() -> void:
 		"bld": ArchiveCodexPage.new(),
 		"mech": ArchiveCodexPage.new(),
 		"keys": ArchiveKeysPage.new(),
-		"gallery": ArchiveGalleryPage.new(),
-		"story": ArchiveStoryPage.new(),
 	}
 	builders["bld"].kind = "bld"
 	builders["mech"].kind = "mech"
@@ -58,7 +56,7 @@ func _build_header() -> void:
 	var header := Ui.poster_label("档案几何", 34, Palette.I.paper, true, Palette.I.red)
 	header.position = Vector2(64, 40)
 	_content.add_child(header)
-	var header_sub := Ui.l("ARCHIVE GEOMETRY · 几何 × 建筑 × 机关 × 键位 × 剧情", 13, Ui.LIGHT, Palette.I.dim)
+	var header_sub := Ui.l("ARCHIVE GEOMETRY · 几何 × 建筑 × 机关 × 键位", 13, Ui.LIGHT, Palette.I.dim)
 	header_sub.position = Vector2(66, 88)
 	_content.add_child(header_sub)
 
@@ -80,7 +78,7 @@ func _build_header() -> void:
 	tab_row.alignment = BoxContainer.ALIGNMENT_END
 	_content.add_child(tab_row)
 	for spec in [["geo", "几何体"], ["bld", "建 筑"], ["mech", "机 关"],
-			["keys", "键 位"], ["gallery", "剧 情"]]:
+			["keys", "键 位"]]:
 		var b := _tab_button(str(spec[1]))
 		b.pressed.connect(func() -> void: _switch_tab(str(spec[0])))
 		tab_row.add_child(b)
@@ -90,10 +88,6 @@ func _build_header() -> void:
 func _on_anim_tick() -> void:
 	for kind in ["bld", "mech"]:
 		builders[kind].on_tick()
-
-
-func open_story(story: Dictionary) -> void:
-	builders["story"].open_story(story)
 
 
 func _make_page(tab: String) -> Control:
@@ -129,7 +123,7 @@ func _nav_button(text: String, on_click: Callable, click_sfx := "ui_click") -> B
 
 func _build_footer() -> void:
 	var touch := Adaptive.is_touch_mode()
-	var hints_text := "A / D 切条目 · 十字键翻页 · 1–5 直达几何体 · 滚轮 · Q / E 或 LB / RB 切页 · Esc / B 返回" \
+	var hints_text := "A / D 切条目 · 十字键翻页 · 1–4 直达几何体 · 滚轮 · Q / E 或 LB / RB 切页 · Esc / B 返回" \
 		if not touch else "◀ ▶ 翻页查看档案条目"
 	_hints = Ui.l(hints_text, 13, Ui.BODY, Palette.I.dim)
 	_hints.anchor_top = 1.0
@@ -272,10 +266,7 @@ func close() -> void:
 
 
 func go_back() -> void:
-	if _tab == "story":
-		_switch_tab("gallery")
-	else:
-		close()
+	close()
 
 
 func _input(event: InputEvent) -> void:
@@ -287,10 +278,7 @@ func _input(event: InputEvent) -> void:
 			KEY_ESCAPE, KEY_C:
 				get_viewport().set_input_as_handled()
 
-				if _tab == "story":
-					_switch_tab("gallery")
-				else:
-					close()
+				close()
 			KEY_A, KEY_LEFT:
 				if _is_paged(_tab):
 					_switch(-1)
@@ -323,10 +311,7 @@ func _input(event: InputEvent) -> void:
 				_cycle_tab(1)
 			JOY_BUTTON_B:
 				get_viewport().set_input_as_handled()
-				if _tab == "story":
-					_switch_tab("gallery")
-				else:
-					close()
+				close()
 	elif event is InputEventMouseButton and event.pressed and _is_paged(_tab):
 		match (event as InputEventMouseButton).button_index:
 			MOUSE_BUTTON_WHEEL_UP:
@@ -336,7 +321,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _cycle_tab(dir: int) -> void:
-	var tabs := ["geo", "bld", "mech", "keys", "gallery"]
+	var tabs := ["geo", "bld", "mech", "keys"]
 	var i := tabs.find(_tab)
 	if i < 0:
 		i = 0

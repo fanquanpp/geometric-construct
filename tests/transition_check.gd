@@ -60,16 +60,39 @@ func _run() -> void:
 		_fail("减动效未退化为硬切")
 	await _drain(fx)
 
+	# v0.55.0 白屏根治:转场不再依赖自定义 shader(安卓 Vulkan 上 shader
+	# 首用编译卡顿/失败会让白底 ColorRect 裸奔成全屏白)。断言旧 shader
+	# 已清退、veil 为纯色引擎绘制(无材质),SWEEP 相位真实推进满覆。
 	for path in ["res://assets/fx/sweep_diagonal.gdshader",
 			"res://assets/fx/block_dissolve.gdshader"]:
-		var sh: Shader = load(path)
-		if sh == null or sh.get_rid().is_valid() == false:
-			_fail("shader 加载失败:%s" % path)
+		if ResourceLoader.exists(path):
+			_fail("转场 shader 未清退:%s" % path)
 		else:
-			var mat := ShaderMaterial.new()
-			mat.shader = sh
-			mat.set_shader_parameter("progress", 0.5)
-			print("SHADER %s PASS" % path.get_file())
+			print("TRANSITION shader-cleared %s PASS" % path.get_file())
+	if fx._veil.material != null:
+		_fail("veil 仍挂 ShaderMaterial(应为纯色引擎绘制)")
+	else:
+		print("TRANSITION veil-material-free PASS")
+
+	var peak := [0.0]
+	var layer_seen := [false]
+	fx.transition(TransitionFX.Style.SWEEP, 0.15, func() -> void: pass)
+	var guard2 := 0
+	while fx.is_busy() and guard2 < 600:
+		peak[0] = maxf(peak[0], fx._sweep.phase)
+		if fx.visible:
+			layer_seen[0] = true
+		await process_frame
+		guard2 += 1
+	# v0.55.2:层体 visible 必须在飞(此前重写丢 visible=true,扫掠全盲)
+	if not layer_seen[0]:
+		_fail("SWEEP 飞行期间层体不可见(白屏/硬切根因回归)")
+	else:
+		print("TRANSITION sweep-layer-visible PASS")
+	if peak[0] >= 1.0 and not fx.visible:
+		print("TRANSITION sweep-phase PASS (max=%.2f)" % peak[0])
+	else:
+		_fail("SWEEP 相位未满覆(%.2f)或收尾未隐藏" % peak[0])
 
 	print("TRANSITIONCHECK ", "ALL PASS" if _fails == 0 else "FAIL(%d)" % _fails)
 	quit(0 if _fails == 0 else 1)

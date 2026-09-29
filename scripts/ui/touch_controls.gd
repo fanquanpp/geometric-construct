@@ -2,7 +2,8 @@ class_name TouchControls
 extends CanvasLayer
 
 
-const ICON_SIZE_SMALL := 76.0
+const ICON_SIZE_SMALL := 84.0
+const ICON_VISUAL := 44.0
 const UI_STRIP_TOP := 200.0
 
 
@@ -86,7 +87,7 @@ func _input(event: InputEvent) -> void:
 func _is_on_button(pos: Vector2) -> bool:
 	for action in _buttons:
 		var b: Dictionary = _buttons[action]
-		if not (b.btn as TouchScreenButton).is_visible_in_tree():
+		if not (b.btn as Control).is_visible_in_tree():
 			continue
 		if (b.rect as Rect2).grow(HIT_MARGIN).has_point(pos):
 			return true
@@ -97,7 +98,7 @@ func _is_on_button(pos: Vector2) -> bool:
 func _pos_reserved(pos: Vector2) -> bool:
 	for action in _buttons:
 		var b: Dictionary = _buttons[action]
-		if not (b.btn as TouchScreenButton).is_visible_in_tree():
+		if not (b.btn as Control).is_visible_in_tree():
 			continue
 		if (b.rect as Rect2).grow(HIT_MARGIN).has_point(pos):
 			return true
@@ -182,32 +183,43 @@ func _relayout() -> void:
 		var b: Dictionary = _buttons[action]
 		var sz := Vector2(b.icon_px, b.icon_px)
 		var pos := Vector2(
-			vis.x - right - 26.0 - sz.x / 2.0 - k * spacing,
-			top + 92.0 + sz.y / 2.0) - sz / 2.0
-		b.btn.position = pos
+			vis.x - right - 26.0 - sz.x - k * spacing,
+			top + 76.0)
+		var btn: Button = b.btn
+		btn.position = pos
+		btn.size = sz
 		b.rect = Rect2(pos, sz)
 
 		var label: Label = b.label
-		label.position = Vector2(pos.x + sz.x / 2.0 - 40.0, pos.y + sz.y + 4.0)
+		label.position = Vector2(pos.x + sz.x / 2.0 - 40.0, pos.y + sz.y + 2.0)
 
 
 func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 		label_text: String) -> void:
-	var btn := TouchScreenButton.new()
-	btn.action = action
-	var shape := RectangleShape2D.new()
-	shape.size = Vector2(64, 64)
-	btn.shape = shape
-	btn.shape_centered = false
-	var s := ICON_SIZE_SMALL / 64.0
-	btn.scale = Vector2(s, s)
-	btn.modulate = Color(1, 1, 1, 0.66)
-	btn.passby_press = true
-
-	btn.pressed.connect(func() -> void: buzz(24))
+	# v0.55.1:TouchScreenButton 的命中形状与自适应/安全区坐标脱节,实测命中
+	# 区只剩图标上半。改用引擎 Button 控件(R0 引擎自带优先):命中即整键,
+	# 触屏经 emulate_mouse_from_touch 走引擎命中;动作语义保持 Input.action_*
+	# 管线不变(is_action_just_pressed 消费方无感)。
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(ICON_SIZE_SMALL, ICON_SIZE_SMALL)
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.self_modulate = Color(1, 1, 1, 0.85)
+	btn.add_theme_stylebox_override("normal", _keycap_style(0.72, 0.30))
+	btn.add_theme_stylebox_override("hover", _keycap_style(0.80, 0.45))
+	btn.add_theme_stylebox_override("pressed", _keycap_style(0.92, 0.85))
+	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	btn.button_down.connect(func() -> void:
+		buzz(24)
+		Input.action_press(action)
+		_flash_icon(action, true))
+	btn.button_up.connect(func() -> void:
+		Input.action_release(action)
+		_flash_icon(action, false))
 	_root.add_child(btn)
-	var glyph := UiGlyph.Node2DGlyph.new(icon_rel, 32.0)
-	glyph.position = Vector2(32, 32)
+	var glyph := UiGlyph.new(icon_rel)
+	glyph.size = Vector2(ICON_VISUAL, ICON_VISUAL)
+	glyph.position = Vector2(ICON_SIZE_SMALL - ICON_VISUAL,
+		ICON_SIZE_SMALL - ICON_VISUAL) * 0.5
 	btn.add_child(glyph)
 	var label := Ui.l(label_text, 12, Ui.LIGHT, Color(Palette.I.paper, 0.8),
 		HORIZONTAL_ALIGNMENT_CENTER)
@@ -216,6 +228,25 @@ func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 	_root.add_child(label)
 	_buttons[action] = {"btn": btn, "label": label, "icon_px": ICON_SIZE_SMALL,
 		"rect": Rect2(), "glyph": glyph, "icon": icon_rel, "icon_on": icon_on_rel}
+
+
+static func _keycap_style(bg_a: float, edge_a: float) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(Palette.I.ink_2, bg_a)
+	sb.border_color = Color(Palette.I.paper, edge_a)
+	sb.set_border_width_all(2)
+	sb.set_content_margin_all(0)
+	return sb
+
+
+func _flash_icon(action: String, on: bool) -> void:
+	var b: Dictionary = _buttons.get(action, {})
+	if b.is_empty():
+		return
+	var key: String = (b.icon_on if on else b.icon) as String
+	var g: UiGlyph = b.glyph
+	if g.glyph_key != key:
+		g.set_key(key)
 
 
 static func buzz(ms := 24) -> void:
@@ -277,16 +308,12 @@ func _process(_delta: float) -> void:
 
 	for action in _buttons:
 		var b: Dictionary = _buttons[action]
-		var btn: TouchScreenButton = b.btn
-		var target := 1.0 if btn.is_pressed() else 0.66
-		btn.modulate.a = move_toward(btn.modulate.a, target, 0.12)
+		var btn: Button = b.btn
+		var target := 1.0 if btn.is_hovered() or btn.is_pressed() else 0.85
+		btn.self_modulate.a = move_toward(btn.self_modulate.a, target, 0.12)
 		var ltarget := 1.0 if btn.is_pressed() else 0.72
 		var label: Label = b.label
 		label.modulate.a = move_toward(label.modulate.a, ltarget, 0.12)
-		var key: String = (b.icon_on if btn.is_pressed() else b.icon) as String
-		var g: UiGlyph.Node2DGlyph = b.glyph
-		if g.glyph_key != key:
-			g.set_key(key)
 
 
 class WheelPad extends Control:

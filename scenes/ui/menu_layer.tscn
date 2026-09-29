@@ -247,7 +247,7 @@ stretch_mode = 5
 [node name="Floater3" type="Control" parent="Root/Content"]
 script = ExtResource("ui_glyph_scr")
 unique_name_in_owner = true
-glyph_key = "characters/roll"
+glyph_key = "characters/pair"
 modulate = Color(1, 1, 1, 0.3)
 offset_left = 1024.0
 offset_top = 43.2

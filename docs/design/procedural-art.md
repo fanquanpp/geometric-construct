@@ -25,7 +25,8 @@
 | **DrawKit** | `scripts/art/draw_kit.gd` | 静态绘制词汇表:抖动填充 / 折线环 / 山脊 / 雪佛龙 / 键帽 / 取景角 / 面板框 / 图标字形 / 图鉴配方。**全部取色经 `Palette.I`,禁止字面色值** |
 | **TerrainArt** | `scripts/art/terrain_art.gd` | 地形渲染器:`@tool`,逐格读 TileMapLayer 图位 → TileData **物理多边形即形状**(整方/单向/坡/局部),材质族按图集列带分档;装饰图位走坐标配方表。TileMapLayer 运行时 `visible=false`(碰撞不受影响),编辑器保留图位视图供作关 |
 | **MechArt / 机关自绘** | `scripts/world/mechanisms/*.gd` | 机关壳零 Visual 节点,正典形态由各脚本 `_draw()` 画(状态切换 = 参数化重绘);`@tool` 编辑器预览保留(所见即所得不变) |
-| **CodexArt** | `scripts/art/codex_art.gd` | 图鉴 43 条程序化配方(15 建筑 + 13 机关 + 5 角色),帧/两态 = pose 参数;图鉴页以 Control._draw 承载,不再 load PNG |
+| **CodexArt** | `scripts/art/codex_art.gd` | 图鉴 43 条程序化配方(15 建筑 + 13 机关 + 5 角色,v0.55.0 删圆为 4 角色;示例全部场景化重绘:地台 + 幽灵格尺 + 构件 + 角色剪影 + 动势标注),帧/两态 = pose 参数;图鉴页以 Control._draw 承载,不再 load PNG |
+| **EditorMapPlaceholder** | `scripts/art/editor_map_placeholder.gd` | 编辑器整图占位(@tool Sprite2D):仅编辑器可见,铺 `assets/maps/<act>_<场>.png` 烘焙整图;运行时隐藏,画面仍由 TerrainArt 实时 `_draw` 承担 |
 
 UI 装饰:面板框 / 开场卡 / 海报框 / 取景角 / 虚拟摇杆 / 图标字形全部
 `_draw`(`scripts/art/` 与 `scripts/ui/`),`Ui.icon()` 由图集切图改为
@@ -101,6 +102,11 @@ PointLight2D 三档阶跃光(0 / 0.5 / 0.85)、封印镜头 Freeze、徽标
    超预算才考虑烘 ImageTexture(现无此需求)。
 5. **新增美术的路径**:写绘制配方进 DrawKit/CodexArt/TerrainArt 配方表,
    不再新增任何贴图资产;PNG 目录只减不增。
+   **唯一例外(v0.55.0 用户令「地图为整体图片」)**:`assets/maps/` 的
+   每关整图 PNG 由 `tools/bake_level_maps.gd` 从运行时 `_draw` 画面烘焙
+   (`roster=[]` 纯地图皮,窗口运行),只作编辑器作关的整图占位
+   (EditorMapPlaceholder 节点,见 §1 表);属烘焙孤本,禁止运行时引用,
+   关卡改摆后重跑烘焙器刷新。
 
 ## 3. 门禁
 

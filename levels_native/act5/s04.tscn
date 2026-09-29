@@ -8,12 +8,14 @@
 [ext_resource type="Script" path="res://scripts/world/hint_marker.gd" id="8_7yq1r"]
 [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="9_door"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="18_hint"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
+[ext_resource type="Texture2D" path="res://assets/maps/act5_s04.png" id="emp_map"]
 
 [node name="LevelRoot" type="Node2D" unique_id=973579748]
 script = ExtResource("1_nl")
-level_name = "落幕 · 五门归位"
-intro_text = "终点门前,五段红色刻度并排亮着。四个形状与第五个形状,各自走向自己的门——归位。"
-roster = Array[int]([0, 1, 2, 3, 4])
+level_name = "落幕 · 四门归位"
+intro_text = "终点门前,四段红色刻度并排亮着。四个形状各自走向自己的门——归位。"
+roster = Array[int]([0, 1, 2, 3])
 level_size = Vector2(4800, 1200)
 kill_y = 1400.0
 top_kill_y = -420.0
@@ -36,13 +38,10 @@ position = Vector2(350, 880)
 [node name="Spawn2" type="Marker2D" parent="." unique_id=1137755842]
 position = Vector2(500, 880)
 
-[node name="Spawn3" type="Marker2D" parent="." unique_id=428755682]
-position = Vector2(650, 880)
-
-[node name="Spawn4_a" type="Marker2D" parent="." unique_id=1488962414]
+[node name="Spawn3_a" type="Marker2D" parent="." unique_id=1488962414]
 position = Vector2(780, 115)
 
-[node name="Spawn4_b" type="Marker2D" parent="." unique_id=17723133]
+[node name="Spawn3_b" type="Marker2D" parent="." unique_id=17723133]
 position = Vector2(880, 785)
 
 [node name="CheckpointBeacon0" type="Area2D" parent="." unique_id=749250081 instance=ExtResource("4_bc")]
@@ -72,17 +71,11 @@ position = Vector2(4400, 430)
 script = ExtResource("6_t4ms4")
 geo_index = 2
 
-[node name="ExitDoor3" type="Area2D" parent="." unique_id=1035007307 instance=ExtResource("9_door")]
+[node name="ExitDoor3" type="Area2D" parent="." unique_id=830091514 instance=ExtResource("9_door")]
 z_index = 3
-position = Vector2(4550, 430)
+position = Vector2(4750, 850)
 script = ExtResource("6_t4ms4")
 geo_index = 3
-
-[node name="ExitDoor4" type="Area2D" parent="." unique_id=830091514 instance=ExtResource("9_door")]
-z_index = 3
-position = Vector2(4700, 430)
-script = ExtResource("6_t4ms4")
-geo_index = 4
 
 [node name="HintMarker0" type="Node2D" parent="." unique_id=991124961 instance=ExtResource("18_hint")]
 z_index = 4
@@ -94,4 +87,13 @@ text = "最后一段路,慢慢走"
 z_index = 4
 position = Vector2(3900, 400)
 script = ExtResource("8_7yq1r")
-text = "五门归位:到齐的那一刻"
+text = "四门归位:到齐的那一刻"
+[node name="EditorMap" type="Sprite2D" parent="." unique_id=2117643605]
+visible = false
+centered = false
+texture = ExtResource("emp_map")
+script = ExtResource("emp_scr")
+
+[node name="ExitDoor4" parent="." unique_id=321346849 instance=ExtResource("9_door")]
+position = Vector2(750, 250)
+geo_index = 3

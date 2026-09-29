@@ -1,7 +1,7 @@
 class_name SaveManager
 
 
-const SAVE_VERSION := 7
+const SAVE_VERSION := 8
 const SAVE_PATH := "user://speed-rouge.cfg"
 const LEGACY_PATH := "user://lonelyblocks.cfg"
 
@@ -9,11 +9,6 @@ static var I: SaveManager
 
 
 var unlocked := 0
-var seen_act1 := false
-var seen_act2 := false
-var seen_act3 := false
-var seen_act4 := false
-var seen_act5 := false
 
 var cleared := {}
 var best_ms := {}
@@ -38,7 +33,6 @@ func load_save() -> void:
 	if err == OK:
 		var ver := int(cfg.get_value("meta", "save_version", 1))
 		unlocked = int(cfg.get_value("progress", "unlocked", 0))
-		_load_flags(cfg)
 		_load_stats(cfg)
 		_migrate(ver, cfg)
 		return
@@ -60,11 +54,6 @@ func write_save() -> void:
 	cfg.set_value("meta", "save_version", SAVE_VERSION)
 	cfg.set_value("meta", "game_version", Version.number_string())
 	cfg.set_value("progress", "unlocked", unlocked)
-	cfg.set_value("rogue", "seen_act1", seen_act1)
-	cfg.set_value("rogue", "seen_act2", seen_act2)
-	cfg.set_value("rogue", "seen_act3", seen_act3)
-	cfg.set_value("rogue", "seen_act4", seen_act4)
-	cfg.set_value("rogue", "seen_act5", seen_act5)
 	for li: int in cleared:
 		cfg.set_value("stats", "lv%d_cleared" % li, true)
 	for li: int in best_ms:
@@ -137,44 +126,6 @@ func long_time_text(ms: int) -> String:
 	return "%d:%02d:%02d" % [s / 3600, (s / 60) % 60, s % 60]
 
 
-func note_story(kind: String) -> void:
-	match kind:
-		"act1":
-			seen_act1 = true
-		"act2":
-			seen_act2 = true
-		"act3":
-			seen_act3 = true
-		"act4":
-			seen_act4 = true
-		"act5":
-			seen_act5 = true
-	write_save()
-
-
-func story_seen(kind: String) -> bool:
-	match kind:
-		"act1":
-			return seen_act1
-		"act2":
-			return seen_act2
-		"act3":
-			return seen_act3
-		"act4":
-			return seen_act4
-		"act5":
-			return seen_act5
-	return false
-
-
-func _load_flags(cfg: ConfigFile) -> void:
-	seen_act1 = bool(cfg.get_value("rogue", "seen_act1", false))
-	seen_act2 = bool(cfg.get_value("rogue", "seen_act2", false))
-	seen_act3 = bool(cfg.get_value("rogue", "seen_act3", false))
-	seen_act4 = bool(cfg.get_value("rogue", "seen_act4", false))
-	seen_act5 = bool(cfg.get_value("rogue", "seen_act5", false))
-
-
 func _load_stats(cfg: ConfigFile) -> void:
 	if not cfg.has_section("stats"):
 		return
@@ -213,4 +164,39 @@ func _migrate(from_version: int, _cfg: ConfigFile) -> void:
 	if from_version < 6:
 		for li in unlocked:
 			cleared[li] = true
+	if from_version < 8:
+		# v0.55.0 删除「圆」:旧 15(圆·长坡)与 20(圆·回头)退役,
+		# 旧 16-19 左移 1、21-25 左移 2,0-14 保持不动。
+		var remap := func(li: int) -> int:
+			if li == 15 or li == 20:
+				return -1
+			if li < 15:
+				return li
+			return li - (1 if li < 20 else 2)
+		var moved := {}
+		for li in cleared:
+			var n: int = remap.call(int(li))
+			if n >= 0:
+				moved[n] = true
+		cleared = moved
+		var moved_best := {}
+		for li in best_ms:
+			var n2: int = remap.call(int(li))
+			if n2 >= 0:
+				moved_best[n2] = best_ms[li]
+		best_ms = moved_best
+		var moved_deaths := {}
+		for li in level_deaths:
+			var n3: int = remap.call(int(li))
+			if n3 >= 0:
+				moved_deaths[n3] = level_deaths[li]
+		level_deaths = moved_deaths
+		var moved_perf := {}
+		for li in perf:
+			var n4: int = remap.call(int(li))
+			if n4 >= 0:
+				moved_perf[n4] = true
+		perf = moved_perf
+		var n5: int = remap.call(unlocked)
+		unlocked = maxi(n5, 0)
 	unlocked = maxi(unlocked, 0)

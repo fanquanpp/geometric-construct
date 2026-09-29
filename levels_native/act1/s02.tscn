@@ -5,6 +5,8 @@
 [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="4_door"]
 [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/mover.tscn" id="6_sc"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="12_hint"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
+[ext_resource type="Texture2D" path="res://assets/maps/act1_s02.png" id="emp_map"]
 
 [node name="LevelRoot" type="Node2D" unique_id=980443402]
 script = ExtResource("1_nl")
@@ -39,3 +41,8 @@ period = 4
 [node name="HintMarker0" parent="." unique_id=1415117362 instance=ExtResource("12_hint")]
 position = Vector2(700, 1050)
 text = "空中再按 Space = 二段跳"
+[node name="EditorMap" type="Sprite2D" parent="." unique_id=1758779405]
+visible = false
+centered = false
+texture = ExtResource("emp_map")
+script = ExtResource("emp_scr")

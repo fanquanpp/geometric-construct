@@ -32,12 +32,9 @@ static func eff_weight(p: Player, ramp_buffed: bool) -> float:
 
 static func accel_factor(p: Player, ramp_buffed: bool) -> float:
 	var t := MovementTuning.I
-	var a := clampf(t.accel_base - t.accel_weight_k * eff_weight(p, ramp_buffed),
+	return clampf(t.accel_base - t.accel_weight_k * eff_weight(p, ramp_buffed),
 			t.accel_min, t.accel_base) \
 		* (t.accel_ski_mult if p.skiing else 1.0)
-	if p.def.shape == GeometryDef.Shape.BALL:
-		a = maxf(a, t.ball_accel_floor)
-	return a
 
 
 static func friction_factor(p: Player, ramp_buffed: bool) -> float:
@@ -48,8 +45,6 @@ static func friction_factor(p: Player, ramp_buffed: bool) -> float:
 
 static func friction_mu(p: Player, ramp_buffed: bool) -> float:
 	var t := MovementTuning.I
-	if p.def.shape == GeometryDef.Shape.BALL:
-		return t.ball_mu_roll * friction_factor(p, ramp_buffed)
 	return t.standard_mu * friction_factor(p, ramp_buffed) \
 		* (t.ski_friction_mult if p.skiing else 1.0)
 
