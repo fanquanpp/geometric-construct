@@ -61,6 +61,32 @@
 check-only 全部改动脚本绿;native_check 27 场 / flow / stats / trait /
 recall / dual / net 全 PASS;菜单/幕面板/设置/图鉴/首关截图目检通过。
 
+## v0.53.2(2026-09-29 · slab 语言回归 + 真机安装测试)
+
+> 用户考古指令:9 月 12 日前后(v0.1x–v0.2x)的程序化生成关卡与机关
+> 美术是历史最佳——本批把该版视觉语言整体移植回现架构。
+
+### 变更
+- **TerrainArt 升级 slab 语言**(自 v0.43 TerrainKit.slab 移植):整方
+  `262B34` / 单向 `2B3140` 双面色;顶暴露面 22px 亮肩 `3A4254` + 顶缘
+  纸白线;红刻度 14×3@0.55 沿顶缘世界 x 每 480px(跨格连续);立块
+  45° 接触裙角;逆天花板底缘蓝线;装饰暗板改 paper 0.06+0.14 线框。
+- **机关动效复活**(自 v0.29.2 MapSkinFX 移植):终点门圣环(双环 +
+  12 径向刻度 2.4s 缓幅)+ 封印光柱气流(门膛三线上浮)。
+- **齐平令**:钢琴砖 / 滑雪带 / 弹射板运行时探地面顶线自动齐平
+  (PianoTile 碰撞同步下沉,无隐形台沿;桥/悬空件不变)。
+- **触屏轮盘底座恢复六边形**(正典比例 ±120/±55/±36,替代矩形);
+  教学牌键位词触屏化(Adaptive.adapt_copy 统一出口,HintMarker 接入)。
+
+### 安装测试(Android 真机 Redmi 23013RK75C / arm64 / MIUI)
+本机 SDK 补装 cmdline-tools + emulator + android-35 镜像并建 AVD;
+debug APK(64MB)装机走查:菜单 / 开演剧跳过 / 首关轮盘跑动 / 点按
+跳跃 / BACK 暂停 / 第二幕 slab 场景全通过,screencap 2000×900 与
+input 坐标 3200×1440 的 1.6 倍映射与「瞬时 tap 会被 Godot 丢弃、
+必须 swipe≥150ms」两坑入册;暂停 TouchScreenButton 对 adb 注入
+未响应(BACK 路径可用)列待查。门禁:native 27 / flow / trait /
+recall / dual 全 PASS,tour 26 关零游戏脚本错。
+
 ## v0.53.1(2026-09-29 · 商业化补件:无障碍与死亡剧场)
 
 ### 新增

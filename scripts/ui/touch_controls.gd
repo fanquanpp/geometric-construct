@@ -446,13 +446,30 @@ class WheelPad extends Control:
 		if Palette.I == null:
 			return
 		var a := _idle_a
-		var r := Rect2(Vector2.ZERO, size)
 		var mid_y := size.y / 2.0
-		draw_rect(r, Color(Palette.I.ink_3, 0.55 * a))
-		draw_rect(r, Color(Palette.I.red if sprinting else Palette.I.paper,
-			(0.6 if sprinting else 0.30) * a), false, 2.0)
-		draw_rect(Rect2(Vector2(size.x / 2.0 - 2, mid_y - 9), Vector2(4, 18)),
-			Color(Palette.I.paper, 0.22 * a))
+		var cx := size.x / 2.0
+		var kx := (size.x - 12.0) / 240.0
+		var ky := (size.y - 12.0) / 72.0
+		var edge := Color(Palette.I.red if sprinting else Palette.I.paper,
+			(0.6 if sprinting else 0.30) * a)
+		var hex := PackedVector2Array([
+			Vector2(cx - 120.0 * kx, mid_y),
+			Vector2(cx - 55.0 * kx, mid_y - 36.0 * ky),
+			Vector2(cx + 55.0 * kx, mid_y - 36.0 * ky),
+			Vector2(cx + 120.0 * kx, mid_y),
+			Vector2(cx + 55.0 * kx, mid_y + 36.0 * ky),
+			Vector2(cx - 55.0 * kx, mid_y + 36.0 * ky)])
+		hex.append(hex[0])
+		draw_polyline(hex, edge, 2.0, true)
+		draw_line(Vector2(cx - 84.0 * kx, mid_y - 1.0),
+			Vector2(cx + 84.0 * kx, mid_y - 1.0),
+			Color(Palette.I.paper, 0.10 * a), 2.0)
+		draw_rect(Rect2(cx - 2.5, mid_y - 2.5, 5, 5),
+			Color(Palette.I.paper, 0.45 * a))
+		DrawKit.chevron(self, Vector2(cx + 103.0 * kx, mid_y), Vector2(1, 0),
+			17.0 * ky, Color(Palette.I.paper, 0.16 * a), 2.0)
+		DrawKit.chevron(self, Vector2(cx - 103.0 * kx, mid_y), Vector2(-1, 0),
+			17.0 * ky, Color(Palette.I.paper, 0.16 * a), 2.0)
 		if strength > 0.0:
 			DrawKit.chevron(self, Vector2(size.x - 20.0, mid_y), Vector2(1, 0),
 				18.0, Color(Palette.I.red if sprinting else Palette.I.paper,

@@ -6,13 +6,7 @@ var hud
 
 
 func adapt_copy(text: String) -> String:
-	if not Adaptive.is_touch_mode():
-		return text
-	return text.replace("空格跳跃", "点按屏幕跳跃") \
-		.replace("空中再按一次", "空中再点一次") \
-		.replace("贴墙攀爬", "长按屏幕贴墙攀爬") \
-		.replace("空格不再是跳跃", "点屏不再是跳跃") \
-		.replace("Tab 切换操控", "点按切换键,操控")
+	return Adaptive.adapt_copy(text)
 
 
 func rebuild(def: Dictionary) -> void:

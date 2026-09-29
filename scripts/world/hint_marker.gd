@@ -31,8 +31,8 @@ func _build_plate(touch: bool) -> PanelContainer:
 	mark.custom_minimum_size = Vector2(4, 16 if touch else 14)
 	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(mark)
-	_label = Ui.l(text, 17 if touch else 15, Ui.HEAD, Color(Palette.I.paper, 0.94),
-		HORIZONTAL_ALIGNMENT_CENTER, true, 0)
+	_label = Ui.l(Adaptive.adapt_copy(text), 17 if touch else 15, Ui.HEAD,
+		Color(Palette.I.paper, 0.94), HORIZONTAL_ALIGNMENT_CENTER, true, 0)
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(_label)
 	plate.add_child(row)

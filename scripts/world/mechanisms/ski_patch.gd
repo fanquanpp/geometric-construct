@@ -7,6 +7,15 @@ extends Area2D
 var _grace := {}
 
 var _sig := ""
+var _flush_off := 0.0
+
+
+func _calc_flush() -> void:
+	var gtop := TerrainKit.floor_top_at(get_parent(), global_position.x,
+		global_position.y - size.y / 2.0 + 2.0, 60.0)
+	if gtop != TerrainKit.SURFACE_MISS:
+		_flush_off = clampf(gtop - (global_position.y - size.y / 2.0),
+			0.0, size.y)
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -21,6 +30,7 @@ func _ready() -> void:
 	if cs.shape == null:
 		cs.shape = RectangleShape2D.new()
 	cs.shape.size = size
+	_calc_flush()
 	queue_redraw()
 	body_entered.connect(_on_enter)
 	body_exited.connect(_on_exit)
@@ -59,7 +69,7 @@ func _physics_process(delta: float) -> void:
 func _draw() -> void:
 	if Palette.I == null:
 		return
-	var r := Rect2(-size / 2.0, size)
+	var r := Rect2(Vector2(-size.x / 2.0, -size.y / 2.0 + _flush_off), size)
 	draw_rect(r, Color(Palette.I.blue, 0.16))
 	DrawKit.hatch45(self, r, Color(Palette.I.blue, 0.30), 9.0, 1.5)
 	draw_rect(r, Color(Palette.I.blue, 0.5), false, 2.0)

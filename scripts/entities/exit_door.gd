@@ -185,11 +185,48 @@ func _draw() -> void:
 	if _filled:
 		draw_rect(r.grow(-6.0), Color(Palette.I.paper, 0.30 + 0.25 * pulse))
 		draw_rect(r, Color(Palette.I.paper, 0.75), false, 2.0)
+		_column_flow()
 	elif sealed:
 		draw_rect(r, Color(Palette.I.paper, 0.5))
+	_halo()
 	draw_rect(Rect2(-size.x / 2.0 - 6, -size.y / 2.0 - 6, 6, 6),
 		Color(col, 0.9))
 	draw_rect(Rect2(size.x / 2.0, -size.y / 2.0 - 6, 6, 6), Color(col, 0.9))
+
+
+func _halo() -> void:
+	var a := 0.20 + 0.14 * sin(_t * TAU / 2.4 + 0.9)
+	var center := Vector2(0, 0)
+	var r_out := maxf(size.x, size.y) * 0.72
+	var r_in := r_out * 0.78
+	var pts_out := PackedVector2Array()
+	var pts_in := PackedVector2Array()
+	for k in 25:
+		var ang := TAU * float(k) / 24.0
+		pts_out.append(center + Vector2(cos(ang), sin(ang)) * r_out)
+		pts_in.append(center + Vector2(cos(ang), sin(ang)) * r_in)
+	draw_polyline(pts_out, Color(TerrainArt.FACE_SHOULDER, a), 2.0, true)
+	draw_polyline(pts_in, Color(Palette.I.paper, a * 0.7), 1.0, true)
+	for k in 12:
+		var ang := TAU * float(k) / 12.0
+		var dir := Vector2(cos(ang), sin(ang))
+		draw_line(center + dir * (r_out + 5.0), center + dir * (r_out + 13.0),
+			Color(TerrainArt.FACE_SHOULDER, a), 2.0, true)
+
+
+func _column_flow() -> void:
+	var flows := [
+		{"w": 0.5, "speed": 42.0, "phase": 0.0},
+		{"w": 0.3, "speed": 30.0, "phase": 0.4},
+		{"w": 0.7, "speed": 52.0, "phase": 0.75},
+	]
+	var span := size.y - 20.0
+	for fl: Dictionary in flows:
+		var y := -size.y / 2.0 + size.y - 10.0 \
+			- fposmod(_t * float(fl["speed"]) + float(fl["phase"]) * span, span)
+		var w: float = float(fl["w"]) * size.x
+		draw_line(Vector2(-w * 0.5, y), Vector2(w * 0.5, y),
+			Color(Palette.I.paper, 0.20), 1.5, true)
 
 var _sig := ""
 

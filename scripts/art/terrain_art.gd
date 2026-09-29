@@ -127,18 +127,12 @@ func _draw_decor(e: Dictionary) -> void:
 
 
 func _decor_panel(e: Dictionary, r: Rect2) -> void:
-	draw_rect(r, Color(Palette.I.ink_3, decor_fill_alpha))
-	var edge := Color(Palette.I.paper, 0.12)
-	if _side_open(e, Vector2i(0, -1)):
-		draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), edge)
-	if _side_open(e, Vector2i(0, 1)):
-		draw_rect(Rect2(Vector2(r.position.x, r.end.y - 2),
-			Vector2(r.size.x, 2)), edge)
-	if _side_open(e, Vector2i(-1, 0)):
-		draw_rect(Rect2(r.position, Vector2(2, r.size.y)), edge)
-	if _side_open(e, Vector2i(1, 0)):
-		draw_rect(Rect2(Vector2(r.end.x - 2, r.position.y),
-			Vector2(2, r.size.y)), edge)
+	draw_rect(r, Color(Palette.I.paper, 0.06))
+	var edge := Color(Palette.I.paper, 0.14)
+	var pts := PackedVector2Array([
+		r.position, Vector2(r.end.x, r.position.y),
+		r.end, Vector2(r.position.x, r.end.y), r.position])
+	draw_polyline(pts, edge, 1.5, true)
 
 
 func _tick_columns(center: Vector2, col: Color) -> void:
@@ -149,6 +143,13 @@ func _tick_columns(center: Vector2, col: Color) -> void:
 		for t in 5:
 			draw_rect(Rect2(Vector2(x - 9, center.y - 40 + t * 18),
 				Vector2(12, 2)), Color(col, 0.85))
+
+
+const FACE_FULL := Color("262b34")
+const FACE_TOP := Color("2b3140")
+const FACE_SHOULDER := Color("3a4254")
+const FACE_SHOULDER_DIM := Color("313845")
+const CEIL_BLUE := Color("4e86d8")
 
 
 func _draw_solid(e: Dictionary) -> void:
@@ -166,16 +167,22 @@ func _draw_solid(e: Dictionary) -> void:
 		for p: Vector2 in polys[pi]:
 			pts.append(center + p)
 		var oneway: bool = pi < oneways.size() and oneways[pi]
+		var bottom_ceiling := _is_bottom_poly(polys[pi])
 		draw_colored_polygon(pts,
-			Color(Palette.I.ink_2, 1.0) if not oneway else Color(Palette.I.ink_3, 1.0))
+			FACE_TOP if oneway and not bottom_ceiling else FACE_FULL)
 		var closed := pts.duplicate()
 		closed.append(pts[0])
 		draw_polyline(closed, Color(Palette.I.paper, feature_outline_alpha), 1.5, true)
-		if oneway:
-			var top := _poly_top_segment(polys[pi])
+		var top := _poly_top_segment(polys[pi])
+		if oneway and not bottom_ceiling:
 			draw_line(center + (top[0] as Vector2) + Vector2(0, 1.0),
 				center + (top[1] as Vector2) + Vector2(0, 1.0),
 				Color(Palette.I.paper, edge_alpha), 3.0)
+		if bottom_ceiling:
+			var bot := _poly_bottom_segment(polys[pi])
+			draw_line(center + (bot[0] as Vector2) - Vector2(0, 1.0),
+				center + (bot[1] as Vector2) - Vector2(0, 1.0),
+				Color(CEIL_BLUE, 0.65), 3.0)
 
 
 func _is_full_square(polys: Array) -> bool:
@@ -188,6 +195,27 @@ func _is_full_square(polys: Array) -> bool:
 		if absf(hi.x - lo.x - 100.0) < 2.0 and absf(hi.y - lo.y - 100.0) < 2.0:
 			return true
 	return false
+
+
+func _is_bottom_poly(pts: PackedVector2Array) -> bool:
+	var lo := pts[0]
+	var hi := pts[0]
+	for p in pts:
+		lo = lo.min(p)
+		hi = hi.max(p)
+	return lo.y > 20.0
+
+
+func _poly_bottom_segment(pts: PackedVector2Array) -> Array:
+	var worst_y := -INF
+	for p in pts:
+		worst_y = maxf(worst_y, p.y)
+	var xs: Array = []
+	for p in pts:
+		if absf(p.y - worst_y) < 1.0:
+			xs.append(p.x)
+	xs.sort()
+	return [Vector2(xs[0], worst_y), Vector2(xs[xs.size() - 1], worst_y)]
 
 
 func _poly_top_segment(pts: PackedVector2Array) -> Array:
@@ -212,17 +240,26 @@ func _draw_full_block(e: Dictionary, center: Vector2, atlas: Vector2i) -> void:
 			draw_rect(Rect2(r.position.x, r.end.y - 10, r.size.x, 10),
 				Color(Palette.I.ink, 0.30))
 			return
-		Vector2i(1, 0):
+		Vector2i(7, 1), Vector2i(8, 1), Vector2i(9, 1):
 			draw_rect(r, Color(Palette.I.ink_2, 1.0))
+			draw_rect(Rect2(Vector2(r.position.x, r.end.y - 3.0),
+				Vector2(r.size.x, 3)), Color(CEIL_BLUE, 0.65))
+			draw_rect(Rect2(r.position.x, r.end.y - 10.0,
+				r.size.x, 7.0), Color(FACE_SHOULDER_DIM, 1.0))
+			return
+		Vector2i(1, 0):
+			draw_rect(r, FACE_FULL)
 			draw_rect(Rect2(center + Vector2(-16, -50), Vector2(32, 6)),
 				Color(Palette.I.red, 0.85))
 		_:
-			draw_rect(r, Color(Palette.I.ink_2, 1.0))
+			draw_rect(r, FACE_FULL)
 	if _side_open(e, Vector2i(0, -1)):
-		draw_rect(Rect2(r.position, Vector2(r.size.x, 10)),
-			Color(Palette.I.paper, band_alpha))
+		var slab := minf(100.0 * 0.4, 22.0)
+		draw_rect(Rect2(r.position, Vector2(r.size.x, slab)),
+			Color(FACE_SHOULDER, 1.0))
 		draw_rect(Rect2(r.position, Vector2(r.size.x, 2)),
 			Color(Palette.I.paper, edge_alpha))
+		_red_rules(r)
 	if _side_open(e, Vector2i(0, 1)):
 		draw_rect(Rect2(Vector2(r.position.x, r.end.y - 4),
 			Vector2(r.size.x, 4)), Color(Palette.I.paper, 0.05))
@@ -232,3 +269,33 @@ func _draw_full_block(e: Dictionary, center: Vector2, atlas: Vector2i) -> void:
 	if _side_open(e, Vector2i(1, 0)):
 		draw_rect(Rect2(Vector2(r.end.x - 2, r.position.y),
 			Vector2(2, r.size.y)), Color(Palette.I.paper, 0.12))
+	_skirt(e, r)
+
+
+func _red_rules(r: Rect2) -> void:
+	var wx := r.position.x
+	var k := ceilf(wx / 480.0)
+	var mark_x := k * 480.0
+	while mark_x < wx + r.size.x:
+		var lx := mark_x - wx
+		if lx >= 0.0 and lx <= r.size.x - 14.0:
+			draw_rect(Rect2(Vector2(lx, r.position.y), Vector2(14, 3)),
+				Color(Palette.I.red, 0.55))
+		k += 1.0
+		mark_x = k * 480.0
+
+
+func _skirt(e: Dictionary, r: Rect2) -> void:
+	var down := not _side_open(e, Vector2i(0, 1))
+	if not down:
+		return
+	var f := 16.0
+	var by := r.end.y
+	if _side_open(e, Vector2i(-1, 0)):
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(r.position.x, by - f), Vector2(r.position.x, by),
+			Vector2(r.position.x - f, by)]), Color(FACE_FULL, 1.0))
+	if _side_open(e, Vector2i(1, 0)):
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(r.end.x, by - f), Vector2(r.end.x, by),
+			Vector2(r.end.x + f, by)]), Color(FACE_FULL, 1.0))

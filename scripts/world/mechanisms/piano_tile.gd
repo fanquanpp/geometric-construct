@@ -10,6 +10,21 @@ var hl_color := Color(0, 0, 0, 0)
 var _pulse := 0.0
 var _last_played := {}
 var _in_contact := {}
+var _flush_off := 0.0
+
+
+func _calc_flush(half_h: float) -> void:
+	var gtop := TerrainKit.floor_top_at(get_parent(), global_position.x,
+		global_position.y - half_h + 2.0, 60.0)
+	if gtop != TerrainKit.SURFACE_MISS:
+		_flush_off = clampf(gtop - (global_position.y - half_h), 0.0, half_h * 2.0)
+		return
+	var cbot := TerrainKit.ceil_bottom_at(get_parent(), global_position.x,
+		global_position.y + half_h, 60.0)
+	if cbot != -TerrainKit.SURFACE_MISS:
+		_flush_off = clampf(cbot - (global_position.y + half_h), -half_h * 2.0, 0.0)
+
+
 
 
 var _sig := ""
@@ -28,7 +43,10 @@ func _ready() -> void:
 	if cs.shape == null:
 		cs.shape = RectangleShape2D.new()
 	cs.shape.size = size
-	add_child(TerrainKit.rect_occluder(Rect2(-size / 2.0, size)))
+	_calc_flush(size.y / 2.0)
+	cs.position = Vector2(0, _flush_off)
+	add_child(TerrainKit.rect_occluder(
+		Rect2(Vector2(-size.x / 2.0, -size.y / 2.0 + _flush_off), size)))
 	queue_redraw()
 	if note.is_empty() and Main.I != null:
 		note = Sfx.note_for_height(global_position.y, 2000.0)
@@ -90,7 +108,7 @@ func _note_burst(_player: Player) -> void:
 	burst.scale_amount_min = 2.0
 	burst.scale_amount_max = 3.5
 	burst.color = Color(Palette.I.paper, 0.85)
-	burst.position = Vector2(0, -size.y * 0.5 - 2.0)
+	burst.position = Vector2(0, -size.y * 0.5 + _flush_off - 2.0)
 	burst.finished.connect(burst.queue_free)
 	add_child(burst)
 
@@ -101,7 +119,8 @@ func _has_other_rider(player: Player) -> bool:
 		return false
 	for p in m.players:
 		if p != player and is_instance_valid(p) and not p.dying \
-				and Rect2(-size / 2.0, size).grow(6.0).has_point(p.position + Vector2(0,
+				and Rect2(Vector2(-size.x / 2.0, -size.y / 2.0 + _flush_off), size) \
+			.grow(6.0).has_point(p.position + Vector2(0,
 					p.def.size.y * 0.5 * p.gravity_dir)):
 			return true
 	return false
@@ -109,7 +128,7 @@ func _has_other_rider(player: Player) -> bool:
 func _draw() -> void:
 	if Palette.I == null:
 		return
-	var r := Rect2(-size / 2.0, size)
+	var r := Rect2(Vector2(-size.x / 2.0, -size.y / 2.0 + _flush_off), size)
 	var on := _pulse > 0.0
 	draw_rect(r, Color(Palette.I.paper, 0.30) if on else Color(Palette.I.ink_2, 1.0))
 	draw_rect(r, Color(Palette.I.paper, 0.8 if on else 0.4), false, 2.0)
