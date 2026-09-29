@@ -64,7 +64,8 @@ static func _layer_ceil_bottom(layer: TileMapLayer, x: float, y: float,
 static func draw_focus(c: CanvasItem, r: Rect2, col: Color) -> void:
 	if col.a <= 0.0:
 		return
-	var pl := 0.55 + 0.35 * sin(Time.get_ticks_msec() / 1000.0 * 6.0)
+	var pl := 0.7 if SettingsManager.reduced_motion \
+		else 0.55 + 0.35 * sin(Time.get_ticks_msec() / 1000.0 * 6.0)
 	c.draw_rect(r.grow(3.0), Color(col.r, col.g, col.b, col.a * pl), false, 2.0)
 
 

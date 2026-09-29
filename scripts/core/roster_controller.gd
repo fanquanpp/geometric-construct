@@ -76,6 +76,9 @@ func switch_to(slot: int, quiet := false) -> void:
 				main._hud.narration(p.quote_text(), p.def.color)
 				if main.camera_rig != null:
 					main.camera_rig.on_switch()
+			var fs := get_tree().get_first_node_in_group("focus_system")
+			if fs != null:
+				(fs as FocusSystem).on_switch()
 			return
 
 

@@ -13,28 +13,28 @@
 ### 新增
 - **程序化美术体系(视觉侧唯一契约 `docs/design/procedural-art.md`)**:
   - `DrawKit`(`scripts/art/draw_kit.gd`):抖动/折线环/雪佛龙/取景角/
-    面板框/键帽/图标字形/图鉴配方等静态绘制词汇表,取色只经
-    `data/palette.tres`。
+	面板框/键帽/图标字形/图鉴配方等静态绘制词汇表,取色只经
+	`data/palette.tres`。
   - `TerrainArt`(`scripts/art/terrain_art.gd` + 场景壳):地形渲染器逐格
-    读 TileData **物理多边形即形状**(整方/单向/坡/局部自动成形),
-    材质族按图集列带分档,装饰图位走坐标配方表(9 种实配 + 兜底);
-    TileMapLayer 运行时隐视觉、碰撞不变(native_check 27 场验证),
-    编辑器保留图位视图供作关。
+	读 TileData **物理多边形即形状**(整方/单向/坡/局部自动成形),
+	材质族按图集列带分档,装饰图位走坐标配方表(9 种实配 + 兜底);
+	TileMapLayer 运行时隐视觉、碰撞不变(native_check 27 场验证),
+	编辑器保留图位视图供作关。
   - **机关正典形态全 `_draw` 化**:exit_door 三态 / speed_gate / 弹射板 /
-    mover / push_box / piano_tile 双态 / timed_bridge 双态 / ski_patch /
-    portal(参数化相位动画替代 AnimatedSprite2D)/ lever_gate 门板与
-    踏板 / ramp 坡体填充;12 个场景壳全部摘除 Visual 精灵与 PNG 引用,
-    `@tool` 所见即所得保留;`TerrainKit.mech_layout` 清退。
+	mover / push_box / piano_tile 双态 / timed_bridge 双态 / ski_patch /
+	portal(参数化相位动画替代 AnimatedSprite2D)/ lever_gate 门板与
+	踏板 / ramp 坡体填充;12 个场景壳全部摘除 Visual 精灵与 PNG 引用,
+	`@tool` 所见即所得保留;`TerrainKit.mech_layout` 清退。
   - **图鉴 CodexArt**:15 建筑 + 13 机关 + 5 角色全程序化配方
-    (`scripts/art/codex_art.gd`),列表图标/详情图/帧动画 = pose 参数,
-    `archive_data.img_path` PNG 出口清退。
+	(`scripts/art/codex_art.gd`),列表图标/详情图/帧动画 = pose 参数,
+	`archive_data.img_path` PNG 出口清退。
   - **UI 装饰九件全 `_draw` 化**:海报框/幕面板卡框/开场卡框/图鉴面板框/
-    设置面板框/取景角标(2 页)/键帽图标(hud_hints)/check 与 play /
-    recall/pause 字形(`UiGlyph`,替代 icons.png 图集)/触屏虚拟摇杆
-    (WheelPad 自绘,替代 stick_* 六图);TouchScreenButton 改 shape 命中
-    + 字形子节点。`Ui.icon` 图集出口删除。
+	设置面板框/取景角标(2 页)/键帽图标(hud_hints)/check 与 play /
+	recall/pause 字形(`UiGlyph`,替代 icons.png 图集)/触屏虚拟摇杆
+	(WheelPad 自绘,替代 stick_* 六图);TouchScreenButton 改 shape 命中
+	+ 字形子节点。`Ui.icon` 图集出口删除。
   - 原 PNG 素材(图块集/43 图鉴/12 UI)**保留孤本不入渲染**,生成器
-    gen_*.lua 停用;ASSETS.md 登记状态。
+	gen_*.lua 停用;ASSETS.md 登记状态。
 - **双人竞速(「双人试炼」改判,net.md §3 换代)**:`RaceController`
   (场景化)——开局 3-2-1 倒计时冻结输入(InputSource 鸭子类型防御,
   trait_check Stub 兼容)、先过本己门者胜(过线即判定)、BO 局分常驻、
@@ -60,6 +60,28 @@
 ### 门禁
 check-only 全部改动脚本绿;native_check 27 场 / flow / stats / trait /
 recall / dual / net 全 PASS;菜单/幕面板/设置/图鉴/首关截图目检通过。
+
+## v0.53.3(2026-09-29 · 受控聚焦系统:透明度设计融合二次设计)
+
+> 用户令:融合 9.12 版(v0.29)与现版的透明度设计,汲取优秀点二次
+> 设计,动画特效补足、触发逻辑与边界全门控。
+
+### 新增
+- **FocusSystem**(`scripts/art/focus_system.gd`):受控聚焦三档——
+  受控体 1.0 / 非受控体 0.62 / 专属门受控色呼吸描边;切换波次
+  (0.00019s/px max 0.3 + TRANS_K 18 指数趋近,近处先动);根因修复
+  = 旧 FocusDriver 随八层退役后机关 hl_color 呼吸沦为死代码,本批
+  以终点门专属高亮复活该通道。
+- 门控矩阵:reduced_motion(瞬切/呼吸静态化/圣环光柱静止帧/门
+  逐帧重绘停)、死亡与到站让位(tween 独占 modulate,聚焦走
+  self_modulate 通道零冲突)、双活全员满亮、联机按本端取景、
+  暂停自然冻结、地形永不压暗(导航信息);调研依据 = WCAG 非文字
+  3:1 对比底线 + 亮度外冗余线索(专属描边)。
+
+### 门禁
+native 27 / flow / dualtest(切体路径)/ recall / trait 全 PASS;
+第三幕独行与分岔路口(4 体 4 门)截图目检:受控满亮 / 非受控压暗 /
+专属门红框呼吸 / 圣环在位。
 
 ## v0.53.2(2026-09-29 · slab 语言回归 + 真机安装测试)
 

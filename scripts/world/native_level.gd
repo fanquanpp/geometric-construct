@@ -13,6 +13,7 @@ extends LevelRoot
 const CAMERA_RIG_SCENE := preload("res://scenes/world/camera_rig.tscn")
 const MAG_BOUNDARY_SCENE := preload("res://scenes/world/mechanisms/mag_boundary.tscn")
 const TERRAIN_ART_SCENE := preload("res://scenes/art/terrain_art.tscn")
+const FOCUS_SCENE := preload("res://scenes/art/focus_system.tscn")
 
 
 func _ready() -> void:
@@ -44,6 +45,9 @@ func _ready() -> void:
 	cam.limit_bottom = int(level_size.y)
 	add_child(cam)
 	add_child(TERRAIN_ART_SCENE.instantiate())
+	var fs: FocusSystem = FOCUS_SCENE.instantiate()
+	fs.main = Main.I
+	add_child(fs)
 	_add_boundary_walls()
 
 

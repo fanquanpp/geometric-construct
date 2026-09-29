@@ -20,6 +20,7 @@ var sealed := false:
 				cam.freeze(0.14)
 
 var _filled := false
+var hl_color := Color(0, 0, 0, 0)
 var _arrived_set := {}
 var _t := 0.0
 var _burst: CPUParticles2D
@@ -165,7 +166,11 @@ func _process(delta: float) -> void:
 	_t += delta
 	_icon.position = Vector2(0, -size.y / 2.0 - 30 + sin(_t * 2.1) * 4.0)
 	_check.position = Vector2(0, -size.y / 2.0 - 30 + sin(_t * 2.1) * 4.0)
-	queue_redraw()
+	if not SettingsManager.reduced_motion:
+		queue_redraw()
+	elif hl_color.a > 0.0 or get_meta("_hl_was", false):
+		queue_redraw()
+		set_meta("_hl_was", hl_color.a > 0.0)
 
 
 func _draw() -> void:
@@ -192,9 +197,13 @@ func _draw() -> void:
 	draw_rect(Rect2(-size.x / 2.0 - 6, -size.y / 2.0 - 6, 6, 6),
 		Color(col, 0.9))
 	draw_rect(Rect2(size.x / 2.0, -size.y / 2.0 - 6, 6, 6), Color(col, 0.9))
+	TerrainKit.draw_focus(self, r.grow(2.0), hl_color)
 
 
 func _halo() -> void:
+	if SettingsManager.reduced_motion:
+		_halo_static()
+		return
 	var a := 0.20 + 0.14 * sin(_t * TAU / 2.4 + 0.9)
 	var center := Vector2(0, 0)
 	var r_out := maxf(size.x, size.y) * 0.72
@@ -214,7 +223,18 @@ func _halo() -> void:
 			Color(TerrainArt.FACE_SHOULDER, a), 2.0, true)
 
 
+func _halo_static() -> void:
+	var pts := PackedVector2Array()
+	var r_out := maxf(size.x, size.y) * 0.72
+	for k in 25:
+		var ang := TAU * float(k) / 24.0
+		pts.append(Vector2(cos(ang), sin(ang)) * r_out)
+	draw_polyline(pts, Color(TerrainArt.FACE_SHOULDER, 0.27), 2.0, true)
+
+
 func _column_flow() -> void:
+	if SettingsManager.reduced_motion:
+		return
 	var flows := [
 		{"w": 0.5, "speed": 42.0, "phase": 0.0},
 		{"w": 0.3, "speed": 30.0, "phase": 0.4},

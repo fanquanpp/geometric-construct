@@ -38,6 +38,20 @@ UI 装饰:面板框 / 开场卡 / 海报框 / 取景角 / 虚拟摇杆 / 图标�
 图块层探测脚下地面顶线,绘制与碰撞(PianoTile)自动下沉齐平——
 不突出、无隐形台沿;桥 / 悬空构件不变。
 
+**受控聚焦系统(v0.53.3,融合 v0.29 三档透明度 × 现架构二次设计)**
+—— `scripts/art/focus_system.gd`(FocusSystem,随关卡挂载):
+- 档位:受控体 1.0 / 非受控体 0.62(≥WCAG 非文字 3:1 可辨底线,
+  压暗不隐形);专属门 = 受控体色 2px 呼吸描边(TerrainKit.draw_focus,
+  FocusSystem 逐帧喂 hl_color),非受控专属门 0.62 无呼吸;共享机关
+  常亮;**地形永远不压暗**(导航信息)。
+- 切换波次:switch_to 时按与目标距离 0.00019s/px(max 0.3)延迟、
+  TRANS_K 18 指数趋近(近处先动,≤0.3s 全收敛,沿旧版参数)。
+- 通道与门控:Player 走 `self_modulate`(死亡/重生 tween 占
+  modulate,互不干扰;dying/in_exit/arrived 让位不覆盖);双活
+  (dual)全员满亮无呼吸;联机按本端 view_slot;reduced_motion =
+  瞬切 + 呼吸描边静态化 + 圣环/光柱静止帧;暂停时 process 自然
+  冻结;关卡切换随 level_root 重建。
+
 ## 2. 风格契约(代码内执行,不再有文档审计)
 
 1. **色板**:一切颜色出自 `Palette.I`(ink 三阶 / paper / dim / line /
