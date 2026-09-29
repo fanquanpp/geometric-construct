@@ -16,6 +16,7 @@ var _tween: Tween
 var _wheel_fixed_btn: Button
 var _wheel_float_btn: Button
 var _vib_btn: Button
+var _shake_btn: Button
 var _sfx_slider: HSlider
 var _sfx_value: Label
 var _amb_slider: HSlider
@@ -48,6 +49,12 @@ func _ready() -> void:
 		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 		SettingsManager.set_vibration(on))
 	body.add_child(_row("触感反馈(按键轻震)", _vib_btn))
+
+	_shake_btn = _toggle_btn()
+	_shake_btn.toggled.connect(func(on: bool) -> void:
+		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
+		SettingsManager.set_screen_shake(on))
+	body.add_child(_row("屏幕震动(打击反馈)", _shake_btn))
 
 	body.add_child(_rule())
 
@@ -276,6 +283,7 @@ func _sync_from_settings() -> void:
 	_wheel_float_btn.set_pressed_no_signal(SettingsManager.wheel_mode
 		== SettingsManager.WHEEL_FLOAT)
 	_vib_btn.set_pressed_no_signal(SettingsManager.vibration)
+	_shake_btn.set_pressed_no_signal(SettingsManager.screen_shake)
 	if not OS.has_feature("mobile"):
 		for i in _res_btns.size():
 			var r: Vector2i = SettingsManager.RESOLUTIONS[i]

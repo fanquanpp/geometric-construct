@@ -9,6 +9,7 @@ const WHEEL_FLOAT := "float"
 
 static var wheel_mode := WHEEL_FIXED
 static var vibration := true
+static var screen_shake := true
 static var reduced_motion := false
 static var sfx_volume := 1.0
 static var ambience_volume := 1.0
@@ -31,6 +32,7 @@ static func load_settings() -> void:
 	if wheel_mode != WHEEL_FIXED and wheel_mode != WHEEL_FLOAT:
 		wheel_mode = WHEEL_FIXED
 	vibration = bool(cfg.get_value("control", "vibration", true))
+	screen_shake = bool(cfg.get_value("accessibility", "screen_shake", true))
 	reduced_motion = bool(cfg.get_value("accessibility", "reduced_motion", false))
 	sfx_volume = clampf(float(cfg.get_value("audio", "sfx", 1.0)), 0.0, 1.0)
 	ambience_volume = clampf(float(cfg.get_value("audio", "ambience", 1.0)), 0.0, 1.0)
@@ -46,6 +48,7 @@ static func write_settings() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("control", "wheel_mode", wheel_mode)
 	cfg.set_value("control", "vibration", vibration)
+	cfg.set_value("accessibility", "screen_shake", screen_shake)
 	cfg.set_value("accessibility", "reduced_motion", reduced_motion)
 	cfg.set_value("audio", "sfx", sfx_volume)
 	cfg.set_value("audio", "ambience", ambience_volume)
@@ -73,6 +76,11 @@ static func haptic(ms: int) -> void:
 static func set_sfx_volume(v: float) -> void:
 	sfx_volume = clampf(v, 0.0, 1.0)
 	Sfx.set_volume_scale(sfx_volume)
+	write_settings()
+
+
+static func set_screen_shake(on: bool) -> void:
+	screen_shake = on
 	write_settings()
 
 

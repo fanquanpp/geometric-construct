@@ -10,6 +10,8 @@ var _best_by_level := {}
 var _marks := {}
 var _draw: GhostDraw
 var _last_ms := -1000
+var _recent := {}
+var _replays: Array = []
 
 
 func on_level_started(level_index: int) -> void:
@@ -17,6 +19,8 @@ func on_level_started(level_index: int) -> void:
 	_last_ms = -SAMPLE_MS
 	if not _marks.has(level_index):
 		_marks[level_index] = []
+	_recent = {}
+	_replays = []
 	if _draw != null and is_instance_valid(_draw):
 		_draw.queue_free()
 		_draw = null
@@ -37,6 +41,12 @@ func on_death(p: Player) -> void:
 	if not _marks.has(li):
 		_marks[li] = []
 	_marks[li].append(p.position)
+	var key: int = p.body_key()
+	var ring: Array = _recent.get(key, []).duplicate()
+	ring.append({"t": -1, "pos": p.position, "index": p.index,
+		"pair_half": p.pair_half})
+	if _replays.size() < 30:
+		_replays.append(ring)
 	if _draw != null:
 		_draw.queue_redraw()
 
@@ -60,14 +70,25 @@ func _physics_process(_delta: float) -> void:
 		var key: int = p.body_key()
 		if not _samples.has(key):
 			_samples[key] = []
-		(_samples[key] as Array).append({
-			"t": ms, "pos": p.position, "index": p.index,
-			"pair_half": p.pair_half})
+		var rec := {"t": ms, "pos": p.position, "index": p.index,
+			"pair_half": p.pair_half}
+		(_samples[key] as Array).append(rec)
+		if not _recent.has(key):
+			_recent[key] = []
+		var ring: Array = _recent[key]
+		ring.append(rec)
+		if ring.size() > 10:
+			ring.pop_front()
 
 
 func on_complete() -> void:
 	if NetSession.I != null and NetSession.I.is_net():
 		return
+	if not _replays.is_empty() and not SettingsManager.reduced_motion \
+			and main._level_root != null:
+		var theater := DeathTheater.new()
+		theater.recorder = self
+		main._level_root.add_child(theater)
 	var li: int = main.game_flow.current
 	var best: Dictionary = _best_by_level.get(li, {})
 	var best_ms: int = best.get("ms", -1)
@@ -82,6 +103,47 @@ func best_of(level_index: int) -> Dictionary:
 
 func marks_of(level_index: int) -> Array:
 	return _marks.get(level_index, [])
+
+
+class DeathTheater extends Node2D:
+	const DUR := 1.1
+	const HOLD := 0.7
+	var recorder: GhostRecorder
+	var _t := 0.0
+
+	func _process(delta: float) -> void:
+		_t += delta
+		if _t > DUR + HOLD:
+			queue_free()
+			return
+		queue_redraw()
+
+	func _draw() -> void:
+		if Palette.I == null:
+			return
+		var k := clampf(_t / DUR, 0.0, 1.0)
+		var fade := 1.0 if _t <= DUR else maxf(1.0 - (_t - DUR) / HOLD, 0.0)
+		for ring: Array in recorder._replays:
+			if ring.size() < 2:
+				continue
+			var pts := PackedVector2Array()
+			for s in ring:
+				pts.append(s["pos"])
+			var head_idx := int(floor(k * float(pts.size() - 1)))
+			var col: Color = _color_of(ring[0])
+			draw_polyline(pts, Color(col.r, col.g, col.b, 0.30 * fade), 2.0, true)
+			var head: Vector2 = pts[head_idx]
+			var sz := 8.0
+			draw_rect(Rect2(head - Vector2(sz, sz) / 2.0,
+				Vector2(sz, sz)), Color(col.r, col.g, col.b, 0.85 * fade))
+			draw_rect(Rect2(head - Vector2(sz, sz) / 2.0,
+				Vector2(sz, sz)), Color(Palette.I.paper, 0.6 * fade), false, 1.5)
+
+	func _color_of(s: Dictionary) -> Color:
+		var idx: int = s.get("index", 0)
+		if idx < 0 or idx >= Geometries.ALL.size():
+			return Palette.I.paper
+		return Geometries.ALL[idx].color
 
 
 class GhostDraw extends Node2D:

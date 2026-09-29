@@ -28,6 +28,8 @@ func freeze(dur := 0.12) -> void:
 
 
 func kick(strength := 6.0) -> void:
+	if not SettingsManager.screen_shake:
+		return
 	if SettingsManager.reduced_motion:
 		return
 	_kick = minf(_kick + strength, 12.0)

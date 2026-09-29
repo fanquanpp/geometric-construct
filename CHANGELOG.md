@@ -61,6 +61,22 @@
 check-only 全部改动脚本绿;native_check 27 场 / flow / stats / trait /
 recall / dual / net 全 PASS;菜单/幕面板/设置/图鉴/首关截图目检通过。
 
+## v0.53.1(2026-09-29 · 商业化补件:无障碍与死亡剧场)
+
+### 新增
+- **屏幕震动开关**:设置面板「屏幕震动(打击反馈)」toggle
+  (accessibility/screen_shake 持久化,CameraRig.kick 统一守卫,
+  对标调研无障碍清单 Game Accessibility Guidelines);
+  同批 Version 常量对齐 0.53.x(修设置页脚版本串停留在 0.52 的漏改)。
+- **死亡回放剧场**(Super Meat Boy 口径):GhostRecorder 每体维护
+  垂死前 1s 轨迹环形缓冲,死亡时快照;通关瞬间全场同演——每条轨迹
+  画身体色路径 + 方点沿径行进 1.1s 后 0.7s 淡出,单场至多 30 条;
+  reduced_motion 不发,联机不采样。
+
+### 门禁
+check-only 四脚本绿;dualtest(死亡+竞速通关途经剧场路径)/ flow /
+stats 全 PASS;设置面板重截目检(新行在位)。
+
 ## v0.52.0(2026-09-29 · 商业化完善化二批:游戏性增强 + 风格化统一 + 面板打磨 + 节点化)
 
 > 双路联网调研(优秀面板 UI 设计模式 + 内容全量后的玩法增强套路)后
