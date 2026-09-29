@@ -8,7 +8,7 @@ extends StaticBody2D
 var sig_value := 1
 var hl_color := Color(0, 0, 0, 0)
 
-const T_FRAME := preload("res://assets/archive/mech_ramp.png")
+const THICKNESS := 48.0
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -17,12 +17,6 @@ func _ready() -> void:
 	collision_layer = sig_value
 	collision_mask = 0
 	add_to_group("ramp")
-
-	if pts.size() >= 2:
-		var spr := Sprite2D.new()
-		spr.show_behind_parent = true
-		TerrainKit.mech_layout(spr, T_FRAME, _frame_zone())
-		add_child(spr)
 
 	for i in pts.size() - 1:
 		var a: Vector2 = pts[i]
@@ -45,17 +39,8 @@ func _ready() -> void:
 		poly.polygon = body
 		occ.occluder = poly
 		add_child(occ)
+	queue_redraw()
 
-
-func _frame_zone() -> Rect2:
-	var flo: Vector2 = pts[0]
-	var fhi: Vector2 = pts[0]
-	for p in pts:
-		flo = flo.min(p)
-		fhi = fhi.max(p)
-	flo.y = minf(flo.y, base_y)
-	fhi.y = maxf(fhi.y, base_y)
-	return Rect2(flo, fhi - flo)
 
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
@@ -69,18 +54,6 @@ func _editor_sync(force: bool) -> void:
 	if not force and s == _sig:
 		return
 	_sig = s
-	var prev := get_node_or_null("EditorPreview")
-	if prev != null:
-		prev.queue_free()
-	if pts.size() < 2:
-		return
-	var box := Node2D.new()
-	box.name = "EditorPreview"
-	var spr := Sprite2D.new()
-	spr.show_behind_parent = true
-	TerrainKit.mech_layout(spr, T_FRAME, _frame_zone())
-	box.add_child(spr)
-	add_child(box)
 	queue_redraw()
 
 func _draw() -> void:
@@ -98,18 +71,23 @@ func _draw() -> void:
 				Color(Palette.I.paper, 0.25), 2.0)
 		return
 
-	draw_polyline(pts, Color(Palette.I.paper, 0.35), 2.0)
+	var body := PackedVector2Array(pts)
+	body.append(Vector2(pts[pts.size() - 1].x, base_y))
+	body.append(Vector2(pts[0].x, base_y))
+	draw_colored_polygon(body, Color(Palette.I.ink_2, 1.0))
+	draw_rect(Rect2(pts[0].x, base_y - 6, pts[pts.size() - 1].x - pts[0].x, 6),
+		Color(Palette.I.paper, 0.14))
+
+	draw_polyline(pts, Color(Palette.I.paper, 0.6), 3.0)
 
 	for i in pts.size() - 1:
 		var a: Vector2 = pts[i]
 		var b: Vector2 = pts[i + 1]
 		var d := (b - a).normalized()
 		var mid := (a + b) * 0.5
-		draw_line(mid - d * 7.0, mid + d * 7.0, Color(Palette.I.red, 0.55), 3.0)
+		DrawKit.chevron(self, mid, d, 16.0, Color(Palette.I.red, 0.65), 2.5)
 
 	TerrainKit.draw_focus(self, TerrainKit.ramp_bounds(pts, base_y), hl_color)
-
-const THICKNESS := 48.0
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var w := PackedStringArray()

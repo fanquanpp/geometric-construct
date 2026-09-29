@@ -5,8 +5,6 @@ extends Node2D
 
 @export var lever_rects: Array = []
 @export var door_item := {}
-var _pad_off: Array = []
-var _pad_on: Array = []
 var invert := false
 var sig_bit := 1
 var gate_id := 0
@@ -14,12 +12,7 @@ var hl_color := Color(0, 0, 0, 0)
 var _riders: Array = []
 var _door_body: StaticBody2D
 var _door_occ: LightOccluder2D
-var _door_spr: Sprite2D
 var _open := false
-
-const T_DOOR := preload("res://assets/archive/mech_gate_door.png")
-const T_PAD_OFF := preload("res://assets/archive/mech_lever_pad.png")
-const T_PAD_ON := preload("res://assets/archive/mech_lever_pad_f2.png")
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -40,11 +33,6 @@ func _ready() -> void:
 	add_child(_door_body)
 	_door_occ = TerrainKit.rect_occluder(Rect2(-r.size / 2.0, r.size))
 	_door_body.add_child(_door_occ)
-
-	_door_spr = Sprite2D.new()
-	TerrainKit.mech_layout(_door_spr, T_DOOR, r)
-	add_child(_door_spr)
-
 	for i in lever_rects.size():
 		var lever_rect: Rect2 = lever_rects[i]
 		_riders.append({})
@@ -60,16 +48,6 @@ func _ready() -> void:
 		area.body_entered.connect(_on_body_entered.bind(i))
 		area.body_exited.connect(_on_body_exited.bind(i))
 		add_child(area)
-		var lr: Rect2 = lever_rects[i]
-		var off := Sprite2D.new()
-		TerrainKit.mech_layout(off, T_PAD_OFF, lr)
-		add_child(off)
-		var on := Sprite2D.new()
-		TerrainKit.mech_layout(on, T_PAD_ON, lr)
-		on.visible = false
-		add_child(on)
-		_pad_off.append(off)
-		_pad_on.append(on)
 	_apply(_initial_open())
 
 func _process(delta: float) -> void:
@@ -90,23 +68,6 @@ func _editor_sync(force: bool) -> void:
 	if not force and s == _sig:
 		return
 	_sig = s
-	var prev := get_node_or_null("EditorPreview")
-	if prev != null:
-		prev.queue_free()
-	if door_item.is_empty():
-		return
-	var box := Node2D.new()
-	box.name = "EditorPreview"
-	var r: Rect2 = door_item.get("rect", Rect2())
-	if r.size != Vector2.ZERO:
-		var door := Sprite2D.new()
-		TerrainKit.mech_layout(door, T_DOOR, r)
-		box.add_child(door)
-	for lr: Rect2 in lever_rects:
-		var pad := Sprite2D.new()
-		TerrainKit.mech_layout(pad, T_PAD_OFF, lr)
-		box.add_child(pad)
-	add_child(box)
 	queue_redraw()
 
 func _initial_open() -> bool:
@@ -150,8 +111,6 @@ func _apply(open: bool) -> void:
 
 	_door_body.set_collision_layer_value(sig_bit, not open)
 	_door_occ.visible = not open
-	if _door_spr != null:
-		_door_spr.visible = not open
 	_flash_t = 0.12
 	queue_redraw()
 
@@ -174,14 +133,23 @@ func _draw() -> void:
 
 		draw_rect(r, Color(Palette.I.paper, 0.06))
 		draw_rect(r, Color(Palette.I.paper, 0.14), false, 1.5)
+		DrawKit.dashed_rect(self, r, Color(Palette.I.paper, 0.22), 1.5)
+	else:
+		draw_rect(r, Color(Palette.I.ink_2, 1.0))
+		draw_rect(r, Color(Palette.I.paper, 0.5), false, 2.0)
+		draw_rect(Rect2(r.position, Vector2(r.size.x, 5)),
+			Color(Palette.I.paper, 0.55))
+		var n := maxi(int(r.size.y / 44.0), 2)
+		for k in n:
+			var y := lerpf(r.position.y + 18.0, r.end.y - 14.0, float(k) / float(n - 1))
+			draw_line(Vector2(r.position.x + 8, y), Vector2(r.end.x - 8, y),
+				Color(Palette.I.paper, 0.18), 2.0)
 
 	for i in lever_rects.size():
 		var lever_rect: Rect2 = lever_rects[i]
-		var pressed: bool = i < _pad_on.size() \
+		var pressed: bool = i < _riders.size() \
 				and not (_riders[i] as Dictionary).is_empty()
-		if i < _pad_on.size():
-			_pad_on[i].visible = pressed
-			_pad_off[i].visible = not pressed
+		_draw_pad(lever_rect, pressed)
 		var link_y: float = lever_rect.end.y - 2.0
 		var lx0: float = minf(lever_rect.get_center().x, r.get_center().x)
 		var lx1: float = maxf(lever_rect.get_center().x, r.get_center().x)
@@ -189,6 +157,20 @@ func _draw() -> void:
 			Color(Palette.I.red if pressed else Palette.I.paper, 0.22 if pressed else 0.10))
 
 	TerrainKit.draw_focus(self, r, hl_color)
+
+
+func _draw_pad(lr: Rect2, pressed: bool) -> void:
+	var h := 10.0 if pressed else 18.0
+	var body := Rect2(Vector2(lr.position.x + 6, lr.end.y - h),
+		Vector2(lr.size.x - 12, h))
+	draw_rect(body, Color(Palette.I.red, 0.75) if pressed
+		else Color(Palette.I.ink_3, 1.0))
+	draw_rect(body, Color(Palette.I.paper, 0.55), false, 2.0)
+	draw_rect(Rect2(Vector2(lr.position.x, lr.end.y - 4),
+		Vector2(lr.size.x, 4)), Color(Palette.I.paper, 0.30))
+	if not pressed:
+		draw_rect(Rect2(Vector2(lr.get_center().x - 7, body.position.y + 4),
+			Vector2(14, 4)), Color(Palette.I.red, 0.8))
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var w := PackedStringArray()

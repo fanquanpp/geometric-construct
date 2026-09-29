@@ -62,7 +62,7 @@ func beacon_stop_only() -> void:
 
 func autostart_host() -> void:
 	visible = true
-	if NetSession.I.host_room("试炼房间"):
+	if NetSession.I.host_room("联机协作房间"):
 		_show_host()
 
 
@@ -191,7 +191,7 @@ func _show_pick() -> void:
 
 
 func _enter_host() -> void:
-	if not NetSession.I.host_room("试炼房间"):
+	if not NetSession.I.host_room("联机协作房间"):
 		return
 	_show_host()
 

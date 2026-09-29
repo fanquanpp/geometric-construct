@@ -69,6 +69,8 @@ func start_level(index: int, intro := true) -> void:
 		var focus: GeometryDef = Geometries.get_def(level_info["focus"])
 		main._hud.narration(focus.quote, focus.color, 3.8)
 	main._switch_to(0, true)
+	main.race.reset()
+	main.ghost.on_level_started(current)
 
 	if NetSession.I != null and NetSession.I.is_net():
 		main.net_room_layer.visible = false
@@ -132,6 +134,7 @@ func check_complete() -> void:
 
 	main._state = Main.State.TRANSITION
 	Sfx.play("complete")
+	main.ghost.on_complete()
 	if main._auto_test:
 		print("TEST: LEVEL COMPLETE ", current)
 	var done_text := "通过。"

@@ -1,6 +1,6 @@
 extends Node2D
 
-# 动态生成豁免:星阵由种子程序生成,数量形态运行时确定(R1)。
+# 星阵由种子程序生成,数量形态运行时确定(procedural-art)。
 
 const TILE := Vector2(2600, 1300)
 var _stars: Array = []

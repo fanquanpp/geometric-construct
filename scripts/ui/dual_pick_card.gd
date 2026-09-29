@@ -52,7 +52,7 @@ func open_card(touch: bool) -> void:
 	_open = true
 	_same.text = "同设备双人\n      %s" % (
 		"移动端不可用 · 同屏分区需键鼠 / 双手柄" if touch
-		else "同屏分键 · P1 键盘左区 + P2 右区 / 双手柄")
+		else "同屏分键 · P1 键盘左区 + P2 右区 / 双手柄 · 先归位者胜")
 	_same.disabled = touch
 	_same.modulate = Color(1, 1, 1, 0.42 if touch else 1.0)
 

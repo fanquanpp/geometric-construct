@@ -12,6 +12,7 @@ extends LevelRoot
 
 const CAMERA_RIG_SCENE := preload("res://scenes/world/camera_rig.tscn")
 const MAG_BOUNDARY_SCENE := preload("res://scenes/world/mechanisms/mag_boundary.tscn")
+const TERRAIN_ART_SCENE := preload("res://scenes/art/terrain_art.tscn")
 
 
 func _ready() -> void:
@@ -42,6 +43,7 @@ func _ready() -> void:
 	cam.limit_right = int(level_size.x)
 	cam.limit_bottom = int(level_size.y)
 	add_child(cam)
+	add_child(TERRAIN_ART_SCENE.instantiate())
 	_add_boundary_walls()
 
 

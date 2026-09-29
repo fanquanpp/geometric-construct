@@ -10,9 +10,6 @@ var _area: Area2D
 const CELL := 100.0
 const SLIDE_TIME := 0.18
 
-const T_FRAME := preload("res://assets/archive/mech_push_box.png")
-
-@onready var _visual: Sprite2D = $Visual
 var _sig := ""
 
 func _ready() -> void:
@@ -29,8 +26,7 @@ func _ready() -> void:
 	if cs.shape == null:
 		cs.shape = RectangleShape2D.new()
 	cs.shape.size = Vector2(CELL, CELL)
-	TerrainKit.mech_layout(_visual, T_FRAME,
-		Rect2(Vector2(-CELL / 2.0, -CELL / 2.0), Vector2(CELL, CELL)))
+	queue_redraw()
 
 	_area = Area2D.new()
 	_area.collision_layer = 0
@@ -59,9 +55,7 @@ func _editor_sync(force: bool) -> void:
 	if not force and s == _sig:
 		return
 	_sig = s
-	var off := cell - position
-	TerrainKit.mech_layout(_visual, T_FRAME,
-		Rect2(off - Vector2(CELL / 2.0, CELL / 2.0), Vector2(CELL, CELL)))
+	queue_redraw()
 
 func _physics_process(_delta: float) -> void:
 	if Engine.is_editor_hint():
@@ -108,6 +102,15 @@ func _draw() -> void:
 		return
 	var off := cell - position if Engine.is_editor_hint() else Vector2.ZERO
 	var r := Rect2(off - Vector2(CELL / 2.0, CELL / 2.0), Vector2(CELL, CELL))
+
+	draw_rect(r, Color(Palette.I.ink_3, 1.0))
+	draw_rect(r, Color(Palette.I.paper, 0.55), false, 2.0)
+	draw_line(r.position + Vector2(10, 10), r.end - Vector2(10, 10),
+		Color(Palette.I.paper, 0.18), 2.0)
+	draw_line(Vector2(r.end.x - 10, r.position.y + 10),
+		Vector2(r.position.x + 10, r.end.y - 10), Color(Palette.I.paper, 0.18), 2.0)
+	draw_rect(Rect2(r.position + Vector2(6, 6), Vector2(r.size.x - 12, 5)),
+		Color(Palette.I.paper, 0.4))
 
 	for side: float in [-1.0, 1.0]:
 		var cx := off.x + side * (CELL / 2.0 - 14.0)

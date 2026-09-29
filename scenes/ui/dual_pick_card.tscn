@@ -36,12 +36,12 @@ unique_name_in_owner = true
 
 [node name="TitleLabel" type="Label" parent="Center/Card/VB/TitleBar/TitleVB"]
 unique_name_in_owner = true
-text = "双人试炼"
+text = "双人竞速"
 horizontal_alignment = 1
 
 [node name="SubLabel" type="Label" parent="Center/Card/VB/TitleBar/TitleVB"]
 unique_name_in_owner = true
-text = "TWO PLAYERS · 选择联接方式"
+text = "TWO PLAYER RACE · 选择联接方式"
 horizontal_alignment = 1
 
 [node name="Pad" type="MarginContainer" parent="Center/Card/VB"]

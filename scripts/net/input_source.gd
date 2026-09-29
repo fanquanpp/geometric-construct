@@ -33,6 +33,9 @@ func move_axis() -> float:
 		Kind.REMOTE:
 			return r_axis
 		_:
+			if Main.I != null and Main.I.has_method("race_input_locked") \
+				and Main.I.race_input_locked():
+				return 0.0
 			if slot == 0 and _slot0_partitioned():
 				return Input.get_axis("p1_move_left", "p1_move_right")
 			if slot == 1:
@@ -53,6 +56,9 @@ func jump_pressed() -> bool:
 			r_jump_edge = false
 			return e
 		_:
+			if Main.I != null and Main.I.has_method("race_input_locked") \
+				and Main.I.race_input_locked():
+				return false
 			if slot == 0 and _slot0_partitioned():
 				return Input.is_action_just_pressed("p1_jump")
 			if slot == 1:
@@ -65,6 +71,9 @@ func jump_held() -> bool:
 		Kind.REMOTE:
 			return r_jump_held
 		_:
+			if Main.I != null and Main.I.has_method("race_input_locked") \
+				and Main.I.race_input_locked():
+				return false
 			if slot == 0 and _slot0_partitioned():
 				return Input.is_action_pressed("p1_jump")
 			if slot == 1:

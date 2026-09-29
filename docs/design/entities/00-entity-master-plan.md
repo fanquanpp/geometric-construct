@@ -93,13 +93,13 @@ TUBE   = Floor + Ceiling + Wall×n        ← 试炼场 v5 即 TUBE 语法
 Entity
 ├── Geometry  形状 / 尺寸 / 比例
 ├── Function  Walkable / Blocking / Climbable / Interactive
-├── Visual    材质 / 颜色 / 风格(八语言,art-audio 卷二)/ Animation
+├── Visual    材质 / 颜色 / 风格(procedural-art.md `_draw` 配方)/ Animation
 └── Narrative 含义 / 章节 / Lore / Foreshadowing
 ```
 
 - **一形多皮**:同一 Pillar 可有 Constructivist / Industrial / Theatre /
   Archive / Anomaly 五种 Visual 皮——**碰撞、尺寸、空间语义、玩法属性
-  保持一致**(八语言融合矩阵领地规则,art-audio 卷二)。
+  保持一致**(领地规则见 procedural-art.md 风格契约)。
 - 四层数据落点(v0.45 原生换代):Geometry/Function 落原生场景
   (TileMapLayer 图位 + 场景实例 @export);Visual 走风格层;Narrative
   走 bible 伏笔账本引用(related 机制)。
@@ -197,7 +197,7 @@ atmosphere 剪影层与 audio 动机库各有一个识别条目。
 
 - 世界观升格:**整个世界由几何关系构成**——特殊建筑可以是
   "巨型几何体"(SP 速度圣殿=疾之建筑的 Tier3 形态)。
-- 与 art-audio 卷三母条目、audio.md 角色画像三向互锁:
+- 与 procedural-art.md 角色配方、audio.md 角色画像三向互锁:
   形(视觉)/音(听觉)/性(玩法)一致性检查 = 实体立项必过。
 
 ---
@@ -252,14 +252,14 @@ atmosphere 剪影层与 audio 动机库各有一个识别条目。
 |---|---|---|---|---|
 | 疾/跃/逆/圆 | characters.md §5 | G | **保留** | 身份语言表登记(卷九) |
 | 伍·界/边 | characters.md §5 | G(双体) | **保留** | 双声部+双体建筑语言登记 |
-| 陆/柒 | characters.md §10 | G 占位 | **保留(不解释纪律)** | 音位 si/C5 冻结(art-audio §5.8) |
+| 陆/柒 | characters.md §10 | G 占位 | **保留(不解释纪律)** | 音位 si/C5 冻结 |
 | 终点门 ExitDoor | structures §1 | M/Space(M6)+SP 候选 | 保留 | 双登记:机关+特殊建筑候选 |
 | 加速门 SpeedGate | structures §2 | M/Physics(M1) | 保留 | — |
 | 曲面跳跃板 Ramp | structures §3 | S(A06)+M/Physics(M1) | 保留 | 双登记:结构与物理机关 |
 | 移动平台 Mover | structures §4 | M/Motion+Time(M1) | 保留 | — |
 | 踩踏开关+门板 | structures §5 | M/Trigger+State(M2) | 保留 | 机关链首发成员 |
-| 限时桥 | structures §5 | M/Time(M1) | 保留 | 节拍对齐深化(art-audio §5.5) |
-| 钢琴砖 | structures §5 | M/Trigger(M0)+SP 演出 | 保留 | 地图即乐谱(art-audio §5.4) |
+| 限时桥 | structures §5 | M/Time(M1) | 保留 | 节拍对齐深化 |
+| 钢琴砖 | structures §5 | M/Trigger(M0)+SP 演出 | 保留 | 地图即乐谱 |
 | ~~磁界 MagBoundary~~ | structures §5 | — | **v0.46 清退** | 全仓零实例化;复活自 git 历史并按场景壳规范重建 |
 | 推箱/滑雪带/传送对/弹射板 | gameplay 卷二 | M/Physics+State(M1–M2) | **保留(观察期)** | 组合矩阵已登记 |
 | 记录点信标 | structures §8 | M/Trigger+State | **保留(v0.36 实装)** | 信标实体 + 像素契约落地;正式关排布随 P2 |
@@ -268,8 +268,8 @@ atmosphere 剪影层与 audio 动机库各有一个识别条目。
 | 计时环/脆弱块 | gameplay 卷二 | M | **暂缓** | 随 P3 |
 | ~~LevelDef.platforms 全部~~ | levels.md §0 | S(A01–A16 槽位) | **v0.45 清退** | 原生 TileMapLayer + Kit 图位(levels.md §0) |
 | 反重力门(规划) | glossary §2 | M/Space | **暂缓**(逆置换是其个体版) | — |
-| 背景剪影 | atmosphere.md | E | 保留 | — |
-| 异常(两套刻度等) | fx-light-uiux 卷一 | X | **冻结占位(P5)** | 伏笔账本登记制 |
+| 背景剪影 | procedural-art.md | E | 保留 | — |
+| 异常(两套刻度等) | 伏笔账本 | X | **冻结占位(P5)** | 伏笔账本登记制 |
 
 ---
 
@@ -282,9 +282,9 @@ GAMEPLAY(gameplay.md:五层核心/组合矩阵)
    ↓ 承载
 STORY(bible.md:真相/弧光/信控)
    ↓ 表现
-ART-AUDIO(八语言/动机库/融合五联)
+ART(procedural-art.md:`_draw` 配方/风格契约)
    ↓ 组织给玩家
-UI(00-ui-master-plan:六空间/DetailPage/Related)
+UI(ui-flow.md:三型页面/层带/导航)
    ↓ 沉淀
 ARCHIVE(玩家理解世界的第二套系统)
 ```

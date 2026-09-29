@@ -12,9 +12,6 @@ var hl_color := Color(0, 0, 0, 0)
 var _t := 0.0
 var _base := Vector2.ZERO
 
-const T_FRAME := preload("res://assets/archive/mech_mover.png")
-
-@onready var _visual: Sprite2D = $Visual
 var _sig := ""
 
 func _ready() -> void:
@@ -34,7 +31,7 @@ func _ready() -> void:
 	cs.shape.size = size
 
 	add_child(TerrainKit.rect_occluder(Rect2(-size / 2.0, size)))
-	TerrainKit.mech_layout(_visual, T_FRAME, Rect2(-size / 2.0, size))
+	queue_redraw()
 
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
@@ -46,11 +43,19 @@ func _editor_sync(force: bool) -> void:
 	if not force and s == _sig:
 		return
 	_sig = s
-	TerrainKit.mech_layout(_visual, T_FRAME, Rect2(-size / 2.0, size))
 	queue_redraw()
 
 func _draw() -> void:
-	if Palette.I == null or travel == Vector2.ZERO:
+	if Palette.I == null:
+		return
+	var body := Rect2(-size / 2.0, size)
+	draw_rect(body, Color(Palette.I.ink_2, 1.0))
+	draw_rect(body, Color(Palette.I.paper, 0.5), false, 2.0)
+	draw_rect(Rect2(body.position, Vector2(body.size.x, 5)),
+		Color(Palette.I.paper, 0.6))
+	draw_rect(Rect2(body.position.x + 8, body.end.y - 8,
+		body.size.x - 16, 4), Color(Palette.I.paper, 0.14))
+	if travel == Vector2.ZERO:
 		return
 
 	var pa := -travel * 0.5

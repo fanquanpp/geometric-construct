@@ -43,7 +43,7 @@
 | 08 | Dialogue & Performance | story/*.ks + ui/story_layer + Konado | **Phase 5**:剧情数据库(docs/story/)与 .ks 演出脚本分离 |
 | 09 | World & Lore | bible.md 卷二/卷三 + glossary.md | 世界观词条(空白/刻度/重拼/门)从 glossary 拆出至卷二引用体系 |
 | 10 | UI & Archive | ui/(12 文件 4817 行)+ data/archive_data + ui/archive_panel | Phase 4 按页签拆 hud/archive;档案叙事化(bible 卷十方向) |
-| 11 | Audio & Visual | fx/sfx + fx/ambience + art-style/atmosphere/audio/motion 四文档 | 建立演出常量 SSOT:**调色板/字号等常量从 ui.gd 迁 data/palette**(解 ui 扇入 24 的根源之一) |
+| 11 | Audio & Visual | fx/sfx + fx/ambience + procedural-art/audio 文档 | 建立演出常量 SSOT:**调色板/字号等常量从 ui.gd 迁 data/palette**(解 ui 扇入 24 的根源之一) |
 | 12 | Save & Progression | core/save_manager + SettingsManager(user://)| **剧情状态 ≠ 存档状态**:剧情旗标走 08 的接口,不直写存档 |
 | 13 | Data 基础设施 | scripts/data/(9 文件) | 叶节点化(§三.2-②) |
 | 14 | Research 基础设施 | **缺** → 新建 docs/research/narrative/ | 研究资料与正式设定隔离(用户方案 §23) |
@@ -94,7 +94,7 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
    `data/palette.gd`(见 4);level_data 只依赖 data 域内类。
 3. **ui.gd 调色板被引擎层引用 10 次**(mechanisms→ui 的全部来源):
    `Ui.RED / PAPER / INK / HEAD` 是**视觉规范常量**,不是 UI 功能。
-   → 解法:迁 `data/palette.gd`(SSOT:art-style.md),ui.gd 转为引用者。
+   → 解法:迁 `data/palette.gd`(SSOT:procedural-art.md),ui.gd 转为引用者。
 4. **Main 枢纽扇入 28**:Main.I 单例被全域回调。→ 逐系统改直连
    (roster/dev 已示范);Phase 4 收窄,不搞一次性大改。
 5. **entities → mechanisms(player 认识 PianoTile)**:接触回调,
@@ -112,7 +112,7 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
 | levels.md | 关卡数据规范 | 教学节奏/关卡解析/v5 内容混装 | Phase 6:内容出走 docs/story/levels/ |
 | structures.md | 机关登记(生命周期契约) | — | 正常 |
 | roguelike.md | 重跑系统唯一权威 | — | 正常 |
-| art-style/audio/motion/atmosphere | 各自规范 | — | 正常;调色板常量落 data/palette |
+| procedural-art/audio | 各自规范 | — | 正常;调色板常量落 data/palette |
 | ARCHITECTURE/REFACTOR/ASSETS/CHANGELOG/UPDATE | 架构/施工/资产账/版本/发版 | — | 正常 |
 
 ---
@@ -131,7 +131,7 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
 | 对白 | `story/*.ks`(正典) | bible 卷八 = 文体基准 |
 | 术语 | glossary.md | — |
 | 系统架构 | ARCHITECTURE.md + 本文 | — |
-| 视觉常量 | `data/palette.tres`(Palette 资源,v0.32.0 起)| art-style.md = 规范 |
+| 视觉常量 | `data/palette.tres`(Palette 资源,v0.32.0 起)| procedural-art.md = 规范 |
 | 音频规范 | audio.md | — |
 | 版本 | version.gd + CHANGELOG | README 版本行 |
 

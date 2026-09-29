@@ -1,6 +1,6 @@
 extends Node2D
 
-# 动态生成豁免:山脊折线由种子程序生成,子节点(Polygon2D/Line2D)运行时组装(R1)。
+# 山脊折线由种子程序生成,子节点(Polygon2D/Line2D)运行时组装(procedural-art)。
 
 const TILE_W := 2600.0
 

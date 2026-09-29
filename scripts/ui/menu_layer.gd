@@ -63,13 +63,10 @@ func _ready() -> void:
 		var b := Button.new()
 
 		b.custom_minimum_size = Vector2(490, 50)
-		b.text = "%02d   %s · %s" % [idx + 1, act["name"], act["title"]]
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.add_theme_font_override("font", Ui.HEAD)
 		b.add_theme_font_size_override("font_size", 21)
-		b.add_theme_constant_override("icon_max_width", 30)
-		b.add_theme_constant_override("h_separation", 14)
-		b.icon = Ui.icon(act["icon"])
+		Ui.glyph_row(b, act["icon"], 28.0,
+			"%02d   %s · %s" % [idx + 1, act["name"], act["title"]], Ui.HEAD, 21)
 		b.pivot_offset = Vector2(12, 25)
 		Ui.wire_button(b, "")
 		b.pressed.connect(func() -> void: try_open_act(idx))
@@ -129,8 +126,8 @@ func _ready() -> void:
 	var ys := [0.22, 0.07, 0.62, 0.06]
 	for i in 4:
 		var s := 34.0 + i * 10.0
-		var ico: TextureRect = _floaters_node(i)
-		ico.texture = Ui.icon("characters/%s" % Geometries.ALL[i].slug)
+		var ico: UiGlyph = _floaters_node(i)
+		ico.glyph_key = "characters/%s" % Geometries.ALL[i].slug
 		ico.position = Vector2(xs[i] * 1280.0, ys[i] * 720.0)
 		_floaters.append(ico)
 		_floater_seed.append({"spin": (0.22 if i % 2 == 0 else -0.16) * (1.0 + i * 0.12),
@@ -142,8 +139,8 @@ func _ready() -> void:
 	_play_entrance()
 
 
-func _floaters_node(i: int) -> TextureRect:
-	return [%Floater0, %Floater1, %Floater2, %Floater3][i] as TextureRect
+func _floaters_node(i: int) -> UiGlyph:
+	return [%Floater0, %Floater1, %Floater2, %Floater3][i] as UiGlyph
 
 
 func _play_entrance() -> void:
@@ -172,7 +169,7 @@ func _process(delta: float) -> void:
 	_t += delta
 
 	for i in _floaters.size():
-		var fl: TextureRect = _floaters[i]
+		var fl: Control = _floaters[i]
 		var seed_d: Dictionary = _floater_seed[i]
 		fl.rotation += seed_d["spin"] * delta
 		fl.position.y = seed_d["base_y"] + sin(_t * 1.4 + seed_d["phase"]) * 6.0

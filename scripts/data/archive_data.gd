@@ -1,9 +1,6 @@
 class_name ArchiveData
 
 
-const IMG_DIR := "res://assets/archive/"
-
-
 const BUILDINGS := [
 	{"id": "bld_slab_full", "name": "实心石板", "en": "SLAB · FULL", "tag": "地形",
 		"desc": "最基础的承重构件:四面实心,构成关卡的可站立地形与墙体。以「格」为单元拼装,顶缘纸白亮线即承重面,左缘红刻度每 480px 一处标定尺度。",
@@ -24,7 +21,7 @@ const BUILDINGS := [
 	{"id": "bld_ghost_frame", "name": "幽灵线框", "en": "GHOST FRAME", "tag": "装饰",
 		"desc": "无碰撞的纯视觉线框(8% 亮度):标示动态构件的虚化态、记忆中的结构或尚未登场的构件轮廓。几何体自由穿行。",
 		"facts": [["faces", "none 无碰撞"], ["实体性", "纯视觉"], ["亮度", "8% 线框"], ["同类", "虚化态门板 / 限时桥"]],
-		"tips": ["外观双轨:两态静帧在素材,切换合成在引擎(art-style §6.7)",
+		"tips": ["外观双轨:状态切换在引擎,正典形态程序化绘制",
 			"禁止用线框做「隐蔽碰撞」——状态可读优先"]},
 	{"id": "bld_back_tower", "name": "背景建筑塔", "en": "BACK TOWER", "tag": "景观 · L3",
 		"desc": "背景层的退台巨塔:窗槽、信标与硬投影构成城市剪影,讲述「这里曾是完整的世界」。纯景观,不参与碰撞。",
@@ -34,7 +31,7 @@ const BUILDINGS := [
 	{"id": "bld_pillar", "name": "巨构立柱", "en": "COLOSSUS PILLAR", "tag": "巨构",
 		"desc": "第一幕门厅的承重柱梁:以 3× 尺度立起的方柱,45° 裙角与引擎实算硬影撑起「巨构降临」的体量感。柱梁之间的净空即是关卡节奏。",
 		"facts": [["faces", "full 四面实心"], ["尺度", "3× 巨构档"], ["母题", "第一幕 · 巨构降临"]],
-		"tips": ["巨构幕的差分只动尺度与排布密度,不碰调色板(art-style §7)",
+		"tips": ["巨构幕的差分只动尺度与排布密度,不碰调色板",
 			"立柱高净空常配竖向 mover 电梯"]},
 	{"id": "bld_beam", "name": "梁", "en": "BEAM", "tag": "构件 · A05",
 		"desc": "横向承重构件:柱与柱之间的水平骨架,端头榫块咬进柱身。梁下净空即通行预算,梁上常走高空路线。",
@@ -207,7 +204,3 @@ const CONTROLS := [
 		{"act": "触屏", "note": "全部界面均有可点按的按钮 / 页签,无键盘依赖"},
 	]},
 ]
-
-
-static func img_path(id: String, suffix := "") -> String:
-	return IMG_DIR + id + suffix + ".png"

@@ -10,7 +10,7 @@ var _tween: Tween
 @onready var _root: Control = %Root
 @onready var _shade: ColorRect = %Shade
 @onready var _content: Control = %Content
-@onready var _frame: NinePatchRect = %Frame
+@onready var _frame: Control = %Frame
 @onready var _scroll: ScrollContainer = %Scroll
 @onready var _foot: HBoxContainer = %Foot
 var _wheel_fixed_btn: Button

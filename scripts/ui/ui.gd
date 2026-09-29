@@ -10,7 +10,6 @@ static var _base: Font
 static var _weights := {}
 static var _theme: Theme
 static var _ls_cache := {}
-static var _icons := {}
 
 
 static func init_font() -> void:
@@ -247,39 +246,19 @@ static func _button_scale(b: Button, target: float) -> void:
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
-const ICON_ATLAS := preload("res://assets/ui/icons.png")
-const ICON_CELLS := {
-	"characters/dash": Vector2i(0, 0),
-	"characters/spring": Vector2i(1, 0),
-	"characters/fall": Vector2i(2, 0),
-	"characters/roll": Vector2i(3, 0),
-	"characters/pair": Vector2i(4, 0),
-	"keys/key-a": Vector2i(0, 1),
-	"keys/key-d": Vector2i(1, 1),
-	"keys/key-space": Vector2i(2, 1),
-	"keys/key-shift": Vector2i(3, 1),
-	"keys/key-tab": Vector2i(4, 1),
-	"keys/key-r": Vector2i(0, 2),
-	"keys/key-esc": Vector2i(1, 2),
-	"icons/check": Vector2i(2, 2),
-	"buttons/play": Vector2i(3, 2),
-	"buttons/recall": Vector2i(4, 2),
-	"buttons/recall-on": Vector2i(0, 3),
-	"buttons/pause": Vector2i(1, 3),
-	"buttons/pause-on": Vector2i(2, 3),
-}
-
-static func icon(rel: String) -> Texture2D:
-	if not _icons.has(rel):
-		var tex: Texture2D = null
-		var cell: Variant = ICON_CELLS.get(rel)
-		if cell != null:
-			var at := AtlasTexture.new()
-			at.atlas = ICON_ATLAS
-			var c: Vector2i = cell
-			at.region = Rect2(c.x * 64, c.y * 64, 64, 64)
-			tex = at
-		else:
-			push_warning("Ui.icon: 未知图标 %s" % rel)
-		_icons[rel] = tex
-	return _icons[rel]
+static func glyph_row(b: Button, key: String, px: float, text: String,
+		font: Font, font_size: int, pad_l := 12.0) -> void:
+	b.text = ""
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.set_anchors_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = pad_l
+	row.add_theme_constant_override("separation", 14)
+	var g := UiGlyph.new(key)
+	g.custom_minimum_size = Vector2(px, px)
+	g.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(g)
+	var lab := Ui.l(text, font_size, font)
+	lab.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(lab)
+	b.add_child(row)

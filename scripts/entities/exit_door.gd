@@ -12,7 +12,7 @@ var sealed := false:
 		if sealed == v:
 			return
 		sealed = v
-		_refresh_texture()
+		queue_redraw()
 		if v:
 
 			var cam := get_tree().get_first_node_in_group("camera_rig")
@@ -22,7 +22,6 @@ var sealed := false:
 var _filled := false
 var _arrived_set := {}
 var _t := 0.0
-var _color: Color
 var _burst: CPUParticles2D
 var _light: PointLight2D
 static var _light_tex: ImageTexture
@@ -46,20 +45,12 @@ static func _stepped_light_texture() -> ImageTexture:
 			img.set_pixel(x, y, Color(v, v, v))
 	_light_tex = ImageTexture.create_from_image(img)
 	return _light_tex
-var _icon: Sprite2D
-var _check: Sprite2D
+var _icon: UiGlyph.Node2DGlyph
+var _check: UiGlyph.Node2DGlyph
 
 
-const T_IDLE := preload("res://assets/archive/mech_exit_door.png")
-const T_ARRIVE := preload("res://assets/archive/mech_exit_door_f2.png")
-const T_ENTER := preload("res://assets/archive/mech_exit_door_f3.png")
-@onready var _spr: Sprite2D = $Visual
-
-
-func _refresh_texture() -> void:
-	if _spr == null:
-		return
-	_spr.texture = T_ENTER if sealed else (T_ARRIVE if _filled else T_IDLE)
+func _door_color() -> Color:
+	return Geometries.get_def(geo_index).color
 
 
 func _ready() -> void:
@@ -68,7 +59,6 @@ func _ready() -> void:
 		return
 	collision_layer = 0
 	collision_mask = 2
-	_color = Geometries.ALL[geo_index].color
 
 	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if cs == null:
@@ -92,25 +82,22 @@ func _ready() -> void:
 	_burst.initial_velocity_max = 190.0
 	_burst.scale_amount_min = 2.0
 	_burst.scale_amount_max = 4.0
-	_burst.color = _color
+	_burst.color = _door_color()
 	add_child(_burst)
 
 	_light = PointLight2D.new()
 	_light.texture = _stepped_light_texture()
-	_light.color = _color
+	_light.color = _door_color()
 	_light.energy = 0.0
 	_light.shadow_enabled = false
 	add_child(_light)
 
-	_icon = Sprite2D.new()
-	_icon.texture = Ui.icon("characters/%s" % Geometries.ALL[geo_index].slug)
+	_icon = UiGlyph.Node2DGlyph.new(
+		"characters/%s" % Geometries.ALL[geo_index].slug, 16.0)
 	_icon.position = Vector2(0, -size.y / 2.0 - 30)
-	_icon.scale = Vector2(0.62, 0.62)
 	add_child(_icon)
-	_check = Sprite2D.new()
-	_check.texture = Ui.icon("icons/check")
+	_check = UiGlyph.Node2DGlyph.new("icons/check", 13.0)
 	_check.position = Vector2(0, -size.y / 2.0 - 30)
-	_check.scale = Vector2(0.5, 0.5)
 	_check.visible = false
 	add_child(_check)
 
@@ -137,7 +124,7 @@ func _refresh_fill() -> void:
 	_burst.emitting = full
 	_icon.visible = not full
 	_check.visible = full
-	_refresh_texture()
+	queue_redraw()
 
 
 static func net_suppressed() -> bool:
@@ -178,6 +165,31 @@ func _process(delta: float) -> void:
 	_t += delta
 	_icon.position = Vector2(0, -size.y / 2.0 - 30 + sin(_t * 2.1) * 4.0)
 	_check.position = Vector2(0, -size.y / 2.0 - 30 + sin(_t * 2.1) * 4.0)
+	queue_redraw()
+
+
+func _draw() -> void:
+	if Palette.I == null:
+		return
+	var col := _door_color()
+	var r := Rect2(-size / 2.0, size)
+	var pulse := 0.5 + 0.5 * sin(_t * 2.1)
+	draw_rect(r, Color(Palette.I.ink, 0.55))
+	draw_rect(r, Color(col, 0.85), false, 3.0)
+	draw_rect(r.grow(-6.0), Color(col, 0.30 if not _filled else 0.55))
+	draw_rect(Rect2(r.position.x, r.position.y, r.size.x, 8), Color(col, 0.85))
+	for k in 3:
+		var y := r.position.y + 22.0 + k * (r.size.y - 34.0) / 2.0
+		draw_line(Vector2(r.position.x + 8, y), Vector2(r.end.x - 8, y),
+			Color(Palette.I.paper, 0.35), 2.0)
+	if _filled:
+		draw_rect(r.grow(-6.0), Color(Palette.I.paper, 0.30 + 0.25 * pulse))
+		draw_rect(r, Color(Palette.I.paper, 0.75), false, 2.0)
+	elif sealed:
+		draw_rect(r, Color(Palette.I.paper, 0.5))
+	draw_rect(Rect2(-size.x / 2.0 - 6, -size.y / 2.0 - 6, 6, 6),
+		Color(col, 0.9))
+	draw_rect(Rect2(size.x / 2.0, -size.y / 2.0 - 6, 6, 6), Color(col, 0.9))
 
 var _sig := ""
 
@@ -192,14 +204,11 @@ func _editor_sync(force: bool) -> void:
 		prev.queue_free()
 	if geo_index < 0 or geo_index >= Geometries.ALL.size():
 		return
-	var box := Node2D.new()
-	box.name = "EditorPreview"
-	var badge := Sprite2D.new()
-	badge.texture = Ui.icon("characters/%s" % Geometries.ALL[geo_index].slug)
+	var badge := UiGlyph.Node2DGlyph.new(
+		"characters/%s" % Geometries.ALL[geo_index].slug, 16.0)
 	badge.position = Vector2(0, -size.y / 2.0 - 30)
-	badge.scale = Vector2(0.62, 0.62)
-	box.add_child(badge)
-	add_child(box)
+	badge.name = "EditorPreview"
+	add_child(badge)
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var w := PackedStringArray()

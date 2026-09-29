@@ -12,6 +12,6 @@
   成品 `assets/ui/*.png`,由 `tools/gen_ui.lua` 生成时同步写出)
 - `icon_construct.aseprite` — 项目图标源
 
-规范见 `docs/design/art-style.md`。改源后由对应生成器再生成成品
-(v0.48.0 起图标 / 档案插图、v0.49.0 起 UI 装饰素材均生成器直出;
-本目录不再是 v0.13.2 时代的废止留档,而是现役源库)。
+2026-09-29 起全部美术改 `_draw` 程序化生成(现行规范 =
+`docs/design/procedural-art.md`):本目录与全部成品 PNG 已退役为
+**历史孤本**——保留不删、禁止新增引用;生成器(gen_*.lua)停用。

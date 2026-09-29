@@ -33,11 +33,8 @@ func rebuild(def: Dictionary) -> void:
 		can_sprint = can_sprint or (cd.can_sprint and cd.sprint_speed > cd.base_speed)
 
 	var add_key := func(key_name: String):
-		var ico := TextureRect.new()
-		ico.texture = Ui.icon("keys/%s" % key_name)
-		ico.custom_minimum_size = Vector2(26, 26)
-		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var ico := UiGlyph.new("keys/%s" % key_name)
+		ico.custom_minimum_size = Vector2(30, 26)
 		ico.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		host.add_child(ico)
 	var add_text := func(s: String):

@@ -2,7 +2,7 @@ class_name ActPanelCard
 extends Control
 
 
-## 生成,动态生成豁免)。
+
 
 
 signal back_pressed
@@ -14,8 +14,6 @@ var _open := false
 var _tween: Tween
 var _row_list: Array = []
 
-
-var _card_frame: Texture2D = load("res://assets/ui/card_frame.png")
 
 @onready var _shade: ColorRect = %Shade
 @onready var _card: PanelContainer = %Card
@@ -34,13 +32,6 @@ func _ready() -> void:
 	_shade.color = Color(Palette.I.ink, 0.92)
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	%Center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var frame := StyleBoxTexture.new()
-	frame.texture = _card_frame
-	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
-		frame.set_texture_margin(side, 20.0)
-		frame.set_content_margin(side, 20.0)
-	_card.add_theme_stylebox_override("panel", frame)
-	_card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_card.resized.connect(func() -> void:
 		_card.pivot_offset = _card.size / 2.0)
 	get_viewport().size_changed.connect(func() -> void:
@@ -134,11 +125,10 @@ func _populate_rows(idx: int) -> void:
 		b.add_theme_font_size_override("font_size", 19)
 		b.add_theme_constant_override("h_separation", 14)
 
-		b.add_theme_constant_override("icon_max_width", 28)
-		b.icon = Ui.icon("characters/%s" % Geometries.get_def(meta["focus"]).slug)
-		b.text = "%02d   %s" % [k + 1, meta["name"]]
+		Ui.glyph_row(b, "characters/%s" % Geometries.get_def(meta["focus"]).slug,
+			26.0, "%02d   %s" % [k + 1, meta["name"]], Ui.HEAD, 19)
 		b.pivot_offset = Vector2(12, 27)
-		b.self_modulate = Color(1, 1, 1, 1.0 if unlocked else 0.45)
+		b.modulate = Color(1, 1, 1, 1.0 if unlocked else 0.45)
 		Ui.wire_button(b, "")
 		b.mouse_entered.connect(func() -> void:
 			_level_hint.text = str(meta.get("intro", "")).replace("\n", "  "))
@@ -206,11 +196,9 @@ func _focus_next_row() -> void:
 func _add_wip_row(k: int) -> void:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(700, 54)
-	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	b.add_theme_font_override("font", Ui.HEAD)
-	b.add_theme_font_size_override("font_size", 19)
-	b.text = "%02d   —— 未上演 · 排练中 ——" % (k + 1)
-	b.self_modulate = Color(1, 1, 1, 0.28)
+	b.modulate = Color(1, 1, 1, 0.28)
+	Ui.glyph_row(b, "ui/none", 26.0,
+		"%02d   —— 未上演 · 排练中 ——" % (k + 1), Ui.HEAD, 19)
 	Ui.wire_button(b, "ui_error")
 	b.mouse_entered.connect(func() -> void:
 		_level_hint.text = "这一场还在排练——巨构尚未搭完。")

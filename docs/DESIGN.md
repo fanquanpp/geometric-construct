@@ -13,15 +13,13 @@
 |---|---|
 | 设计总纲与三支柱 | [design/README.md](design/README.md) |
 | 名词总表(三域名词 / 七名册 / 标尺 v2 / 量尺纪律) | [design/glossary.md](design/glossary.md) |
-| 视觉规范(调色板 / 形状语言 / 动效法则 M1–M9 / 审计清单 / 素材管线) | [design/art-style.md](design/art-style.md) |
+| 程序化美术(全部 _draw 制图契约 / DrawKit·TerrainArt·CodexArt / 风格契约) | [design/procedural-art.md](design/procedural-art.md) |
 | 几何体角色设计(标尺与利用率 / 手感公约数 / 射程矩阵 / 配合矩阵 / 档案台词) | [design/characters.md](design/characters.md) |
 | 特殊建筑物(终点门 / 加速门 / 曲面板 / 移动构件 / 动态构件 / 规划) | [design/structures.md](design/structures.md) |
 | 关卡设计(数据规范 / 写作流程 / 动态地图原则 / 组件语义 v4 / 网格量尺) | [design/levels.md](design/levels.md) |
 | 多人联机(三档连接 / 输入槽 / LAN 发现 / 同步规格 / 中继服) | [design/net.md](design/net.md) |
 | UI 流与层级(三型页面 / 层带规范 / 导航语义 / 档案几何五页签) | [design/ui-flow.md](design/ui-flow.md) |
-| 动效与特效(程序化管线 / 资产清单 / 转场规范 / 性能预算 / 玩法配合) | [design/motion.md](design/motion.md) |
 | 音频设计(七音符体系 / 音高审计 / BGM 序列器 / 钢琴地板) | [design/audio.md](design/audio.md) |
-| 氛围设计(背景装饰迭代 / 结构剪影 / 构成主义光影) | [design/atmosphere.md](design/atmosphere.md) |
 | 剧情设计(世界观 / 声线 / 演出规范 / 钩子) | [design/story.md](design/story.md) |
 | ~~肉鸽系统~~(已随 v0.45.0 作关换代移除,档案见 git 历史) | — |
 

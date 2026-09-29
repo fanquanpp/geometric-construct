@@ -6,7 +6,7 @@ var panel
 var portrait_zone: Control
 var right_col: VBoxContainer
 
-var _portrait_tex: TextureRect
+var _portrait_tex: UiGlyph
 var _name_label: Label
 var _full_label: Label
 var _role_tag: PanelContainer
@@ -30,20 +30,12 @@ func build(p, page: Control) -> void:
 	page.add_child(zone)
 	portrait_zone = zone
 
-	_portrait_tex = TextureRect.new()
-	_portrait_tex.position = Vector2.ZERO
+	_portrait_tex = UiGlyph.new()
 	_portrait_tex.size = Vector2(400, 400)
-	_portrait_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_portrait_tex.stretch_mode = TextureRect.STRETCH_SCALE
-	_portrait_tex.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_portrait_tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(_portrait_tex)
 
-	var corners := TextureRect.new()
-	corners.texture = load("res://assets/ui/viewfinder.png")
+	var corners := UiGlyph.new("ui/viewfinder")
 	corners.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	corners.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	corners.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(corners)
 
 	var right := VBoxContainer.new()
@@ -89,9 +81,7 @@ func build(p, page: Control) -> void:
 
 func refresh() -> void:
 	var gd: GeometryDef = Geometries.get_def(panel.current)
-	var tex: Texture2D = load(ArchiveData.img_path("geo_" + gd.slug))
-	if tex != null:
-		_portrait_tex.texture = tex
+	_portrait_tex.glyph_key = "characters/%s" % gd.slug
 	_name_label.text = gd.name + (" / " + gd.name_half if gd.paired else "")
 	_full_label.text = gd.full_name + "  ·  " + gd.slug.to_upper()
 	(_role_tag.get_child(0) as Label).text = gd.role

@@ -3,7 +3,8 @@
 [ext_resource type="Script" path="res://scripts/ui/menu_layer.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/act_panel_card.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/ui/dual_pick_card.tscn" id="4"]
-[ext_resource type="Texture2D" path="res://assets/ui/poster_frame.png" id="poster_frame_png"]
+[ext_resource type="Script" path="res://scripts/art/ui_glyph.gd" id="ui_glyph_scr"]
+[ext_resource type="Script" path="res://scripts/art/frame_draw.gd" id="frame_draw_scr"]
 
 [node name="MenuLayer" type="CanvasLayer"]
 layer = 20
@@ -21,19 +22,15 @@ offset_right = 1280.0
 offset_bottom = 720.0
 mouse_filter = 2
 
-[node name="FrameOutline" type="NinePatchRect" parent="Root/Content"]
+[node name="FrameOutline" type="Control" parent="Root/Content"]
 unique_name_in_owner = true
-texture_filter = 1
+script = ExtResource("frame_draw_scr")
+style = "poster"
 offset_left = 16.0
 offset_top = 16.0
 offset_right = 1264.0
 offset_bottom = 704.0
 mouse_filter = 2
-texture = ExtResource("poster_frame_png")
-patch_margin_left = 24
-patch_margin_top = 24
-patch_margin_right = 24
-patch_margin_bottom = 24
 
 [node name="CornerTL" type="ColorRect" parent="Root/Content"]
 unique_name_in_owner = true
@@ -186,7 +183,7 @@ offset_left = 930.0
 offset_top = 596.0
 offset_right = 1170.0
 offset_bottom = 638.0
-text = "双人试炼"
+text = "双人竞速"
 
 [node name="PanelBtn" type="Button" parent="Root/Content"]
 unique_name_in_owner = true
@@ -204,8 +201,11 @@ offset_right = 1170.0
 offset_bottom = 690.0
 text = "设 置"
 
-[node name="Floater0" type="TextureRect" parent="Root/Content"]
+[node name="Floater0" type="Control" parent="Root/Content"]
+script = ExtResource("ui_glyph_scr")
 unique_name_in_owner = true
+glyph_key = "characters/dash"
+glyph_key = "characters/dash"
 modulate = Color(1, 1, 1, 0.3)
 offset_left = 64.0
 offset_top = 158.4
@@ -216,8 +216,10 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Floater1" type="TextureRect" parent="Root/Content"]
+[node name="Floater1" type="Control" parent="Root/Content"]
+script = ExtResource("ui_glyph_scr")
 unique_name_in_owner = true
+glyph_key = "characters/spring"
 modulate = Color(1, 1, 1, 0.3)
 offset_left = 537.6
 offset_top = 50.4
@@ -228,8 +230,10 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Floater2" type="TextureRect" parent="Root/Content"]
+[node name="Floater2" type="Control" parent="Root/Content"]
+script = ExtResource("ui_glyph_scr")
 unique_name_in_owner = true
+glyph_key = "characters/fall"
 modulate = Color(1, 1, 1, 0.3)
 offset_left = 1216.0
 offset_top = 446.4
@@ -240,8 +244,10 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Floater3" type="TextureRect" parent="Root/Content"]
+[node name="Floater3" type="Control" parent="Root/Content"]
+script = ExtResource("ui_glyph_scr")
 unique_name_in_owner = true
+glyph_key = "characters/roll"
 modulate = Color(1, 1, 1, 0.3)
 offset_left = 1024.0
 offset_top = 43.2

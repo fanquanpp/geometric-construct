@@ -3,6 +3,7 @@ extends CanvasLayer
 
 
 signal chip_tapped(index: int)
+signal race_rematch_requested
 
 var _intro_tween: Tween
 var _complete_tween: Tween
@@ -51,6 +52,8 @@ func _ready() -> void:
 	_fx = TransitionFX.new()
 	add_child(_fx)
 
+	_build_race_ui()
+
 	var flash_layer := CanvasLayer.new()
 	flash_layer.layer = 90
 	var flash_ctl := Control.new()
@@ -83,12 +86,8 @@ func _ready() -> void:
 	_intro_skip.pressed.connect(_dismiss_intro)
 
 	for c in Geometries.ALL:
-		var ico := TextureRect.new()
-		ico.texture = Ui.icon("characters/%s" % c.slug)
+		var ico := UiGlyph.new("characters/%s" % c.slug)
 		ico.custom_minimum_size = Vector2(52, 52)
-		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_shapes_row.add_child(ico)
 	_win_hint.text = "右上 重来 · 再走一遍        右上 暂停 · 回到标题" if touch \
 		else "空格 · 再走一遍        Esc · 回到标题"
@@ -112,18 +111,12 @@ func _apply_styles() -> void:
 
 	%Shade.color = Color(Palette.I.ink, 0.55)
 
-	var intro_frame := StyleBoxTexture.new()
-	intro_frame.texture = load("res://assets/ui/intro_card_frame.png")
-	intro_frame.set_texture_margin(SIDE_LEFT, 16.0)
-	intro_frame.set_texture_margin(SIDE_TOP, 16.0)
-	intro_frame.set_texture_margin(SIDE_RIGHT, 24.0)
-	intro_frame.set_texture_margin(SIDE_BOTTOM, 26.0)
-	intro_frame.set_content_margin(SIDE_LEFT, 36.0)
-	intro_frame.set_content_margin(SIDE_TOP, 20.0)
-	intro_frame.set_content_margin(SIDE_RIGHT, 44.0)
-	intro_frame.set_content_margin(SIDE_BOTTOM, 30.0)
-	_intro_card.add_theme_stylebox_override("panel", intro_frame)
-	_intro_card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var intro_sb := _intro_card.get_theme_stylebox("panel") as StyleBoxFlat
+	if intro_sb != null:
+		intro_sb.set_content_margin(SIDE_LEFT, 36.0)
+		intro_sb.set_content_margin(SIDE_TOP, 20.0)
+		intro_sb.set_content_margin(SIDE_RIGHT, 44.0)
+		intro_sb.set_content_margin(SIDE_BOTTOM, 30.0)
 	%TitleBlock.color = Palette.I.red
 	%IntroRule.color = Palette.I.red
 	Ui.style(_intro_num, 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
@@ -316,3 +309,110 @@ func _anchor_flash_draw() -> void:
 func set_net_badge(text: String) -> void:
 	_net_badge.text = text
 	_net_badge.visible = not text.is_empty()
+
+
+var _race_root: Control
+var _race_count: Label
+var _race_panel: PanelContainer
+var _race_title: Label
+var _race_times: Label
+var _race_wins: Label
+var _race_hint: Label
+var _race_tween: Tween
+
+
+func _build_race_ui() -> void:
+	_race_root = Control.new()
+	_race_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_race_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_race_root.visible = false
+	_root.add_child(_race_root)
+
+	_race_count = Ui.l("", 130, Ui.TITLE, Palette.I.paper,
+		HORIZONTAL_ALIGNMENT_CENTER, true)
+	_race_count.set_anchors_preset(Control.PRESET_CENTER)
+	_race_count.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_race_count.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_race_count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_race_root.add_child(_race_count)
+
+	_race_panel = PanelContainer.new()
+	_race_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_race_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_race_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_race_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	var sb := Ui.sb(Color(Palette.I.ink_2, 0.97), 0, Color(Palette.I.paper, 0.5), 2, 40, 26)
+	_race_panel.add_theme_stylebox_override("panel", sb)
+	_race_panel.gui_input.connect(func(ev: InputEvent) -> void:
+		if ev is InputEventScreenTouch and ev.pressed \
+				or ev is InputEventMouseButton and ev.pressed:
+			race_rematch_requested.emit())
+	_race_root.add_child(_race_panel)
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 10)
+	_race_panel.add_child(vb)
+	_race_title = Ui.l("", 52, Ui.TITLE, Palette.I.paper, HORIZONTAL_ALIGNMENT_CENTER)
+	vb.add_child(_race_title)
+	_race_times = Ui.l("", 22, Ui.HEAD, Color(Palette.I.paper, 0.9),
+		HORIZONTAL_ALIGNMENT_CENTER)
+	_race_times.add_theme_font_override("font", Ui.tabular())
+	vb.add_child(_race_times)
+	_race_wins = Ui.l("", 18, Ui.HEAD, Palette.I.yellow, HORIZONTAL_ALIGNMENT_CENTER)
+	vb.add_child(_race_wins)
+	_race_hint = Ui.l("", 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
+	vb.add_child(_race_hint)
+
+
+func race_countdown(n: int) -> void:
+	_race_root.visible = true
+	_race_panel.visible = false
+	_race_count.text = str(n)
+	_race_count.modulate = Color(1, 1, 1, 1)
+	_race_count.pivot_offset = _race_count.size / 2.0
+	if _race_tween != null:
+		_race_tween.kill()
+	_race_tween = create_tween()
+	_race_tween.tween_property(_race_count, "scale",
+		Vector2(1.25, 1.25), 0.5).from(Vector2.ONE) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+func race_go() -> void:
+	_race_count.text = "GO"
+	_race_count.modulate = Color(Palette.I.red, 1.0)
+	if _race_tween != null:
+		_race_tween.kill()
+	_race_tween = create_tween()
+	_race_tween.tween_property(_race_count, "modulate:a", 0.0, 0.55)
+	_race_tween.tween_callback(func() -> void:
+		_race_count.text = ""
+		_race_root.visible = _race_panel.visible)
+
+
+func show_race_result(winner: int, t_win: String, t_other: String,
+		wins: Array) -> void:
+	_race_root.visible = true
+	_race_panel.visible = true
+	_race_count.text = ""
+	var roster: Array = Main.I.players if Main.I != null else []
+	var wcol := Palette.I.paper
+	if winner < roster.size():
+		wcol = roster[winner].def.color
+	_race_title.text = "玩家 %d · 先归位" % (winner + 1)
+	_race_title.label_settings = Ui.ls(52, Ui.TITLE, wcol, null, 0,
+		Color(0, 0, 0, 0.55), Vector2(0, 3), 6)
+	_race_times.text = "P1 %s   ·   P2 %s" % [t_win if winner == 0 else t_other,
+		t_other if winner == 0 else t_win]
+	_race_wins.text = "局分 %d : %d" % [wins[0], wins[1]]
+	_race_hint.text = "点按此处 · 再战一局        右上 · 回到标题" \
+		if _touch_mode() else "R · 再战一局        Esc · 回到标题"
+	_race_panel.modulate = Color(1, 1, 1, 0)
+	_race_panel.pivot_offset = _race_panel.size / 2.0
+	if _race_tween != null:
+		_race_tween.kill()
+	_race_tween = create_tween()
+	_race_tween.tween_property(_race_panel, "modulate:a", 1.0, 0.3)
+
+
+func race_hide() -> void:
+	_race_root.visible = false

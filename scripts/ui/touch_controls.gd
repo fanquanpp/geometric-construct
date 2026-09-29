@@ -193,28 +193,29 @@ func _relayout() -> void:
 
 func _add_button(icon_rel: String, icon_on_rel: String, action: String,
 		label_text: String) -> void:
-	var tex := Ui.icon(icon_rel)
-	var tex_on := Ui.icon(icon_on_rel)
 	var btn := TouchScreenButton.new()
-	btn.texture_normal = tex
-	btn.texture_pressed = tex_on
 	btn.action = action
-
-	var base := maxf(tex.get_width(), 1.0)
-	var s := ICON_SIZE_SMALL / base
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(64, 64)
+	btn.shape = shape
+	btn.shape_centered = false
+	var s := ICON_SIZE_SMALL / 64.0
 	btn.scale = Vector2(s, s)
 	btn.modulate = Color(1, 1, 1, 0.66)
 	btn.passby_press = true
 
 	btn.pressed.connect(func() -> void: buzz(24))
 	_root.add_child(btn)
+	var glyph := UiGlyph.Node2DGlyph.new(icon_rel, 32.0)
+	glyph.position = Vector2(32, 32)
+	btn.add_child(glyph)
 	var label := Ui.l(label_text, 12, Ui.LIGHT, Color(Palette.I.paper, 0.8),
 		HORIZONTAL_ALIGNMENT_CENTER)
 	label.size = Vector2(80, 16)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(label)
 	_buttons[action] = {"btn": btn, "label": label, "icon_px": ICON_SIZE_SMALL,
-		"rect": Rect2()}
+		"rect": Rect2(), "glyph": glyph, "icon": icon_rel, "icon_on": icon_on_rel}
 
 
 static func buzz(ms := 24) -> void:
@@ -282,6 +283,10 @@ func _process(_delta: float) -> void:
 		var ltarget := 1.0 if btn.is_pressed() else 0.72
 		var label: Label = b.label
 		label.modulate.a = move_toward(label.modulate.a, ltarget, 0.12)
+		var key: String = (b.icon_on if btn.is_pressed() else b.icon) as String
+		var g: UiGlyph.Node2DGlyph = b.glyph
+		if g.glyph_key != key:
+			g.set_key(key)
 
 
 class WheelPad extends Control:
@@ -306,40 +311,10 @@ class WheelPad extends Control:
 	var _finger := -1
 	var _returning := false
 
-	const TEX_BASE := preload("res://assets/ui/stick_base.png")
-	const TEX_BASE_ON := preload("res://assets/ui/stick_base_sprint.png")
-	const TEX_ARROW := preload("res://assets/ui/stick_arrow.png")
-	const TEX_ARROW_ON := preload("res://assets/ui/stick_arrow_red.png")
-	const TEX_KNOB := preload("res://assets/ui/stick_knob.png")
-	const TEX_KNOB_ON := preload("res://assets/ui/stick_knob_sprint.png")
-	const CANON := Vector2(252, 84)
-	const ARROW_R_POS := Vector2(229, 34)
-	const ARROW_L_POS := Vector2(11, 34)
-	const KNOB_TEX := 54.0
-	const KNOB_CANON_R := 26.0
-
-	var _base: TextureRect
-	var _arrow_l: TextureRect
-	var _arrow_r: TextureRect
-	var _knob: TextureRect
+	var _idle_a := 1.0
 
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_base = _visual(TEX_BASE)
-		_arrow_r = _visual(TEX_ARROW)
-		_arrow_l = _visual(TEX_ARROW)
-		_arrow_l.flip_h = true
-		_knob = _visual(TEX_KNOB)
-
-	func _visual(tex: Texture2D) -> TextureRect:
-		var tr := TextureRect.new()
-		tr.texture = tex
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_SCALE
-		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(tr)
-		return tr
 
 	func setup(p_half_w: float, p_half_h: float, center: Vector2) -> void:
 		half_w = p_half_w
@@ -351,28 +326,10 @@ class WheelPad extends Control:
 		_travel = half_w - _knob_r - 12.0
 		size = Vector2(half_w, half_h) * 2.0 + Vector2(12, 12)
 		position = _center - size / 2.0
-		_layout_visuals()
-
-	func _layout_visuals() -> void:
-		var sc := size / CANON
-		_base.size = size
-		_base.position = Vector2.ZERO
-		_arrow_r.position = ARROW_R_POS * sc
-		_arrow_l.position = ARROW_L_POS * sc
-		var ks := KNOB_TEX * (_knob_r / KNOB_CANON_R)
-		_knob.size = Vector2(ks, ks)
-		_apply_state()
+		queue_redraw()
 
 	func _apply_state() -> void:
-		_base.texture = TEX_BASE_ON if sprinting else TEX_BASE
-		_knob.texture = TEX_KNOB_ON if sprinting else TEX_KNOB
-		_arrow_r.texture = TEX_ARROW_ON if sprinting else TEX_ARROW
-		_arrow_l.texture = _arrow_r.texture
-		_arrow_r.visible = strength > 0.0
-		_arrow_l.visible = strength < 0.0
-		var ks := _knob.size.x
-		_knob.position = Vector2(size.x / 2.0 + _knob_x, size.y / 2.0) \
-			- Vector2(ks, ks) / 2.0
+		queue_redraw()
 
 	func float_begin(finger: int, pos: Vector2) -> bool:
 		if wheel_mode != MODE_FLOAT or _finger != -1:
@@ -476,10 +433,36 @@ class WheelPad extends Control:
 		position = _center - size / 2.0
 		_release_move()
 		Input.action_release("sprint")
-		_layout_visuals()
+		queue_redraw()
 
 	func _process(_delta: float) -> void:
 
 		var idle_a := 0.18 if (wheel_mode == MODE_FLOAT and _finger == -1) else 1.0
-		_base.modulate.a = idle_a
-		_knob.modulate.a = idle_a
+		if idle_a != _idle_a:
+			_idle_a = idle_a
+			queue_redraw()
+
+	func _draw() -> void:
+		if Palette.I == null:
+			return
+		var a := _idle_a
+		var r := Rect2(Vector2.ZERO, size)
+		var mid_y := size.y / 2.0
+		draw_rect(r, Color(Palette.I.ink_3, 0.55 * a))
+		draw_rect(r, Color(Palette.I.red if sprinting else Palette.I.paper,
+			(0.6 if sprinting else 0.30) * a), false, 2.0)
+		draw_rect(Rect2(Vector2(size.x / 2.0 - 2, mid_y - 9), Vector2(4, 18)),
+			Color(Palette.I.paper, 0.22 * a))
+		if strength > 0.0:
+			DrawKit.chevron(self, Vector2(size.x - 20.0, mid_y), Vector2(1, 0),
+				18.0, Color(Palette.I.red if sprinting else Palette.I.paper,
+					0.85 * a), 3.0)
+		elif strength < 0.0:
+			DrawKit.chevron(self, Vector2(20.0, mid_y), Vector2(-1, 0),
+				18.0, Color(Palette.I.red if sprinting else Palette.I.paper,
+					0.85 * a), 3.0)
+		var kc := Vector2(size.x / 2.0 + _knob_x, mid_y)
+		DrawKit.ngon_fill(self, kc, _knob_r, 16,
+			Color(Palette.I.red if sprinting else Palette.I.paper, 0.9 * a))
+		DrawKit.ngon_line(self, kc, _knob_r, 16, Color(Palette.I.ink, 0.45 * a), 2.0)
+		draw_circle(kc, _knob_r * 0.3, Color(Palette.I.ink, 0.55 * a))

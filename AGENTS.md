@@ -13,7 +13,7 @@
 	 文案双端自适应(键位词 ↔ 触屏词,参照 HintMarker / HUD 提示条)。
    - **实时更新文档** = 文档与代码同一次交付同步:CHANGELOG 记一节、
 	 README 版本行、涉及的设计文档(characters / levels / structures /
-	 art-style / ui-flow / audio / motion 等)、ARCHITECTURE(架构变化)、
+	 procedural-art / ui-flow / audio 等)、ARCHITECTURE(架构变化)、
 	 ASSETS.md(新资产)。不允许"代码先合、文档下次补"。
 2. **机制优先**:关卡与剧情设计锁定在机制全部完美之后(用户决策
    2026-09-10);改机制时必须同步数据契约(levels.md)与门禁
@@ -84,13 +84,12 @@
   场景应自包含、相互依赖最小化,可复用 / 可独立测试的节点组一律
   独立成场景,组合优于继承。
 - 脚本内 `Xxx.new()` + `add_child` 串常驻树 = 违规。
-- **UI 装饰禁 `_draw`**(2026-09-13 用户拍板):框线 / 角刻 / 规线 /
-  花饰一律 aseprite 素材化(源入 assets/art,引擎用 PNG 入非 .gdignore
-  目录),由场景节点承载(NinePatchRect / TextureRect / StyleBoxTexture);
-  `_draw` 只留动态状态绘制(高亮脉冲 / 进度类)。仅两类豁免:
-  ①运行时才能确定数量 / 形态的动态内容(粒子迸散 / 关卡内容物按
-  JSON 编译装配 / 联机对端实体);②dev 钩子与测试分镜。豁免处
-  必须注释注明「动态生成豁免」。
+- **全部美术 `_draw` 程序化生成**(2026-09-29 用户拍板,废除旧
+  「UI 装饰禁 _draw」令):素材 / 地图房间 / 机关 / 特效 / 动画 /
+  图鉴 / UI 装饰一律 `_draw` 绘制配方产出,取色只经
+  `data/palette.tres`(Palette);原 PNG 素材保留孤本、禁止新引用。
+  架构与风格契约见 `docs/design/procedural-art.md`(视觉侧唯一现行
+  规范,旧 art-style / motion / atmosphere / presentation 等已删)。
 - 新系统交付三件套:`xxx.tscn` + `xxx.gd` + 调参 `.tres`;场景必须
   能单独在编辑器打开预览(场景即组件)。
 
@@ -115,7 +114,7 @@
 **R4 · 边界(与既有契约不冲突)**
 - 关卡几何 = `levels_native/*.tscn` 原生摆位(契约 levels.md 原生 v1,
   JSON 管线与肉鸽已随 v0.45 清退);机关参数一律 `@export` 场景实例调
-  (R2),机关场景壳必须自带正典帧 Visual + @tool 预览(所见即所得)。
+  (R2),机关场景壳以 `_draw` 画正典形态 + @tool 预览(所见即所得)。
 - 双端路径与文档同步要求(本文件第 1 条)不变;新增场景 / 资源
   改动照跑第 4 条验收基线。
 

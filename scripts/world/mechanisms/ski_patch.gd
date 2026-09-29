@@ -6,9 +6,6 @@ extends Area2D
 @export var size := Vector2(300, 60)
 var _grace := {}
 
-const T_FRAME := preload("res://assets/archive/mech_ski_patch.png")
-
-@onready var _visual: Sprite2D = $Visual
 var _sig := ""
 
 func _ready() -> void:
@@ -24,7 +21,7 @@ func _ready() -> void:
 	if cs.shape == null:
 		cs.shape = RectangleShape2D.new()
 	cs.shape.size = size
-	TerrainKit.mech_layout(_visual, T_FRAME, Rect2(-size / 2.0, size))
+	queue_redraw()
 	body_entered.connect(_on_enter)
 	body_exited.connect(_on_exit)
 
@@ -38,7 +35,7 @@ func _editor_sync(force: bool) -> void:
 	if not force and s == _sig:
 		return
 	_sig = s
-	TerrainKit.mech_layout(_visual, T_FRAME, Rect2(-size / 2.0, size))
+	queue_redraw()
 
 func _on_enter(body: Node2D) -> void:
 	if body is Player:
@@ -57,3 +54,16 @@ func _physics_process(delta: float) -> void:
 			if is_instance_valid(k) and not overlaps_body(k):
 				(k as Player).skiing = false
 			_grace.erase(k)
+
+
+func _draw() -> void:
+	if Palette.I == null:
+		return
+	var r := Rect2(-size / 2.0, size)
+	draw_rect(r, Color(Palette.I.blue, 0.16))
+	DrawKit.hatch45(self, r, Color(Palette.I.blue, 0.30), 9.0, 1.5)
+	draw_rect(r, Color(Palette.I.blue, 0.5), false, 2.0)
+	DrawKit.chevron(self, Vector2(-24, r.get_center().y), Vector2(1, 0),
+		18.0, Color(Palette.I.paper, 0.55), 2.0)
+	DrawKit.chevron(self, Vector2(24, r.get_center().y), Vector2(1, 0),
+		18.0, Color(Palette.I.paper, 0.55), 2.0)

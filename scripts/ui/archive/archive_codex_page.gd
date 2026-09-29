@@ -34,11 +34,13 @@ func build(p, page: Control) -> void:
 		b.toggle_mode = true
 		b.custom_minimum_size = Vector2(276, row_h)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.add_theme_constant_override("icon_max_width", icon_px)
+		var art := CodexArt.new(str(e["id"]))
+		art.position = Vector2(14, (row_h - icon_px) / 2.0)
+		art.size = Vector2(icon_px, icon_px)
+		b.add_child(art)
 		b.add_theme_constant_override("h_separation", 10)
 		b.add_theme_stylebox_override("pressed",
 			Ui.sb(Color(Palette.I.ink_3, 1.0), 0, Color(Palette.I.paper, 0.55), 1, 10, 6))
-		b.icon = codex_icon(str(e["id"]))
 		b.pivot_offset = Vector2(12, 26)
 		Ui.wire_button(b, "ui_page")
 		b.pressed.connect(func() -> void:
@@ -76,19 +78,12 @@ func build(p, page: Control) -> void:
 	backing.size = Vector2(400, 400)
 	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(backing)
-	var tex := TextureRect.new()
+	var tex := CodexArt.new()
 	tex.size = Vector2(400, 400)
-	tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	tex.stretch_mode = TextureRect.STRETCH_SCALE
-	tex.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(tex)
 
-	var corners := TextureRect.new()
-	corners.texture = load("res://assets/ui/viewfinder.png")
+	var corners := UiGlyph.new("ui/viewfinder")
 	corners.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	corners.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	corners.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(corners)
 
 	var under := HBoxContainer.new()
@@ -170,17 +165,10 @@ func anim_show(idx: int) -> void:
 	var frames: Array = anim["frames"]
 	idx = posmod(idx, frames.size())
 	refs["anim_idx"] = idx
-	var entries: Array = ArchiveData.BUILDINGS if kind == "bld" else ArchiveData.MECHS
-	var e: Dictionary = entries[int(panel._sel[kind])]
-	(refs["tex"] as TextureRect).texture = codex_icon(str(e["id"]) + str(frames[idx]))
+	(refs["tex"] as CodexArt).set_pose(idx)
 	if anim.has("states"):
-		(refs["caption"] as Label).text = "动态精灵 · " + str(anim["states"][idx])
+		(refs["caption"] as Label).text = "动态绘制 · " + str(anim["states"][idx])
 	panel._anim_timer.start(float(anim["ms"]) / 1000.0)
-
-
-func codex_icon(id: String) -> Texture2D:
-	var path := ArchiveData.img_path(id)
-	return load(path) if ResourceLoader.exists(path) else null
 
 
 func refresh() -> void:
@@ -195,6 +183,7 @@ func refresh() -> void:
 	var anim: Dictionary = e.get("anim", {})
 	refs["anim"] = anim
 	refs["anim_idx"] = 0
+	(refs["tex"] as CodexArt).set_entry(str(e["id"]), 0)
 	if not anim.is_empty():
 
 		if toggle != null:
@@ -213,8 +202,7 @@ func refresh() -> void:
 			if toggle != null:
 				toggle.visible = false
 			(refs["caption"] as Label).text = "示例图 200×200 · 1 格 = 100px"
-		(refs["tex"] as TextureRect).texture = codex_icon(
-			str(e["id"]) + ("_f2" if frame2 else ""))
+		(refs["tex"] as CodexArt).set_pose(1 if frame2 else 0)
 		if panel._tab == kind:
 			panel._anim_timer.stop()
 

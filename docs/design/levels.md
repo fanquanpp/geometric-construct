@@ -1,17 +1,19 @@
 # 关卡设计 · LEVELS(原生编辑器作关 v1)
 
-> 状态:现行(v0.45)· 作关 = **Godot 原生编辑器内 TileMapLayer 摆位 + 机关场景实例**
+> 状态:现行(v0.53)· 作关 = **Godot 原生编辑器内 TileMapLayer 摆位 + 机关场景实例**;
+> 渲染 = **全程序化 `_draw`**(2026-09-29 用户令,契约见 procedural-art.md)
 > 方案与决策记录:`native-levels.md`(提案 v1 已落地,D1–D8 已拍板)
-> 旧 JSON 管线(LevelBuilder / Comp / LevelDef / ase2level)已于本轮**整体退役**,
+> 旧 JSON 管线(LevelBuilder / Comp / LevelDef / ase2level)已于 v0.45 **整体退役**,
 > 归档见 git 历史(v0.39.0 / v0.43.0 / v0.44.0 / v0.45.0 四批)。
 
 ## 0. 制作流程(全在编辑器内)
 
-1. **素材**:图块集已全量绘制落位——`assets/tiles/native_tiles.png`
-   (100×100 网格,16 列 × 14 行 = 224 图位;构成主义纪律同 art-style
-   §1/§6)。PNG 为孤本,再生源 = `tools/gen_tiles.lua`(Aseprite Lua
-   生成器,画满全部图位后导出同名覆盖;旧占位工具 `build_native_kit.gd`
-   已删除,任何灰块产物都不得覆盖正式图块)。
+1. **地形渲染(程序化)**:运行时由 `TerrainArt`(`scripts/art/terrain_art.gd`)
+   逐格 `_draw`:形状 = TileData **物理多边形**(整方 / 单向 / 坡 / 局部),
+   材质族按图集列带分档(石板 / 亮面板 / 墨块 / 灰阶),装饰图位走
+   坐标配方表(同张表语义)。TileMapLayer 运行时 `visible=false`
+   (TileSet 碰撞不受影响),**编辑器保留图位视图供作关**;
+   `assets/tiles/native_tiles.png` 与图鉴/机关 PNG 同为历史孤本。
 2. **TileSet**(`data/tiles/native_tileset.tres`):物理层一次配好——
    `layer0 = 共享实体(bit1)`,`layer1..5 = 疾/跃/逆/圆/伍 专属(bit2..32)`;
    **224 图位碰撞多边形已逐格配好**(现行 = layer0:实心整方 / 单向踏面
@@ -22,17 +24,14 @@
    (社区实证),初版建议手拼;16 邻接变体已随图集提供三族(下表),
    地形集可随时启用。
 
-### 图集地图(native_tiles.png · 224 格,16 列 × 14 行)
+### 图集地图(native_tileset · 224 格,16 列 × 14 行)
 
-> 源流:占位灰块(旧工具已删,档见 git 历史)→ 40 格
-> aseprite 批次(`assets/art/tiles/native_tiles.aseprite`,档案保留)→
-> **现行 = `tools/gen_tiles.lua` 生成器全量绘制**(2026-09-15,同名覆盖,
-> 场景零改动)。色板与 palette.tres 同源;缘线 = PAPER·30%;构成红唯一
-> 强调(art-style §1)。**兼容契约**:(0,0)(1,0)(2,0)(0,1)(1,1) 五格
-> 语义与占位版一致,现役场景直换不重摆。门禁:native_check 13 关 +
-> flow_check 全绿(2026-09-15)。
+> 表 = **图位语义 / 碰撞契约**(外观不再来自贴图,由 TerrainArt 配方
+> 程序化绘制:碰撞格画物理多边形 + 材质族;装饰格按下表语义走
+> 坐标配方)。**兼容契约**:(0,0)(1,0)(2,0)(0,1)(1,1) 五格
+> 语义与占位版一致。门禁:native_check 27 场 + flow_check 全绿。
 
-| 行 | 语义 | 碰撞(layer0) |
+| 行 | 语义(TerrainArt 配方依据) | 碰撞(layer0) |
 |---|---|---|
 | R0 | 实心主族 16:基准 / 红刻记号 / 角部刻度 / 红方块 / 斜切三角 / 细线双规 / 横纹 / 竖纹 / 雪佛龙 / 几何圆环 / 点阵 / 取景框角标 / 亮面板 / 动板 / 墨块 | 整方(均含受光带+顶缘+底暗带) |
 | R0(2,0) | 单向薄板 24px | 顶部 24px One Way |

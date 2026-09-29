@@ -422,7 +422,11 @@ func _recall_keypress() -> void:
 func run_dual_test() -> void:
 	m.start_level_dual(26)
 	await m.get_tree().create_timer(0.5).timeout
-	var fails := 0
+	var ok_cd: bool = m.race.phase == RaceController.Phase.COUNTDOWN
+	print("DUALTEST countdown-phase ", "PASS" if ok_cd else "FAIL",
+		" phase=", m.race.phase)
+	await m.get_tree().create_timer(3.0).timeout
+	var fails: int = 0 if ok_cd else 1
 	var p1: Player = m.players[0]
 	var p2: Player = m.players[1]
 
@@ -467,22 +471,28 @@ func run_dual_test() -> void:
 	var d1: ExitDoor = m._doors.get(p2.index)
 	p1.position = d0.position
 	p2.position = d1.position
-	await m.get_tree().create_timer(1.0).timeout
+	await m.get_tree().create_timer(0.6).timeout
 
-	var ok_arrive: bool = d0.sealed and d1.sealed
-	print("DUALTEST arrive ", "PASS" if ok_arrive else "FAIL",
-		" p1=", p1.arrived, " p2=", p2.arrived)
+	var ok_win: bool = m.race.phase == RaceController.Phase.FINISHED
+	var wins_ok: bool = int(m.race.wins.get(m.race.winner, 0)) == 1
+	var locked: bool = m.race_input_locked()
+	var hud_ok: bool = m._hud._race_panel.visible 		and m._hud._race_root.visible
+	var ok_arrive: bool = ok_win and wins_ok and locked and hud_ok
+	print("DUALTEST race ", "PASS" if ok_arrive else "FAIL",
+		" winner=", m.race.winner, " wins=", m.race.wins,
+		" locked=", locked, " hud=", hud_ok)
 	if not ok_arrive:
 		fails += 1
 
-	await m.get_tree().create_timer(1.6).timeout
-	var ok_seal: bool = p1.in_exit and p2.in_exit \
-		and m._state != Main.State.PLAYING
-	print("DUALTEST seal ", "PASS" if ok_seal else "FAIL",
-		" p1=", p1.in_exit, " p2=", p2.in_exit, " state=",
-		Main.State.keys()[m._state])
-	if not ok_seal:
+	var wslot: int = m.race.winner
+	m.race.rematch()
+	await m.get_tree().create_timer(0.5).timeout
+	var ok_rematch: bool = m.race.phase == RaceController.Phase.COUNTDOWN 		and m.game_flow.current == 26 		and int(m.race.wins.get(wslot, 0)) == 1
+	print("DUALTEST rematch ", "PASS" if ok_rematch else "FAIL",
+		" phase=", m.race.phase, " wins=", m.race.wins)
+	if not ok_rematch:
 		fails += 1
+
 	print("DUALTEST ALL ", "PASS" if fails == 0 else "FAIL(%d)" % fails)
 	m.get_tree().quit(0 if fails == 0 else 1)
 

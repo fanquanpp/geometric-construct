@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/edge_indicator.tscn" id="2"]
+[ext_resource type="Script" path="res://scripts/art/frame_panel.gd" id="3"]
 
 [node name="Hud" type="CanvasLayer"]
 layer = 10
@@ -116,6 +117,7 @@ mouse_filter = 2
 [node name="Card" type="PanelContainer" parent="Root/Intro/CardCenter"]
 unique_name_in_owner = true
 mouse_filter = 2
+script = ExtResource("3")
 
 [node name="VBox" type="VBoxContainer" parent="Root/Intro/CardCenter/Card"]
 alignment = 1

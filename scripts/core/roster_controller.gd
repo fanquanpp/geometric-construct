@@ -168,6 +168,10 @@ func on_player_arrived(p: Player) -> void:
 	if main._state != Main.State.PLAYING:
 		return
 
+	if main.dual_mode and main.race != null:
+		refresh_roster()
+		main.race.on_arrival(p)
+		return
 	refresh_roster()
 	check_all_arrived()
 

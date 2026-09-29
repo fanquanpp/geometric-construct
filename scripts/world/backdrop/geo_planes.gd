@@ -1,6 +1,6 @@
 extends Node2D
 
-# 动态生成豁免:构成巨面由种子程序生成,数量形态运行时确定(R1)。
+# 构成巨面由种子程序生成,数量形态运行时确定(procedural-art)。
 
 func _draw() -> void:
 	var rng := RandomNumberGenerator.new()

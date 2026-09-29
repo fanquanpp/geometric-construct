@@ -29,7 +29,7 @@ geometric-construct/
 │   └── net/                 #   net_session
 ├── data/                    # 静态数据资源 .tres(R2:数值权威,Inspector 直调;
 │   │                        #   resource 只作静态数据,禁运行时写入)
-│   ├── palette.tres         #   全局色板(Palette;art-style.md = 规范)
+│   ├── palette.tres         #   全局色板(Palette;procedural-art.md = 规范)
 │   ├── tuning/              #   movement_default.tres(手感 31 项,MovementTuning)
 │   └── characters/          #   dash / spring / fall / roll / pair.tres(GeometryDef)
 ├── scripts/

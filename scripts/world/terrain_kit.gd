@@ -1,17 +1,6 @@
 class_name TerrainKit
 
 
-static func mech_layout(spr: Sprite2D, tex: Texture2D, zone: Rect2) -> void:
-	var img: Image = tex.get_image()
-	if img.is_compressed():
-		img.decompress()
-	var used: Rect2 = Rect2(img.get_used_rect())
-	spr.texture = tex
-	spr.centered = false
-	spr.scale = zone.size / used.size
-	spr.position = zone.position - used.position * spr.scale
-
-
 static func draw_focus(c: CanvasItem, r: Rect2, col: Color) -> void:
 	if col.a <= 0.0:
 		return

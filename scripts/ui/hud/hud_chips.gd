@@ -45,7 +45,7 @@ func refresh_roster(roster: Array, active: int, exited_mask: int,
 		lab.add_theme_font_override("font", Ui.HEAD if is_active else Ui.BODY)
 		lab.add_theme_color_override("font_color",
 			Color.WHITE if is_active else Color(Palette.I.paper, 0.75))
-		(c["check"] as TextureRect).visible = exited
+		(c["check"] as Control).visible = exited
 
 
 func _pair_chip_text(idx: int) -> String:
@@ -98,11 +98,8 @@ func _rebuild_chips(roster: Array) -> void:
 			c.name + " / " + c.name_half if c.paired else c.name, 20,
 			Ui.BODY, Color(Palette.I.paper, 0.75), HORIZONTAL_ALIGNMENT_LEFT)
 		hb.add_child(lab)
-		var check := TextureRect.new()
-		check.texture = Ui.icon("icons/check")
+		var check := UiGlyph.new("icons/check")
 		check.custom_minimum_size = Vector2(18, 18)
-		check.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		check.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		check.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		check.visible = false
 		hb.add_child(check)

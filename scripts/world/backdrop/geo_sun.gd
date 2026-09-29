@@ -1,6 +1,6 @@
 extends Node2D
 
-# 动态生成豁免:构成棱环太阳为程序绘制装饰(R1;装饰零弧线令 v0.52.0)。
+# 构成棱环太阳为程序绘制装饰(procedural-art)。
 
 const FACETS := 12
 

@@ -11,19 +11,14 @@ var _areas: Array = []
 
 const EXIT_PUSH := 46.0
 const COOLDOWN := 0.5
-const T_FRAME := preload("res://assets/archive/mech_portal.png")
+var _t := 0.0
 
-@onready var _door_a: AnimatedSprite2D = $DoorA
-@onready var _door_b: AnimatedSprite2D = $DoorB
 var _sig := ""
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		_editor_sync(true)
 		return
-	for cfg: Array in [[_door_a, a], [_door_b, b]]:
-		_layout_door(cfg[0], cfg[1])
-		cfg[0].play("default")
 	for end: Vector2 in [a, b]:
 		var area := Area2D.new()
 		area.position = end
@@ -39,23 +34,17 @@ func _ready() -> void:
 		_areas.append(area)
 
 
-func _layout_door(spr: AnimatedSprite2D, end: Vector2) -> void:
-	var used: Rect2i = T_FRAME.get_image().get_used_rect()
-	spr.position = end
-	spr.scale = gate_size / Vector2(used.size)
-
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		_editor_sync(false)
+		return
+	_t += _delta
+	queue_redraw()
 
 
 func _editor_sync(force: bool) -> void:
-	var s := str(a) + "|" + str(b) + "|" + str(gate_size)
-	if not force and s == _sig:
-		return
-	_sig = s
-	_layout_door(_door_a, a)
-	_layout_door(_door_b, b)
+	if force:
+		queue_redraw()
 
 func _on_enter(body: Node2D, end: Vector2) -> void:
 	if not (body is Player):
@@ -98,6 +87,39 @@ func _physics_process(delta: float) -> void:
 		_cooldown[k] = float(_cooldown[k]) - delta
 		if float(_cooldown[k]) <= 0.0:
 			_cooldown.erase(k)
+
+
+func _draw() -> void:
+	if Palette.I == null:
+		return
+	_draw_door(a)
+	_draw_door(b)
+	var dir := (b - a).normalized()
+	var span := a.distance_to(b)
+	if span > gate_size.x * 1.4:
+		var t := 0.0
+		while t < span - 24.0:
+			var p := a + dir * (t + 24.0)
+			draw_line(p - Vector2(dir.y, -dir.x) * 4.0,
+				p + Vector2(dir.y, -dir.x) * 4.0, Color(Palette.I.paper, 0.14), 1.5)
+			t += 26.0
+
+
+func _draw_door(end: Vector2) -> void:
+	var r := Rect2(end - gate_size / 2.0, gate_size)
+	var phase := 0.5 + 0.5 * sin(_t * 4.0)
+	draw_rect(r, Color(Palette.I.ink, 0.65))
+	draw_rect(r, Color(Palette.I.paper, 0.6), false, 3.0)
+	DrawKit.brackets(self, r.grow(-5.0), Color(Palette.I.blue, 0.5), 12.0, 2.0)
+	for k in 4:
+		var y := lerpf(r.position.y + 18.0, r.end.y - 18.0, float(k) / 3.0)
+		draw_line(Vector2(r.position.x + 10, y), Vector2(r.end.x - 10, y),
+			Color(Palette.I.blue, 0.20 + 0.16 * phase), 2.0)
+	draw_rect(Rect2(Vector2(end.x - 3, r.position.y + 10), Vector2(6, r.size.y - 20)),
+		Color(Palette.I.blue, 0.45 + 0.3 * phase))
+	DrawKit.chevron(self, Vector2(end.x, r.position.y - 12), Vector2(0, -1),
+		12.0, Color(Palette.I.paper, 0.4 + 0.3 * phase), 2.0)
+
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var w := PackedStringArray()

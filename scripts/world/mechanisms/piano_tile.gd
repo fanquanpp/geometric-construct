@@ -12,11 +12,6 @@ var _last_played := {}
 var _in_contact := {}
 
 
-const T_IDLE := preload("res://assets/archive/mech_piano_tile.png")
-const T_ON := preload("res://assets/archive/mech_piano_tile_f2.png")
-
-@onready var _spr_idle: Sprite2D = $Visual
-@onready var _spr_on: Sprite2D = $VisualOn
 var _sig := ""
 
 func _ready() -> void:
@@ -34,9 +29,7 @@ func _ready() -> void:
 		cs.shape = RectangleShape2D.new()
 	cs.shape.size = size
 	add_child(TerrainKit.rect_occluder(Rect2(-size / 2.0, size)))
-	TerrainKit.mech_layout(_spr_idle, T_IDLE, Rect2(-size / 2.0, size))
-	TerrainKit.mech_layout(_spr_on, T_ON, Rect2(-size / 2.0, size))
-	_spr_on.visible = false
+	queue_redraw()
 	if note.is_empty() and Main.I != null:
 		note = Sfx.note_for_height(global_position.y, 2000.0)
 
@@ -44,12 +37,11 @@ func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		_editor_sync(false)
 		return
+	var was_on := _pulse > 0.0
 	if _pulse > 0.0:
 		_pulse = maxf(_pulse - delta, 0.0)
-	var on := _pulse > 0.0
-	if _spr_on.visible != on:
-		_spr_on.visible = on
-		_spr_idle.visible = not on
+	if was_on != (_pulse > 0.0):
+		queue_redraw()
 
 
 func _editor_sync(force: bool) -> void:
@@ -57,9 +49,7 @@ func _editor_sync(force: bool) -> void:
 	if not force and s == _sig:
 		return
 	_sig = s
-	var zone := Rect2(-size / 2.0, size)
-	TerrainKit.mech_layout(_spr_idle, T_IDLE, zone)
-	TerrainKit.mech_layout(_spr_on, T_ON, zone)
+	queue_redraw()
 
 
 func strike(player: Player, impact: float) -> void:
@@ -119,5 +109,16 @@ func _has_other_rider(player: Player) -> bool:
 func _draw() -> void:
 	if Palette.I == null:
 		return
-
-	TerrainKit.draw_focus(self, Rect2(-size / 2.0, size), hl_color)
+	var r := Rect2(-size / 2.0, size)
+	var on := _pulse > 0.0
+	draw_rect(r, Color(Palette.I.paper, 0.30) if on else Color(Palette.I.ink_2, 1.0))
+	draw_rect(r, Color(Palette.I.paper, 0.8 if on else 0.4), false, 2.0)
+	draw_rect(Rect2(r.position, Vector2(r.size.x, 4)),
+		Color(Palette.I.paper, 0.7 if on else 0.55))
+	var n := maxi(int(r.size.x / 44.0), 1)
+	for k in n:
+		var x := r.get_center().x if n == 1 else lerpf(
+			r.position.x + 22.0, r.end.x - 22.0, float(k) / float(n - 1))
+		draw_rect(Rect2(Vector2(x - 2, r.position.y + 8), Vector2(4, r.size.y - 16)),
+			Color(Palette.I.paper, 0.22 if not on else 0.1))
+	TerrainKit.draw_focus(self, r, hl_color)

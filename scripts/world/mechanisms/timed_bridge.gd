@@ -17,9 +17,6 @@ var _beat_phase := 0.0
 var _occ: LightOccluder2D
 var _spr: Sprite2D
 
-const T_FRAME := preload("res://assets/archive/mech_timed_bridge.png")
-
-@onready var _visual: Sprite2D = $Visual
 var _sig := ""
 
 func _ready() -> void:
@@ -37,9 +34,7 @@ func _ready() -> void:
 	cs.shape.size = size
 	_occ = TerrainKit.rect_occluder(Rect2(-size / 2.0, size))
 	add_child(_occ)
-	_spr = _visual
-	TerrainKit.mech_layout(_spr, T_FRAME, Rect2(-size / 2.0, size))
-	_spr.visible = _solid
+	queue_redraw()
 	if sync_beat and Sfx.beat_period() > 0.0:
 		_beat_phase = Sfx.beat_time()
 		_t = _beat_phase
@@ -54,7 +49,7 @@ func _editor_sync(force: bool) -> void:
 	if not force and s == _sig:
 		return
 	_sig = s
-	TerrainKit.mech_layout(_visual, T_FRAME, Rect2(-size / 2.0, size))
+	queue_redraw()
 
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
@@ -79,7 +74,6 @@ func _physics_process(delta: float) -> void:
 
 		set_collision_layer_value(sig_value, solid)
 		_occ.visible = solid
-		_spr.visible = solid
 		queue_redraw()
 		if not solid:
 			Sfx.play("ui_page", -8.0)
@@ -90,6 +84,12 @@ func _draw() -> void:
 	if Palette.I == null:
 		return
 	var r := Rect2(-size / 2.0, size)
+
+	if _solid or Engine.is_editor_hint():
+		draw_rect(r, Color(Palette.I.ink_2, 1.0))
+		draw_rect(r, Color(Palette.I.paper, 0.5), false, 2.0)
+		draw_rect(Rect2(r.position, Vector2(r.size.x, 4)),
+			Color(Palette.I.paper, 0.6))
 
 	draw_rect(Rect2(Vector2(r.position.x - 10, r.get_center().y - 1),
 		Vector2(4, 2)), Color(Palette.I.red, 0.55))

@@ -10,6 +10,8 @@ enum State { MENU, ROOM, PLAYING, PAUSED, TRANSITION, WIN }
 const CHARACTER_MANAGER_SCENE := preload("res://scenes/core/character_manager.tscn")
 const ROSTER_SCENE := preload("res://scenes/core/roster_controller.tscn")
 const GAME_FLOW_SCENE := preload("res://scenes/core/game_flow.tscn")
+const RACE_SCENE := preload("res://scenes/core/race_controller.tscn")
+const GHOST_SCENE := preload("res://scenes/core/ghost_recorder.tscn")
 const BACKDROP_SCENE := preload("res://scenes/world/backdrop.tscn")
 const AMBIENCE_SCENE := preload("res://scenes/fx/ambience.tscn")
 const TOUCH_SCENE := preload("res://scenes/ui/touch_controls.tscn")
@@ -52,6 +54,8 @@ var frame_no := 0
 
 var roster: RosterController
 var game_flow: GameFlow
+var race: RaceController
+var ghost: GhostRecorder
 var players: Array:
 	get:
 		return roster.players
@@ -96,6 +100,12 @@ func _ready() -> void:
 	game_flow = GAME_FLOW_SCENE.instantiate() as GameFlow
 	game_flow.main = self
 	add_child(game_flow)
+	race = RACE_SCENE.instantiate() as RaceController
+	race.main = self
+	add_child(race)
+	ghost = GHOST_SCENE.instantiate() as GhostRecorder
+	ghost.main = self
+	add_child(ghost)
 	_setup_dual_input()
 
 	if OS.has_feature("mobile"):
@@ -116,6 +126,12 @@ func _ready() -> void:
 	_hud = HUD_SCENE.instantiate() as Hud
 	add_child(_hud)
 	_hud.chip_tapped.connect(switch_to_geo)
+	_hud.race_rematch_requested.connect(func() -> void:
+		if race != null and race.phase == RaceController.Phase.FINISHED:
+			race.rematch())
+	race.countdown.connect(_hud.race_countdown)
+	race.race_go.connect(_hud.race_go)
+	race.race_finished.connect(_on_race_finished)
 	_menu = MENU_SCENE.instantiate() as MenuLayer
 	_menu.m = self
 	add_child(_menu)
@@ -280,6 +296,7 @@ func start_level_dual(index := 0) -> void:
 		roster.players[1].input_source = InputSource.local(1)
 		roster.players[1].is_active = true
 	_refresh_roster()
+	race.begin()
 
 
 func open_net_room() -> void:
@@ -346,6 +363,19 @@ func _key_pressed(k: Key) -> bool:
 	return false
 
 
+func race_input_locked() -> bool:
+	return dual_mode and race != null and race.input_locked()
+
+
+func _on_race_finished(winner: int, t_win_ms: int, t_other_ms: int) -> void:
+	var fmt := func(ms: int) -> String:
+		return _save.time_text(ms) if ms >= 0 else "—"
+	_hud.show_race_result(winner, fmt.call(t_win_ms), fmt.call(t_other_ms),
+		[int(race.wins.get(0, 0)), int(race.wins.get(1, 0))])
+	ghost.on_complete()
+	Sfx.play("fanfare", -4.0)
+
+
 func _physics_process(_delta: float) -> void:
 	frame_no += 1
 	if archive_panel.is_open or settings_panel.is_open:
@@ -353,6 +383,18 @@ func _physics_process(_delta: float) -> void:
 	if _state == State.PLAYING:
 
 		if _level_info == null:
+			return
+		if dual_mode and race != null \
+				and race.phase == RaceController.Phase.FINISHED:
+			if Input.is_action_just_pressed("recall"):
+				race.rematch()
+			elif Input.is_action_just_pressed("pause") \
+					or Input.is_action_just_pressed("ui_cancel"):
+				quit_to_menu()
+			return
+		if dual_mode and race != null \
+				and race.phase == RaceController.Phase.COUNTDOWN:
+			_check_deaths()
 			return
 		_check_deaths()
 		if debug_solo:
@@ -496,6 +538,7 @@ func _ambience_motif(motif_name: String) -> void:
 func on_player_died(p: Player) -> void:
 
 	game_flow.note_death()
+	ghost.on_death(p)
 	if NetSession.I != null and NetSession.I.is_host() and NetSession.I.in_game():
 		NetSession.I.emit_event(NetSession.EV_DIED, players.find(p))
 	roster.on_player_died(p)

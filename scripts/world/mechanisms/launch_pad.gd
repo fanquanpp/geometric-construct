@@ -6,10 +6,6 @@ extends Area2D
 @export var launch_vec := Vector2(0, -1400)
 var _cooldown := 0.0
 
-const T_FRAME := preload("res://assets/archive/mech_launch_pad.png")
-
-@onready var _visual: Sprite2D = $Visual
-
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		_editor_sync(true)
@@ -23,7 +19,6 @@ func _ready() -> void:
 	if cs.shape == null:
 		cs.shape = RectangleShape2D.new()
 	cs.shape.size = Vector2(140.0, 44.0)
-	TerrainKit.mech_layout(_visual, T_FRAME, Rect2(-70.0, -69.0, 140.0, 138.0))
 	body_entered.connect(_on_enter)
 
 func _process(_delta: float) -> void:
@@ -32,8 +27,6 @@ func _process(_delta: float) -> void:
 
 
 func _editor_sync(force: bool) -> void:
-	if force:
-		TerrainKit.mech_layout(_visual, T_FRAME, Rect2(-70.0, -69.0, 140.0, 138.0))
 	queue_redraw()
 
 func _on_enter(body: Node2D) -> void:
@@ -55,6 +48,19 @@ func _draw() -> void:
 	if Palette.I == null:
 		return
 
+	var base := Rect2(-70.0, -22.0, 140.0, 44.0)
+	draw_rect(base, Color(Palette.I.ink_3, 1.0))
+	draw_rect(base, Color(Palette.I.paper, 0.5), false, 2.0)
+	draw_rect(Rect2(base.position, Vector2(base.size.x, 6)),
+		Color(Palette.I.paper, 0.6))
+	for k in 3:
+		var x := -42.0 + k * 42.0
+		draw_line(Vector2(x, 4), Vector2(x - 6, 14), Color(Palette.I.paper, 0.35), 2.0)
+		draw_line(Vector2(x - 6, 14), Vector2(x, 24), Color(Palette.I.paper, 0.35), 2.0)
+		draw_line(Vector2(x, 24), Vector2(x - 6, 34), Color(Palette.I.paper, 0.35), 2.0)
+	if _cooldown > 0.0:
+		draw_rect(base, Color(Palette.I.paper, 0.3))
+
 	var dir := launch_vec.normalized()
 	var arrow := clampf(launch_vec.length() / 280.0, 26.0, 64.0)
 	var tip := dir * arrow
@@ -63,5 +69,3 @@ func _draw() -> void:
 	draw_colored_polygon(PackedVector2Array([
 		tip, tip - dir * 14.0 + n * 9.0, tip - dir * 14.0 - n * 9.0]),
 		Color(Palette.I.paper, 0.85))
-	if _cooldown > 0.0:
-		draw_rect(Rect2(-70.0, -14.0, 140.0, 28.0), Color(Palette.I.paper, 0.2))

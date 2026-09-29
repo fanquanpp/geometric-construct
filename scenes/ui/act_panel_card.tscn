@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/act_panel_card.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/art/frame_panel.gd" id="2"]
 
 [node name="ActPanelCard" type="Control"]
 visible = false
@@ -25,6 +26,7 @@ mouse_filter = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(780, 0)
 mouse_filter = 0
+script = ExtResource("2")
 
 [node name="VB" type="VBoxContainer" parent="Center/Card"]
 theme_override_constants/separation = 10

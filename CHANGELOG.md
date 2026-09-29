@@ -3,6 +3,64 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.53.0(2026-09-29 · 程序化美术全量换代 + 双人竞速)
+
+> 联网三路深度调研(平台跳跃关卡设计 / Godot _draw 程序化美术与性能量级 /
+> 同屏竞速对标 SpeedRunners 等)后三流并进:美术侧按用户令**全量 `_draw`
+> 程序化生成**(旧美术规范文档整体删除),玩法侧「双人试炼」改判
+> **双人竞速**并新增最佳路线幽灵与死亡标记。
+
+### 新增
+- **程序化美术体系(视觉侧唯一契约 `docs/design/procedural-art.md`)**:
+  - `DrawKit`(`scripts/art/draw_kit.gd`):抖动/折线环/雪佛龙/取景角/
+    面板框/键帽/图标字形/图鉴配方等静态绘制词汇表,取色只经
+    `data/palette.tres`。
+  - `TerrainArt`(`scripts/art/terrain_art.gd` + 场景壳):地形渲染器逐格
+    读 TileData **物理多边形即形状**(整方/单向/坡/局部自动成形),
+    材质族按图集列带分档,装饰图位走坐标配方表(9 种实配 + 兜底);
+    TileMapLayer 运行时隐视觉、碰撞不变(native_check 27 场验证),
+    编辑器保留图位视图供作关。
+  - **机关正典形态全 `_draw` 化**:exit_door 三态 / speed_gate / 弹射板 /
+    mover / push_box / piano_tile 双态 / timed_bridge 双态 / ski_patch /
+    portal(参数化相位动画替代 AnimatedSprite2D)/ lever_gate 门板与
+    踏板 / ramp 坡体填充;12 个场景壳全部摘除 Visual 精灵与 PNG 引用,
+    `@tool` 所见即所得保留;`TerrainKit.mech_layout` 清退。
+  - **图鉴 CodexArt**:15 建筑 + 13 机关 + 5 角色全程序化配方
+    (`scripts/art/codex_art.gd`),列表图标/详情图/帧动画 = pose 参数,
+    `archive_data.img_path` PNG 出口清退。
+  - **UI 装饰九件全 `_draw` 化**:海报框/幕面板卡框/开场卡框/图鉴面板框/
+    设置面板框/取景角标(2 页)/键帽图标(hud_hints)/check 与 play /
+    recall/pause 字形(`UiGlyph`,替代 icons.png 图集)/触屏虚拟摇杆
+    (WheelPad 自绘,替代 stick_* 六图);TouchScreenButton 改 shape 命中
+    + 字形子节点。`Ui.icon` 图集出口删除。
+  - 原 PNG 素材(图块集/43 图鉴/12 UI)**保留孤本不入渲染**,生成器
+    gen_*.lua 停用;ASSETS.md 登记状态。
+- **双人竞速(「双人试炼」改判,net.md §3 换代)**:`RaceController`
+  (场景化)——开局 3-2-1 倒计时冻结输入(InputSource 鸭子类型防御,
+  trait_check Stub 兼容)、先过本己门者胜(过线即判定)、BO 局分常驻、
+  胜负结算浮层(R 再战 / Esc 回菜单 / 触屏点按再战)、HUD 倒计时数字
+  弹跳演出;`--dualtest` 门禁扩为七链路(倒计时/绑定/分区输入/禁切/
+  死亡保操控/竞速胜负+局分+冻结/重赛)全 PASS。
+- **最佳路线幽灵**:`GhostRecorder` 逐 0.1s 采样全程轨迹,通关即登记
+  本场最快 attempt(会话内按场缓存),后续尝试实时渲染 translucent
+  幽灵形(N++/Dustforce 口径);联机不采样。
+- **死亡标记**:本场会话内每次摔碎在原地留红叉标记,速通走查时
+  死亡史可见;重开新场自动清。
+
+### 变更
+- **美术规范文档整体删除**(用户令 2026-09-29):art-style / art-audio /
+  atmosphere / motion / fx-light-uiux / redraw-lighting / presentation /
+  ui 总纲八份退役;AGENTS.md R1「UI 装饰禁 _draw」反转为「全部美术
+  `_draw` 程序化」;native-levels 旧拍板②(删除 _draw 制图)标记反转;
+  levels.md 制作流程改写为程序化渲染契约;全部文档死指针清零。
+- 双人文案换代:菜单「双人竞速」/ 选卡「同设备双人竞速 · 先归位者胜」/
+  房间「联机协作房间」;net.md / ui-flow.md 契约同步。
+- export_presets 版本对齐 0.53.0 / code 21。
+
+### 门禁
+check-only 全部改动脚本绿;native_check 27 场 / flow / stats / trait /
+recall / dual / net 全 PASS;菜单/幕面板/设置/图鉴/首关截图目检通过。
+
 ## v0.52.0(2026-09-29 · 商业化完善化二批:游戏性增强 + 风格化统一 + 面板打磨 + 节点化)
 
 > 双路联网调研(优秀面板 UI 设计模式 + 内容全量后的玩法增强套路)后
