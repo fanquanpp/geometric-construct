@@ -3,6 +3,44 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.54.1(2026-09-29 · 过关切关转场白屏硬切修复)
+
+> 用户报障:重复体验关卡时,过关切换关卡不再触发过渡动画,只剩
+> 白屏硬切。洞察定位 + 同类勘察一并修复。
+
+### 修复
+- **过关转场白屏硬切(根因)**:`shot_harness.boot()` 的
+  `reduced_motion = true` 强制行自 v0.38.0(v0.39.1 随 dev 面下沉平移)
+  起无条件执行——任何能 load 到 `res://scripts/dev/shot_harness.gd` 的
+  运行(编辑器 F5 / MCP run_project / 项目目录直跑,即全部开发走查
+  环境)都被强制减动效:`TransitionFX` 全部五式退化为 1 帧硬切,
+  纸白世界上观感即「白屏过渡」;连带 v0.54.0 背景动效整体停帧、
+  镜头 kick/打击震屏、置换锚闪、幽灵回放、切体涟漪等十余处
+  reduced_motion 门控演出在开发环境全部静默失效(导出版已排除
+  `scripts/dev/*` 不受影响)。修复 = 强制以「确有 dev 钩子入参」
+  为门(`args` 非空且非 `--transitionshot`),无参启动=正常游玩
+  不得改任何设置;同批收口 mobile debug 无参自动 PERF 日志同一类
+  泄漏(改为仅带参运行)。实证:探针连闯「首关通关自动切下关 /
+  下关再通关 / 回菜单重进再通关」三腿,修复前三次 SWEEP 全部
+  不起飞,修复后三次全过。
+- **过关切关软锁同类防御**:`Hud.fade_to_black / transition_sweep /
+  transition_blocks / transition_corners` 四个包装器此前忽略
+  `TransitionFX.transition()` 的 bool 返回——`_busy` 期间被拒时
+  `on_covered` 永不触发,过关后恒卡「通过。」、重开恒黑屏(与
+  `return_to_menu` 既有回退先例同型)。补齐被拒即硬切回退。
+- **新门禁 `tests/replay_transition_check.tscn`**:三腿连闯断言每次
+  过关 SWEEP 必真起飞并完整收束(减动效关闭前提),回归防火墙
+  入册 REFACTOR §十一。
+
+### 验收
+- check-only 三脚本绿(shot_harness / hud / replay_transition_check;
+  hud.tscn ext_resource 报错=4.7 上游噪音,exit code 权威);
+- replay_transition_check ALL PASS(新)/ transition_check 五式+单飞+
+  减动效硬切 ALL PASS / flow_check PASS / native_check 27 关 ALL PASS
+  / recalltest 4 链 PASS / dualtest 七链路 ALL PASS;
+- 双端口径:导出 exe / Android APK(不含 dev 脚本)行为不变;
+  编辑器与开发运行恢复全套演出转场与动效门控真值。
+
 ## v0.54.0(2026-09-29 · 背景动效深度化 + 终点门轮廓考古回退)
 
 > 联网调研 Godot 官方推荐(Parallax2D 官方替代 ParallaxBackground /
@@ -16,7 +54,7 @@
 ### 新增
 - **背景动效系统(常驻 `scenes/world/backdrop.tscn`,CanvasLayer -10)**:
   - **五幕变奏**:`BackdropPreset`(`scripts/data/backdrop_preset.gd`)
-    + `data/backdrop/menu.tres, act1..act5.tres` 六份参数表(天幕渐变
+	+ `data/backdrop/menu.tres, act1..act5.tres` 六份参数表(天幕渐变
 	端点 / 云带强度速度 / 星闪倍率 / 太阳自转呼吸 / 轨道环数 / 幕强调色 /
 	巨面数 / 刻度密度 / 山脊幅高 / 浮尘量,全 @export Inspector 可调);
 	编排 = 同一母题按幕强弱变奏不堆满(fandex GeoBgDecor 口径):

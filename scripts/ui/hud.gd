@@ -255,15 +255,18 @@ func fade_from_black() -> void:
 
 
 func fade_to_black(dur: float, on_done: Callable) -> void:
-	_fx.transition(TransitionFX.Style.FADE, dur, on_done)
+	if not _fx.transition(TransitionFX.Style.FADE, dur, on_done):
+		on_done.call()
 
 
 func transition_sweep(dur: float, on_covered: Callable) -> void:
-	_fx.transition(TransitionFX.Style.SWEEP, dur, on_covered)
+	if not _fx.transition(TransitionFX.Style.SWEEP, dur, on_covered):
+		on_covered.call()
 
 
 func transition_blocks(dur: float, on_covered: Callable) -> void:
-	_fx.transition(TransitionFX.Style.BLOCKS_RED, dur, on_covered)
+	if not _fx.transition(TransitionFX.Style.BLOCKS_RED, dur, on_covered):
+		on_covered.call()
 
 
 func transition_curtain(dur: float, on_covered: Callable) -> bool:
@@ -271,7 +274,8 @@ func transition_curtain(dur: float, on_covered: Callable) -> bool:
 
 
 func transition_corners(dur: float, on_covered: Callable) -> void:
-	_fx.transition(TransitionFX.Style.CORNERS, dur, on_covered)
+	if not _fx.transition(TransitionFX.Style.CORNERS, dur, on_covered):
+		on_covered.call()
 
 
 func reveal_corners() -> void:

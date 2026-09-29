@@ -386,6 +386,7 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
 | trait_check | `--script` | ✅ 现役 · 物理仿真 |
 | nettest | `-- --nettest` | ✅ 现役 · LAN+ENet 回环 |
 | ambience_check / transition_check | `--script` | ✅ 现役 · 音频峰值 / 转场五式 |
+| replay_transition_check | `--path . res://tests/replay_transition_check.tscn` | ✅ 现役(v0.54.1)· 过关切关 SWEEP 三腿必真播(首关自动切 / 下关再通关 / 回菜单重进) |
 | grid_check / reach_check / rogue_check / mover_check / modifier_check | — | ☠️ 已随 v0.45.0 作关换代清退(旧数据源不存在) |
 | level_shot / story_shot / win_shot / shot_all(.tscn) | 编辑器场景 | 🗄 分镜素材,随用随开,非门禁 |
 

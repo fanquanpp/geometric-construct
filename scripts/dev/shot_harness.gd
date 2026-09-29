@@ -94,7 +94,9 @@ func boot(args: Array) -> void:
 	if _auto_shot and _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
 
-	if not _transition_shot:
+	# 承重约束:无参启动=正常游玩,不得改任何设置;钩子(带参)统一减动效
+	# 硬切防后台/遮挡窗口 Tween 冻结卡分镜,--transitionshot 例外照常播。
+	if not args.is_empty() and not _transition_shot:
 		SettingsManager.reduced_motion = true
 	if _auto_shot and args.has("--menushot"):
 		run_menu_shot()
@@ -139,7 +141,8 @@ func boot(args: Array) -> void:
 		run_tour_shot()
 	if _perf_log:
 		run_perf_log()
-	elif OS.is_debug_build() and OS.has_feature("mobile"):
+	elif not args.is_empty() and OS.is_debug_build() \
+			and OS.has_feature("mobile"):
 
 		run_perf_log()
 	if _auto_test:
