@@ -31,12 +31,42 @@ UI 装饰:面板框 / 开场卡 / 海报框 / 取景角 / 虚拟摇杆 / 图标�
 `_draw`(`scripts/art/` 与 `scripts/ui/`),`Ui.icon()` 由图集切图改为
 字形绘制出口。特效维持既有程序化粒子 + 两枚 shader,零贴图。
 
-**机关动效(v0.53.2 起,自 v0.29.2 MapSkinFX 移植)**:终点门常驻
-圣环(双环 + 12 径向刻度,周期 2.4s 缓幅明暗 M5)+ 封印后门膛三道
-细横线匀速上浮(光柱气流);全部 Time.get_ticks_msec 计时(M9)、
-低幅不抢焦点。地板机关(钢琴砖 / 滑雪带 / 弹射板)运行时向场景
-图块层探测脚下地面顶线,绘制与碰撞(PianoTile)自动下沉齐平——
-不突出、无隐形台沿;桥 / 悬空构件不变。
+**机关动效(v0.54.0 起,门轮廓考古回退)**:终点门轮廓 = **v0.11.1
+正典**(2026-09-29 用户拍板,弃 v0.53.2 圣环/光柱版):锐利矩形门框
+64×92(墨腔 0.94 + 几何色 2px 内框 + 3px 外框向白提亮 + 顶部悬挑
+6px 门楣)+ 腔内呼吸方点核心(sin ×3.0,7~10px,lerp 白 0.45)+
+到站纸白取景框 / 封印红取景框(grow 7,1.5px)。动效完善沿用 v0.38
+批口径:内框透明度三档就绪态(空 0.30 / 半 0.42 / 满 0.55)、
+PointLight2D 三档阶跃光(0 / 0.5 / 0.85)、封印镜头 Freeze、徽标
+悬浮 sin ×2.1 幅 4px。地板机关(钢琴砖 / 滑雪带 / 弹射板)运行时
+向场景图块层探测脚下地面顶线,绘制与碰撞(PianoTile)自动下沉
+齐平——不突出、无隐形台沿;桥 / 悬空构件不变。
+
+**背景动效系统(v0.54.0,调研 Godot 官方推荐 × fandex 装饰体系移植)**
+—— 常驻 `scenes/world/backdrop.tscn`(CanvasLayer -10,层序 HUD >
+世界 > 背景不变):
+- **五幕变奏**:`BackdropPreset`(`scripts/data/backdrop_preset.gd`)+ 
+  `data/backdrop/menu.tres + act1..act5.tres`,每幕一份天幕渐变端点 /
+  云带强度 / 星闪倍率 / 太阳自转与呼吸 / 轨道环数 / 幕强调色 / 巨面数 /
+  刻度密度 / 山脊幅高 / 浮尘量;编排思想 = 同一母题按幕强弱变奏
+  (fandex GeoBgDecor 口径),单幕彩色强调只 accent 一路。GameFlow
+  start_level 下发 `apply_act(act_i)`,回菜单 `apply_act(-1)`,同档跳过。
+- **天幕 shader**(`assets/fx/backdrop_sky.gdshader`):纵向双色渐变 +
+  双层无缝噪声云带(NoiseTexture2D/FastNoiseLite 引擎自带程序化),
+  `TIME` 驱动 GPU 持续场零每帧 CPU;取色经 uniform 由 Palette 下发。
+- **装饰活化**:太阳棱环极低速自转 + 15s 呼吸(fandex 光晕参数)、
+  巨面 5 面 9/11/13/15/17s 错峰浮沉、十字星微漂移、轨道环三速
+  38/26/48s 其一反向(fandex decor-orbit);全部走节点 transform 零重绘。
+- **操作互动**(一次性 Tween,同属性 kill 旧再建):落地脉冲(impact
+  分级,山脊 scroll_offset 下沉 BOUNCE 弹回 + 天幕微涌)、切换涟漪
+  (受控体色一闪 + 全景层 alpha 微沉回浮)、到站光涌(太阳 burst +
+  幕强调色一闪,满员加强)、死亡红波(fandex decor-wave 音波三道
+  横扫 0.9s + 全景压暗回浮)、移速星线(速度 >420 拉伸,0.125s 节流)、
+  视差对偶(移动端陀螺仪 / 桌面鼠标,同深度表 3/6/8)。
+- **双门控**:`SettingsManager.background_fx`(设置面板「背景动效」)
+  与 `reduced_motion` 总闸,任一关 = 停帧保静态(渐变天幕与装饰轮廓
+  保留、粒子 speed_scale 0、shader anim 0、视差回中),fandex
+  reduced-motion 同口径;Main 载入设置后与面板切换后调 `refresh_gate()`。
 
 **受控聚焦系统(v0.53.3,融合 v0.29 三档透明度 × 现架构二次设计)**
 —— `scripts/art/focus_system.gd`(FocusSystem,随关卡挂载):
@@ -49,7 +79,7 @@ UI 装饰:面板框 / 开场卡 / 海报框 / 取景角 / 虚拟摇杆 / 图标�
 - 通道与门控:Player 走 `self_modulate`(死亡/重生 tween 占
   modulate,互不干扰;dying/in_exit/arrived 让位不覆盖);双活
   (dual)全员满亮无呼吸;联机按本端 view_slot;reduced_motion =
-  瞬切 + 呼吸描边静态化 + 圣环/光柱静止帧;暂停时 process 自然
+  瞬切 + 呼吸描边静态化 + 门腔呼吸核心/徽标悬浮静止帧;暂停时 process 自然
   冻结;关卡切换随 level_root 重建。
 
 ## 2. 风格契约(代码内执行,不再有文档审计)

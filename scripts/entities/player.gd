@@ -318,6 +318,8 @@ func _physics_process(delta: float) -> void:
 		if now_on_floor:
 			_air_jumps_left = 0
 
+		if Main.I != null and Main.I.backdrop != null:
+			Main.I.backdrop.pulse_land(impact)
 		if impact > 620.0:
 			SettingsManager.haptic(40)
 			if Main.I != null and Main.I.camera_rig != null:
@@ -545,6 +547,8 @@ func die() -> void:
 	PlayerCosmetics.death_burst(self)
 	if Main.I != null and Main.I.camera_rig != null:
 		Main.I.camera_rig.kick(7.0)
+	if Main.I != null and Main.I.backdrop != null:
+		Main.I.backdrop.pulse_death()
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 0.0, 0.20)
 	tw.tween_callback(_reset_for_respawn)

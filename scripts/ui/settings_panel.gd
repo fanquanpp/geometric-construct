@@ -17,6 +17,7 @@ var _wheel_fixed_btn: Button
 var _wheel_float_btn: Button
 var _vib_btn: Button
 var _shake_btn: Button
+var _bgfx_btn: CheckButton
 var _sfx_slider: HSlider
 var _sfx_value: Label
 var _amb_slider: HSlider
@@ -107,6 +108,15 @@ func _ready() -> void:
 		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 		SettingsManager.set_reduced_motion(on))
 	body.add_child(_row("减动效(关闭震屏 / 演出转场,保留硬切)", motion_btn))
+
+	_bgfx_btn = _toggle_btn()
+	_bgfx_btn.button_pressed = SettingsManager.background_fx
+	_bgfx_btn.toggled.connect(func(on: bool) -> void:
+		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
+		SettingsManager.set_background_fx(on)
+		if Main.I != null and Main.I.backdrop != null:
+			Main.I.backdrop.refresh_gate())
+	body.add_child(_row("背景动效(星空闪烁 / 浮尘 / 幕变奏,关=静态画面)", _bgfx_btn))
 
 	body.add_child(_rule())
 
@@ -284,6 +294,7 @@ func _sync_from_settings() -> void:
 		== SettingsManager.WHEEL_FLOAT)
 	_vib_btn.set_pressed_no_signal(SettingsManager.vibration)
 	_shake_btn.set_pressed_no_signal(SettingsManager.screen_shake)
+	_bgfx_btn.set_pressed_no_signal(SettingsManager.background_fx)
 	if not OS.has_feature("mobile"):
 		for i in _res_btns.size():
 			var r: Vector2i = SettingsManager.RESOLUTIONS[i]

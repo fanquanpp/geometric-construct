@@ -56,6 +56,7 @@ var roster: RosterController
 var game_flow: GameFlow
 var race: RaceController
 var ghost: GhostRecorder
+var backdrop: Backdrop
 var players: Array:
 	get:
 		return roster.players
@@ -110,7 +111,8 @@ func _ready() -> void:
 
 	if OS.has_feature("mobile"):
 		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
-	add_child(BACKDROP_SCENE.instantiate())
+	backdrop = BACKDROP_SCENE.instantiate() as Backdrop
+	add_child(backdrop)
 	Sfx.init(self)
 	var amb: Ambience = AMBIENCE_SCENE.instantiate()
 	amb.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -119,6 +121,7 @@ func _ready() -> void:
 
 	SettingsManager.load_settings()
 	SettingsManager.apply_all_at_boot()
+	backdrop.refresh_gate()
 
 	touch_controls = TOUCH_SCENE.instantiate() as TouchControls
 	touch_controls.process_mode = Node.PROCESS_MODE_PAUSABLE

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BackdropPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/backdrop_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+sky_top = Color(0.117647, 0.133333, 0.168627, 1)
+sky_bottom = Color(0.0627451, 0.0705882, 0.0862745, 1)
+cloud_alpha = 0.14
+cloud_speed = 10.0
+twinkle = 0.9
+sun_spin = -1.5
+sun_pulse = 0.05
+orbits = 2
+accent = Color(0.878431, 0.494118, 0.180392, 1)
+planes = 2
+marks = 0.9
+motes = 0.9
+ridge_far = 90.0
+ridge_near = 130.0

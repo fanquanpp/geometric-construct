@@ -3,6 +3,95 @@
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 发版规范见 docs/UPDATE.md。
 
+## v0.54.0(2026-09-29 · 背景动效深度化 + 终点门轮廓考古回退)
+
+> 联网调研 Godot 官方推荐(Parallax2D 官方替代 ParallaxBackground /
+> Tween 官方口径「动态一次性动画优先 Tween」/ 粒子 GPUParticles 优先但
+> 「低端设备 CPUParticles 更优」属官方正当理由 / canvas_item shader +
+> TIME 内建 GPU 持续场),并勘察本地同根 fandex 项目的背景装饰体系
+> (变体驱动编排 / 只动 transform+opacity / 整周期平移无缝 /
+> reduced-motion 停帧保静态),双源融合落地。用户中途追加拍板:
+> 终点门轮廓采用 v0.11.1 版本及其后续同轮廓动效完善版,弃现行圣环版。
+
+### 新增
+- **背景动效系统(常驻 `scenes/world/backdrop.tscn`,CanvasLayer -10)**:
+  - **五幕变奏**:`BackdropPreset`(`scripts/data/backdrop_preset.gd`)
+    + `data/backdrop/menu.tres, act1..act5.tres` 六份参数表(天幕渐变
+	端点 / 云带强度速度 / 星闪倍率 / 太阳自转呼吸 / 轨道环数 / 幕强调色 /
+	巨面数 / 刻度密度 / 山脊幅高 / 浮尘量,全 @export Inspector 可调);
+	编排 = 同一母题按幕强弱变奏不堆满(fandex GeoBgDecor 口径):
+	act2 界与边天幕上亮下暗(界在天花)、act3 分岔三轨道全开最密、
+	act4 蜕变太阳逆转 -1.5°/s + 近脊反超远脊、act5 刻度真相密刻
+	1.8×+红 accent+最亮天幕;`GameFlow.start_level` 下发 `apply_act`,
+	回菜单 `apply_act(-1)`,同档跳过,天幕渐变 0.8s 缓变。
+  - **天幕 shader** `assets/fx/backdrop_sky.gdshader`:纵向双色渐变 +
+	双层无缝噪声云带(NoiseTexture2D+FastNoiseLite 引擎自带),
+	TIME 驱动 GPU 持续场零每帧 CPU,取色经 uniform 由 Palette 下发
+	(替代原 Sky 单色 ColorRect 平涂)。
+  - **装饰活化**(全走节点 transform 零重绘):太阳棱环极低速自转 +
+	15s 呼吸(scale 0.97~1.03,fandex 光晕参数);巨面拆 5 面独立
+	9/11/13/15/17s 错峰浮沉(幅 3~8px);深空 6 十字星微漂移;
+	轨道星系 `orbit_rings.gd` 三重同心环 38/26/48s 其一反向(fandex
+	decor-orbit 移植,环顶绕行圆点)。
+  - **操作互动**(四件事件反馈,一次性 Tween,同属性 kill 旧再建):
+	落地脉冲(impact 120~1720 分级,双层山脊 scroll_offset 下沉
+	BOUNCE 弹回 + 天幕微涌 ≤0.05)、切换涟漪(受控体色一闪 + 六视差层
+	alpha 0.88 微沉回浮,与聚焦透明度语言同族)、到站光涌(太阳 burst
+	1.05/满员 1.12 TRANS_BACK 回弹 + 幕强调色一闪)、死亡红波
+	(`red_wave.gd` 三道 320px 周期音波横扫 0.9s alpha 包络 + 全景
+	0.82 压暗回浮);接线点 = player.gd 落地/死亡、roster_controller
+	switch_to、exit_door 到站/满员。
+  - **持续互动**(三件常驻):移速星线(`speed_lines.gd`,速度 >420
+	拉伸至 900 满档,顺速度方向流动,0.125s 节流重绘)、视差对偶
+	(移动端陀螺仪 ↔ 桌面鼠标同组层同深度表 3/6/8,headless 跳过)、
+	装饰活化(见上)。
+  - **设置与门控**:「背景动效」toggle(settings_manager.background_fx,
+	accessibility 分节持久化,面板文案「星空闪烁 / 浮尘 / 幕变奏,
+	关=静态画面」);与 reduced_motion 双门控任一关 = 停帧保静态
+	(渐变天幕与装饰轮廓保留、浮尘 speed_scale 0、shader anim 0、
+	星闪定格相位 0、视差回中),Main 载入设置后与面板切换后
+	refresh_gate()。原背景星闪/浮尘/陀螺仪不受任何门控的无障碍欠账
+	就此补齐。
+- 门特写验收截图链路:`--doorshot` 连拍 + 设置面板滚动到底截图
+	(临时脚本跑完即删)。
+
+### 变更
+- **终点门轮廓考古回退(用户拍板:采用 v0.11.1 及后续同轮廓动效
+  完善版,弃 v0.53.2 圣环/光柱版)**:`exit_door._draw` 换 v0.11.1
+  正典轮廓——锐利矩形门框 64×92(墨腔 0.94 + 几何色 2px 内框 +
+  3px 外框向白提亮 0.15/0.35 + 顶部悬挑 6px 门楣 0.8/1.0)+ 腔内
+  呼吸方点核心(sin×3.0,7~10px,lerp 白 0.45)+ 到站纸白取景框 /
+  封印红取景框(grow 7,1.5px);动效完善沿用 v0.38 批:内框透明度
+  三档就绪态(空 0.30 / 半 0.42 / 满 0.55)。圣环 `_halo`/`_halo_static`
+  与门膛气流 `_column_flow` 三方法清退;PointLight2D 三档光 / 封印
+  Freeze / UiGlyph 徽标 / draw_focus 受控描边 / reduced_motion 门控
+  全部保留现行架构。受控聚焦契约「圣环/光柱静止帧」措辞改「门腔
+  呼吸核心/徽标悬浮静止帧」(procedural-art.md 同步)。
+- 版本 0.54.0(code 25);export_presets 对齐。
+
+### 调研依据
+- Godot 官方:Parallax2D(4.3+ 推荐,scroll_scale/autoscroll/repeat_size;
+  ParallaxBackground 已废弃)、Tween(动态一次性动画优先,禁复用须
+  kill 旧)、CPUParticles2D(官方:低端设备/GPU 瓶颈更优——真机
+  Redmi + 既有一次性粒子管线成熟,维持 CPU 粒子属正当理由)、
+  canvas_item shader(TIME 内建/unshaded,持续场 GPU 承担)。
+- fandex(本地 Astro+React 项目)背景装饰体系:变体驱动编排(母题
+  强弱变奏)、只动 transform/opacity、循环位移整周期无缝、单页彩色
+  元素 ≤3、prefers-reduced-motion 停帧保低透明静态;参数直接移植
+  (38/26/48s 轨道、15s 光晕呼吸 0.94→1.04、9~15s 星尘漂移、
+  320px/16s 音波周期)。
+
+### 验收
+- check-only 17 改动脚本全绿;native_check 27 场 / flow_check /
+  --recalltest 4 链 / --dualtest 七链路 ALL PASS;编辑器实时调试
+  (MCP run_project,D3D12 Forward Mobile)启动+菜单运行零新增
+  错误(shader 真编译通过);ObjectDB×1 间歇泄漏警告经 stash 对照
+  3+3 次统计定性为既有环境噪音(原版 2/3 同现)。
+- 截图目检:五幕代表关(L0/L6/L16/L17/L22)变奏差异成立(act2 天幕
+  上亮下暗/act4 云最浓倒悬/act5 密刻偏亮)、门轮廓 v0.11.1 特写
+  (红框/悬挑楣/墨腔/呼吸核心)、设置面板新行(滚动态)+ 页脚
+  v0.54.0。真机触屏走查列入发版检查单。
+
 ## v0.53.0(2026-09-29 · 程序化美术全量换代 + 双人竞速)
 
 > 联网三路深度调研(平台跳跃关卡设计 / Godot _draw 程序化美术与性能量级 /

@@ -11,6 +11,7 @@ static var wheel_mode := WHEEL_FIXED
 static var vibration := true
 static var screen_shake := true
 static var reduced_motion := false
+static var background_fx := true
 static var sfx_volume := 1.0
 static var ambience_volume := 1.0
 
@@ -34,6 +35,7 @@ static func load_settings() -> void:
 	vibration = bool(cfg.get_value("control", "vibration", true))
 	screen_shake = bool(cfg.get_value("accessibility", "screen_shake", true))
 	reduced_motion = bool(cfg.get_value("accessibility", "reduced_motion", false))
+	background_fx = bool(cfg.get_value("accessibility", "background_fx", true))
 	sfx_volume = clampf(float(cfg.get_value("audio", "sfx", 1.0)), 0.0, 1.0)
 	ambience_volume = clampf(float(cfg.get_value("audio", "ambience", 1.0)), 0.0, 1.0)
 	adaptive = bool(cfg.get_value("video", "adaptive", false))
@@ -50,6 +52,7 @@ static func write_settings() -> void:
 	cfg.set_value("control", "vibration", vibration)
 	cfg.set_value("accessibility", "screen_shake", screen_shake)
 	cfg.set_value("accessibility", "reduced_motion", reduced_motion)
+	cfg.set_value("accessibility", "background_fx", background_fx)
 	cfg.set_value("audio", "sfx", sfx_volume)
 	cfg.set_value("audio", "ambience", ambience_volume)
 	cfg.set_value("video", "resolution", "%dx%d" % [resolution.x, resolution.y])
@@ -86,6 +89,11 @@ static func set_screen_shake(on: bool) -> void:
 
 static func set_reduced_motion(on: bool) -> void:
 	reduced_motion = on
+	write_settings()
+
+
+static func set_background_fx(on: bool) -> void:
+	background_fx = on
 	write_settings()
 
 

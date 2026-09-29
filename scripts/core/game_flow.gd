@@ -47,6 +47,8 @@ func start_level(index: int, intro := true) -> void:
 
 	var act_i := LevelData.act_index_of(current)
 	main._ambience_motif("act%d" % clampi(act_i + 1, 1, LevelData.ACTS.size()))
+	if main.backdrop != null:
+		main.backdrop.apply_act(act_i)
 
 	main._menu.visible = false
 	main._menu.close_act_panel()
@@ -110,6 +112,8 @@ func show_menu() -> void:
 	main._state = Main.State.MENU
 	main.dual_mode = false
 	main._ambience_motif("prologue")
+	if main.backdrop != null:
+		main.backdrop.apply_act(-1)
 	clear_level()
 	main._hud.visible = false
 	main.touch_controls.set_in_game(false)

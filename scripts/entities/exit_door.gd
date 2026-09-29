@@ -125,6 +125,8 @@ func _refresh_fill() -> void:
 	_burst.emitting = full
 	_icon.visible = not full
 	_check.visible = full
+	if full and Main.I != null and Main.I.backdrop != null:
+		Main.I.backdrop.pulse_arrive(true)
 	queue_redraw()
 
 
@@ -143,6 +145,8 @@ func _on_body_entered(body: Node2D) -> void:
 			_arrived_set[p] = true
 			_refresh_fill()
 			p.arrive_at(self)
+			if Main.I != null and Main.I.backdrop != null:
+				Main.I.backdrop.pulse_arrive(false)
 
 
 func _on_body_exited(body: Node2D) -> void:
@@ -178,75 +182,29 @@ func _draw() -> void:
 		return
 	var col := _door_color()
 	var r := Rect2(-size / 2.0, size)
-	var pulse := 0.5 + 0.5 * sin(_t * 2.1)
-	draw_rect(r, Color(Palette.I.ink, 0.55))
-	draw_rect(r, Color(col, 0.85), false, 3.0)
-	draw_rect(r.grow(-6.0), Color(col, 0.30 if not _filled else 0.55))
-	draw_rect(Rect2(r.position.x, r.position.y, r.size.x, 8), Color(col, 0.85))
-	for k in 3:
-		var y := r.position.y + 22.0 + k * (r.size.y - 34.0) / 2.0
-		draw_line(Vector2(r.position.x + 8, y), Vector2(r.end.x - 8, y),
-			Color(Palette.I.paper, 0.35), 2.0)
+
+	# 轮廓正典 = v0.11.1(用户拍板 2026-09-29,弃 v0.53.2 圣环版):
+	# 锐利矩形门框 + 腔内呼吸方点核心 + 悬挑门楣 + 到站/封印取景框;
+	# 动效完善 = 内框三档就绪态(空/半/满,v0.38 批口径)。
+	draw_rect(r, Color(Palette.I.ink, 0.94))
+	var inner := r.grow(-5.0)
+	var inner_alpha := 0.55 if _filled else (0.42 if not _arrived_set.is_empty() else 0.30)
+	draw_rect(inner, Color(col, inner_alpha), false, 2.0)
+
+	var pulse := 0.5 + 0.5 * sin(_t * 3.0)
+	var core := 7.0 + pulse * 3.0
+	draw_rect(Rect2(Vector2(-core / 2.0, -core / 2.0), Vector2(core, core)),
+		col.lerp(Color.WHITE, 0.45))
+
+	draw_rect(r, col.lerp(Color.WHITE, 0.35 if _filled else 0.15), false, 3.0)
+	draw_rect(Rect2(r.position - Vector2(6, 10), Vector2(size.x + 12, 6)),
+		col if _filled else Color(col, 0.8))
+
 	if _filled:
-		draw_rect(r.grow(-6.0), Color(Palette.I.paper, 0.30 + 0.25 * pulse))
-		draw_rect(r, Color(Palette.I.paper, 0.75), false, 2.0)
-		_column_flow()
-	elif sealed:
-		draw_rect(r, Color(Palette.I.paper, 0.5))
-	_halo()
-	draw_rect(Rect2(-size.x / 2.0 - 6, -size.y / 2.0 - 6, 6, 6),
-		Color(col, 0.9))
-	draw_rect(Rect2(size.x / 2.0, -size.y / 2.0 - 6, 6, 6), Color(col, 0.9))
+		draw_rect(r.grow(7.0),
+			Color(Palette.I.red, 0.95) if sealed else Color(Palette.I.paper, 0.9),
+			false, 1.5)
 	TerrainKit.draw_focus(self, r.grow(2.0), hl_color)
-
-
-func _halo() -> void:
-	if SettingsManager.reduced_motion:
-		_halo_static()
-		return
-	var a := 0.20 + 0.14 * sin(_t * TAU / 2.4 + 0.9)
-	var center := Vector2(0, 0)
-	var r_out := maxf(size.x, size.y) * 0.72
-	var r_in := r_out * 0.78
-	var pts_out := PackedVector2Array()
-	var pts_in := PackedVector2Array()
-	for k in 25:
-		var ang := TAU * float(k) / 24.0
-		pts_out.append(center + Vector2(cos(ang), sin(ang)) * r_out)
-		pts_in.append(center + Vector2(cos(ang), sin(ang)) * r_in)
-	draw_polyline(pts_out, Color(TerrainArt.FACE_SHOULDER, a), 2.0, true)
-	draw_polyline(pts_in, Color(Palette.I.paper, a * 0.7), 1.0, true)
-	for k in 12:
-		var ang := TAU * float(k) / 12.0
-		var dir := Vector2(cos(ang), sin(ang))
-		draw_line(center + dir * (r_out + 5.0), center + dir * (r_out + 13.0),
-			Color(TerrainArt.FACE_SHOULDER, a), 2.0, true)
-
-
-func _halo_static() -> void:
-	var pts := PackedVector2Array()
-	var r_out := maxf(size.x, size.y) * 0.72
-	for k in 25:
-		var ang := TAU * float(k) / 24.0
-		pts.append(Vector2(cos(ang), sin(ang)) * r_out)
-	draw_polyline(pts, Color(TerrainArt.FACE_SHOULDER, 0.27), 2.0, true)
-
-
-func _column_flow() -> void:
-	if SettingsManager.reduced_motion:
-		return
-	var flows := [
-		{"w": 0.5, "speed": 42.0, "phase": 0.0},
-		{"w": 0.3, "speed": 30.0, "phase": 0.4},
-		{"w": 0.7, "speed": 52.0, "phase": 0.75},
-	]
-	var span := size.y - 20.0
-	for fl: Dictionary in flows:
-		var y := -size.y / 2.0 + size.y - 10.0 \
-			- fposmod(_t * float(fl["speed"]) + float(fl["phase"]) * span, span)
-		var w: float = float(fl["w"]) * size.x
-		draw_line(Vector2(-w * 0.5, y), Vector2(w * 0.5, y),
-			Color(Palette.I.paper, 0.20), 1.5, true)
 
 var _sig := ""
 

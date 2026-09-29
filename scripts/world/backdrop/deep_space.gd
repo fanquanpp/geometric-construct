@@ -1,11 +1,30 @@
 extends Node2D
 
 # 星阵由种子程序生成,数量形态运行时确定(procedural-art)。
+# 闪烁速率倍率(twinkle)由 BackdropPreset 下发;动画关 = 定格相位 0 重绘一次后停。
+# 重绘纪律:持续动画仅星闪与十字星微漂移,统一 0.125s 节流。
 
 const TILE := Vector2(2600, 1300)
+const REDRAW_STEP := 0.125
+
 var _stars: Array = []
 var _t := 0.0
 var _acc := 0.0
+var twinkle := 1.0
+var _animated := true
+
+
+func set_twinkle(m: float) -> void:
+	twinkle = m
+
+
+func set_animated(on: bool) -> void:
+	_animated = on
+	set_process(on)
+	if not on:
+		_t = 0.0
+		queue_redraw()
+
 
 func _ready() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -41,7 +60,10 @@ func _ready() -> void:
 			else Color(Palette.I.paper, rng.randf_range(0.20, 0.34))
 		_stars.append({"pos": p, "size": rng.randf_range(4.0, 6.0),
 			"col": col, "spd": rng.randf_range(0.4, 0.9),
-			"ph": rng.randf_range(0.0, TAU), "cross": true})
+			"ph": rng.randf_range(0.0, TAU), "cross": true,
+			"drift_w": rng.randf_range(0.10, 0.2),
+			"drift_ph": rng.randf_range(0.0, TAU)})
+
 
 func _mk_star(rng: RandomNumberGenerator, pos: Vector2, a: float,
 		rng2: RandomNumberGenerator, band := false) -> Dictionary:
@@ -52,12 +74,14 @@ func _mk_star(rng: RandomNumberGenerator, pos: Vector2, a: float,
 		"col": col, "spd": rng.randf_range(0.25, 0.8),
 		"ph": rng.randf_range(0.0, TAU), "cross": false}
 
+
 func _process(delta: float) -> void:
 	_t += delta
 	_acc += delta
-	if _acc >= 0.125:
+	if _acc >= REDRAW_STEP:
 		_acc = 0.0
 		queue_redraw()
+
 
 func _draw() -> void:
 	for st in _stars:
@@ -65,12 +89,16 @@ func _draw() -> void:
 			draw_colored_polygon(st["quad"], st["col"])
 			continue
 		var tw: float = st["col"].a * (0.75 + 0.25 \
-			* sin(_t * st["spd"] * TAU + st["ph"]))
+			* sin(_t * st["spd"] * twinkle * TAU + st["ph"]))
 		var c := Color(st["col"].r, st["col"].g, st["col"].b, tw)
 		if st["cross"]:
+			var drift := Vector2(
+				sin(_t * st["drift_w"] * TAU + st["drift_ph"]) * 6.0,
+				cos(_t * st["drift_w"] * TAU * 0.8 + st["drift_ph"]) * 8.0)
+			var p: Vector2 = st["pos"] + drift
 			var s: float = st["size"]
-			draw_line(st["pos"] + Vector2(-s, 0), st["pos"] + Vector2(s, 0), c, 1.2)
-			draw_line(st["pos"] + Vector2(0, -s), st["pos"] + Vector2(0, s), c, 1.2)
+			draw_line(p + Vector2(-s, 0), p + Vector2(s, 0), c, 1.2)
+			draw_line(p + Vector2(0, -s), p + Vector2(0, s), c, 1.2)
 		else:
 			draw_rect(Rect2(st["pos"] - Vector2(st["size"], st["size"]) / 2.0,
 				Vector2(st["size"], st["size"])), c)
