@@ -2,7 +2,7 @@ class_name GeometryDef
 extends Resource
 
 
-enum Shape { SQUARE, RECT, TRIANGLE }
+enum Shape { SQUARE, RECT }
 
 
 const MAX_JUMPS := 2
@@ -41,13 +41,6 @@ const MAX_JUMPS := 2
 
 @export var can_be_pushed := false
 
-@export var can_pass_boundary := false
-
-@export var paired := false
-
-@export var name_half := ""
-@export var quote_half := ""
-
 
 var jump_v: float:
 	get:
@@ -56,10 +49,6 @@ var jump_v: float:
 
 static func jump_v_for(units: float) -> float:
 	return sqrt(2.0 * MovementTuning.I.gravity * units * Geometries.UNIT_PX)
-
-
-func bodies() -> int:
-	return 2 if paired else 1
 
 
 func bottom_units() -> float:

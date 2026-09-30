@@ -247,9 +247,9 @@ func show_win(on: bool, summary := "") -> void:
 	_win.visible = on
 	if not on:
 		return
-	%WinKicker.text = "GEOMETRIC CONSTRUCT · 五幕全演"
-	%WinSub.text = "四个几何体,各归其位。" if summary == "" \
-		else "四个几何体,各归其位。\n%s" % summary
+	%WinKicker.text = "GEOMETRIC CONSTRUCT · 四幕全演"
+	%WinSub.text = "三个几何体,各归其位。" if summary == "" \
+		else "三个几何体,各归其位。\n%s" % summary
 
 
 func fade_from_black() -> void:

@@ -206,7 +206,7 @@ theme_override_constants/separation = 14
 
 [node name="WinKicker" type="Label" parent="Root/Win/WinBox"]
 unique_name_in_owner = true
-text = "GEOMETRIC CONSTRUCT · 五幕全演"
+text = "GEOMETRIC CONSTRUCT · 四幕全演"
 horizontal_alignment = 1
 
 [node name="WinTitle" type="Label" parent="Root/Win/WinBox"]

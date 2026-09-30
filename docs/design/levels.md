@@ -1,6 +1,6 @@
 # 关卡设计 · LEVELS(原生编辑器作关 v1)
 
-> 状态:现行(v0.53)· 作关 = **Godot 原生编辑器内 TileMapLayer 摆位 + 机关场景实例**;
+> 状态:现行(v0.57)· 作关 = **Godot 原生编辑器内 TileMapLayer 摆位 + 机关场景实例**;
 > 渲染 = **全程序化 `_draw`**(2026-09-29 用户令,契约见 procedural-art.md)
 > 方案与决策记录:`native-levels.md`(提案 v1 已落地,D1–D8 已拍板)
 > 旧 JSON 管线(LevelBuilder / Comp / LevelDef / ase2level)已于 v0.45 **整体退役**,
@@ -15,7 +15,7 @@
    (TileSet 碰撞不受影响),**编辑器保留图位视图供作关**;
    `assets/tiles/native_tiles.png` 与图鉴/机关 PNG 同为历史孤本。
 2. **TileSet**(`data/tiles/native_tileset.tres`):物理层一次配好——
-   `layer0 = 共享实体(bit1)`,`layer1..4 = 疾/跃/逆/伍 专属(bit2..16)`,`layer5 = 退役预留(v0.55.0 删圆)`;
+   `layer0 = 共享实体(bit1)`,`layer1..3 = 疾/跃/逆 专属(bit2..8)`,`layer4..5 = 退役预留(v0.55.0 删圆 / v0.57.0 删伍,图集物理层保留未拆)`;
    **224 图位碰撞多边形已逐格配好**(现行 = layer0:实心整方 / 单向踏面
    One Way / 逆天花板底缘反向 One Way / 半高·立柱·门框局部多边形 /
    装饰无碰撞);角色差异 = 玩家 `collision_mask`(出生自动算:
@@ -29,7 +29,7 @@
 > 表 = **图位语义 / 碰撞契约**(外观不再来自贴图,由 TerrainArt 配方
 > 程序化绘制:碰撞格画物理多边形 + 材质族;装饰格按下表语义走
 > 坐标配方)。**兼容契约**:(0,0)(1,0)(2,0)(0,1)(1,1) 五格
-> 语义与占位版一致。门禁:native_check 27 场 + flow_check 全绿。
+> 语义与占位版一致。门禁:native_check 18 场 + flow_check 全绿。
 
 | 行 | 语义(TerrainArt 配方依据) | 碰撞(layer0) |
 |---|---|---|
@@ -56,9 +56,9 @@
 
 | 摆位 | 约定 |
 |---|---|
-| `Spawn<N>` (Marker2D) | 几何体 N 的出生点,**静息位**(地面顶 −25px,即玩家中心落点);伍 = `Spawn4_a`(天花,贴齐静息)/ `Spawn4_b`(地面) |
+| `Spawn<N>` (Marker2D) | 几何体 N 的出生点,**静息位**(地面顶 −25px,即玩家中心落点) |
 | 出生碰撞 | `mask = 共享层 + 本角色专属层`(NativeLevel 出生算定;装饰层无物理=自由穿行) |
-| 出口门 | `exit_door.tscn` 实例,`geo_index` Inspector 配;双子门 = 一扇门两半都到站 |
+| 出口门 | `exit_door.tscn` 实例,`geo_index` Inspector 配;同名册一扇门 |
 | 机关 | 对应场景实例(`speed_gate` / `checkpoint_beacon` / `hint_marker`;lever/bridge/mover 等随素材化批次补场景壳) |
 | 分区 / 提示 | 分区 = 场景内命名区域节点;教学牌 = `hint_marker` 实例 |
 
@@ -84,15 +84,16 @@
 |---|---|
 | `tests/native_check.tscn` | 逐关装载:玩家数=名册体数、全员落地、专属门齐全、Spawn 齐全 |
 | `tests/flow_check.tscn` | 通关 → 自动流转下一场 → 出生在场景 Spawn 摆位 |
-| `-- --recalltest` | 出生召回 / 信标登记召回 / 双子界边召回 |
-| `-- --dualtest` | 同屏双人五链路(绑定/分区输入/禁切/死亡保操控/封印吸入) |
+| `-- --recalltest` | 出生召回 / 信标登记召回 / 信标幂等 |
+| `-- --dualtest` | 同屏双人七链路(倒计时/绑定/分区输入/禁切/死亡保操控/过线即胜/再赛) |
 | `tests/trait_check.gd` | 顶弹 / 承载 / 推挤 / 跳高物理仿真 |
 
 联机:`-- --nettest`(版本+场景指纹门禁,指纹覆盖目录与场景文件全文哈希)。
 
 ## 5. 现有剧目
 
-正戏五幕 26 场全量在演(转译自 v0.44 已测布局 + 第一幕重制):
-第一幕六场(重制)/ 第二幕六场(伍入队)/ 第三幕五场(分岔)/
-第四幕五场(蜕变)/ 第五幕四场(刻度的真相);剧本档案
-(`story/act1~5.ks`、docs/story/)与场次一一对应。
+正戏四幕 18 场全量在演(v0.57.0 删「伍」后定稿):
+第一幕六场(疾与跃入门 + 终场三门并立)/ 第二幕四场(分岔)/
+第三幕四场(蜕变)/ 第四幕四场(刻度的真相);剧目以
+`scripts/data/level_data.gd` SCENES/ACTS 为唯一真源,场次增删必须
+同步 SaveManager 存档下标迁移。

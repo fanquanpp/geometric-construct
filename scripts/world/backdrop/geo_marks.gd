@@ -1,7 +1,7 @@
 extends Node2D
 
 # 刻度星散布由种子程序生成,数量形态运行时确定(procedural-art)。
-# 密度倍率与强调色由 BackdropPreset 下发(第五幕「密刻」即 marks=1.8 + red accent);
+# 密度倍率与强调色由 BackdropPreset 下发(第四幕「密刻」即 marks=1.8 + red accent);
 # 参数变化才 queue_redraw(重绘纪律)。
 
 var density := 1.0

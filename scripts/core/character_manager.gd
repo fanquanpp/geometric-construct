@@ -27,14 +27,13 @@ func clear_pool() -> void:
 
 
 func create_character(def: GeometryDef, index: int, pos: Vector2,
-		pair_half := -1, world_mask := 1) -> Player:
+		world_mask := 1) -> Player:
 	var p: Player = PLAYER_SCENE.instantiate()
 	p.def = def
 	p.index = index
-	p.pair_half = pair_half
 	p.spawn_pos = pos
 	p.position = pos
 	p.world_mask = world_mask
 	pool.append(p)
-	character_created.emit(p, {"index": index, "pair_half": pair_half})
+	character_created.emit(p, {"index": index})
 	return p

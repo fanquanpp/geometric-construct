@@ -31,7 +31,7 @@ static func piano_step(p: Player, vel: Vector2) -> void:
 			(obj as PianoTile).strike(p, vel.length())
 	for t in p._piano_touch:
 		if not piano_now.has(t):
-			t.release(p.body_key())
+			t.release(p.index)
 	p._piano_touch = piano_now
 
 
@@ -44,5 +44,5 @@ static func piano_cosmetic(p: Player) -> void:
 			tile.strike(p, p.velocity.length())
 	for t in p._piano_touch:
 		if not now.has(t):
-			t.release(p.body_key())
+			t.release(p.index)
 	p._piano_touch = now

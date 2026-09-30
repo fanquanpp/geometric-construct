@@ -12,8 +12,6 @@
 
 | 图 | 内容 | 交互 |
 |---|---|---|
-| ![boot](ui_01_boot_mark.png) | 红色标记块硬立 + 「几何构成」逐字落位 | 点按/任意键跳过 |
-| ![boot2](ui_01b_boot_full.png) | 英文名 + 定位语 + 刻线横扫;底部引擎署名(**POWERED BY GODOT ENGINE 纯文字**;v0.48.0 起 logo 退役,CC BY 出处保留) | — |
 
 ## 标题菜单 MENU(Main.State.MENU)
 
@@ -26,14 +24,11 @@
 
 | 图 | 内容 |
 |---|---|
-| ![geo](ui_05_archive_geo.png) | 几何体档案页签(左列五位,右详情:肖像/数值/台词) |
-| ![keys](ui_10_archive_keys.png) | 键位指南页签(**多端一册**:键鼠/手柄/触屏同册对照) |
+| ![geo](ui_05_archive_geo.png) | 几何体档案页签(左列三位,右详情:肖像/数值/台词;v0.57.0 删伍后现役三体) |
 | ![bld](ui_11_archive_bld.png) | 建筑页签(v0.48 平涂重构正典帧;左列图鉴,右规格/要点) |
 | ![mech](ui_11b_archive_mech.png) | 机关页签(同构;动态帧 f2/portal 见 `--panelshot`) |
-| ![story](ui_12_archive_story.png) | 剧情回顾页签(全文本阅读器,台词按角色着色) |
-| ![storylist](ui_12b_archive_story_list.png) | 剧情目录页(五幕 + 落幕篇目,节拍预览) |
 
-> 未归档同构页:geo1-4(其余四位)、bld_beam、mech_f2 / mech_portal(动态帧)——重截见 `--panelshot`。
+> 未归档同构页:其余几何体条目、bld_beam、mech_f2 / mech_portal(动态帧)——重截见 `--panelshot`。
 
 ## 设置 SETTINGS(面板带 38,与暂停共用)
 

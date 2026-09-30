@@ -21,7 +21,7 @@
 script = ExtResource("1_nl")
 level_name = "第四层真相"
 intro_text = "巨构的最深处:所有机关同时运转,像一场排练了无数次的演出。刻度的主人,快要露面了。"
-roster = Array[int]([0, 1, 2, 3])
+roster = Array[int]([0, 1, 2])
 level_size = Vector2(6400, 1200)
 kill_y = 1400.0
 top_kill_y = -420.0
@@ -43,12 +43,6 @@ position = Vector2(350, 880)
 
 [node name="Spawn2" type="Marker2D" parent="." unique_id=2053159350]
 position = Vector2(500, 880)
-
-[node name="Spawn3_a" type="Marker2D" parent="." unique_id=92346067]
-position = Vector2(780, 115)
-
-[node name="Spawn3_b" type="Marker2D" parent="." unique_id=1495523335]
-position = Vector2(880, 785)
 
 [node name="CheckpointBeacon0" type="Area2D" parent="." unique_id=471058393 instance=ExtResource("4_bc")]
 z_index = 3
@@ -76,12 +70,6 @@ z_index = 3
 position = Vector2(4250, 830)
 script = ExtResource("6_4nldm")
 geo_index = 2
-
-[node name="ExitDoor3" type="Area2D" parent="." unique_id=13704688 instance=ExtResource("9_door")]
-z_index = 3
-position = Vector2(2950, 450)
-script = ExtResource("6_4nldm")
-geo_index = 3
 
 [node name="Mover0" type="AnimatableBody2D" parent="." unique_id=1261193743 instance=ExtResource("11_sc")]
 position = Vector2(1820, 580)
@@ -120,6 +108,3 @@ centered = false
 texture = ExtResource("emp_map")
 script = ExtResource("emp_scr")
 
-[node name="ExitDoor4" parent="." unique_id=1088495348 instance=ExtResource("9_door")]
-position = Vector2(750, 250)
-geo_index = 3

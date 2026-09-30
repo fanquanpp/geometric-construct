@@ -2,15 +2,10 @@ extends SceneTree
 
 
 const SCENES := [
-	"res://levels_native/act2/s02.tscn", "res://levels_native/act2/s03.tscn",
-	"res://levels_native/act2/s04.tscn", "res://levels_native/act2/s05.tscn",
-	"res://levels_native/act2/s06.tscn",
 	"res://levels_native/act3/s01.tscn", "res://levels_native/act3/s02.tscn",
-	"res://levels_native/act3/s03.tscn", "res://levels_native/act3/s04.tscn",
-	"res://levels_native/act3/s05.tscn",
+	"res://levels_native/act3/s03.tscn", "res://levels_native/act3/s05.tscn",
 	"res://levels_native/act4/s01.tscn", "res://levels_native/act4/s02.tscn",
-	"res://levels_native/act4/s03.tscn", "res://levels_native/act4/s04.tscn",
-	"res://levels_native/act4/s05.tscn",
+	"res://levels_native/act4/s03.tscn", "res://levels_native/act4/s05.tscn",
 	"res://levels_native/act5/s01.tscn", "res://levels_native/act5/s02.tscn",
 	"res://levels_native/act5/s03.tscn", "res://levels_native/act5/s04.tscn",
 ]

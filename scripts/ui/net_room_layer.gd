@@ -289,7 +289,7 @@ func _show_lobby() -> void:
 	if ns != null and ns.pick_level >= 0 and ns.pick_level < LevelData.count():
 		for g: int in ns.my_claims():
 			var cd: GeometryDef = Geometries.get_def(g)
-			names.append(cd.name + ("/" + cd.name_half if cd.paired else ""))
+			names.append(cd.name)
 	if names.is_empty() and ns != null and m != null and not m.players.is_empty():
 		for slot: int in ns.own_slots_arr():
 			names.append(m.players[slot].display_name())
@@ -319,10 +319,10 @@ func _show_map() -> void:
 			var names := PackedStringArray()
 			for g in LevelData.scene_roster(idx):
 				var cd: GeometryDef = Geometries.get_def(int(g))
-				names.append(cd.name + ("/" + cd.name_half if cd.paired else ""))
+				names.append(cd.name)
 			_body.add_child(_big_btn(LevelData.scene_name(idx),
 				"第 %d 场 · %d 具体身 · %s" % [LevelData.scene_no_of(idx),
-					Geometries.roster_body_total(LevelData.scene_roster(idx)), " / ".join(names)],
+					LevelData.scene_roster(idx).size(), " / ".join(names)],
 				func() -> void: NetSession.I.host_pick_level(idx),
 				not NetSession.I.is_host()))
 	_body.add_child(_big_btn("返回", "回到房间等待页",
@@ -374,7 +374,7 @@ func _role_chip(gi: int, mine: Array, other: Array) -> Button:
 	b.custom_minimum_size = Vector2(112, 92)
 	b.toggle_mode = true
 	b.set_pressed_no_signal(side == 0)
-	b.text = "%s\n%s" % [cd.name + ("/" + cd.name_half if cd.paired else ""),
+	b.text = "%s\n%s" % [cd.name,
 		["未认领", "我 方", "对 方"][side + 1]]
 	b.add_theme_font_override("font", Ui.HEAD)
 	b.add_theme_font_size_override("font_size", 20)

@@ -15,24 +15,21 @@ func _ready() -> void:
 			print("NATIVE FAIL L%d: 场景未装载" % li)
 			continue
 		var roster: Array = root.roster
-		var bodies := 0
-		for idx in roster:
-			bodies += 2 if Geometries.get_def(idx).paired else 1
 		var label := "%s · %s" % [LevelData.scene_name(li), root.level_name]
-		if bodies == 0:
+		if roster.is_empty():
 			fails += 1
 			print("NATIVE FAIL L%d %s: 场景 roster 为空(登记/摆位缺失)" % [li, label])
 			continue
-		if main.players.size() != bodies:
+		if main.players.size() != roster.size():
 			fails += 1
 			print("NATIVE FAIL L%d %s: players=%d expect=%d"
-				% [li, label, main.players.size(), bodies])
+				% [li, label, main.players.size(), roster.size()])
 		for p in main.players:
 			if not (p.is_on_floor() or p.velocity.length() < 20.0):
 				fails += 1
-				print("NATIVE FAIL L%d %s: %s 未落地 @ %s vel=%s g=%d ph=%d mask=%d"
+				print("NATIVE FAIL L%d %s: %s 未落地 @ %s vel=%s g=%d mask=%d"
 					% [li, label, p.def.name, p.position, p.velocity,
-					p.gravity_dir, p.pair_half, p.collision_mask])
+					p.gravity_dir, p.collision_mask])
 		for idx: int in roster:
 			var door_ok := false
 			for n in root.get_children():
@@ -43,13 +40,9 @@ func _ready() -> void:
 				fails += 1
 				print("NATIVE FAIL L%d %s: 缺 geo%d 终点门" % [li, label, idx])
 		for idx: int in roster:
-			var names: Array = ["Spawn%d" % idx]
-			if Geometries.get_def(idx).paired:
-				names = ["Spawn%d_a" % idx, "Spawn%d_b" % idx]
-			for nn: String in names:
-				if root.get_node_or_null(NodePath(nn)) == null:
-					fails += 1
-					print("NATIVE FAIL L%d %s: 缺 %s" % [li, label, nn])
+			if root.get_node_or_null(NodePath("Spawn%d" % idx)) == null:
+				fails += 1
+				print("NATIVE FAIL L%d %s: 缺 Spawn%d" % [li, label, idx])
 		print("NATIVE L%d %s · bodies=%d" % [li, label, main.players.size()])
 	if fails == 0:
 		print("NATIVE CHECK ALL PASS (%d levels)" % LevelData.count())

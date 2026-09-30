@@ -59,7 +59,7 @@ func start_level(index: int, intro := true) -> void:
 	main.touch_controls.set_in_game(true)
 
 	main.touch_controls.set_switch_available(
-		Geometries.roster_body_total(level_info.roster) > 1)
+		level_info.roster.size() > 1)
 	main._hud.show_win(false)
 	main._hud.set_level_info(current, level_info["name"])
 	main._refresh_roster()
@@ -217,7 +217,7 @@ func net_recall(slot: int) -> void:
 	var p: Player = main.players[slot]
 	if p == null or p.in_exit or p.dying or p.arrived:
 		return
-	p.recall_to(main.roster.checkpoints.get(p.body_key(), p.spawn_pos))
+	p.recall_to(main.roster.checkpoints.get(p.index, p.spawn_pos))
 	Sfx.play("switch")
 
 

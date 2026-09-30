@@ -2,6 +2,64 @@
 
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 
+## v0.57.0 · 删除「伍」双体三角形(2026-09-30)
+
+用户令:「删除全部的几何体三角形以及相关的全部内容,关卡,设定,机制,
+代码,介绍等等内容。全量深度检索删除。缩减关卡数量。」三角形 =
+名册第肆位「伍 · 界 / 边」(紫色正三角双体,shape=TRIANGLE),其删除
+= 双体系统整体退役。
+
+### 删除范围
+
+- **角色**:删 `data/characters/pair.tres` + `Shape.TRIANGLE` 枚举 +
+  `paired` / `name_half` / `quote_half` / `can_pass_boundary` 字段;
+  名册 4 → 3(疾 / 跃 / 逆)。
+- **双体机制**:删 player `pair_half` / `partner` / `body_key()`
+  (BODY_STRIDE 体身份键)——逐体状态(记录点 / 琴键接触)改按名册位
+  `index` 记键;界天花出生(重力倒挂)与 A4 边音随退;character_manager
+  去 pair_half 参;recall/存档链同步改 index 键。
+- **磁力边界机关**:删 `mag_boundary.gd/.tscn` 整件(两顶张成磁力线、
+  速度投影阻挡);native_level 双体建队 + 磁界实例化分支删;player
+  BOUNDARY_BIT 磁界位 / boundary_anchor 删;「逆穿磁界」身份扣随退
+  (fall.tres 特性行删)。
+- **三角形形体**:player 三角形碰撞多边形 / 遮挡体 / player_cosmetics
+  draw_tri / draw_kit char_shape TRIANGLE 分支 / 幽灵回放三角形绘制
+  全部清退(形体只剩方 / 长方)。
+- **关卡 24 → 18(五幕并四幕)**:删伍专属关 act2/s01~s05 五场 +
+  合演关 act1/s06(双生阶);混编关四门换代三门——act2/s06「界与边 ·
+  四门并立」→「三门并立」移编 act1/s06 终场,act4/s05 终场 / act5/s03 /
+  act5/s04「落幕 · 四门归位」→「三门归位」同删 Spawn3_a/b 与双面门;
+  顺清 v0.55.0 漏网孤儿关 act3/s04、act4/s04(圆·长坡等,文件仍在盘);
+  act2 目录空删。LevelData 18 关 4 幕(6/4/4/4),幕名「界与边」随退。
+- **存档 v8 → v9**:旧 5(合演)与 6-10(伍关)退役,旧 11-23 左移 6;
+  迁移逻辑抽 `_remap_stats` 复用。地图整图 assets/maps 同步:删 act2
+  六张孤儿图,18 张全量重烘。
+- **UI / 数据**:hud_chips 双子芯片文本 / hud_hints 体数判断 /
+  archive_geo_page 双名显示 / net_room_layer 三处双子名 / controls_data
+  「双子换另一半」三处 / 门禁提示行,全部随退;键位指南名册直达 1-3。
+- **门禁 / 工具**:native_check 去 paired 双体计数;level_audit 删伍
+  双面门检查 / 界倒挂 BFS / _ceiling_spot 与补门 fix 全段;recalltest
+  界 / 边两腿删(余单体 / 信标 / 幂等三链);dualtest 探针关 24 → 18;
+  restyle_native_acts 清单随关卡换代更新;shot_harness tour 双体换体
+  逻辑删。
+- **文档十四份**:characters(伍档案 + §5 双体契约全节退役,名册 3)、
+  levels(18 场四幕,门禁数字核正)、gameplay(协作矩阵 / 组合矩阵 /
+  能力表删磁界行,充电桩转废弃)、glossary / structures(充电桩 / 信标
+  body_key)/ entities 总纲(七族成员 / 组合句 / 迁移表)/ DESIGN /
+  ARCHITECTURE(树与机关清单)/ ASSETS(关卡 18 / 角色表)/ REFACTOR
+  (门禁台账)/ ui-flow(四幕 18 场)/ ui README(孤儿截图五张随删)/
+  AGENTS(「双体系统速记」节 →「名册速记」)/ 叙事三档(story / bible /
+  seven_dimensions)删除声明头。
+
+### 门禁
+
+- check-only 改动 25 脚本全绿;native_check 18 关 ALL PASS;flow_check
+  PASS;trait_check PASS;stats_check PASS(v8→v9 真迁移);transition /
+  replay_transition(三腿)/ focus_check(v0.56.2)ALL PASS;recalltest
+  三链 PASS;dualtest 七链路 PASS(探针关 18);LEVELAUDIT 全 PASS;
+  地图重烘 MAP_BAKE ALL PASS 18 张。
+- 版本三件:version.gd 0.57.0、export_presets 0.57.0 / code 32。
+
 ## v0.56.2 · 菜单手柄/键盘焦点导航全量修复(2026-09-30)
 
 用户报障:「键位指南和双人竞速的手柄操作逻辑存在问题,不能左右切换,

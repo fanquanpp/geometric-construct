@@ -111,7 +111,7 @@ func _audit_level(index: int) -> void:
 					_warn("%s 终点门(g%d)悬空 %d 格(地面在门下 %d)" % [tag, d.geo_index, dy - 1, dy])
 				break
 		if not ground:
-			_warn("%s 终点门(g%d)下方无地(界边吊顶门?)@%s" % [tag, d.geo_index, dc])
+			_warn("%s 终点门(g%d)下方无地(置换系天花门?)@%s" % [tag, d.geo_index, dc])
 
 	# —— 地块高差体检:单向板表面与两侧地面齐平(用户报「地块高度不水平」)——
 	for c in oneway:
@@ -142,30 +142,13 @@ func _audit_level(index: int) -> void:
 	# —— 可达性 BFS(逐名册成员 → 归属门)——
 	_collect_standable(solid, oneway, standable, ceilings)
 	var roster: Array = LevelData.scene_roster(index)
-	if roster.has(3):
-		var ceil_doors := 0
-		var floor_doors := 0
-		for d in doors:
-			if d.geo_index != 3:
-				continue
-			var dcc := Vector2i((d.position / CELL).floor())
-			if solid.has(dcc + Vector2i(0, -1)) or solid.has(dcc + Vector2i(0, -2)):
-				ceil_doors += 1
-			elif solid.has(dcc + Vector2i(0, 1)) or solid.has(dcc + Vector2i(0, 2)):
-				floor_doors += 1
-		if ceil_doors == 0:
-			_fail("%s 界(g3)无天花门——伍死关" % tag)
-		if floor_doors == 0:
-			_fail("%s 边(g3)无地面门——伍死关" % tag)
 	for d in doors:
 		var g: int = d.geo_index
 		if not roster.has(g):
 			continue
 		var mk := lvl.get_node_or_null(NodePath("Spawn%d" % g)) as Marker2D
 		if mk == null:
-			mk = lvl.get_node_or_null(NodePath("Spawn%d_a" % g)) as Marker2D
-		if mk == null:
-			_fail("%s 缺 Spawn%d(含 _a)" % [tag, g])
+			_fail("%s 缺 Spawn%d" % [tag, g])
 			continue
 		var def := Geometries.get_def(g)
 		var seen := {}
@@ -222,21 +205,6 @@ func _floor_spot(x: int, solid: Dictionary, oneway: Dictionary,
 	return Vector2i(-9999, -9999)
 
 
-func _ceiling_spot(x: int, solid: Dictionary, hint_y: int) -> Vector2i:
-	var order := [hint_y]
-	for k in range(1, _max_y):
-		order.append(hint_y + k)
-		order.append(hint_y - k)
-	for r in order:
-		if r < 2 or r > _max_y - 2:
-			continue
-		if not _clear_down3(x, r, solid):
-			continue
-		if solid.has(Vector2i(x, r - 1)):
-			return Vector2i(x, r)
-	return Vector2i(-9999, -9999)
-
-
 func _collect_fixes(index: int, lvl: NativeLevel, doors: Array, roster: Array,
 		solid: Dictionary, oneway: Dictionary, standable: Dictionary,
 		ceilings: Dictionary, tag: String) -> void:
@@ -244,30 +212,15 @@ func _collect_fixes(index: int, lvl: NativeLevel, doors: Array, roster: Array,
 	# 各成员可达集(边=纯地面,界=含倒挂;其余按自身 def)
 	var seen_by := {}
 	for g in LevelData.scene_roster(index):
-		var mk: Marker2D = null
-		if g == 3:
-			mk = lvl.get_node_or_null(NodePath("Spawn3_b")) as Marker2D
-		if mk == null:
-			mk = lvl.get_node_or_null(NodePath("Spawn%d" % g)) as Marker2D
-		if mk == null:
-			mk = lvl.get_node_or_null(NodePath("Spawn%d_a" % g)) as Marker2D
+		var mk: Marker2D = lvl.get_node_or_null(NodePath("Spawn%d" % g)) as Marker2D
 		if mk == null:
 			continue
 		var def := Geometries.get_def(g)
 		var seen := {}
 		_bfs(Vector2i((mk.position / CELL).floor()), def, solid, oneway,
-			standable, ceilings, seen, 0 if g == 3 else -1)
+			standable, ceilings, seen)
 		seen_by[g] = seen
-	# 界的可达集(倒挂)
-	var seen_jie := {}
-	var mka := lvl.get_node_or_null(NodePath("Spawn3_a")) as Marker2D
-	if mka == null:
-		mka = lvl.get_node_or_null(NodePath("Spawn3")) as Marker2D
-	if mka != null:
-		_bfs(Vector2i((mka.position / CELL).floor()),
-			Geometries.get_def(3), solid, oneway, standable, ceilings,
-			seen_jie, 1)
-	# 1) 嵌墙门扶正:地面位(地表可达集)与天花位(界可达集)都作候选
+	# 1) 嵌墙门扶正:地面位(地表可达集)作候选
 	for d in doors:
 		var dc := Vector2i((d.position / CELL).floor())
 		var buried := solid.has(dc) 			or (solid.has(dc + Vector2i(0, -1)) and solid.has(dc + Vector2i(0, 1)))
@@ -275,9 +228,7 @@ func _collect_fixes(index: int, lvl: NativeLevel, doors: Array, roster: Array,
 			continue
 		var hint_y := dc.y
 		var seen_filter: Dictionary = seen_by.get(d.geo_index, {})
-		var is_pair: bool = d.geo_index == 3
 		var spot := Vector2i(-9999, -9999)
-		var spot_ceil := false
 		for dx in range(0, 24):
 			for sx in [1, -1]:
 				var x: int = dc.x + dx * sx
@@ -287,15 +238,7 @@ func _collect_fixes(index: int, lvl: NativeLevel, doors: Array, roster: Array,
 				if fs.x != -9999 and (seen_filter.is_empty()
 						or seen_filter.has(fs)):
 					spot = fs
-					spot_ceil = false
 					break
-				if is_pair:
-					var cs := _ceiling_spot(x, solid, hint_y)
-					if cs.x != -9999 and (seen_jie.is_empty()
-							or seen_jie.has(cs)):
-						spot = cs
-						spot_ceil = true
-						break
 			if spot.x != -9999:
 				break
 		if spot.x == -9999:
@@ -304,68 +247,7 @@ func _collect_fixes(index: int, lvl: NativeLevel, doors: Array, roster: Array,
 		d.position = Vector2(spot.x * CELL + 50.0, spot.y * CELL + 50.0)
 		_pending.append({"path": path, "name": String(d.name),
 			"pos": d.position})
-		print("FIXMOVE %s %s → %s(%s)" % [tag, d.name, d.position,
-			"天花" if spot_ceil else "地面"])
-	# 2) 伍双面门:缺天花门 / 地面门则就近日补一扇(候选须在对应体可达集内)
-	if not roster.has(3):
-		return
-	var g3: Array = []
-	for d in doors:
-		if d.geo_index == 3:
-			g3.append(d)
-	var has_ceil := false
-	var has_floor := false
-	var ref: Node2D = null
-	for d in g3:
-		ref = d
-		var dc := Vector2i((d.position / CELL).floor())
-		if solid.has(dc + Vector2i(0, -1)) or solid.has(dc + Vector2i(0, -2)):
-			has_ceil = true
-		elif solid.has(dc + Vector2i(0, 1)) or solid.has(dc + Vector2i(0, 2)):
-			has_floor = true
-	if has_ceil and has_floor or ref == null:
-		return
-	var want_ceil := not has_ceil
-	var seen_filter: Dictionary = seen_jie if want_ceil 		else seen_by.get(3, {})
-	var bx := int(ref.position.x / CELL)
-	var by := int(ref.position.y / CELL)
-	# 全域扫最近可达位(不受 ±20 限制;界的天花域可能整段错开)
-	var lo_x := 1
-	var hi_x := int(ref.get_parent().get_child(0) != null 		and lvl.level_size.x / CELL or 10)
-	hi_x = int(lvl.level_size.x / CELL) - 1
-	var best := Vector2i(-9999, -9999)
-	for x in range(lo_x, hi_x):
-		var s := _ceiling_spot(x, solid, by) if want_ceil 			else _floor_spot(x, solid, oneway, by)
-		if s.x == -9999:
-			continue
-		if not seen_filter.is_empty() and not seen_filter.has(s):
-			continue
-		if best.x == -9999 or absi(s.x - bx) < absi(best.x - bx):
-			best = s
-	var spot := best
-	if spot.x == -9999 and want_ceil:
-		# 兜底:界的天花走廊即出生带——把门放到离 Spawn3_a 最近的安装面
-		var sa := lvl.get_node_or_null(NodePath("Spawn3_a")) as Marker2D
-		var ax := int(sa.position.x / CELL) if sa != null else bx
-		var ay := int(sa.position.y / CELL) if sa != null else by
-		for x in range(lo_x, hi_x):
-			var s := _ceiling_spot(x, solid, ay)
-			if s.x == -9999:
-				continue
-			if best.x == -9999 or absi(s.x - ax) < absi(best.x - ax):
-				best = s
-		spot = best
-		if spot.x != -9999:
-			_warn("%s 伍天花门落在界出生走廊(模型可达集未覆盖,x=%d)" % [tag, spot.x])
-	if spot.x == -9999:
-		print("FIXSKIP %s 伍补门无可达位(界/边可达域无重叠安装面)" % tag)
-		return
-	_pending.append({"path": path, "add": true, "geo": 3,
-		"pos": Vector2(spot.x * CELL + 50.0, spot.y * CELL + 50.0)})
-	print("FIXADD %s g3 %s门 @ %s" % [tag,
-		"天花" if want_ceil else "地面", spot])
-
-
+		print("FIXMOVE %s %s → %s(地面)" % [tag, d.name, d.position])
 
 func _apply_fixes(index: int) -> void:
 	var path := LevelData.scene_path(index)
@@ -457,7 +339,7 @@ func _collect_standable(solid: Dictionary, oneway: Dictionary,
 
 func _bfs(start: Vector2i, def: GeometryDef, solid: Dictionary,
 		oneway: Dictionary, standable: Dictionary, ceilings: Dictionary,
-		seen: Dictionary, force_swap := -1) -> void:
+		seen: Dictionary) -> void:
 	var queue: Array = [start]
 	seen[start] = true
 	var jump_h := 1
@@ -465,8 +347,7 @@ func _bfs(start: Vector2i, def: GeometryDef, solid: Dictionary,
 	if def.can_jump:
 		jump_h = int(def.jump_units + 0.35)
 		jump_reach = 3
-	var can_swap := (def.can_swap or def.paired) if force_swap < 0 		else force_swap == 1
-	var jie := force_swap == 1
+	var can_swap := def.can_swap
 	var flat_reach := (5 if def.sprint_speed > def.base_speed + 0.1 else 3) 		if def.can_jump else 2
 	while not queue.is_empty():
 		var c: Vector2i = queue.pop_back()
@@ -489,41 +370,23 @@ func _bfs(start: Vector2i, def: GeometryDef, solid: Dictionary,
 				if standable.has(n) and not seen.has(n):
 					seen[n] = true
 					queue.append(n)
-		if jie:
-			# 界:天花走廊同层跨沟 + 反重力上浮到更高天花
-			for dx in range(1, 4):
-				for sx in [1, -1]:
-					var n := c + Vector2i(dx * sx, 0)
-					if ceilings.has(n) and not seen.has(n):
-						seen[n] = true
-						queue.append(n)
-			for dx in range(-1, 2):
-				var col := c.x + dx
-				for y in range(c.y - 1, maxi(c.y - 7, 0), -1):
-					var n := Vector2i(col, y)
-					if solid.has(n):
-						break
-					if ceilings.has(n) and not seen.has(n):
-						seen[n] = true
-						queue.append(n)
-		elif can_swap:
+		if can_swap:
 			for dy in range(-5, 6):
 				for dx in range(-2, 3):
 					var n := c + Vector2i(dx, dy)
 					if ceilings.has(n) and not seen.has(n):
 						seen[n] = true
 						queue.append(n)
-		# 下落漂移:同柱 ±2 列向下直到落面(界的镜像 = 上浮已单列)
-		if not jie:
-			for dx in range(-2, 3):
-				var col := c.x + dx
-				for y in range(c.y + 1, c.y + 40):
-					var n := Vector2i(col, y)
-					if solid.has(n):
-						break
-					if standable.has(n) and not seen.has(n):
-						seen[n] = true
-						queue.append(n)
+		# 下落漂移:同柱 ±2 列向下直到落面
+		for dx in range(-2, 3):
+			var col := c.x + dx
+			for y in range(c.y + 1, c.y + 40):
+				var n := Vector2i(col, y)
+				if solid.has(n):
+					break
+				if standable.has(n) and not seen.has(n):
+					seen[n] = true
+					queue.append(n)
 
 
 func _mark_rect_standable(standable: Dictionary, center: Vector2,

@@ -1,7 +1,7 @@
 class_name Backdrop
 extends CanvasLayer
 
-# 背景层(常驻 CanvasLayer -10):五幕变奏 + 装饰活化 + 操作互动。
+# 背景层(常驻 CanvasLayer -10):四幕变奏 + 装饰活化 + 操作互动。
 # 契约见 docs/design/procedural-art.md「背景动效」:
 # - 结构全部落 scenes/world/backdrop.tscn;取色 SSOT = data/palette.tres,
 #   幕变奏参数经 data/backdrop/*.tres(BackdropPreset)下发给装饰脚本与 shader;
@@ -17,7 +17,6 @@ const PRESETS := {
 	1: "res://data/backdrop/act2.tres",
 	2: "res://data/backdrop/act3.tres",
 	3: "res://data/backdrop/act4.tres",
-	4: "res://data/backdrop/act5.tres",
 }
 const GYRO_DEPTH := {"sun": 3.0, "planes": 6.0, "marks": 8.0}
 const BASE_MOTES_FAR := 22
@@ -114,7 +113,7 @@ func _process(delta: float) -> void:
 		(entry["node"] as Parallax2D).scroll_offset = _off * entry["depth"]
 
 
-## 幕变奏下发:act_i = 0..4(五幕)/ -1(菜单与幕外)。同档重复跳过。
+## 幕变奏下发:act_i = 0..3(四幕)/ -1(菜单与幕外)。同档重复跳过。
 func apply_act(act_i: int) -> void:
 	if act_i == _current_act:
 		return

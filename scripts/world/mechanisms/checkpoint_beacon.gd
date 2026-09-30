@@ -42,7 +42,7 @@ func _on_body_entered(body: Node2D) -> void:
 
 
 func _register(p: Player) -> void:
-	var key := p.body_key()
+	var key := p.index
 	if Main.I != null:
 		Main.I.set_checkpoint(key, position)
 	if _lit.has(key):

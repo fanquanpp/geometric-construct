@@ -23,9 +23,7 @@ func collect_players(level_root: Node2D) -> void:
 			doors[k].append(n)
 
 	players.sort_custom(func(a: Player, b: Player) -> bool:
-		if a.index != b.index:
-			return a.index < b.index
-		return a.pair_half < b.pair_half)
+		return a.index < b.index)
 	active_slot = 0
 
 
@@ -240,9 +238,9 @@ func recall_active() -> void:
 	var p: Player = players[active_slot]
 	if p == null or p.in_exit or p.dying or p.arrived:
 		return
-	p.recall_to(checkpoints.get(p.body_key(), p.spawn_pos))
+	p.recall_to(checkpoints.get(p.index, p.spawn_pos))
 	Sfx.play("switch")
 
 
-func set_checkpoint(body_key: int, pos: Vector2) -> void:
-	checkpoints[body_key] = pos
+func set_checkpoint(key: int, pos: Vector2) -> void:
+	checkpoints[key] = pos

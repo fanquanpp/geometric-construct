@@ -24,7 +24,7 @@
    - `--headless --path . --check-only --script res://<改动脚本>` 全绿;
    - `--headless --path . res://tests/native_check.tscn` 与
 	 `res://tests/flow_check.tscn` 通过(关卡装载 / 流转);
-   - 涉及双体 / 机关:`-- --recalltest`、`-- --dualtest` 通过;
+   - 涉及召回 / 双人:`-- --recalltest`、`-- --dualtest` 通过;
    - 涉及特性 / 手感数值:`--headless --script res://tests/trait_check.gd`
 	 通过(顶弹 / 可推动 / 跳高的物理仿真);
    - 真机(Android debug apk)触屏走查关键链路。
@@ -129,9 +129,9 @@
 - 双端路径与文档同步要求(本文件第 1 条)不变;新增场景 / 资源
   改动照跑第 4 条验收基线。
 
-## 双体系统速记(伍 · 界 / 边,characters.md §5)
+## 名册速记(疾 · 跃 · 逆,三体现役)
 
-- 一位名册、两具身体:**体身份键** `Player.body_key()` 是一切逐体状态
-  (记录点 / 琴键接触 / 逐体登记)的唯一键,禁止用几何体下标当个体身份。
-- 切换 / 召回 / 到站 / 出生点契约见 `docs/design/characters.md` §5
-  「双体系统契约」;新增特殊几何体(多体 / 共生)前先读它。
+- v0.55.0 删「圆」、v0.57.0 删「伍」(双体三角形)后名册三体;逐体状态
+  (记录点 / 琴键接触)按玩家名册位 `Player.index` 记键。
+- 切换 / 召回 / 到站 / 出生点语义见 `scripts/core/roster_controller.gd`
+  (双体系统契约已随删伍退役;新增多体 / 共生几何体前先重立契约)。

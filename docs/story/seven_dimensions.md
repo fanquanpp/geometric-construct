@@ -1,5 +1,10 @@
 # 关卡七维登记 · SEVEN DIMENSIONS
 
+> **【v0.57.0 删除声明】**「伍」专属关(旧 act2 五场)与合演关已删,
+> 四门/五幕结构换代为三门/四幕(现役 18 场,以 `level_data.gd` 为唯一
+> 真源);本文涉伍行与旧幕-场号自此为历史档案,七维登记不再维护
+> (剧情系统已随 v0.56.0 退役)。
+
 > 定位(REFACTOR Phase 6):每**正式关**登记七维——Gameplay / Narrative /
 > Character / Theme / Foreshadow / Symbol(测试道已随 v0.44.0 清退,免登记
 > 条款失效)。模板即本表;新正式关上线随批登记。

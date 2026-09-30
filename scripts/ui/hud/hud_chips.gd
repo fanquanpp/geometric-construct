@@ -39,25 +39,10 @@ func refresh_roster(roster: Array, active: int, exited_mask: int,
 			Color(Palette.I.ink_2, 0.92 if filled else 0.7),
 			0, border_col, border_w, 14, 8))
 		var lab: Label = c["label"]
-
-		if c.get("paired", false):
-			lab.text = _pair_chip_text(idx)
 		lab.add_theme_font_override("font", Ui.HEAD if is_active else Ui.BODY)
 		lab.add_theme_color_override("font_color",
 			Color.WHITE if is_active else Color(Palette.I.paper, 0.75))
 		(c["check"] as Control).visible = exited
-
-
-func _pair_chip_text(idx: int) -> String:
-	var m = Main.I
-
-	if m != null and not m.dual_mode \
-			and m.view_slot() >= 0 and m.view_slot() < m.players.size():
-		var ap: Player = m.players[m.view_slot()]
-		if ap != null and ap.index == idx:
-			return ap.display_name()
-	var cd: GeometryDef = Geometries.ALL[idx]
-	return cd.name + " / " + cd.name_half
 
 
 func _rebuild_chips(roster: Array) -> void:
@@ -95,7 +80,7 @@ func _rebuild_chips(roster: Array) -> void:
 		block.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		hb.add_child(block)
 		var lab := Ui.l(
-			c.name + " / " + c.name_half if c.paired else c.name, 20,
+			c.name, 20,
 			Ui.BODY, Color(Palette.I.paper, 0.75), HORIZONTAL_ALIGNMENT_LEFT)
 		hb.add_child(lab)
 		var check := UiGlyph.new("icons/check")
@@ -105,5 +90,4 @@ func _rebuild_chips(roster: Array) -> void:
 		hb.add_child(check)
 		chip.add_child(hb)
 		host.add_child(chip)
-		_chips[i] = {"panel": chip, "label": lab, "check": check,
-			"paired": c.paired}
+		_chips[i] = {"panel": chip, "label": lab, "check": check}

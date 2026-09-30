@@ -251,14 +251,6 @@ static func char_shape(c: CanvasItem, shape: int, rect: Rect2, col: Color) -> vo
 	var sz := Vector2(minf(rect.size.x, rect.size.y), minf(rect.size.x, rect.size.y))
 	var body := Rect2(rect.get_center() - sz / 2.0, sz)
 	match shape:
-		GeometryDef.Shape.TRIANGLE:
-			c.draw_colored_polygon(PackedVector2Array([
-				Vector2(body.position.x, body.end.y),
-				Vector2(body.end.x, body.end.y),
-				Vector2(body.get_center().x, body.position.y)]), col)
-			c.draw_line(Vector2(body.get_center().x - sz.x * 0.2, body.end.y - sz.y * 0.28),
-				Vector2(body.get_center().x + sz.x * 0.2, body.end.y - sz.y * 0.28),
-				Color(1, 1, 1, 0.5), 3.0)
 		GeometryDef.Shape.RECT:
 			var rr := Rect2(body.position, Vector2(sz.x, sz.y * 0.62))
 			rr.position.y = body.get_center().y - rr.size.y / 2.0
@@ -305,7 +297,7 @@ static func codex_grid(c: CanvasItem, R: Callable, P: Callable, paper: Color) ->
 	dashed_line(c, P.call(12, 82), P.call(188, 82), g, 1.0, 5.0, 7.0)
 
 
-## 角色剪影:形状即性格的迷你注记(疾/跃/逆/伍),scale≈0.5 格档。
+## 角色剪影:形状即性格的迷你注记(疾/跃/逆),scale≈0.5 格档。
 static func codex_char(c: CanvasItem, P: Callable, slug: String, x: float,
 		y: float, s := 24.0, face_left := false) -> void:
 	var hs := s * 0.5
@@ -328,15 +320,6 @@ static func codex_char(c: CanvasItem, P: Callable, slug: String, x: float,
 			Color(0, 0, 0, 0.22))
 		c.draw_rect(Rect2(r3.position.x, r3.position.y, s, 3.0),
 			Color(1, 1, 1, 0.28))
-	elif slug == "pair":
-		var w := s * 0.52
-		var h := s * 0.42
-		c.draw_colored_polygon(PackedVector2Array([
-			o + Vector2(-w, -s * 0.46), o + Vector2(w, -s * 0.46),
-			o + Vector2(0, -s * 0.04)]), Palette.I.blue)
-		c.draw_colored_polygon(PackedVector2Array([
-			o + Vector2(-w, s * 0.46), o + Vector2(w, s * 0.46),
-			o + Vector2(0, s * 0.04)]), Color(Palette.I.paper, 0.85))
 
 
 static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
@@ -408,7 +391,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 				c.draw_rect(R.call(84, 36, 8, 128), Color(paper, 0.25))
 				c.draw_line(P.call(116, 36), P.call(108, 48), Color(Palette.I.red, 0.6), 2.0 * k)
 				codex_char(c, P, "dash", 46, 152, 20)
-				codex_char(c, P, "pair", 150, 152, 20)
 			"bld_beam":
 				codex_stage(c, R, paper)
 				c.draw_rect(R.call(30, 76, 140, 30), ink2)
@@ -499,7 +481,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 				c.draw_rect(R.call(94, 38, 12, 10), Color(Palette.I.red, 0.85))
 				DrawKit.chevron(c, P.call(100, 88), Vector2(0, 1), 14.0 * k,
 					Color(paper, 0.3), 2.0 * k)
-				codex_char(c, P, "pair", 100, 148, 20)
 			"bld_gate":
 				codex_stage(c, R, paper)
 				c.draw_rect(R.call(36, 48, 26, 116), ink2)

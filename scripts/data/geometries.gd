@@ -8,7 +8,6 @@ const PATHS: Array[String] = [
 	"res://data/characters/dash.tres",
 	"res://data/characters/spring.tres",
 	"res://data/characters/fall.tres",
-	"res://data/characters/pair.tres",
 ]
 
 static var ALL: Array[GeometryDef] = []
@@ -30,10 +29,3 @@ static func by_weight() -> Array:
 	copy.sort_custom(func(a: GeometryDef, b: GeometryDef) -> bool:
 		return a.weight > b.weight)
 	return copy
-
-
-static func roster_body_total(roster: Array) -> int:
-	var n := 0
-	for i in roster:
-		n += get_def(int(i)).bodies()
-	return n

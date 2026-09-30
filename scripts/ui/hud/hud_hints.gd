@@ -56,7 +56,7 @@ func rebuild(def: Dictionary) -> void:
 		add_text.call("冲刺")
 		add_sep.call()
 
-	if Geometries.roster_body_total(def.roster) > 1:
+	if def.roster.size() > 1:
 		add_key.call("key-tab")
 		add_text.call("切换")
 		add_sep.call()

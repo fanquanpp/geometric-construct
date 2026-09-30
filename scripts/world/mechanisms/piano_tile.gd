@@ -72,7 +72,7 @@ func _editor_sync(force: bool) -> void:
 
 func strike(player: Player, impact: float) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
-	var bk: int = player.body_key()
+	var bk: int = player.index
 	var entering: bool = not _in_contact.get(bk, false)
 	_in_contact[bk] = true
 	if not entering:

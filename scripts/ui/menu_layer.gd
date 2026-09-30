@@ -47,7 +47,7 @@ func _ready() -> void:
 	(%Rule2 as ColorRect).color = Color(Palette.I.paper, 0.28)
 	Ui.style(_intro, 17, Ui.BODY, Color(Palette.I.paper, 0.78),
 		HORIZONTAL_ALIGNMENT_LEFT, false, 8)
-	_intro.text = "四个几何体,被丢进一个不存在的地方。\n形状即性格,属性即命运——\n速度、弹性、置换与惯性,\n唯有互相依靠,才能找到各自的出口。"
+	_intro.text = "三个几何体,被丢进一个不存在的地方。\n形状即性格,属性即命运——\n速度、弹性、置换与惯性,\n唯有互相依靠,才能找到各自的出口。"
 
 	_keys.text = "1–5 选择剧目    K 键位指南    C 档案几何    S 设置    Esc 退出" \
 		if not Adaptive.is_touch_mode() \
@@ -127,9 +127,9 @@ func _ready() -> void:
 		m.open_net_room())
 	_dual_pick.back_pressed.connect(func() -> void: close_dual_pick())
 
-	var xs := [0.05, 0.42, 0.95, 0.80]
-	var ys := [0.22, 0.07, 0.62, 0.06]
-	for i in 4:
+	var xs := [0.05, 0.42, 0.95]
+	var ys := [0.22, 0.07, 0.62]
+	for i in Geometries.ALL.size():
 		var s := 34.0 + i * 10.0
 		var ico: UiGlyph = _floaters_node(i)
 		ico.glyph_key = "characters/%s" % Geometries.ALL[i].slug
@@ -200,7 +200,7 @@ func set_menu_focusable(on: bool) -> void:
 
 
 func _floaters_node(i: int) -> UiGlyph:
-	return [%Floater0, %Floater1, %Floater2, %Floater3][i] as UiGlyph
+	return [%Floater0, %Floater1, %Floater2][i] as UiGlyph
 
 
 func _play_entrance() -> void:

@@ -602,8 +602,8 @@ func recall_active() -> void:
 	roster.recall_active()
 
 
-func set_checkpoint(body_key: int, pos: Vector2) -> void:
-	roster.set_checkpoint(body_key, pos)
+func set_checkpoint(key: int, pos: Vector2) -> void:
+	roster.set_checkpoint(key, pos)
 
 
 func hud_swap_flash() -> void:

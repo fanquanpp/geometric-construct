@@ -252,20 +252,6 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Floater3" type="Control" parent="Root/Content"]
-script = ExtResource("ui_glyph_scr")
-unique_name_in_owner = true
-glyph_key = "characters/pair"
-modulate = Color(1, 1, 1, 0.3)
-offset_left = 1024.0
-offset_top = 43.2
-offset_right = 1058.0
-offset_bottom = 77.2
-pivot_offset = Vector2(32, 32)
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
 [node name="ActPanel" parent="Root" instance=ExtResource("3")]
 unique_name_in_owner = true
 

@@ -41,10 +41,9 @@ func on_death(p: Player) -> void:
 	if not _marks.has(li):
 		_marks[li] = []
 	_marks[li].append(p.position)
-	var key: int = p.body_key()
+	var key: int = p.index
 	var ring: Array = _recent.get(key, []).duplicate()
-	ring.append({"t": -1, "pos": p.position, "index": p.index,
-		"pair_half": p.pair_half})
+	ring.append({"t": -1, "pos": p.position, "index": p.index})
 	if _replays.size() < 30:
 		_replays.append(ring)
 	if _draw != null:
@@ -67,11 +66,10 @@ func _physics_process(_delta: float) -> void:
 	for p in main.players:
 		if p == null or not is_instance_valid(p) or p.in_exit or p.dying:
 			continue
-		var key: int = p.body_key()
+		var key: int = p.index
 		if not _samples.has(key):
 			_samples[key] = []
-		var rec := {"t": ms, "pos": p.position, "index": p.index,
-			"pair_half": p.pair_half}
+		var rec := {"t": ms, "pos": p.position, "index": p.index}
 		(_samples[key] as Array).append(rec)
 		if not _recent.has(key):
 			_recent[key] = []
@@ -180,18 +178,7 @@ class GhostDraw extends Node2D:
 			var def: GeometryDef = Geometries.ALL[idx]
 			var pos: Vector2 = s["pos"]
 			var col := Color(def.color, 0.30)
-			if def.shape == GeometryDef.Shape.TRIANGLE:
-				var w := def.size.x * 0.5
-				var h := def.size.y * 0.5
-				var half: int = s["pair_half"]
-				var flat_top := half != 1
-				var pts := [
-					[pos + Vector2(-w, h), pos + Vector2(w, h), pos + Vector2(0, -h)],
-					[pos + Vector2(-w, -h), pos + Vector2(w, -h), pos + Vector2(0, h)]]
-				draw_colored_polygon(
-					PackedVector2Array(pts[0] if flat_top else pts[1]), col)
-			else:
-				draw_rect(Rect2(pos - def.size / 2.0, def.size), col)
+			draw_rect(Rect2(pos - def.size / 2.0, def.size), col)
 
 	func _sample_at(arr: Array, ms: int) -> Dictionary:
 		var last: Dictionary = arr[0]
@@ -205,6 +192,6 @@ class GhostDraw extends Node2D:
 					return last
 				var k := float(ms - t0) / float(t1 - t0)
 				return {"t": ms, "pos": (last["pos"] as Vector2).lerp(s["pos"], k),
-					"index": s["index"], "pair_half": s["pair_half"]}
+					"index": s["index"]}
 			last = s
 		return {}

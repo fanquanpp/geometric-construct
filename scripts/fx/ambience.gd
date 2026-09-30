@@ -16,7 +16,6 @@ const MOTIFS := {
 	"act2": "res://data/music/act2.tres",
 	"act3": "res://data/music/act3.tres",
 	"act4": "res://data/music/act4.tres",
-	"act5": "res://data/music/act5.tres",
 }
 static var _motif_cache := {}
 

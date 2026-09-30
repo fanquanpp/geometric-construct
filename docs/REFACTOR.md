@@ -316,8 +316,8 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
 | Registry + Factory | CharacterManager:读表→建体入池→发 character_created | 已达标(R3 标准形) |
 | CharacterPool 生命周期 | 入池复用不销毁(成文裁定:对象池不做) | 已达标 |
 | CharacterState / RoguelikeState | RunState(RefCounted 钩子覆盖层,modifier_check 门禁) | 已达标;联机 per-player = M-6 待办另立项 |
-| ControlPoint / ControlManager | RosterController + body_key 契约 + InputSource 槽位 | 已达标,语义更细(双体) |
-| RelationshipManager | characters.md §5 双体契约(伍·界/边) | 已达标 |
+| ControlPoint / ControlManager | RosterController + 名册位记键 + InputSource 槽位 | 已达标(body_key 双体契约已随 v0.57.0 删伍退役) |
+| RelationshipManager | characters.md §5 双体契约(伍·界/边) | 已达标(契约已随 v0.57.0 删伍退役,本文该节为历史存档) |
 | FormManager 形态 | 五角色=五定义,无同体多形态问题域 | 不采纳 |
 | RouteResolver 条件路线 | 组件语义 v4:who 集合 = 编译期路线裁决(层概念已退役);reach_check 数学门禁 | 已达标且更硬 |
 | InteractionSystem / InteractionEvent | 物理接触直接契约(承载/推挤/顶弹,characters.md §4) | 不采纳(两体交互规模,事件总线过度设计);entities→mechanisms 信号化另评估(§三.2-5) |
@@ -379,16 +379,16 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
 | 门禁 | 跑法 | 状态(2026-09-29 v0.51.0 盘点) |
 |---|---|---|
 | native_check | `--path . res://tests/native_check.tscn` | ✅ 现役 · 原生关卡装载/静息门禁(v0.45 换代) |
-| flow_check | `--path . res://tests/flow_check.tscn` | ✅ 现役 · 通关流转(27 关) |
+| flow_check | `--path . res://tests/flow_check.tscn` | ✅ 现役 · 通关流转(18 关,v0.57.0) |
 | stats_check | `--path . res://tests/stats_check.tscn` | ✅ 现役 · 存档 v5→v6 迁移 + 通关结算 + 原子写(备份/还原自洁,不污染真档) |
-| recalltest | `-- --recalltest` | ✅ 现役 · 召回链路 |
-| dualtest | `-- --dualtest` | ✅ 现役 · N1 五链路 |
+| recalltest | `-- --recalltest` | ✅ 现役 · 召回链路(单体/信标/幂等;界边腿随 v0.57.0 删伍退役) |
+| dualtest | `-- --dualtest` | ✅ 现役 · 同屏双人七链路(探针关 dev/probe) |
 | trait_check | `--script` | ✅ 现役 · 物理仿真 |
 | nettest | `-- --nettest` | ✅ 现役 · LAN+ENet 回环 |
 | ambience_check / transition_check | `--script` | ✅ 现役 · 音频峰值 / 转场五式 |
 | replay_transition_check | `--path . res://tests/replay_transition_check.tscn` | ✅ 现役(v0.54.1)· 过关切关 SWEEP 三腿必真播(首关自动切 / 下关再通关 / 回菜单重进) |
 | grid_check / reach_check / rogue_check / mover_check / modifier_check | — | ☠️ 已随 v0.45.0 作关换代清退(旧数据源不存在) |
-| level_shot / story_shot / win_shot / shot_all(.tscn) | 编辑器场景 | 🗄 分镜素材,随用随开,非门禁 |
+| level_shot / win_shot / shot_all(.tscn) | 编辑器场景 | 🗄 分镜素材,随用随开,非门禁(story_shot 为 v0.56.0 前遗物) |
 
 **硬规矩(联网核对 godot#85062 后立)**:headless 退出码对 SCRIPT ERROR
 恒为 0 —— 门禁判定一律以**输出文本断言为主**(PASS 行必须出现,批处理

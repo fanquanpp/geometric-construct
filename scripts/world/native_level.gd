@@ -11,33 +11,16 @@ extends LevelRoot
 @export var top_kill_y := -600.0
 
 const CAMERA_RIG_SCENE := preload("res://scenes/world/camera_rig.tscn")
-const MAG_BOUNDARY_SCENE := preload("res://scenes/world/mechanisms/mag_boundary.tscn")
 const TERRAIN_ART_SCENE := preload("res://scenes/art/terrain_art.tscn")
 const FOCUS_SCENE := preload("res://scenes/art/focus_system.tscn")
 
 
 func _ready() -> void:
-	var twins: Array = []
 	for idx in roster:
 		var gdef: GeometryDef = Geometries.ALL[idx]
 		var mask := 1 | (1 << (idx + 1))
-		if gdef.paired:
-			var ha: Player = CharacterManager.I.create_character(gdef, idx,
-				_marker("Spawn%d_a" % idx), 0, mask)
-			var hb: Player = CharacterManager.I.create_character(gdef, idx,
-				_marker("Spawn%d_b" % idx), 1, mask)
-			ha.partner = hb
-			hb.partner = ha
-			twins = [ha, hb]
-		else:
-			CharacterManager.I.create_character(gdef, idx,
-				_marker("Spawn%d" % idx), -1, mask)
-	if not twins.is_empty():
-
-		var mb: MagBoundary = MAG_BOUNDARY_SCENE.instantiate()
-		mb.a = twins[0]
-		mb.b = twins[1]
-		add_child(mb)
+		CharacterManager.I.create_character(gdef, idx,
+			_marker("Spawn%d" % idx), mask)
 	var cam := CAMERA_RIG_SCENE.instantiate()
 	cam.limit_left = 0
 	cam.limit_top = 0

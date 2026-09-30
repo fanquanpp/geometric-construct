@@ -1,7 +1,7 @@
 class_name SaveManager
 
 
-const SAVE_VERSION := 8
+const SAVE_VERSION := 9
 const SAVE_PATH := "user://speed-rouge.cfg"
 const LEGACY_PATH := "user://lonelyblocks.cfg"
 
@@ -173,30 +173,49 @@ func _migrate(from_version: int, _cfg: ConfigFile) -> void:
 			if li < 15:
 				return li
 			return li - (1 if li < 20 else 2)
-		var moved := {}
-		for li in cleared:
-			var n: int = remap.call(int(li))
-			if n >= 0:
-				moved[n] = true
-		cleared = moved
-		var moved_best := {}
-		for li in best_ms:
-			var n2: int = remap.call(int(li))
-			if n2 >= 0:
-				moved_best[n2] = best_ms[li]
-		best_ms = moved_best
-		var moved_deaths := {}
-		for li in level_deaths:
-			var n3: int = remap.call(int(li))
-			if n3 >= 0:
-				moved_deaths[n3] = level_deaths[li]
-		level_deaths = moved_deaths
-		var moved_perf := {}
-		for li in perf:
-			var n4: int = remap.call(int(li))
-			if n4 >= 0:
-				moved_perf[n4] = true
-		perf = moved_perf
-		var n5: int = remap.call(unlocked)
-		unlocked = maxi(n5, 0)
+		var moved := _remap_stats(remap)
+		cleared = moved[0]
+		best_ms = moved[1]
+		level_deaths = moved[2]
+		perf = moved[3]
+		unlocked = maxi(remap.call(unlocked), 0)
+	if from_version < 9:
+		# v0.57.0 删除「伍」(双体三角形):旧 5(合演·双生阶)与
+		# 6-10(伍关五场)退役,旧 11-23 左移 6(五幕并四幕)。
+		var remap9 := func(li: int) -> int:
+			if li <= 4:
+				return li
+			if li <= 10:
+				return -1
+			return li - 6
+		var moved9 := _remap_stats(remap9)
+		cleared = moved9[0]
+		best_ms = moved9[1]
+		level_deaths = moved9[2]
+		perf = moved9[3]
+		unlocked = maxi(remap9.call(unlocked), 0)
 	unlocked = maxi(unlocked, 0)
+
+
+func _remap_stats(remap: Callable) -> Array:
+	var moved_cleared := {}
+	for li in cleared:
+		var n: int = remap.call(int(li))
+		if n >= 0:
+			moved_cleared[n] = true
+	var moved_best := {}
+	for li in best_ms:
+		var n2: int = remap.call(int(li))
+		if n2 >= 0:
+			moved_best[n2] = best_ms[li]
+	var moved_deaths := {}
+	for li in level_deaths:
+		var n3: int = remap.call(int(li))
+		if n3 >= 0:
+			moved_deaths[n3] = level_deaths[li]
+	var moved_perf := {}
+	for li in perf:
+		var n4: int = remap.call(int(li))
+		if n4 >= 0:
+			moved_perf[n4] = true
+	return [moved_cleared, moved_best, moved_deaths, moved_perf]

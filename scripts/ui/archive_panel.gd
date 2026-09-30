@@ -122,7 +122,7 @@ func _nav_button(text: String, on_click: Callable, click_sfx := "ui_click") -> B
 
 func _build_footer() -> void:
 	var touch := Adaptive.is_touch_mode()
-	var hints_text := "A / D 切条目 · 十字键翻页 · 1–4 直达几何体 · 滚轮 · Q / E 或 LB / RB 切页 · Esc / B 返回" \
+	var hints_text := "A / D 切条目 · 十字键翻页 · 1–3 直达几何体 · 滚轮 · Q / E 或 LB / RB 切页 · Esc / B 返回" \
 		if not touch else "◀ ▶ 翻页查看档案条目"
 	_hints = Ui.l(hints_text, 13, Ui.BODY, Palette.I.dim)
 	_hints.anchor_top = 1.0

@@ -216,11 +216,6 @@ func run_tour_shot() -> void:
 		if m.players.is_empty():
 			break
 		var p: Player = m.players[m.view_slot()]
-		if p != null and p.partner != null:
-			for q in m.players:
-				if q.pair_half == 1:
-					p = q
-					break
 		p.position = wp[1]
 		p.velocity = Vector2.ZERO
 		await m.get_tree().create_timer(0.55).timeout
@@ -326,7 +321,7 @@ func run_recall_test() -> void:
 	await m.get_tree().physics_frame
 	await m.get_tree().physics_frame
 	await m.get_tree().physics_frame
-	var ok_cp: bool = m.roster.checkpoints.has(cpr.body_key())
+	var ok_cp: bool = m.roster.checkpoints.has(cpr.index)
 	await _recall_keypress()
 	ok_cp = ok_cp and cpr.position.distance_to(bpos) < 2.0 and not cpr.dying
 	print("RECALLTEST 信标 ", "PASS" if ok_cp else "FAIL",
@@ -334,33 +329,11 @@ func run_recall_test() -> void:
 	if not ok_cp:
 		fails += 1
 
-	m.start_level(5, false)
-	await m.get_tree().create_timer(0.5).timeout
-	m.switch_to_geo(3)
-	await m.get_tree().physics_frame
-	var jie: Player = m.players[m.view_slot()]
-	var ok_jie: bool = jie.pair_half == 0 and jie.gravity_dir == -1
-	jie.position = jie.spawn_pos + Vector2(600, 0)
+	# 记录点召回后再次召回仍回信标(幂等)
 	await _recall_keypress()
-	ok_jie = ok_jie and jie.position.distance_to(jie.spawn_pos) < 8.0 \
-		and jie.gravity_dir == -1 and not jie.dying
-	print("RECALLTEST 界 ", "PASS" if ok_jie else "FAIL",
-		" pos=", jie.position, " spawn=", jie.spawn_pos,
-		" g=", jie.gravity_dir)
-	if not ok_jie:
-		fails += 1
-	m.switch_to_geo(3)
-	await m.get_tree().physics_frame
-	var bian: Player = m.players[m.view_slot()]
-	var ok_bian: bool = bian.pair_half == 1 and bian.gravity_dir == 1
-	bian.position = bian.spawn_pos + Vector2(-300, 0)
-	await _recall_keypress()
-	ok_bian = ok_bian and bian.position.distance_to(bian.spawn_pos) < 2.0 \
-		and bian.gravity_dir == 1 and not bian.dying
-	print("RECALLTEST 边 ", "PASS" if ok_bian else "FAIL",
-		" pos=", bian.position, " spawn=", bian.spawn_pos,
-		" g=", bian.gravity_dir)
-	if not ok_bian:
+	var ok_again: bool = cpr.position.distance_to(bpos) < 2.0 and not cpr.dying
+	print("RECALLTEST 信标幂等 ", "PASS" if ok_again else "FAIL")
+	if not ok_again:
 		fails += 1
 	m.get_tree().quit(0 if fails == 0 else 1)
 
@@ -380,7 +353,7 @@ func _recall_keypress() -> void:
 
 
 func run_dual_test() -> void:
-	m.start_level_dual(24)
+	m.start_level_dual(18)
 	await m.get_tree().create_timer(0.5).timeout
 	var ok_cd: bool = m.race.phase == RaceController.Phase.COUNTDOWN
 	print("DUALTEST countdown-phase ", "PASS" if ok_cd else "FAIL",
@@ -447,7 +420,7 @@ func run_dual_test() -> void:
 	var wslot: int = m.race.winner
 	m.race.rematch()
 	await m.get_tree().create_timer(0.5).timeout
-	var ok_rematch: bool = m.race.phase == RaceController.Phase.COUNTDOWN 		and m.game_flow.current == 24 		and int(m.race.wins.get(wslot, 0)) == 1
+	var ok_rematch: bool = m.race.phase == RaceController.Phase.COUNTDOWN 		and m.game_flow.current == 18 		and int(m.race.wins.get(wslot, 0)) == 1
 	print("DUALTEST rematch ", "PASS" if ok_rematch else "FAIL",
 		" phase=", m.race.phase, " wins=", m.race.wins)
 	if not ok_rematch:
@@ -460,7 +433,7 @@ func run_dual_test() -> void:
 func run_dual_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
-	m.start_level_dual(24)
+	m.start_level_dual(18)
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("dual_spawn")
 

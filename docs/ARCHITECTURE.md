@@ -31,7 +31,7 @@ geometric-construct/
 │   │                        #   resource 只作静态数据,禁运行时写入)
 │   ├── palette.tres         #   全局色板(Palette;procedural-art.md = 规范)
 │   ├── tuning/              #   movement_default.tres(手感 31 项,MovementTuning)
-│   └── characters/          #   dash / spring / fall / pair.tres(GeometryDef;v0.55.0 删 roll)
+│   └── characters/          #   dash / spring / fall(GeometryDef;v0.55.0 删 roll / v0.57.0 删 pair)
 ├── scripts/
 │   ├── core/                # 总控与系统层
 │   │   ├── main.gd          #   状态机:MENU/PLAYING/PAUSED/TRANSITION/WIN,
@@ -58,20 +58,20 @@ geometric-construct/
 │   │   └── level_data.gd    #   关卡目录(SCENES/ACTS:levels_native/*.tscn 幕-场登记)
 │   ├── entities/            # 场景内实体
 │   │   ├── player.gd        #   几何体控制器(编排+跳跃/爬墙/置换/承载状态机;
-│   │   │                    #   body_key() 体身份键(v0.21.0,双体契约 characters.md §5):
-│   │   │                    #   逐体状态(记录点/琴键接触)唯一键,BODY_STRIDE 预留多体;
-│   │   │                    #   v0.29.0 REFACTOR P4 拆四片,见 entities/player/)
+│   │   │                    #   逐体状态(记录点/琴键接触)按名册位 index 记键,
+│   │   │                    #   v0.57.0 删伍后无双体;v0.29.0 REFACTOR P4 拆四片,
+│   │   │                    #   见 entities/player/)
 │   │   ├── player/          #   movement_core(重力/摩擦公式+手感常量)/ player_input
 │   │   │                    #   (InputSource 读数)/ player_cosmetics(爆点/残影/绘制)/
 │   │   │                    #   mechanism_surface(墙面/曲面/钢琴表面查询)
 │   │   ├── exit_door.gd     #   几何体专属终点门(到站不收取,可撤销;sealed 终点激活;
-│   │   │                    #   双体两半都到站才算满,离门即取消——未满员同样成立)
+│   │   │                    #   同名册多体都到站才算满,离门即取消——未满员同样成立)
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)
 │   ├── world/               # 关卡与环境(作关 = levels_native/*.tscn 原生摆位)
 │   │   ├── native_level.gd  #   原生关卡根:roster 建体 / 物理层 mask / 相机与边界墙
-│   │   ├── terrain_kit.gd   #   机关共享件(磁界位 / 高亮描边 / 光影遮挡体)
+│   │   ├── terrain_kit.gd   #   机关共享件(高亮描边 / 光影遮挡体)
 │   │   ├── mechanisms/      #   机关物:ramp / mover(+slab·track) / timed_bridge
-│   │   │                    #   / lever_gate / piano_tile / mag_boundary
+│   │   │                    #   / lever_gate / piano_tile(v0.57.0 删 mag_boundary)
 │   │   ├── mechanism_registry.gd # (已撤除,见 CHANGELOG v0.31.1;契约存 structures.md §7)
 │   │   ├── camera_rig.gd    #   镜头(前瞻偏移/速度变焦/双人动态缩放框)
 │   │   ├── hint_marker.gd   #   教学悬浮提示牌

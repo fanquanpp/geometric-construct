@@ -8,8 +8,6 @@ const MOD_SPEED_CAP := 3.75
 
 const PUSH_TRANSFER := 1800.0
 
-const BOUNDARY_BIT := 1 << 30
-
 
 var def: GeometryDef
 var index: int
@@ -39,15 +37,6 @@ var remote_driven := false
 var _net_pos := Vector2.ZERO
 var _net_vel := Vector2.ZERO
 
-var pair_half := -1
-var partner: Player = null
-
-
-const BODY_STRIDE := 4
-
-func body_key() -> int:
-	return index * BODY_STRIDE + clampi(pair_half, 0, BODY_STRIDE - 1)
-
 var debug_probe := false
 var _coyote := 0.0
 var _jump_buffer := 0.0
@@ -76,33 +65,14 @@ func _ready() -> void:
 	collision_layer = 2
 	collision_mask = 2 | world_mask
 	gravity_dir = def.gravity_dir
-
-	if pair_half == 0:
-		gravity_dir = -1
-
-	if not def.can_pass_boundary and pair_half < 0:
-		collision_mask |= BOUNDARY_BIT
 	up_direction = Vector2(0, -gravity_dir)
 	z_index = 5
 	_climb_budget = (1.0 if def.can_climb else 0.0) * MovementTuning.I.climb_units * Geometries.UNIT_PX
 
 	var shape_node := CollisionShape2D.new()
-	if def.shape == GeometryDef.Shape.TRIANGLE:
-
-		var poly := ConvexPolygonShape2D.new()
-		var hw := def.size.x * 0.5
-		var hh := def.size.y * 0.5
-		if pair_half == 0:
-			poly.points = PackedVector2Array([
-				Vector2(-hw, -hh), Vector2(hw, -hh), Vector2(0, hh)])
-		else:
-			poly.points = PackedVector2Array([
-				Vector2(-hw, hh), Vector2(hw, hh), Vector2(0, -hh)])
-		shape_node.shape = poly
-	else:
-		var rect := RectangleShape2D.new()
-		rect.size = def.size
-		shape_node.shape = rect
+	var rect := RectangleShape2D.new()
+	rect.size = def.size
+	shape_node.shape = rect
 	add_child(shape_node)
 	_init_occluder()
 
@@ -116,15 +86,8 @@ func _init_occluder() -> void:
 	poly.cull_mode = OccluderPolygon2D.CULL_CLOCKWISE
 	var hw := def.size.x * 0.5
 	var hh := def.size.y * 0.5
-	if def.shape == GeometryDef.Shape.TRIANGLE:
-
-		poly.polygon = PackedVector2Array([
-			Vector2(-hw, -hh), Vector2(hw, -hh), Vector2(0, hh)]) \
-			if pair_half == 0 else PackedVector2Array([
-			Vector2(0, -hh), Vector2(hw, hh), Vector2(-hw, hh)])
-	else:
-		poly.polygon = PackedVector2Array([
-			Vector2(-hw, -hh), Vector2(hw, -hh), Vector2(hw, hh), Vector2(-hw, hh)])
+	poly.polygon = PackedVector2Array([
+		Vector2(-hw, -hh), Vector2(hw, -hh), Vector2(hw, hh), Vector2(-hw, hh)])
 	_occluder.occluder = poly
 	add_child(_occluder)
 
@@ -403,29 +366,15 @@ func _top_boost_ratio() -> float:
 
 
 func _note_pitch() -> float:
-	if pair_half == 1:
-		return Sfx.note_ratio("A4")
 	return Sfx.note_ratio(def.note)
 
 
 func quote_text() -> String:
-	if pair_half == 1 and not def.quote_half.is_empty():
-		return def.quote_half
 	return def.quote
 
 
 func display_name() -> String:
-	if pair_half == 1 and not def.name_half.is_empty():
-		return def.name_half
 	return def.name
-
-
-func _base_gravity() -> int:
-	return -1 if pair_half == 0 else def.gravity_dir
-
-
-func boundary_anchor() -> Vector2:
-	return position + Vector2(0.0, -def.size.y * 0.5 * gravity_dir)
 
 
 func _has_riders() -> bool:
@@ -507,7 +456,7 @@ func _reset_for_respawn() -> void:
 	position = spawn_pos
 	rider_of = null
 	velocity = Vector2.ZERO
-	gravity_dir = _base_gravity()
+	gravity_dir = def.gravity_dir
 	up_direction = Vector2(0, -gravity_dir)
 	speed_buffed = false
 	_swap_air = false
@@ -518,7 +467,7 @@ func _reset_for_respawn() -> void:
 	_squash_x = 1.0
 	_squash_y = 1.0
 	for t in _piano_touch:
-		t.release(body_key())
+		t.release(index)
 	_piano_touch.clear()
 	_trail.clear()
 
@@ -531,7 +480,7 @@ func _finish_respawn() -> void:
 func recall_to(pos: Vector2) -> void:
 	position = pos
 	velocity = Vector2.ZERO
-	gravity_dir = _base_gravity()
+	gravity_dir = def.gravity_dir
 	up_direction = Vector2(0, -gravity_dir)
 	_swap_air = false
 	_swap_buffer = 0.0

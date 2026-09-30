@@ -118,10 +118,7 @@ static func draw(p: Player, size: Vector2) -> void:
 		var ts: Vector2 = t["size"] * p.shrink
 		p.draw_rect(Rect2(t["pos"] - p.position - ts / 2.0, ts), Color(p.def.color, a * 0.7))
 
-	if p.def.shape == GeometryDef.Shape.TRIANGLE:
-		draw_tri(p, size)
-	else:
-		draw_box(p, size)
+	draw_box(p, size)
 	if p.is_active:
 		draw_name_tag(p, size)
 
@@ -149,33 +146,6 @@ static func draw_box(p: Player, size: Vector2) -> void:
 		for gy: float in [-size.y * 0.24, size.y * 0.04, size.y * 0.32]:
 			p.draw_line(Vector2(gx - p._climb_side * 9.0, gy), Vector2(gx, gy),
 				Color(1, 1, 1, 0.75), 2.5)
-
-
-static func draw_tri(p: Player, size: Vector2) -> void:
-	var col: Color = p.def.color
-	if p.is_active:
-		var glow := 0.10 + 0.10 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 380.0))
-		col = p.def.color.lerp(Color.WHITE, glow)
-	var w := size.x * 0.5
-	var h := size.y * 0.5
-	var flat_top := p.pair_half == 0
-	var pts := PackedVector2Array()
-	if flat_top:
-		pts = PackedVector2Array([Vector2(-w, -h), Vector2(w, -h), Vector2(0, h)])
-	else:
-		pts = PackedVector2Array([Vector2(-w, h), Vector2(w, h), Vector2(0, -h)])
-	p.draw_colored_polygon(pts, col)
-
-	var band_y := -h * 0.72 if flat_top else h * 0.72
-	p.draw_line(Vector2(-w * 0.62, band_y), Vector2(w * 0.62, band_y),
-		Color(0, 0, 0, 0.18), 5.0)
-
-	var hl_y := -h * 0.80 if flat_top else h * 0.80
-	p.draw_line(Vector2(-w * 0.26, hl_y), Vector2(w * 0.26, hl_y),
-		Color(1, 1, 1, 0.5), 3.0)
-
-	var apex_y := h * 0.86 if flat_top else -h * 0.86
-	p.draw_rect(Rect2(Vector2(-3.5, apex_y - 3.5), Vector2(7, 7)), Color(Palette.I.paper, 0.9))
 
 
 static func draw_name_tag(p: Player, size: Vector2) -> void:
