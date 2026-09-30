@@ -114,3 +114,16 @@ func _input(ev: InputEvent) -> void:
 				return
 			get_viewport().set_input_as_handled()
 			m.resume_game()
+	elif ev is InputEventJoypadButton and ev.pressed \
+			and (ev as InputEventJoypadButton).button_index == JOY_BUTTON_B:
+		if Main.I != null and Main.I.archive_panel != null \
+				and Main.I.archive_panel.is_open:
+			return
+		if Main.I != null and Main.I.controls_panel != null \
+				and Main.I.controls_panel.is_open:
+			return
+		if Main.I != null and Main.I.settings_panel != null \
+				and Main.I.settings_panel.is_open:
+			return
+		get_viewport().set_input_as_handled()
+		m.resume_game()

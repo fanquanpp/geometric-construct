@@ -65,6 +65,11 @@ func _ready() -> void:
 			"drift_ph": rng.randf_range(0.0, TAU)})
 
 
+# 三角波 [-1,1]:匀速直线 + 硬折返(构成主义动效基元)。
+static func _tri(x: float) -> float:
+	return absf(fposmod(x, 1.0) - 0.5) * 4.0 - 1.0
+
+
 func _mk_star(rng: RandomNumberGenerator, pos: Vector2, a: float,
 		rng2: RandomNumberGenerator, band := false) -> Dictionary:
 	var col := Color(Palette.I.paper, a)
@@ -92,9 +97,10 @@ func _draw() -> void:
 			* sin(_t * st["spd"] * twinkle * TAU + st["ph"]))
 		var c := Color(st["col"].r, st["col"].g, st["col"].b, tw)
 		if st["cross"]:
+			# 三角波直线折返漂移(直角折返,拒绝圆弧)。
 			var drift := Vector2(
-				sin(_t * st["drift_w"] * TAU + st["drift_ph"]) * 6.0,
-				cos(_t * st["drift_w"] * TAU * 0.8 + st["drift_ph"]) * 8.0)
+				_tri(_t * st["drift_w"] + st["drift_ph"]) * 6.0,
+				_tri(_t * st["drift_w"] * 0.8 + st["drift_ph"] + 0.25) * 8.0)
 			var p: Vector2 = st["pos"] + drift
 			var s: float = st["size"]
 			draw_line(p + Vector2(-s, 0), p + Vector2(s, 0), c, 1.2)

@@ -16,8 +16,8 @@
 |---|---|---|
 | 几何体(实装) | 4(疾 / 跃 / 逆 / 界·边)| `scripts/data/geometries.gd` |
 | 几何体(待定) | 2(陆 / 柒)| `glossary.md` §1 |
-| 建筑物图鉴 | 15(6 既有 + 9 件 Kit 构件 v0.36 补绘)| `scripts/data/archive_data.gd` BUILDINGS |
-| 机关物图鉴 | 13(全部实装;传送对 v0.27 / 记录点信标 v0.36)| `archive_data.gd` MECHS |
+| 建筑物图鉴(12)| 12(v0.60.0 起;6 既有 + Kit 构件,退台塔/环/穹顶已清退)| `scripts/data/archive_data.gd` BUILDINGS |
+| 机关物图鉴 | 7(全部实装在演;记录点信标 v0.36)| `archive_data.gd` MECHS |
 | 机关物(立项 / 规划未入图鉴) | 2(充电桩 / 反重力门)| `glossary.md` §2 |
 | ~~剧情篇目~~ | ~~7~~ | ~~`story/*.ks`(已删 v0.56.0)~~ |
 | 幕(现行) | 4(第一~第四幕,正戏全量)| `scripts/data/level_data.gd` ACTS |
@@ -50,7 +50,7 @@
 - 平面肖像:无贴图——CodexArt `_draw` 字形绘制(`scripts/art/codex_art.gd`);
   旧 `assets/ui/icons.png` 图集已于 2026-09-30 孤本清退删除。
 
-## 2. 建筑物图鉴(地形、景观与 Kit 构件 · 15)
+## 2. 建筑物图鉴(地形、景观与 Kit 构件 · 12)
 
 来源 `archive_data.gd` BUILDINGS;画面全部由 CodexArt `_draw` 绘制
 (旧 `bld_*` PNG 已随 2026-09-30 孤本清退删除)。
@@ -61,16 +61,13 @@
 | `bld_slab_oneway` | 单向平台 | SLAB · ONEWAY | 地形 | 仅顶面可站立,自下而上自由穿过,防回头标准语言 |
 | `bld_slab_ceiling` | 逆重力天花板 | SLAB · CEILING | 地形 · 逆 | 仅底面实心,是逆翻转后的可站立地面(底缘蓝线) |
 | `bld_ghost_frame` | 幽灵线框 | GHOST FRAME | 装饰 | 无碰撞纯视觉线框(8% 亮度),虚化态 / 预告轮廓 |
-| `bld_back_tower` | 背景建筑塔 | BACK TOWER | 景观 · L3 | 背景层退台巨塔,城市剪影,纯景观不参与碰撞 |
 | `bld_pillar` | 巨构立柱 | COLOSSUS PILLAR | 巨构 | 第一幕门厅 3× 尺度承重柱梁,巨构降临母题 |
 | `bld_beam` | 梁 | BEAM | 构件 · A05 | 横向承重骨架,端头榫块咬柱,梁下净空即通行预算 |
 | `bld_stair` | 台阶 | STAIR | 构件 · A07 | 每级 ≤ 0.9 格的阶梯组,垂直高差的节拍化解法 |
 | `bld_bridge` | 桥面 | BRIDGE | 构件 · A08 | 两端支墩架起的跨缺薄板,动态版 = 限时桥 / Mover |
 | `bld_frame` | 框架 | FRAME | 构件 · A09 | 柱 + 梁 + 洞口的构图骨架,关卡里的取景器 |
-| `bld_ring` | 环 | RING | 构件 · A10 | 中空闭合回环,空间回路;构成主义的直角环 |
 | `bld_hall` | 厅 | HALL | 构件 · A12 | 屋顶 + 侧墙 + 内柱围出的巨腔,尺度演出主舞台 |
 | `bld_corridor` | 回廊 | CORRIDOR | 构件 · A13 | 两壁夹出的狭长通道,压迫 / 对答空间 |
-| `bld_dome` | 穹顶 | DOME | 构件 · A14 | 45° 折线拱出的覆盖曲面,收束 / 仪式顶 |
 | `bld_gate` | 门厅门 | GATE | 构件 · A15 | 章节门户的巨构大门框,双柱阶梯冠红刻度 |
 
 ## 3. 机关物图鉴(可交互构件 · 13)
@@ -84,17 +81,11 @@ Visual 正典帧精灵,参数化机关脚本 `@tool` 预览随导出参数实时
 |---|---|---|---|---|---|
 | `mech_exit_door` | 终点门 | EXIT DOOR | 机关 · 目标 | 3 帧动态(待命 / 到站 / 吸入)| 实装 v0.8 |
 | `mech_speed_gate` | 加速门 | SPEED GATE | 机关 · 增益 | 两态(常态 / 强化)| 实装 v0.8 |
-| `mech_ramp` | 曲面跳跃板 | RAMP | 机关 · 地形 | 单帧 | 实装 v0.8 |
 | `mech_mover` | 移动平台 | MOVER | 机关 · 动构件 | 单帧 | 实装 v0.8 |
-| `mech_lever_pad` | 踩踏开关 | LEVER PAD | 机关 · 触发 | 两态(凸·未踩 / 凹·踩住)| 实装 v0.13 |
-| `mech_gate_door` | 开关门板 | GATE DOOR | 机关 · 受控 | 两态(关·实心 / 开·虚化)| 实装 v0.13;v0.46 起门板运行时吃正典帧 |
 | `mech_timed_bridge` | 限时桥 | TIMED BRIDGE | 机关 · 节拍 | 2 帧动态(实心 / 虚化)| 实装 v0.15 |
 | `mech_piano_tile` | 钢琴砖 | PIANO TILE | 机关 · 演奏 | 两态(常态 / 触发)| 实装 v0.15 |
 | `mech_checkpoint` | 记录点信标 | CHECKPOINT | 机关 · 存续 | 两态(未激活 / 激活)| 实装 v0.36(召回管线 v0.17)|
-| `mech_portal` | 传送对 | PORTAL | 机关 · 穿越 | 3 帧动态(闭合 / 开启 / 脉冲)| 实装 v0.27;画面 = CodexArt `_draw`;**v0.59.0 起零排关(全战役仅死资源声明),图鉴收起、场景壳暂留候选废弃**(旧 SpriteFrames `data/mech/portal_frames.tres` 已随 2026-09-30 清退删除)|
-| `mech_push_box` | 推箱 | PUSH BOX | 机关 · 解谜 | 单帧 | 实装 v0.27 |
 | `mech_ski_patch` | 滑雪带 | SKI PATCH | 机关 · 地形 | 两态(常态 / 滑雪)| 实装 v0.27 |
-| `mech_launch_pad` | 弹射板 | LAUNCH PAD | 机关 · 弹射 | 单帧 | 实装 v0.27;**v0.59.0 起零排关(唯一排关场「高墙」随删关退役),图鉴收起、场景壳暂留候选废弃** |
 
 **立项 / 规划未入图鉴**(登记于 `glossary.md` §2):
 

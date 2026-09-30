@@ -38,7 +38,6 @@ const MAX_JUMPS := 2
 
 @export var can_top_boost := false
 
-@export var can_be_pushed := false
 
 
 var jump_v: float:

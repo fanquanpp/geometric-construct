@@ -51,6 +51,3 @@ static func _static_init() -> void:
 @export var swap_launch := 300.0
 
 
-@export var ramp_buff_time := 1.5
-@export var ramp_boost := 1.5
-@export var ramp_weight_ratio := 0.5

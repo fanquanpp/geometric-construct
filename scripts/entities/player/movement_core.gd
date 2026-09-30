@@ -25,40 +25,40 @@ static func gravity_step(vel: Vector2, def: GeometryDef, gravity_dir: int,
 	return v
 
 
-static func eff_weight(p: Player, ramp_buffed: bool) -> float:
-	return p.def.weight \
-		* (MovementTuning.I.ramp_weight_ratio if ramp_buffed else 1.0)
+static func eff_weight(p: Player) -> float:
+	return p.def.weight
+\
+		
 
-
-static func accel_factor(p: Player, ramp_buffed: bool) -> float:
+static func accel_factor(p: Player) -> float:
 	var t := MovementTuning.I
-	return clampf(t.accel_base - t.accel_weight_k * eff_weight(p, ramp_buffed),
+	return clampf(t.accel_base - t.accel_weight_k * eff_weight(p),
 			t.accel_min, t.accel_base) \
 		* (t.accel_ski_mult if p.skiing else 1.0)
 
 
-static func friction_factor(p: Player, ramp_buffed: bool) -> float:
+static func friction_factor(p: Player) -> float:
 	var t := MovementTuning.I
-	return clampf(t.friction_base - t.friction_weight_k * eff_weight(p, ramp_buffed),
+	return clampf(t.friction_base - t.friction_weight_k * eff_weight(p),
 			t.friction_min, t.friction_base)
 
 
-static func friction_mu(p: Player, ramp_buffed: bool) -> float:
+static func friction_mu(p: Player) -> float:
 	var t := MovementTuning.I
-	return t.standard_mu * friction_factor(p, ramp_buffed) \
+	return t.standard_mu * friction_factor(p) \
 		* (t.ski_friction_mult if p.skiing else 1.0)
 
 
 static func horizontal_step(vel: Vector2, p: Player, move_input: Vector2,
-		target_mult: float, on_ground: bool, ramp_buffed: bool, dt: float) -> float:
+		target_mult: float, on_ground: bool, dt: float) -> float:
 	var t := MovementTuning.I
 	var target_vx := move_input.x * target_mult * t.run_speed
-	var accel := t.base_accel * accel_factor(p, ramp_buffed)
+	var accel := t.base_accel * accel_factor(p)
 	if not on_ground:
 		accel *= t.air_accel_ratio
 	if move_input.x != 0.0:
 		return move_toward(vel.x, target_vx, accel * dt)
-	var friction := friction_mu(p, ramp_buffed) * t.gravity
+	var friction := friction_mu(p) * t.gravity
 	if not on_ground:
 		friction *= t.air_friction_mult
 	return move_toward(vel.x, 0.0, friction * dt)

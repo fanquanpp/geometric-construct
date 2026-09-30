@@ -31,6 +31,3 @@ bounce_min = 240.0
 bounce_settle = 0.8
 swap_settle = 0.55
 swap_launch = 300.0
-ramp_buff_time = 1.5
-ramp_boost = 1.5
-ramp_weight_ratio = 0.5

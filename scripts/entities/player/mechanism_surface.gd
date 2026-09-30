@@ -11,15 +11,6 @@ static func world_wall_normal(p: Player) -> Vector2:
 	return Vector2.ZERO
 
 
-static func touching_ramp(p: Player) -> bool:
-	for i in p.get_slide_collision_count():
-		var col := p.get_slide_collision(i)
-		var obj := col.get_collider() as Node
-		if col.get_normal().dot(p.up_direction) > 0.7 and obj != null \
-				and obj.is_in_group("ramp"):
-			return true
-	return false
-
 
 static func piano_step(p: Player, vel: Vector2) -> void:
 	var piano_now: Array = []

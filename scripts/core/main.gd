@@ -453,7 +453,9 @@ func _physics_process(_delta: float) -> void:
 			open_archive()
 		if _key_pressed(KEY_S):
 			open_settings()
-		if Input.is_action_just_pressed("ui_cancel"):
+		# 主菜单退出只认 Esc:手柄 B 已绑 ui_cancel 作全局返回,
+		# 在顶层菜单按 B 只应无动作,不得误退游戏(手柄返回语义)。
+		if _key_pressed(KEY_ESCAPE):
 			get_tree().quit()
 	elif _state == State.WIN:
 		if debug_solo:
@@ -615,10 +617,6 @@ func notify_buff(mult: float, gd: GeometryDef) -> void:
 	if _hud != null:
 		_hud.narration("加速门 · 速度上限提升至 %.1f×" % mult, gd.color, 2.4)
 
-
-func notify_ramp(gd: GeometryDef) -> void:
-	if _hud != null:
-		_hud.narration("曲面 · 速度 ×1.5,重量减半(离开后 1.5 秒)", gd.color, 1.8)
 
 
 func _check_complete() -> void:

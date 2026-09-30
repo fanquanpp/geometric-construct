@@ -127,7 +127,7 @@ func _audit_level(index: int) -> void:
 	for c in lvl.get_children():
 		var cc := Vector2i((c.position / CELL).floor())
 		var need_ground := c is CheckpointBeacon or c is PianoTile \
-			or c is SkiPatch or c is SpeedGate or c is LaunchPad
+			or c is SkiPatch or c is SpeedGate
 		if need_ground and not _has_ground(cc, solid, oneway):
 			_warn("%s %s 无地可站 %s" % [tag, c.get_class(), cc])
 		if c is Mover:

@@ -75,7 +75,7 @@ func build(p, page: Control) -> void:
 func refresh() -> void:
 	var gd: GeometryDef = Geometries.get_def(panel.current)
 	# 必须走 set_key:直接赋 glyph_key 不触发 queue_redraw,翻页头像不换(存量坑)。
-	_portrait_tex.set_key("characters/%s" % gd.slug)
+	_portrait_tex.set_key("codex_geo/%s" % gd.slug)
 	_name_label.text = gd.name
 	_full_label.text = gd.full_name + "  ·  " + gd.slug.to_upper()
 	(_role_tag.get_child(0) as Label).text = gd.role

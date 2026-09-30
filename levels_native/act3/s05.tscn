@@ -8,8 +8,8 @@
 [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="8_door"]
 [ext_resource type="Script" path="res://scripts/world/hint_marker.gd" id="8_vhipp"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="17_hint"]
-[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
 [ext_resource type="Texture2D" path="res://assets/maps/act3_s05.png" id="emp_map"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
 
 [node name="LevelRoot" type="Node2D" unique_id=1479814079]
 script = ExtResource("1_nl")
@@ -50,18 +50,18 @@ script = ExtResource("4_tjwvg")
 
 [node name="ExitDoor0" type="Area2D" parent="." unique_id=1718461576 instance=ExtResource("8_door")]
 z_index = 3
-position = Vector2(4450, 830)
+position = Vector2(4450, 854)
 script = ExtResource("6_shmyo")
 
 [node name="ExitDoor1" type="Area2D" parent="." unique_id=1581987226 instance=ExtResource("8_door")]
 z_index = 3
-position = Vector2(2850, 250)
+position = Vector2(2850, 254)
 script = ExtResource("6_shmyo")
 geo_index = 1
 
 [node name="ExitDoor2" type="Area2D" parent="." unique_id=437052382 instance=ExtResource("8_door")]
 z_index = 3
-position = Vector2(4150, 510)
+position = Vector2(4000, 554)
 script = ExtResource("6_shmyo")
 geo_index = 2
 
@@ -76,8 +76,9 @@ z_index = 4
 position = Vector2(3500, 560)
 script = ExtResource("8_vhipp")
 text = "各自走来的,互相看见"
+
 [node name="EditorMap" type="Sprite2D" parent="." unique_id=1975557397]
 visible = false
-centered = false
 texture = ExtResource("emp_map")
+centered = false
 script = ExtResource("emp_scr")

@@ -266,6 +266,7 @@ func _draw_full_block(e: Dictionary, center: Vector2, atlas: Vector2i) -> void:
 		draw_rect(Rect2(r.position, Vector2(r.size.x, 2)),
 			Color(Palette.I.paper, edge_alpha))
 		_red_rules(r)
+		_color_accent(e, r)
 	if _side_open(e, Vector2i(0, 1)):
 		draw_rect(Rect2(Vector2(r.position.x, r.end.y - 4),
 			Vector2(r.size.x, 4)), Color(Palette.I.paper, 0.05))
@@ -276,6 +277,21 @@ func _draw_full_block(e: Dictionary, center: Vector2, atlas: Vector2i) -> void:
 		draw_rect(Rect2(Vector2(r.end.x - 2, r.position.y),
 			Vector2(2, r.size.y)), Color(Palette.I.paper, 0.12))
 	_skirt(e, r)
+
+
+## 角色色点缀(v0.60.0,用户令「地块可以和几何体一样的色彩装饰,
+## 不要喧宾夺主」):约 1/9 的承重面、按格坐标确定性取红/黄/蓝,
+## 顶缘下方一道 2px 短线(30% 宽、α0.28),远观无痕、近读有色。
+func _color_accent(e: Dictionary, r: Rect2) -> void:
+	var h := hash(Vector2i(r.position))
+	if h % 9 != 0:
+		return
+	var cols: Array[Color] = [Palette.I.red, Palette.I.yellow, Palette.I.blue]
+	var c: Color = cols[(h / 9) % 3]
+	var aw := r.size.x * 0.30
+	var ax := r.position.x + 6.0 + float((h / 9) % 23)
+	ax = minf(ax, r.end.x - 4.0 - aw)
+	draw_rect(Rect2(ax, r.position.y + 4.0, aw, 2.0), Color(c, 0.28))
 
 
 func _red_rules(r: Rect2) -> void:

@@ -73,8 +73,10 @@ class PlaneShape:
 	var _t := 0.0
 
 	func _process(delta: float) -> void:
+		# 构成主义:匀速直线沉浮、端点硬折返(三角波),拒绝正弦柔滑。
 		_t += delta
-		position.y = sin(_t * TAU / period + phase) * amp
+		var x := _t / period + phase
+		position.y = (absf(fposmod(x, 1.0) - 0.5) * 4.0 - 1.0) * amp
 
 	func _draw() -> void:
 		draw_colored_polygon(pts, col)

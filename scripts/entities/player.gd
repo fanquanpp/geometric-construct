@@ -6,7 +6,6 @@ const AIR_JUMPS := 1
 
 const MOD_SPEED_CAP := 3.75
 
-const PUSH_TRANSFER := 1800.0
 
 
 var def: GeometryDef
@@ -52,7 +51,6 @@ var _climb_budget := 0.0
 var _climb_side := 0
 var _climb_tick := 0.0
 var _skidding := false
-var _ramp_timer := 0.0
 var _squash_x := 1.0
 var _squash_y := 1.0
 var _trail: Array = []
@@ -113,7 +111,6 @@ func _physics_process(delta: float) -> void:
 	var sprinting := false
 	var jump_pressed := false
 	var jump_held := false
-	var ramp_buffed := _ramp_timer > 0.0
 	if is_active:
 		move_input = PlayerInput.move_axis(_src())
 		sprinting = PlayerInput.sprint(_src())
@@ -135,7 +132,7 @@ func _physics_process(delta: float) -> void:
 	var on_ground := is_on_floor()
 	var target_mult := _target_multiplier(sprinting)
 	vel.x = MovementCore.horizontal_step(vel, self, move_input, target_mult,
-		on_ground, ramp_buffed, dt)
+		on_ground, dt)
 
 	if on_ground and move_input.x != 0.0 and absf(vel.x) > 200.0 \
 			and signf(move_input.x) != signf(vel.x) and not _skidding:
@@ -292,24 +289,7 @@ func _physics_process(delta: float) -> void:
 				p.position.x += carry_dx
 				p.velocity.x = velocity.x
 
-	if MechanismSurface.touching_ramp(self):
-		if _ramp_timer <= 0.0 and Main.I != null:
-			Sfx.play("buff")
-			Main.I.notify_ramp(def)
-		_ramp_timer = MovementTuning.I.ramp_buff_time
-	elif _ramp_timer > 0.0:
-		_ramp_timer = maxf(_ramp_timer - dt, 0.0)
-
 	MechanismSurface.piano_step(self, vel)
-
-	if now_on_floor and absf(vel.x) > 20.0:
-		for i in get_slide_collision_count():
-			var col := get_slide_collision(i)
-			var other := col.get_collider() as Player
-			if other != null and other.def.can_be_pushed \
-					and signf(col.get_normal().x) == signf(-vel.x):
-				other.velocity.x = move_toward(other.velocity.x, vel.x,
-					PUSH_TRANSFER * dt)
 
 	PlayerCosmetics.update_trail(self, vel)
 	PlayerCosmetics.squash_recover(self, dt)
@@ -338,8 +318,6 @@ func _target_multiplier(sprinting: bool) -> float:
 		cap = maxf(cap, def.buff_sprint_speed if speed_buffed else def.sprint_speed)
 	if speed_buffed:
 		cap = minf(cap, MOD_SPEED_CAP)
-	if _ramp_timer > 0.0:
-		cap = minf(cap * MovementTuning.I.ramp_boost, MOD_SPEED_CAP)
 	return cap
 
 
@@ -459,7 +437,6 @@ func _reset_for_respawn() -> void:
 	_air_jumps_left = 0
 	_climbing = false
 	_climb_budget = MovementTuning.I.climb_units * Geometries.UNIT_PX
-	_ramp_timer = 0.0
 	_squash_x = 1.0
 	_squash_y = 1.0
 	for t in _piano_touch:
@@ -485,7 +462,6 @@ func recall_to(pos: Vector2) -> void:
 	_jump_cut = false
 	_air_jumps_left = 0
 	_coyote = 0.0
-	_ramp_timer = 0.0
 	_climb_budget = MovementTuning.I.climb_units * Geometries.UNIT_PX
 	_trail.clear()
 	_squash(1.15, 0.88)

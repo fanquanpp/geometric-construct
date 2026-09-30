@@ -272,12 +272,8 @@ func _bake(i: int) -> void:
 			kind = "timed_bridge"
 		elif cname.begins_with("SkiPatch"):
 			kind = "ski_patch"
-		elif cname.begins_with("LaunchPad"):
-			kind = "launch_pad"
 		elif cname.begins_with("PianoTile"):
 			kind = "piano_tile"
-		elif cname.begins_with("PortalPair"):
-			kind = "portal"
 		elif cname.begins_with("HintMarker"):
 			hints.append((c as Node2D).position.x)
 			continue

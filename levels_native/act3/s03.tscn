@@ -8,8 +8,8 @@
 [ext_resource type="Script" path="res://scripts/entities/exit_door.gd" id="6_tvo6v"]
 [ext_resource type="Script" path="res://scripts/world/hint_marker.gd" id="8_tc1s1"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="14_hint"]
-[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
 [ext_resource type="Texture2D" path="res://assets/maps/act3_s03.png" id="emp_map"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
 
 [node name="LevelRoot" type="Node2D" unique_id=251012184]
 script = ExtResource("1_nl")
@@ -40,7 +40,7 @@ script = ExtResource("4_w1vbn")
 
 [node name="ExitDoor2" type="Area2D" parent="." unique_id=1117545641 instance=ExtResource("5_door")]
 z_index = 3
-position = Vector2(3000, 830)
+position = Vector2(3000, 854)
 script = ExtResource("6_tvo6v")
 geo_index = 2
 
@@ -55,8 +55,9 @@ z_index = 4
 position = Vector2(2500, 520)
 script = ExtResource("8_tc1s1")
 text = "两个面,同一条路"
+
 [node name="EditorMap" type="Sprite2D" parent="." unique_id=400245898]
 visible = false
-centered = false
 texture = ExtResource("emp_map")
+centered = false
 script = ExtResource("emp_scr")

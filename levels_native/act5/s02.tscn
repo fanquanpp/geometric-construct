@@ -10,8 +10,8 @@
 [ext_resource type="Script" path="res://scripts/world/hint_marker.gd" id="10_oyjqw"]
 [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/timed_bridge.tscn" id="11_sc"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="17_hint"]
-[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
 [ext_resource type="Texture2D" path="res://assets/maps/act5_s02.png" id="emp_map"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
 
 [node name="LevelRoot" type="Node2D" unique_id=1837958236]
 script = ExtResource("1_nl")
@@ -52,18 +52,18 @@ script = ExtResource("4_503lh")
 
 [node name="ExitDoor0" type="Area2D" parent="." unique_id=912299689 instance=ExtResource("8_door")]
 z_index = 3
-position = Vector2(4600, 830)
+position = Vector2(4600, 854)
 script = ExtResource("6_3ldrq")
 
 [node name="ExitDoor1" type="Area2D" parent="." unique_id=2011938246 instance=ExtResource("8_door")]
 z_index = 3
-position = Vector2(3950, 570)
+position = Vector2(3950, 554)
 script = ExtResource("6_3ldrq")
 geo_index = 1
 
 [node name="ExitDoor2" type="Area2D" parent="." unique_id=199151493 instance=ExtResource("8_door")]
 z_index = 3
-position = Vector2(2500, 830)
+position = Vector2(2500, 854)
 script = ExtResource("6_3ldrq")
 geo_index = 2
 
@@ -81,6 +81,6 @@ text = "限时桥:塌之前过"
 
 [node name="EditorMap" type="Sprite2D" parent="." unique_id=1063748183]
 visible = false
-centered = false
 texture = ExtResource("emp_map")
+centered = false
 script = ExtResource("emp_scr")

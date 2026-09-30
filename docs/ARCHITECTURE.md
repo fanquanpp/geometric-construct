@@ -63,7 +63,7 @@ geometric-construct/
 │   │   │                    #   见 entities/player/)
 │   │   ├── player/          #   movement_core(重力/摩擦公式+手感常量)/ player_input
 │   │   │                    #   (InputSource 读数)/ player_cosmetics(爆点/残影/绘制)/
-│   │   │                    #   mechanism_surface(墙面/曲面/钢琴表面查询)
+│   │   │                    #   mechanism_surface(墙面/钢琴表面查询)
 │   │   ├── exit_door.gd     #   几何体专属终点门(到站不收取,可撤销;sealed 终点激活;
 │   │   │                    #   同名册多体都到站才算满,离门即取消——未满员同样成立)
 │   │   └── speed_gate.gd    #   加速门(buff 冲刺上限)

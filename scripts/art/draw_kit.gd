@@ -201,6 +201,12 @@ static func glyph(c: CanvasItem, key: String, rect: Rect2, tint: Color) -> void:
 				char_shape(c, d.shape, rect, d.color)
 				return
 		c.draw_rect(rect, col)
+	elif key.begins_with("codex_geo/"):
+		for d2 in Geometries.ALL:
+			if d2.slug == key.substr(10):
+				codex_geo(c, d2, rect)
+				return
+		c.draw_rect(rect, col)
 	elif key.begins_with("keys/"):
 		var label: String = KEY_LABELS.get(key, key.substr(5).to_upper())
 		var fs := int(rect.size.y * (0.32 if label.length() > 2 else 0.5))
@@ -297,6 +303,49 @@ static func codex_grid(c: CanvasItem, R: Callable, P: Callable, paper: Color) ->
 	dashed_line(c, P.call(12, 82), P.call(188, 82), g, 1.0, 5.0, 7.0)
 
 
+## 几何体图鉴画像(v0.60.0,用户令「图鉴画像采用游戏实际的内容;
+## 注意图鉴画像的大小」):按 def.size 真实尺寸(1 格 = 100px)以实机
+## draw_box 正典四层画法(体色/底影/右缘影/顶亮线)绘在地台上一格
+## 参照尺内——三体 50×50 / 40×80 / 30×30 一眼读出真实比例;此前直接
+## 把字形铺满 400px 画框,比例差 8 倍。
+static func codex_geo(c: CanvasItem, d: GeometryDef, rect: Rect2) -> void:
+	var k := rect.size.x / 200.0
+	var ox := rect.position.x
+	var oy := rect.position.y
+	var R := func(x: float, y: float, w: float, h: float) -> Rect2:
+		return Rect2(ox + x * k, oy + y * k, w * k, h * k)
+	var P := func(x: float, y: float) -> Vector2:
+		return Vector2(ox + x * k, oy + y * k)
+	var paper := Palette.I.paper
+	# 一格参照尺(100 design px = 1 格)虚线立在地台上。
+	var cell := Color(paper, 0.16)
+	dashed_line(c, P.call(50, 60), P.call(50, 164), cell, 1.2, 5.0, 7.0)
+	dashed_line(c, P.call(150, 60), P.call(150, 164), cell, 1.2, 5.0, 7.0)
+	dashed_line(c, P.call(50, 60), P.call(150, 60), cell, 1.2, 5.0, 7.0)
+	# 地台(承重石板正典)。
+	codex_stage(c, R, paper)
+	# 角色本体:真尺寸 + 实机 draw_box 正典四层,立于格内底面(164)。
+	var w := d.size.x
+	var h := d.size.y
+	var body := Rect2(P.call(100 - w / 2.0, 164 - h), Vector2(w * k, h * k))
+	c.draw_rect(body, d.color)
+	c.draw_rect(Rect2(body.position.x, body.end.y - body.size.y * 0.24,
+		body.size.x, body.size.y * 0.24), Color(0, 0, 0, 0.18))
+	c.draw_rect(Rect2(body.end.x - maxf(2.0, minf(w, h) * 0.045 * k),
+		body.position.y, maxf(2.0, minf(w, h) * 0.045 * k), body.size.y),
+		Color(0, 0, 0, 0.14))
+	c.draw_rect(Rect2(body.position + Vector2(3, 3),
+		Vector2(body.size.x * 0.42, 3)), Color(1.0, 1.0, 1.0, 0.5))
+	# 量距刻度:右侧身高跨线 + 上下 tick,读图即得实际尺寸。
+	var dim := Color(paper, 0.45)
+	var dx := 100.0 + w / 2.0 + 6.0
+	if dx > 146.0:
+		dx = 100.0 - w / 2.0 - 6.0
+	dashed_line(c, P.call(dx, 164 - h), P.call(dx, 164), dim, 1.0, 3.0, 4.0)
+	c.draw_rect(R.call(dx - 3.0, 164 - h - 1.0, 6, 2), dim)
+	c.draw_rect(R.call(dx - 3.0, 163.0, 6, 2), dim)
+
+
 ## 角色剪影:形状即性格的迷你注记(疾/跃/逆),scale≈0.5 格档。
 static func codex_char(c: CanvasItem, P: Callable, slug: String, x: float,
 		y: float, s := 24.0, face_left := false) -> void:
@@ -373,16 +422,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 				dashed_rect(c, R.call(64, 64, 72, 72), Color(paper, 0.22), 1.2 * k)
 				codex_char(c, P, "dash", 100, 118, 22)
 				codex_stage(c, R, paper)
-			"bld_back_tower":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(60, 92, 80, 72), Color(paper, 0.10))
-				c.draw_rect(R.call(72, 56, 56, 36), Color(paper, 0.14))
-				c.draw_rect(R.call(84, 30, 32, 26), Color(paper, 0.18))
-				for wy in 3:
-					c.draw_rect(R.call(70, 100 + wy * 18, 14, 8), Color(Palette.I.ink, 0.6))
-					c.draw_rect(R.call(116, 100 + wy * 18, 14, 8), Color(Palette.I.ink, 0.6))
-				c.draw_rect(R.call(94, 22, 12, 8), Color(Palette.I.red, 0.9))
-				codex_char(c, P, "spring", 40, 152, 18)
 			"bld_pillar":
 				codex_stage(c, R, paper)
 				c.draw_rect(R.call(84, 36, 32, 128), ink2)
@@ -439,17 +478,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 				codex_char(c, P, "spring", 100, 150, 20)
 				DrawKit.brackets(c, R.call(62, 62, 76, 14), Color(Palette.I.red, 0.6),
 					6.0 * k, 1.5 * k)
-			"bld_ring":
-				DrawKit.ngon_line(c, P.call(100, 92), 62.0 * k, 4,
-					Color(ink2, 1.0), 22.0 * k, PI / 4.0)
-				DrawKit.ngon_line(c, P.call(100, 92), 62.0 * k, 4,
-					Color(paper, 0.5), 2.0 * k, PI / 4.0)
-				c.draw_rect(R.call(94, 86, 12, 12), Color(Palette.I.red, 0.85))
-				codex_stage(c, R, paper)
-				DrawKit.chevron(c, P.call(100, 156), Vector2(1, 0), 16.0 * k,
-					Color(paper, 0.4), 2.5 * k)
-				DrawKit.chevron(c, P.call(132, 156), Vector2(1, 0), 16.0 * k,
-					Color(paper, 0.22), 2.5 * k)
 			"bld_hall":
 				codex_stage(c, R, paper)
 				c.draw_rect(R.call(16, 146, 168, 6), ink2)
@@ -470,17 +498,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 				DrawKit.chevron(c, P.call(100, 100), Vector2(1, 0), 20.0 * k,
 					Color(paper, 0.25), 3.0 * k)
 				codex_char(c, P, "dash", 100, 140, 20)
-			"bld_dome":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(40, 116, 24, 48), ink2)
-				c.draw_rect(R.call(136, 116, 24, 48), ink2)
-				c.draw_polyline(PackedVector2Array([
-					P.call(52, 116), P.call(52, 80), P.call(76, 56), P.call(100, 48),
-					P.call(124, 56), P.call(148, 80), P.call(148, 116)]),
-					Color(paper, 0.6), 3.0 * k, true)
-				c.draw_rect(R.call(94, 38, 12, 10), Color(Palette.I.red, 0.85))
-				DrawKit.chevron(c, P.call(100, 88), Vector2(0, 1), 14.0 * k,
-					Color(paper, 0.3), 2.0 * k)
 			"bld_gate":
 				codex_stage(c, R, paper)
 				c.draw_rect(R.call(36, 48, 26, 116), ink2)

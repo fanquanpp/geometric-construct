@@ -1,6 +1,6 @@
 extends Node2D
 
-# 死亡红波(移植 fandex decor-wave 音波语言):三道 sin 波形自左向右横扫,
+# 死亡红波(v0.60.0 风格化重置,源自 fandex decor-wave):三道折线波自左向右横扫,
 # phase 0→1 由 Backdrop 的 Tween 推动 setter 重绘(TransitionFX CurtainDraw 同款),
 # alpha 按 sin(phase*PI) 包络,单场约 0.9s,一次性开销。
 
@@ -35,6 +35,8 @@ func _draw() -> void:
 		var pts := PackedVector2Array()
 		for i in 65:
 			var x := vp.x * float(i) / 64.0
-			var y := y0 + sin(x / PERIOD * TAU + drift + row * 4.0) * AMP
+			# 折线波(直线段+硬折角)替代正弦曲线。
+			var u := x / PERIOD + drift + row * 0.25
+			var y := y0 + (absf(fposmod(u, 1.0) - 0.5) * 4.0 - 1.0) * AMP
 			pts.append(Vector2(x, y))
 		draw_polyline(pts, c, 1.6, true)

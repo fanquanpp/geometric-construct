@@ -534,11 +534,20 @@ func run_net_auto() -> void:
 func run_door_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
-	m.start_level(0, false)
-	await m.get_tree().create_timer(0.3).timeout
-	m.players[0].position = Vector2(14450, 1700)
+	# v0.60.0 修复:原硬编码 start_level(0)+旧版坐标传送,--level 无效、
+	# 多关截的全是初速关门位。改按 _shot_level 起关,传送到本关终点门
+	# 侧旁站立(偏移 90px,不进门不触发布到站),门框与落点入画。
+	m.start_level(_shot_level, false)
+	await m.get_tree().create_timer(0.6).timeout
+	var door: ExitDoor = null
+	for n in m._level_root.get_children():
+		if n is ExitDoor and n.geo_index == m.players[0].index:
+			door = n
+			break
+	if door != null:
+		m.players[0].position = door.position + Vector2(-90, 4)
 	m.players[0].velocity = Vector2.ZERO
-	await m.get_tree().create_timer(0.25).timeout
+	await m.get_tree().create_timer(0.35).timeout
 	await _shot("door")
 	await m.get_tree().create_timer(1.1).timeout
 	await _shot("complete")

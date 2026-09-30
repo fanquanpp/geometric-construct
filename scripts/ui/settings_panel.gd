@@ -347,3 +347,7 @@ func _input(event: InputEvent) -> void:
 		if k == KEY_ESCAPE:
 			get_viewport().set_input_as_handled()
 			close()
+	elif event is InputEventJoypadButton and event.pressed \
+			and (event as InputEventJoypadButton).button_index == JOY_BUTTON_B:
+		get_viewport().set_input_as_handled()
+		close()

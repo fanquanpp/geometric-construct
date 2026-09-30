@@ -8,8 +8,8 @@
 [ext_resource type="Script" path="res://scripts/entities/exit_door.gd" id="6_2tu11"]
 [ext_resource type="Script" path="res://scripts/world/hint_marker.gd" id="8_tmrtx"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="14_hint"]
-[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
 [ext_resource type="Texture2D" path="res://assets/maps/act4_s01.png" id="emp_map"]
+[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
 
 [node name="LevelRoot" type="Node2D" unique_id=716187050]
 script = ExtResource("1_nl")
@@ -39,7 +39,7 @@ script = ExtResource("4_ab4ex")
 
 [node name="ExitDoor0" type="Area2D" parent="." unique_id=1988348156 instance=ExtResource("5_door")]
 z_index = 3
-position = Vector2(3000, 830)
+position = Vector2(3000, 854)
 script = ExtResource("6_2tu11")
 
 [node name="HintMarker0" type="Node2D" parent="." unique_id=1927269190 instance=ExtResource("14_hint")]
@@ -53,8 +53,9 @@ z_index = 4
 position = Vector2(2350, 560)
 script = ExtResource("8_tmrtx")
 text = "停稳,再跳"
+
 [node name="EditorMap" type="Sprite2D" parent="." unique_id=538672944]
 visible = false
-centered = false
 texture = ExtResource("emp_map")
+centered = false
 script = ExtResource("emp_scr")

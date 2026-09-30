@@ -111,6 +111,46 @@ func _run() -> void:
 	_expect((btns["StartBtn"] as Button).focus_mode == Control.FOCUS_ALL,
 		"关卡后菜单按钮应回归可聚焦")
 
+	print("=== ⑤ 手柄确认链(v0.61.0):A 确认开卡/选关开演,B 返回 ===")
+	# 裸菜单无法验证 ui_accept(m=null 会断),换真 Main 全链路。
+	root.remove_child(_menu)
+	_menu.queue_free()
+	await process_frame
+	var main := Main.new()
+	root.add_child(main)
+	await process_frame
+	await process_frame
+	for i in 130:
+		await process_frame
+	var gstart: Button = main._menu.get_node("%StartBtn")
+	gstart.grab_focus()
+	await process_frame
+	await _dpad("UP")
+	var row_focus: Control = root.gui_get_focus_owner()
+	_expect(row_focus != null and (main._menu as Node).is_ancestor_of(row_focus),
+		"UP 应进剧目行,实为 " + _focus_name())
+	await _joy(JOY_BUTTON_A)
+	_expect(main._menu.is_act_panel_open(), "A 键应打开选关面板(选关确认链)")
+	await process_frame
+	await _joy(JOY_BUTTON_B)
+	_expect(not main._menu.is_act_panel_open(), "B 键应关闭选关面板(全局返回)")
+	await process_frame
+	gstart.grab_focus()
+	await process_frame
+	await _dpad("UP")
+	await _joy(JOY_BUTTON_A)
+	await process_frame
+	await _joy(JOY_BUTTON_A)
+	var started := func() -> bool:
+		return main._state == Main.State.PLAYING \
+			or main._state == Main.State.TRANSITION
+	for i in 300:
+		if started.call():
+			break
+		await process_frame
+	_expect(started.call(), "A 键确认选关应开演(state=%s)"
+		% Main.State.keys()[main._state])
+
 	if _fails == 0:
 		print("FOCUS CHECK ALL PASS")
 	quit(0 if _fails == 0 else 1)
@@ -134,13 +174,23 @@ func _dpad(dir: String) -> void:
 		"RIGHT": idx = JOY_BUTTON_DPAD_RIGHT
 		"UP": idx = JOY_BUTTON_DPAD_UP
 		"DOWN": idx = JOY_BUTTON_DPAD_DOWN
+	_joy(idx)
+
+
+func _joy(idx: int) -> void:
+	# headless 冲洗时机不定(事件会以「上一发」延迟生效):每次注入后
+	# 显式 flush_buffered_events 强制落地,再让 GUI 处理一帧。
 	var ev := InputEventJoypadButton.new()
 	ev.button_index = idx
 	ev.pressed = true
 	Input.parse_input_event(ev)
+	Input.flush_buffered_events()
+	await process_frame
 	await process_frame
 	var ev2 := InputEventJoypadButton.new()
 	ev2.button_index = idx
 	ev2.pressed = false
 	Input.parse_input_event(ev2)
+	Input.flush_buffered_events()
+	await process_frame
 	await process_frame
