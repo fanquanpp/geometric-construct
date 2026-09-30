@@ -4,16 +4,10 @@ class_name LevelData
 const SCENES: Array[Dictionary] = [
 	{"path": "res://levels_native/act1/s01.tscn", "name": "疾 · 初速",
 		"roster": [0], "focus": 0, "medals": [12000, 18000, 25000],
-		"intro": "A/D 移动,Space 跳过缺口。\n速度是他的答案。"},
-	{"path": "res://levels_native/act1/s02.tscn", "name": "疾 · 折返",
-		"roster": [0], "focus": 0,
-		"intro": "空中再按一次 Space——二段跳。\n高度不是墙,是台阶。"},
+		"intro": "A/D 移动,Space 跳过缺口;空中再按一次 Space——二段跳。\n速度是他的答案。"},
 	{"path": "res://levels_native/act1/s03.tscn", "name": "疾 · 门厅",
 		"roster": [0], "focus": 0,
 		"intro": "穿过加速门,冲刺跨过门厅断口。\nShift 是他的第二条腿。"},
-	{"path": "res://levels_native/act1/s04.tscn", "name": "疾 · 高墙",
-		"roster": [0], "focus": 0,
-		"intro": "贴墙,按住跳跃——墙就是路。\n只有疾能翻过这道高墙。"},
 	{"path": "res://levels_native/act1/s05.tscn", "name": "跃 · 折叠",
 		"roster": [1], "focus": 1,
 		"intro": "跃落得越深,弹得越高。\n折叠自己,是为了更高的起飞。"},
@@ -61,23 +55,23 @@ const SCENES: Array[Dictionary] = [
 ]
 
 
-# 幕-场序按下标进存档契约(progress/unlocked)。v0.57.0 删除「伍」(双体
-# 三角形)后重排:旧 5(合演·双生阶)与 6-10(伍关五场)退役,旧 11-23
-# 左移 6(五幕并四幕);旧档由 SaveManager._migrate v9 做下标映射,此后
-# 仍不得插删。
+# 幕-场序按下标进存档契约(progress/unlocked)。v0.59.0 第一幕 6→4:旧 1
+# (疾·折返)与旧 3(疾·高墙)退役(二段跳教学并入旧 0 的开场卡与提示牌;
+# 弹射板随旧 3 退出排关、进废弃候选),旧 2→1、旧 4→2、旧 5→3、旧 6-17
+# 左移 2;旧档由 SaveManager._migrate v10 做逐段映射,此后仍不得插删。
 static var ACTS: Array[Dictionary] = [
 	{"name": "第一幕", "title": "各自的路上",
-		"hint": "疾与跃的入门五场,终场三门并立:初速 / 折返 / 门厅 / 高墙 / 折叠 / 并立",
-		"icon": "buttons/play", "levels": [0, 1, 2, 3, 4, 5]},
+		"hint": "疾与跃的入门四场,终场三门并立:初速 / 门厅 / 折叠 / 并立",
+		"icon": "buttons/play", "levels": [0, 1, 2, 3]},
 	{"name": "第二幕", "title": "分岔",
 		"hint": "独自一人时,我还算什么?——三条独路,在路口并拢",
-		"icon": "buttons/play", "levels": [6, 7, 8, 9]},
+		"icon": "buttons/play", "levels": [4, 5, 6, 7]},
 	{"name": "第三幕", "title": "蜕变",
 		"hint": "我能背叛自己的形状吗?——三次反着来的路",
-		"icon": "buttons/play", "levels": [10, 11, 12, 13]},
+		"icon": "buttons/play", "levels": [8, 9, 10, 11]},
 	{"name": "第四幕", "title": "刻度的真相",
 		"hint": "最深处的密刻,代价一直摆在眼前——三门归位,落幕",
-		"icon": "buttons/play", "levels": [14, 15, 16, 17]},
+		"icon": "buttons/play", "levels": [12, 13, 14, 15]},
 ]
 
 

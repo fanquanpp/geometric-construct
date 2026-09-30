@@ -1,7 +1,7 @@
 # 架构规范 · ARCHITECTURE
 
 > 几何构成 GEOMETRIC CONSTRUCT · 构成主义几何平台闯关 · Godot 4.7 · 纯 GDScript
-> 现行 = 原生编辑器作关 + 第一幕六场(作关换代 v0.45,native-levels.md)。
+> 现行 = 原生编辑器作关 + 四幕 16 场(v0.59.0 第一幕 6→4;作关换代 v0.45,native-levels.md)。
 > 本文是项目结构的唯一权威描述;改动结构前先改本文。
 > 技术方案档案见 docs/design/(作关换代 = native-levels.md;联机 = net.md)。
 

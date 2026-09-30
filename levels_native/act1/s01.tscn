@@ -12,7 +12,7 @@
 [node name="LevelRoot" type="Node2D" unique_id=1554927428]
 script = ExtResource("1_nl")
 level_name = "疾 · 初速"
-intro_text = "A/D 移动,Space 跳过缺口。
+intro_text = "A/D 移动,Space 跳过缺口;空中再按一次 Space——二段跳。
 速度是他的答案。"
 roster = Array[int]([0])
 level_size = Vector2(3200, 2000)
@@ -48,6 +48,9 @@ text = "A/D 移动 · Space 跳跃"
 [node name="HintMarker1" parent="." unique_id=1095525932 instance=ExtResource("14_hint")]
 position = Vector2(1350, 1050)
 text = "跳过缺口"
+[node name="HintMarker2" parent="." unique_id=1732050807]
+position = Vector2(1900, 1050)
+text = "空中再按 Space = 二段跳"
 [node name="EditorMap" type="Sprite2D" parent="." unique_id=1886242853]
 visible = false
 centered = false

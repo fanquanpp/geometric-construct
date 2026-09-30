@@ -14,7 +14,9 @@ static func is_touch_mode() -> bool:
 static func adapt_copy(text: String) -> String:
 	if not is_touch_mode():
 		return text
-	return text.replace("空格跳跃", "点按屏幕跳跃") \
+	return text.replace("空中再按一次 Space——二段跳", "空中再点一次屏幕——二段跳") \
+		.replace("空中再按 Space = 二段跳", "空中再点按屏幕 = 二段跳") \
+		.replace("空格跳跃", "点按屏幕跳跃") \
 		.replace("空中再按一次", "空中再点一次") \
 		.replace("贴墙攀爬", "长按屏幕贴墙攀爬") \
 		.replace("空格不再是跳跃", "点屏不再是跳跃") \

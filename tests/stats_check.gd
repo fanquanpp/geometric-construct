@@ -18,9 +18,11 @@ func _ready() -> void:
 
 	var sm := SaveManager.new()
 	sm.load_save()
-	if sm.unlocked != 4 or sm.cleared_count() != 4 or not sm.is_cleared(3):
+	# v5 夹具 unlocked=4 → v6 记 cleared{0..3};v10(第一幕 6→4)退役旧
+	# 1(折返)/3(高墙),链终点 = unlocked 2、cleared{0,1}(旧2 门厅→新1)。
+	if sm.unlocked != 2 or sm.cleared_count() != 2 or not sm.is_cleared(1):
 		ok = false
-		print("STATS FAIL: v5→v6 迁移 unlocked=%d cleared=%d"
+		print("STATS FAIL: v5→v10 迁移 unlocked=%d cleared=%d"
 			% [sm.unlocked, sm.cleared_count()])
 
 	if FileAccess.file_exists(SAVE_PATH):

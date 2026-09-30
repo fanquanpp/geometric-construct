@@ -260,10 +260,10 @@ func run_panel_shot() -> void:
 	m.archive_panel.builders["mech"].refresh()
 	await m.get_tree().create_timer(0.4).timeout
 	await _shot("panel_mech_f2")
-	m.archive_panel._sel["mech"] = ArchiveData.MECHS.size() - 1
+	m.archive_panel._sel["mech"] = 3
 	m.archive_panel.builders["mech"].refresh()
 	await m.get_tree().create_timer(1.2).timeout
-	await _shot("panel_mech_portal")
+	await _shot("panel_mech_bridge")
 
 	m.get_tree().quit()
 
@@ -357,7 +357,7 @@ func _recall_keypress() -> void:
 
 
 func run_dual_test() -> void:
-	m.start_level_dual(18)
+	m.start_level_dual(16)
 	await m.get_tree().create_timer(0.5).timeout
 	var ok_cd: bool = m.race.phase == RaceController.Phase.COUNTDOWN
 	print("DUALTEST countdown-phase ", "PASS" if ok_cd else "FAIL",
@@ -424,7 +424,7 @@ func run_dual_test() -> void:
 	var wslot: int = m.race.winner
 	m.race.rematch()
 	await m.get_tree().create_timer(0.5).timeout
-	var ok_rematch: bool = m.race.phase == RaceController.Phase.COUNTDOWN 		and m.game_flow.current == 18 		and int(m.race.wins.get(wslot, 0)) == 1
+	var ok_rematch: bool = m.race.phase == RaceController.Phase.COUNTDOWN 		and m.game_flow.current == 16 		and int(m.race.wins.get(wslot, 0)) == 1
 	print("DUALTEST rematch ", "PASS" if ok_rematch else "FAIL",
 		" phase=", m.race.phase, " wins=", m.race.wins)
 	if not ok_rematch:
@@ -437,7 +437,7 @@ func run_dual_test() -> void:
 func run_dual_shot() -> void:
 	if _shot_dir.is_empty():
 		_shot_dir = "res://.shots"
-	m.start_level_dual(18)
+	m.start_level_dual(16)
 	await m.get_tree().create_timer(1.2).timeout
 	await _shot("dual_spawn")
 

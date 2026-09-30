@@ -40,7 +40,7 @@ Mechanism 机关    —— "空间为什么会改变?"(只管状态与规则)
 | **Architecture 建筑** | A | 世界是什么地方(身份与外观) | 图鉴 bld 六条;正典:巨构门厅/速度圣殿… |
 | **Structure 结构** | S | 站在哪里、走在哪里(Spatial Construction Kit) | platforms/ramps 全部数据;地板/天花/墙/台阶 |
 | **Mechanism 机关** | M | 空间为什么改变 | 十三件实装机关(§卷六 迁移表) |
-| **Special Architecture 特殊建筑** | SP | 具有世界/玩法/剧情意义的空间实体 | 第一幕六场(正典);红色刻度塔(规划) |
+| **Special Architecture 特殊建筑** | SP | 具有世界/玩法/剧情意义的空间实体 | 第一幕四场(正典);红色刻度塔(规划) |
 | **Landmark 地标** | L | 远距离可识别的空间导航锚 | 红色刻度(全游戏唯一恒在地标) |
 | **Environment / Anomaly** | E / X | 环境实体 / 异常构成 | 背景剪影;异常(冻结占位,gameplay 卷七) |
 

@@ -615,38 +615,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 					Color(paper, 0.35), 2.5 * k)
 				dashed_line(c, P.call(36, 110), P.call(76, 110),
 					Color(paper, 0.28), 1.5 * k)
-			"mech_launch_pad":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(56, 132, 88, 32), ink3)
-				c.draw_rect(R.call(56, 132, 88, 32), Color(paper, 0.5), false, 2.0 * k)
-				DrawKit.arrow(c, P.call(100, 128), P.call(100, 44),
-					Color(paper, 0.85), 3.0 * k, 12.0 * k)
-				codex_char(c, P, "spring", 100, 118 if pose == 1 else 62, 20)
-				if pose == 1:
-					for t in 3:
-						c.draw_rect(R.call(88 + t * 8, 100 - t * 14, 6, 6),
-							Color(paper, 0.5 - t * 0.12))
-				else:
-					dashed_line(c, P.call(120, 60), P.call(120, 36),
-						Color(paper, 0.25), 1.5 * k)
-					dashed_line(c, P.call(80, 60), P.call(80, 36),
-						Color(paper, 0.25), 1.5 * k)
-			"mech_portal":
-				codex_stage(c, R, paper)
-				for pair_def in [[46.0, 0], [154.0, 1]]:
-					var dx: float = pair_def[0]
-					c.draw_rect(Rect2(ox + (dx - 22.0) * k, oy + 44.0 * k,
-						44.0 * k, 112.0 * k), Color(Palette.I.ink, 0.65))
-					c.draw_rect(Rect2(ox + (dx - 22.0) * k, oy + 44.0 * k,
-						44.0 * k, 112.0 * k), Color(paper, 0.6), false, 2.0 * k)
-					c.draw_rect(Rect2(ox + (dx - 3.0) * k, oy + 54.0 * k,
-						6.0 * k, 92.0 * k), Color(Palette.I.blue, 0.5))
-				dashed_rect(c, R.call(20, 36, 160, 128), Color(paper, 0.18), 1.5 * k)
-				codex_char(c, P, "dash", 46, 130, 18)
-				DrawKit.chevron(c, P.call(100, 96), Vector2(1, 0), 22.0 * k,
-					Color(Palette.I.blue, 0.8), 3.0 * k)
-				dashed_line(c, P.call(140, 70), P.call(176, 52),
-					Color(paper, 0.3), 1.5 * k)
 			_:
 				c.draw_rect(R.call(40, 40, 120, 120), ink2)
 				codex_stage(c, R, paper)

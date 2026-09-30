@@ -379,7 +379,7 @@ AGENTS.md 第 1 条);②以类目推演替代实仓核对(建议的 15 类中 9 
 | 门禁 | 跑法 | 状态(2026-09-29 v0.51.0 盘点) |
 |---|---|---|
 | native_check | `--path . res://tests/native_check.tscn` | ✅ 现役 · 原生关卡装载/静息门禁(v0.45 换代) |
-| flow_check | `--path . res://tests/flow_check.tscn` | ✅ 现役 · 通关流转(18 关,v0.57.0) |
+| flow_check | `--path . res://tests/flow_check.tscn` | ✅ 现役 · 通关流转(16 关,v0.59.0) |
 | stats_check | `--path . res://tests/stats_check.tscn` | ✅ 现役 · 存档 v5→v6 迁移 + 通关结算 + 原子写(备份/还原自洁,不污染真档) |
 | recalltest | `-- --recalltest` | ✅ 现役 · 召回链路(单体/信标/幂等;界边腿随 v0.57.0 删伍退役) |
 | dualtest | `-- --dualtest` | ✅ 现役 · 同屏双人七链路(探针关 dev/probe) |

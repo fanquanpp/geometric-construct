@@ -1,7 +1,7 @@
 class_name SaveManager
 
 
-const SAVE_VERSION := 9
+const SAVE_VERSION := 10
 const SAVE_PATH := "user://speed-rouge.cfg"
 const LEGACY_PATH := "user://lonelyblocks.cfg"
 
@@ -194,6 +194,27 @@ func _migrate(from_version: int, _cfg: ConfigFile) -> void:
 		level_deaths = moved9[2]
 		perf = moved9[3]
 		unlocked = maxi(remap9.call(unlocked), 0)
+	if from_version < 10:
+		# v0.59.0 第一幕 6→4:旧 1(疾·折返)与旧 3(疾·高墙)退役;
+		# 旧 2→1、旧 4→2、旧 5→3,旧 6-17 左移 2(逐段映射,非整段平移)。
+		var remap10 := func(li: int) -> int:
+			if li == 0:
+				return 0
+			if li == 2:
+				return 1
+			if li == 4:
+				return 2
+			if li == 5:
+				return 3
+			if li >= 6:
+				return li - 2
+			return -1
+		var moved10 := _remap_stats(remap10)
+		cleared = moved10[0]
+		best_ms = moved10[1]
+		level_deaths = moved10[2]
+		perf = moved10[3]
+		unlocked = maxi(remap10.call(unlocked), 0)
 	unlocked = maxi(unlocked, 0)
 
 

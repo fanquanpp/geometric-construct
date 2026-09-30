@@ -36,17 +36,20 @@ func _ready() -> void:
 func _play_and_pass(index: int) -> void:
 	main.start_level(index, false)
 	await get_tree().create_timer(1.0).timeout
-	var door: ExitDoor = null
-	for n in main._level_root.get_children():
-		if n is ExitDoor and n.geo_index == main.players[0].index:
-			door = n
-			break
-	if door == null:
-		_fail("L%d 缺 %d 号终点门" % [index, main.players[0].index])
-		get_tree().quit(1)
-		return
-	main.players[0].position = door.position + Vector2(0, 4)
-	main.players[0].velocity = Vector2.ZERO
+	# 关卡无关:终点门要全员到齐才封印,把每个玩家都送到自己归属的门
+	# (单门关与三门并立这类多门关同链路可通)。
+	for p in main.players:
+		var door: ExitDoor = null
+		for n in main._level_root.get_children():
+			if n is ExitDoor and n.geo_index == p.index:
+				door = n
+				break
+		if door == null:
+			_fail("L%d 缺 %d 号终点门" % [index, p.index])
+			get_tree().quit(1)
+			return
+		p.position = door.position + Vector2(0, 4)
+		p.velocity = Vector2.ZERO
 	_wait_state(Main.State.TRANSITION, 8.0, "L%d 通关" % index)
 
 	var swept := false

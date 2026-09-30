@@ -22,10 +22,10 @@
 | ~~剧情篇目~~ | ~~7~~ | ~~`story/*.ks`(已删 v0.56.0)~~ |
 | 幕(现行) | 4(第一~第四幕,正戏全量)| `scripts/data/level_data.gd` ACTS |
 | 幕(七幕主纲) | 7(5 已演 + 序幕/落幕剧本)| `story.md` §1.5 |
-| 关卡(在演) | 18(四幕全战役 native)+ dev/probe 探针 | `levels_native/act1,act3..act5/*.tscn` | v0.45 换代:JSON 26 关管线退役;v0.55.0 删圆 26→24;v0.57.0 删伍 24→18(地图整图 assets/maps 同步重烘) |
+| 关卡(在演) | 16(四幕全战役 native)+ dev/probe 探针 | `levels_native/act1,act3..act5/*.tscn` | v0.45 换代:JSON 26 关管线退役;v0.55.0 删圆 26→24;v0.57.0 删伍 24→18;v0.59.0 第一幕 6→4(房间地图 assets/maps 同步重烘) |
 | ~~测试道~~ | ~~2~~ | ~~trial_v5 / pair_trial~~ | v0.44.0 清退(测试关内容清退令)|
 | ~~图鉴插图(入引擎)~~ | ~~42 张 png~~ | ~~`assets/archive/`~~ | **2026-09-30 孤本清退**(用户令):图鉴画面全由 CodexArt `_draw` 绘制,42 张 PNG 零运行时引用,整目录删除;`data/mech/portal_frames.tres`(自身零引用)随批删 |
-| 地图整体图(编辑器占位) | 24 张 png(v0.55.0 新增,`tools/bake_level_maps.gd` 烘焙)| `assets/maps/` |
+| 房间地图(编辑器占位) | 16 张 png(v0.55.0 整图新增;v0.59.0 起为一体化空间房间地图,`tools/bake_level_maps.gd` v2 按实机数据切分房间烘焙)| `assets/maps/` |
 | 图块集(入引擎) | 1(native_tiles.png,224 格 16 列×14 行)| `assets/tiles/` | v0.45 原生作关唯一图块素材,图位契约 levels.md §0;PNG 为 TileSet 贴图(`data/tiles/native_tileset.tres` 引用),生成器 `tools/gen_tiles.lua` 保留;**不在 v0.46 重绘轮**(坐标契约与物理层绑定,以 e6c5b1d 审计终态为准) |
 | aseprite 源 | 2 个(icon_construct 1 + native_tiles 1)| `assets/art/` | 2026-09-30 清退后仅剩在用产出之源;v0.46.0 清退 mech 精灵源 12 + strip 12;v0.39.0 清退地图皮源 30 + 图鉴源 33 |
 | 音频数据 .tres | 34(data/music 6 + data/sfx 28)| `data/music/`、`data/sfx/` | M-7/M-8 数值资源化(v0.38):BGM motif 与音效规格全 @export,Inspector 直调 |
@@ -91,10 +91,10 @@ Visual 正典帧精灵,参数化机关脚本 `@tool` 预览随导出参数实时
 | `mech_timed_bridge` | 限时桥 | TIMED BRIDGE | 机关 · 节拍 | 2 帧动态(实心 / 虚化)| 实装 v0.15 |
 | `mech_piano_tile` | 钢琴砖 | PIANO TILE | 机关 · 演奏 | 两态(常态 / 触发)| 实装 v0.15 |
 | `mech_checkpoint` | 记录点信标 | CHECKPOINT | 机关 · 存续 | 两态(未激活 / 激活)| 实装 v0.36(召回管线 v0.17)|
-| `mech_portal` | 传送对 | PORTAL | 机关 · 穿越 | 3 帧动态(闭合 / 开启 / 脉冲)| 实装 v0.27;画面 = CodexArt `_draw`(旧 SpriteFrames `data/mech/portal_frames.tres` 自身零引用,已随 2026-09-30 清退删除)|
+| `mech_portal` | 传送对 | PORTAL | 机关 · 穿越 | 3 帧动态(闭合 / 开启 / 脉冲)| 实装 v0.27;画面 = CodexArt `_draw`;**v0.59.0 起零排关(全战役仅死资源声明),图鉴收起、场景壳暂留候选废弃**(旧 SpriteFrames `data/mech/portal_frames.tres` 已随 2026-09-30 清退删除)|
 | `mech_push_box` | 推箱 | PUSH BOX | 机关 · 解谜 | 单帧 | 实装 v0.27 |
 | `mech_ski_patch` | 滑雪带 | SKI PATCH | 机关 · 地形 | 两态(常态 / 滑雪)| 实装 v0.27 |
-| `mech_launch_pad` | 弹射板 | LAUNCH PAD | 机关 · 弹射 | 单帧 | 实装 v0.27 |
+| `mech_launch_pad` | 弹射板 | LAUNCH PAD | 机关 · 弹射 | 单帧 | 实装 v0.27;**v0.59.0 起零排关(唯一排关场「高墙」随删关退役),图鉴收起、场景壳暂留候选废弃** |
 
 **立项 / 规划未入图鉴**(登记于 `glossary.md` §2):
 
@@ -116,12 +116,12 @@ Visual 正典帧精灵,参数化机关脚本 `@tool` 预览随导出参数实时
 
 | 序 | 幕名 | 标题 | 状态 |
 |---|---|---|---|
-| 0 | **第一幕** | 各自的路上 | ✅ 六场 native(终场三门并立)|
+| 0 | **第一幕** | 各自的路上 | ✅ 四场 native(终场三门并立)|
 | 1 | **第二幕** | 分岔 | ✅ 四场 native |
 | 2 | **第三幕** | 蜕变 | ✅ 四场 native |
 | 3 | **第四幕** | 刻度的真相 | ✅ 四场 native(落幕三门归位)|
 
-### 5.2 在演关卡:正戏四幕 18 场(v0.57.0 删伍定稿)
+### 5.2 在演关卡:正戏四幕 16 场(v0.59.0 第一幕 6→4 定稿)
 
 `levels_native/<幕>/<场>.tscn` = NativeLevel 根 + Decor/Solid TileMapLayer +
 机关/门/信标/提示场景实例拖摆;**所见即所玩,零运行时装配**(v0.46.0 起机关
