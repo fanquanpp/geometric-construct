@@ -14,7 +14,7 @@
 [node name="LevelRoot" type="Node2D" unique_id=1655205341]
 script = ExtResource("1_nl")
 level_name = "跃 · 高台"
-intro_text = "跃的分岔全是高台与深谷。以前她为别人折叠坠落——这一次,高台只属于她。"
+intro_text = "跃的分岔全是高台与深谷。每一次坠落都折成上升——这一次,高台只属于她。"
 focus = 1
 roster = Array[int]([1])
 level_size = Vector2(3200, 1200)

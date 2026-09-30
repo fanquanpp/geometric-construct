@@ -251,6 +251,10 @@ func run_panel_shot() -> void:
 	m.archive_panel.open(0, "mech")
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("panel_mech0")
+	# 两态腿选中两态条目(滑雪带):终点门等带 anim 的条目隐藏两态钮,空转无意义
+	m.archive_panel._sel["mech"] = 6
+	m.archive_panel.builders["mech"].refresh()
+	await m.get_tree().create_timer(0.4).timeout
 	var refs: Dictionary = m.archive_panel._pages["mech"].get_meta("refs")
 	(refs["toggle"] as Button).button_pressed = true
 	m.archive_panel.builders["mech"].refresh()
@@ -559,7 +563,8 @@ func run_tap_shot() -> void:
 
 
 func run_menu_shot() -> void:
-	await m.get_tree().create_timer(1.0).timeout
+	# 1.8s:菜单入场编排里版本行 1.40s 延迟 + 0.25s 淡入,过早抓帧会缺版本行
+	await m.get_tree().create_timer(1.8).timeout
 	await m.get_tree().process_frame
 	DirAccess.make_dir_recursive_absolute(_shot_dir)
 	var img := m.get_viewport().get_texture().get_image()

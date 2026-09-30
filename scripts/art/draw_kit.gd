@@ -341,7 +341,7 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 				c.draw_rect(R.call(30, 122, 140, 60), ink2)
 				c.draw_rect(R.call(30, 122, 140, 8), Color(paper, 0.55))
 				c.draw_rect(R.call(30, 122, 140, 22), Color(paper, 0.14))
-				c.draw_rect(R.call(24, 128, 6, 8), Color(Palette.I.red, 0.85))
+				c.draw_rect(R.call(88, 122, 14, 3), Color(Palette.I.red, 0.55))
 				codex_char(c, P, "dash", 76, 110, 24)
 				DrawKit.chevron(c, P.call(120, 110), Vector2(1, 0), 16.0 * k,
 					Color(paper, 0.4), 2.5 * k)
@@ -500,19 +500,26 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 		match id:
 			"mech_exit_door":
 				codex_stage(c, R, paper)
-				var dcol: Color = Palette.I.orange if pose != 2 else Palette.I.paper
-				c.draw_rect(R.call(62, 36, 76, 128), Color(Palette.I.ink, 0.6))
+				# 正典 = 实机 ExitDoor(v0.11.1 门框):墨腔 + 角色色锐利
+				# 门框 + 呼吸核心方点 + 悬挑门楣 + 门上方悬浮角色图标。
+				var dcol: Color = Palette.I.red
+				c.draw_rect(R.call(62, 36, 76, 128), Color(Palette.I.ink, 0.7))
+				c.draw_rect(R.call(67, 41, 66, 118),
+					Color(dcol, 0.55 if pose > 0 else 0.30), false, 2.0 * k)
 				c.draw_rect(R.call(62, 36, 76, 128), Color(dcol, 0.85), false, 3.0 * k)
-				c.draw_rect(R.call(70, 58, 60, 106), Color(dcol, 0.55 if pose > 0 else 0.25))
-				c.draw_rect(R.call(62, 36, 76, 10), Color(dcol, 0.85))
-				for t in 3:
-					c.draw_rect(R.call(66 + t * 24, 26, 12, 6), Color(Palette.I.red, 0.9))
+				c.draw_rect(R.call(56, 26, 88, 6), Color(dcol, 0.8))
+				codex_char(c, P, "dash", 100, 14, 16)
 				if pose == 1:
-					codex_char(c, P, "spring", 40, 152, 20)
-					DrawKit.chevron(c, P.call(54, 150), Vector2(1, 0), 12.0 * k,
-						Color(paper, 0.4), 2.0 * k)
+					codex_char(c, P, "dash", 100, 124, 14)
+					for t in 3:
+						c.draw_rect(R.call(82 + t * 12, 134 + t * 5, 5, 5),
+							Color(dcol, 0.8 - t * 0.22))
 				elif pose == 2:
-					codex_char(c, P, "spring", 100, 92, 22)
+					c.draw_rect(R.call(55, 29, 90, 142),
+						Color(Palette.I.red, 0.9), false, 1.5 * k)
+				else:
+					DrawKit.ngon_fill(c, P.call(100, 100), 6.0 * k, 4,
+						dcol.lerp(paper, 0.45), PI / 4.0)
 			"mech_speed_gate":
 				codex_stage(c, R, paper)
 				c.draw_rect(R.call(50, 24, 100, 140), Color(Palette.I.ink, 0.5))
@@ -531,21 +538,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 					codex_char(c, P, "dash", 40, 142, 22)
 					DrawKit.chevron(c, P.call(70, 142), Vector2(1, 0), 12.0 * k,
 						Color(paper, 0.4), 2.0 * k)
-			"mech_ramp":
-				codex_stage(c, R, paper)
-				c.draw_colored_polygon(PackedVector2Array([
-					P.call(24, 152), P.call(80, 88), P.call(120, 108), P.call(176, 52),
-					P.call(176, 164), P.call(24, 164)]), Color(Palette.I.ink_2, 0.9))
-				c.draw_polyline(PackedVector2Array([
-					P.call(24, 152), P.call(80, 88), P.call(120, 108), P.call(176, 52)]),
-					Color(paper, 0.7), 4.0 * k, true)
-				DrawKit.ngon_fill(c, P.call(96, 74), 10.0 * k, 16,
-					Color(Palette.I.yellow, 0.95))
-				codex_char(c, P, "dash", 66, 80, 20)
-				dashed_line(c, P.call(120, 108), P.call(160, 70),
-					Color(paper, 0.4), 2.0 * k)
-				DrawKit.chevron(c, P.call(148, 68), Vector2(1, -0.86), 14.0 * k,
-					Color(paper, 0.5), 2.5 * k)
 			"mech_mover":
 				codex_stage(c, R, paper)
 				c.draw_line(P.call(24, 116), P.call(176, 116), Color(paper, 0.2), 2.0 * k)
@@ -559,36 +551,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 					Color(Palette.I.red, 0.7), 2.0 * k)
 				DrawKit.chevron(c, P.call(170, 116), Vector2(1, 0), 12.0 * k,
 					Color(Palette.I.red, 0.7), 2.0 * k)
-			"mech_lever_pad":
-				codex_stage(c, R, paper)
-				var h := 12.0 if pose == 1 else 24.0
-				c.draw_rect(R.call(24, 152 - h, 64, h),
-					Color(Palette.I.red, 0.8) if pose == 1 else ink3)
-				c.draw_rect(R.call(24, 152 - h, 64, h), Color(paper, 0.55), false, 2.0 * k)
-				dashed_line(c, P.call(88, 146), P.call(116, 146),
-					Color(Palette.I.red, 0.4 if pose == 1 else 0.15), 1.5 * k)
-				if pose == 1:
-					c.draw_rect(R.call(116, 88, 56, 58), Color(paper, 0.05))
-					dashed_rect(c, R.call(116, 88, 56, 58), Color(paper, 0.4), 1.5 * k)
-				else:
-					c.draw_rect(R.call(116, 88, 56, 58), ink2)
-					c.draw_rect(R.call(116, 88, 56, 58), Color(paper, 0.5), false, 1.5 * k)
-				codex_char(c, P, "dash", 46, 130 if pose == 1 else 118, 18)
-				if pose != 1:
-					c.draw_rect(R.call(50, 146, 12, 6), Color(Palette.I.red, 0.9))
-			"mech_gate_door":
-				codex_stage(c, R, paper)
-				if pose == 1:
-					dashed_rect(c, R.call(60, 36, 80, 116), Color(paper, 0.45), 2.0 * k)
-					c.draw_rect(R.call(60, 36, 80, 116), Color(paper, 0.05))
-					codex_char(c, P, "dash", 100, 60, 20)
-					dashed_line(c, P.call(100, 72), P.call(100, 148),
-						Color(paper, 0.25), 1.5 * k)
-				else:
-					c.draw_rect(R.call(60, 36, 80, 116), ink2)
-					c.draw_rect(R.call(60, 36, 80, 116), Color(paper, 0.55), false, 2.0 * k)
-					c.draw_rect(R.call(60, 36, 80, 6), Color(paper, 0.5))
-				codex_char(c, P, "spring", 28, 142, 16)
 			"mech_timed_bridge":
 				codex_stage(c, R, paper)
 				c.draw_rect(R.call(16, 88, 30, 14), ink3)
@@ -640,26 +602,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 					codex_char(c, P, "dash", 56, 138, 20)
 					dashed_line(c, P.call(66, 130), P.call(92, 122),
 						Color(paper, 0.25), 1.5 * k)
-			"mech_push_box":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(24, 138, 152, 4), Color(paper, 0.14))
-				var bx := 66.0 if pose == 1 else 50.0
-				c.draw_rect(R.call(bx, 52, 84, 84), ink3)
-				c.draw_rect(R.call(bx, 52, 84, 84), Color(paper, 0.55), false, 2.0 * k)
-				c.draw_line(P.call(bx + 12, 64), P.call(bx + 72, 124),
-					Color(paper, 0.18), 2.0 * k)
-				c.draw_line(P.call(bx + 72, 64), P.call(bx + 12, 124),
-					Color(paper, 0.18), 2.0 * k)
-				c.draw_rect(R.call(bx + 6, 58, 72, 5), Color(paper, 0.4))
-				if pose == 1:
-					dashed_rect(c, R.call(24, 52, 84, 84), Color(paper, 0.2), 1.2 * k)
-					codex_char(c, P, "fall", 130, 100, 20)
-					DrawKit.chevron(c, P.call(120, 94), Vector2(-1, 0), 16.0 * k,
-						Color(paper, 0.5), 2.5 * k)
-				else:
-					codex_char(c, P, "fall", 158, 100, 20)
-					DrawKit.chevron(c, P.call(146, 94), Vector2(-1, 0), 14.0 * k,
-						Color(paper, 0.4), 2.5 * k)
 			"mech_ski_patch":
 				codex_stage(c, R, paper)
 				c.draw_rect(R.call(30, 132, 140, 32), Color(Palette.I.blue, 0.2))

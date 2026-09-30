@@ -19,8 +19,8 @@
 
 [node name="LevelRoot" type="Node2D" unique_id=360250994]
 script = ExtResource("1_nl")
-level_name = "第四层真相"
-intro_text = "巨构的最深处:所有机关同时运转,像一场排练了无数次的演出。刻度的主人,快要露面了。"
+level_name = "巨构深处"
+intro_text = "巨构的最深处:加速门、移动平台与限时桥同时运转——一路学过的机关,在这里合演一场。"
 roster = Array[int]([0, 1, 2])
 level_size = Vector2(6400, 1200)
 kill_y = 1400.0

@@ -10,7 +10,6 @@ var _portrait_tex: UiGlyph
 var _name_label: Label
 var _full_label: Label
 var _role_tag: PanelContainer
-var _quote_label: Label
 var _stats_box: VBoxContainer
 var _traits_box: VBoxContainer
 
@@ -59,12 +58,6 @@ func build(p, page: Control) -> void:
 	right.add_child(_full_label)
 	right.add_child(Ui.rule(640, 2))
 
-	_quote_label = Ui.l("", 18, Ui.LIGHT, Color(Palette.I.paper, 0.85),
-		HORIZONTAL_ALIGNMENT_LEFT, false, 6)
-	_quote_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_quote_label.custom_minimum_size = Vector2(640, 0)
-	right.add_child(_quote_label)
-
 	var stats_title := Ui.l("属性 ATTRIBUTES(条 = 加成档位:0 基础 · +1~+4 每档 +25% · −1 锁定 · 状态-1 天生没有)",
 		13, Ui.LIGHT, Palette.I.dim)
 	right.add_child(stats_title)
@@ -88,7 +81,6 @@ func refresh() -> void:
 	(_role_tag.get_child(0) as Label).text = gd.role
 	(_role_tag.get_child(0) as Label).label_settings = Ui.ls(15, Ui.HEAD, Color.WHITE)
 	_role_tag.add_theme_stylebox_override("panel", Ui.sb(gd.color, 0, null, 0, 14, 5))
-	_quote_label.text = gd.quote
 	panel._index_label.text = "%d / %d" % [panel.current + 1, Geometries.ALL.size()]
 
 	for c in _stats_box.get_children():

@@ -16,7 +16,7 @@
 [node name="LevelRoot" type="Node2D" unique_id=1837958236]
 script = ExtResource("1_nl")
 level_name = "代价"
-intro_text = "每一次重拼,都要消耗一段红色刻度。这一关,桥会塌,箱要推——代价第一次看得见。"
+intro_text = "桥会塌,等它回来——代价第一次看得见。"
 roster = Array[int]([0, 1, 2])
 level_size = Vector2(4800, 1200)
 kill_y = 1400.0
@@ -79,11 +79,6 @@ position = Vector2(1400, 700)
 script = ExtResource("10_oyjqw")
 text = "限时桥:塌之前过"
 
-[node name="HintMarker1" type="Node2D" parent="." unique_id=2080807743 instance=ExtResource("17_hint")]
-z_index = 4
-position = Vector2(3100, 700)
-script = ExtResource("10_oyjqw")
-text = "推箱垫脚:代价是慢"
 [node name="EditorMap" type="Sprite2D" parent="." unique_id=1063748183]
 visible = false
 centered = false

@@ -14,7 +14,7 @@
 [node name="LevelRoot" type="Node2D" unique_id=2063241555]
 script = ExtResource("1_nl")
 level_name = "跃 · 为自己折"
-intro_text = "第一次,跃不接住自己。深谷底下没有尖刺,只有同伴铺好的平台。"
+intro_text = "第一次,跃不接住自己——深谷底下没有尖刺,只有记录点接住每一次坠落。"
 focus = 1
 roster = Array[int]([1])
 level_size = Vector2(3200, 1200)
@@ -48,7 +48,7 @@ geo_index = 1
 z_index = 4
 position = Vector2(1200, 620)
 script = ExtResource("8_h5jw4")
-text = "跳下去:谷底有人接"
+text = "跳下去:谷底有记录点接住"
 
 [node name="HintMarker1" type="Node2D" parent="." unique_id=640800166 instance=ExtResource("14_hint")]
 z_index = 4

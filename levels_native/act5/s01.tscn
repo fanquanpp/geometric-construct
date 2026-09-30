@@ -14,7 +14,7 @@
 [node name="LevelRoot" type="Node2D" unique_id=1137823327]
 script = ExtResource("1_nl")
 level_name = "刻度长廊"
-intro_text = "第四幕开演:长廊两壁满是红色刻度,密得数不清。它量过很多次终点。"
+intro_text = "第四幕开演:长廊两壁满是红色刻度,密得数不清——每一段,都在丈量离终点的距离。"
 roster = Array[int]([0, 1, 2])
 level_size = Vector2(4800, 1200)
 kill_y = 1400.0

@@ -201,7 +201,8 @@ func show_intro(kicker: String, def: Dictionary) -> void:
 	_layout_intro_skip.call_deferred()
 	_intro_tween = create_tween()
 	_intro_tween.tween_property(_intro, "modulate:a", 1.0, 0.5)
-	_intro_tween.tween_interval(3.6)
+	# 停留 1.8s(v0.58.0 用户令:开场卡显示时间缩短一半,原 3.6s)
+	_intro_tween.tween_interval(1.8)
 	_intro_tween.tween_property(_intro, "modulate:a", 0.0, 0.7)
 	_intro_tween.tween_callback(func() -> void:
 		_intro.visible = false

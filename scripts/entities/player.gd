@@ -369,10 +369,6 @@ func _note_pitch() -> float:
 	return Sfx.note_ratio(def.note)
 
 
-func quote_text() -> String:
-	return def.quote
-
-
 func display_name() -> String:
 	return def.name
 

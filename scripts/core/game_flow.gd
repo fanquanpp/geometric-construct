@@ -69,8 +69,6 @@ func start_level(index: int, intro := true) -> void:
 			else "正戏"
 		main._hud.show_intro("%s · 第 %d 场 · %s" % [act_name, LevelData.scene_no_of(current),
 			Geometries.get_def(level_info["focus"]).full_name], level_info)
-		var focus: GeometryDef = Geometries.get_def(level_info["focus"])
-		main._hud.narration(focus.quote, focus.color, 3.8)
 	main._switch_to(0, true)
 	main.race.reset()
 	main.ghost.on_level_started(current)

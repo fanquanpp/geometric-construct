@@ -16,7 +16,6 @@ const MAX_JUMPS := 2
 @export var shape: Shape = Shape.SQUARE
 @export var color: Color = Color.WHITE
 @export var role: String = ""
-@export var quote: String = ""
 @export var traits: Array = []
 
 

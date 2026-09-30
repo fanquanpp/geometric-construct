@@ -74,7 +74,6 @@ func switch_to(slot: int, quiet := false) -> void:
 			refresh_roster()
 			if not quiet:
 				Sfx.play("switch")
-				main._hud.narration(p.quote_text(), p.def.color)
 				if main.camera_rig != null:
 					main.camera_rig.on_switch()
 				if main.backdrop != null:

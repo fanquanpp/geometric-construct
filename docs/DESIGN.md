@@ -14,7 +14,7 @@
 | 设计总纲与三支柱 | [design/README.md](design/README.md) |
 | 名词总表(三域名词 / 名册 / 标尺 v2 / 量尺纪律) | [design/glossary.md](design/glossary.md) |
 | 程序化美术(全部 _draw 制图契约 / DrawKit·TerrainArt·CodexArt / 风格契约) | [design/procedural-art.md](design/procedural-art.md) |
-| 几何体角色设计(标尺与利用率 / 手感公约数 / 射程矩阵 / 配合矩阵 / 档案台词) | [design/characters.md](design/characters.md) |
+| 几何体角色设计(标尺与利用率 / 手感公约数 / 射程矩阵 / 配合矩阵;台词已随 v0.58.0 删) | [design/characters.md](design/characters.md) |
 | 特殊建筑物(终点门 / 加速门 / 曲面板 / 移动构件 / 动态构件 / 规划) | [design/structures.md](design/structures.md) |
 | 关卡设计(数据规范 / 写作流程 / 动态地图原则 / 组件语义 v4 / 网格量尺) | [design/levels.md](design/levels.md) |
 | 多人联机(三档连接 / 输入槽 / LAN 发现 / 同步规格 / 中继服) | [design/net.md](design/net.md) |
