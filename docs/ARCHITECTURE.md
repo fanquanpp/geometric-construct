@@ -105,14 +105,10 @@ geometric-construct/
 │       ├── lan_beacon.gd     #   LAN 发现信标(版本+关卡哈希门禁 D7;多网卡按网段广播)
 │       ├── peer_factory.gd   #   ENet peer 唯一创建入口
 │       └── net_config.gd     #   端口/魔数/版本门禁常量
-│   ├── prologue.ks          #   序幕(标题菜单)
-│   ├── act1.ks ~ act5.ks    #   五幕开演剧(幕首进自动播放)
-│   └── epilogue.ks          #   尾声(通关画面播放)
 ├── assets/
-│   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入)
-│   ├── archive/             # 档案几何示例图(200×200 PNG,图鉴唯一运行时
-│   │                        #   素材;v0.48.0 平涂重构,生成器
-│   │                        #   tools/gen_archive.lua,PNG 为孤本可直改)
+│   ├── art/                 # 美术工程源文件(aseprite 等,引擎不导入;
+│   │                        #   2026-09-30 孤本清退后仅剩 icon_construct
+│   │                        #   与 tiles/native_tiles 两个在用源)
 │   ├── brand/               # 品牌图标:Android 启动器 192 + 自适应
 │   │                        #   前景/背景/单色 432(源 icon_construct.aseprite)
 │   ├── fx/                  # backdrop_sky.gdshader(天幕;转场 shader 已于
@@ -120,19 +116,18 @@ geometric-construct/
 │   ├── maps/                # 地图整体图(编辑器占位孤本,烘焙器 tools/bake_level_maps.gd)
 │   ├── tools/level_audit.gd      # 关卡体检器(headless;可达性/门位/机关/高差,--fix 自动扶正)
 │   ├── tiles/               # 关卡图块集 native_tiles.png(tools/gen_tiles.lua 直出)
-│   ├── fonts/               # NotoSansSC 可变字体
-│   └── ui/                  # UI 图标图集 icons.png(64px 网格 5 列,
-│                            #   tools/gen_icons.lua 直出;Ui.icon 切格)
-│                            #   + UI 装饰素材 9 件(角刻框/取景框/触屏
-│                            #   轮盘底形,tools/gen_ui.lua 直出,NEAREST)
+│   └── fonts/               # NotoSansSC 可变字体
+│                            # (assets/archive 图鉴 42 张、assets/ui 图标图集
+│                            #   +装饰 9 件已随 2026-09-30 孤本清退整目录删除:
+│                            #   图鉴/图标/装饰全部 CodexArt·UiGlyph _draw 绘制)
 ├── tools/
 │   ├── gen_tiles.lua        # 图块集生成器(assets/tiles 唯一来源)
 │   ├── restyle_native_acts.gd  # 二~五幕图块重摆(幂等;act2/s01 跳过)
-│   ├── gen_icons.lua        # UI 图标图集生成器(assets/ui/icons.png 唯一来源)
-│   ├── gen_ui.lua           # UI 装饰素材生成器(assets/ui 九件唯一来源)
-│   ├── gen_archive.lua      # 档案插图生成器(assets/archive 43 PNG 唯一来源)
-│   ├── inspect_mech_frames.gd  # 机关正典帧占位框实测(一次性)
+│   ├── clean_waste.py       # 任务收尾清理器(AGENTS 第 8 条:截图/构建物/
+│   │                        #   临时件/孤儿 .import·.uid + 未引用素材报告)
 │   └── scan_tiles.gd        # 图块集逐格审计
+│                            # (gen_icons/gen_ui/gen_archive/inspect_mech_frames
+│                            #   与剧情 stylometry×2 已随 2026-09-30 孤本清退删除)
 ├── tests/                   # 开发用截图 / 验证场景(shot_*.tscn;
 │                            #   native_check / flow_check / trait_check /
 │                            #   recalltest / dualtest / nettest 门禁)

@@ -40,29 +40,27 @@
   现行 = 正戏五幕 26 场全量在演(levels.md §5)。
 - **几何体包**:在 `data/characters/` 追加一份 GeometryDef `.tres`
   (参照 `dash.tres`,全字段 Inspector 可调),并在
-  `scripts/data/geometries.gd` 的 `PATHS` 尾部登记下标,再在图标图集
-  登记一格:改 `tools/gen_icons.lua` 画格再生成 `assets/ui/icons.png`,
-  并在 `scripts/ui/ui.gd` 的 `ICON_CELLS` 登记键名。几何体下标同样只能追加
+  `scripts/data/geometries.gd` 的 `PATHS` 尾部登记下标;图标无需素材——
+  `DrawKit` / `UiGlyph` `_draw` 字形按几何体 id 绘制(旧 icons.png 图集
+  已随 2026-09-30 孤本清退删除)。几何体下标同样只能追加
   (`spawns`/存档按位掩码记录)。
 - **档案几何条目**:建筑物 / 机关图鉴条目是纯字典表(`ArchiveData`),
-  新增条目零代码——补孤本 PNG(见 §4)后改数据表即可。
+  新增条目零素材——数据表登记 + `CodexArt`(`codex_art.gd`)补一条
+  `_draw` 配方即可。
 - 新增实体类型(如新机关):`scenes/world/mechanisms/` 建场景壳(正典帧 Visual
   + @tool 预览),`levels_native/` 拖摆即用——此类变更属于 MINOR。
 
 ## 4. 素材更新
 
-素材分两条互不重叠的管线:
-
-- **UI 图标图集(v0.48.0 SVG 全面退役)**:唯一图标源 =
-  `assets/ui/icons.png`(64px 网格 5 列;aseprite 源
-  `assets/art/icons.aseprite` 由生成器同步写出)。新增 / 改格 =
-  改 `tools/gen_icons.lua` 重新生成,再在 `scripts/ui/ui.gd`
-  `ICON_CELLS` 登记键名;图标一律 flat 单色直角折线,字形用折线。
-- **图鉴插图(档案几何专用)**:成品 PNG 直住 `assets/archive/`
-  (统一 200×200 画布;动态帧加 `_f2`/`_f3` 后缀)——**唯一入引擎的
-  衍生素材目录**,地图 / 实体不得引用;显示纪律见 art-style.md §6.1
-  (源 aseprite 已随 v0.39.0 清退,PNG 为孤本)。
-  地图为引擎原生节点分层(Polygon2D),本条不构成瓦片管线重启。
+- **UI 图标与装饰(`_draw`,无素材文件)**:图标 = `UiGlyph` / `DrawKit`
+  字形绘制;面板框 / 取景角 / 虚拟摇杆等装饰全部 `_draw`。改视觉 = 改
+  `scripts/art/draw_kit.gd` / `codex_art.gd` 对应配方,零贴图。
+  (旧 `assets/ui/` icons.png 图集与装饰 9 件、`assets/art/ui/` 源、
+  `tools/gen_icons.lua` / `gen_ui.lua` 已随 2026-09-30 孤本清退删除。)
+- **图鉴插图(档案几何专用,`_draw`)**:图鉴画面 = `CodexArt`
+  (`scripts/art/codex_art.gd`)程序化配方,零贴图。新增条目 = 数据表
+  登记 + 补配方。旧 `assets/archive/` 43 PNG 与 `tools/gen_archive.lua`
+  已随 2026-09-30 孤本清退删除。
 - **图块集(关卡地形,原生作关)**:aseprite 绘制(100×100 网格)→
   导出 PNG 到 `assets/tiles/`(B 管线:CLI 导出,零插件)→
   `data/tiles/native_tileset.tres` 引用;物理层 / 单向 / 地形集配置
@@ -77,11 +75,10 @@
 - [ ] 存档迁移:删掉 `user://speed-rouge.cfg` 与保留旧档两种情况下,游戏都能正常启动
 - [ ] `tests/native_check` / `tests/flow_check` / `tests/stats_check` / `-- --recalltest` / `-- --dualtest` / `-- --nettest` / `tests/trait_check` 门禁全绿(现役关卡目录)
 - [ ] `--menushot` / `--panelshot`(档案几何全页签)/ `--autoshot=0` / `--tourshot` 截图人工过目(风格锚定不跑偏)
-- [ ] 新增图标走 `tools/gen_icons.lua` 图集管线(改格 → 再生成 →
-	  `ICON_CELLS` 登记);新增图鉴插图改 `tools/gen_archive.lua` 再生成
-	  `assets/archive/` PNG(v0.48.0 生成器直出,孤本可直改);
-	  新增 UI 装饰件改 `tools/gen_ui.lua` 再生成 `assets/ui/` PNG
-	  (v0.49.0 生成器直出:角刻框 / 取景框 / 触屏轮盘底形)
+- [ ] 新增图标 / 图鉴插图 / UI 装饰走 `_draw` 配方(DrawKit / CodexArt /
+	  UiGlyph),零贴图;新增机关 = 场景壳 `_draw` 正典形态
+- [ ] 交付前运行 `python tools/clean_waste.py`(AGENTS 第 8 条:清截图 /
+	  构建物 / 临时件 / 孤儿 .import·.uid,过目未引用素材报告)
 - [ ] Android:导出段显式 `texture_format/etc2_astc=true`(export_presets.cfg 已声明)、`rendering/viewport/hdr_2d` 关闭
 - [ ] Android 真机抽查:`--perflog` 基线 + `dumpsys gfxinfo` 帧时间无异常 jank
 

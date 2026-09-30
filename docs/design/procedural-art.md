@@ -1,10 +1,14 @@
 # 程序化美术 · PROCEDURAL ART(_draw 全量制图 v1)
 
-> 状态:**现行(2026-09-29)**· 用户拍板:全部关卡美术(素材 / 地图房间 /
-> 机关 / 特效 / 动画 / 图鉴内容)一律 `_draw` 程序化生成;原 PNG 素材
-> **保留孤本、不入渲染**。旧美术规范文档(art-style / art-audio /
-> atmosphere / motion / fx-light-uiux / redraw-lighting / presentation /
-> ui 总纲)已整体删除,其约束全部废止——本档是视觉侧唯一现行契约。
+> 状态:**现行(2026-09-29;2026-09-30 孤本清退修订)**· 用户拍板:全部
+> 关卡美术(素材 / 地图房间 / 机关 / 特效 / 动画 / 图鉴内容)一律
+> `_draw` 程序化生成;**未被引擎引用的旧 PNG/aseprite 已于 2026-09-30
+> 全部删除**(图鉴 42 张、UI 装饰 12 张、icons 图集、art/ui 全部源、
+> 死生成器 gen_archive/gen_icons/gen_ui;仍被引用者保留:图块集
+> native_tiles.png、编辑器整图 assets/maps、brand 图标、字体)。旧美术
+> 规范文档(art-style / art-audio / atmosphere / motion / fx-light-uiux /
+> redraw-lighting / presentation / ui 总纲)已整体删除,其约束全部废止
+> ——本档是视觉侧唯一现行契约。
 > 色板唯一来源仍是 `data/palette.tres`(Palette);文字渲染仍走
 > `assets/fonts/NotoSansSC-VF.ttf`(字体不是贴图)。
 
@@ -16,7 +20,7 @@
 | 「装饰零弧线令」(宪法 §2/§5) | **废止**(弧线/折线由各绘制配方自定) |
 | 「彻底删除 _draw 制图的地图生成」(native-levels 旧拍板②) | **废止,反向**:地图渲染 = `_draw` |
 | 「机关壳必须烘焙正典帧 Visual 素材」(旧 R4) | 改为:机关壳 `_draw` 正典形态,`@tool` 预览保留 |
-| gen_*.lua 素材管线 | 停用(生成物保留为历史孤本) |
+| gen_*.lua 素材管线 | **已删除**(2026-09-30 孤本清退:gen_archive / gen_icons / gen_ui 生成物零引用,随批删;gen_tiles 保留,产出在用) |
 
 ## 1. 架构(四件套)
 

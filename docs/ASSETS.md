@@ -1,10 +1,11 @@
 # 游戏名词与资产总账 · NAMES & ASSETS
 
-> 状态:现行(v0.53.0 · 2026-09-29)· 游戏内全部命名实体的**分类统计速查**:
-> **v0.53.0 起全部美术改 `_draw` 程序化生成**(procedural-art.md):
-> 下表 PNG/aseprite 条目全部转为**保留孤本**——文件在库、引擎不再引用
-> (图块集 TileSet 的碰撞语义仍生效,贴图不渲染)。
-> 几何体 / 建筑物 / 机关物 / 剧情标题 / 关卡与幕 / 系统命名 / 资产文件。
+> 状态:现行(v0.56.0 · 2026-09-30)· 游戏内全部命名实体的**分类统计速查**:
+> **v0.53.0 起全部美术改 `_draw` 程序化生成**(procedural-art.md);
+> **2026-09-30 用户拍板孤本清退**:未被引擎引用的 PNG/aseprite 全部删除
+> (图鉴 42 张 / UI 装饰 12 张 / icons 图集 / art/ui 全部源 / 死生成器),
+> 仅保留仍被引用者(图块集 / 编辑器整图 assets/maps / brand 图标 / 字体)。
+> 几何体 / 建筑物 / 机关物 / 关卡与幕 / 系统命名 / 资产文件。
 > 本文只做**登记与计数**,不做设计展开;数值与语义的权威在对应文档与代码。
 > 术语定义见 `docs/design/glossary.md`(名词三域唯一权威);
 > **与代码数据表(`scripts/data/*.gd`)不一致时,以代码为准并回改本文。**
@@ -18,17 +19,17 @@
 | 建筑物图鉴 | 15(6 既有 + 9 件 Kit 构件 v0.36 补绘)| `scripts/data/archive_data.gd` BUILDINGS |
 | 机关物图鉴 | 13(全部实装;传送对 v0.27 / 记录点信标 v0.36)| `archive_data.gd` MECHS |
 | 机关物(立项 / 规划未入图鉴) | 2(充电桩 / 反重力门)| `glossary.md` §2 |
-| 剧情篇目 | 7(= `story/*.ks`)| `archive_data.gd` STORIES |
+| ~~剧情篇目~~ | ~~7~~ | ~~`story/*.ks`(已删 v0.56.0)~~ |
 | 幕(现行) | 5(第一~第五幕,正戏全量)| `scripts/data/level_data.gd` ACTS |
 | 幕(七幕主纲) | 7(5 已演 + 序幕/落幕剧本)| `story.md` §1.5 |
 | 关卡(在演) | 26(五幕全战役 native)+ dev/probe 探针 | `levels_native/act1..act5/*.tscn` | v0.45 换代:JSON 26 关管线退役(归档 git 历史);一/二幕用户重摆中 |
 | ~~测试道~~ | ~~2~~ | ~~trial_v5 / pair_trial~~ | v0.44.0 清退(测试关内容清退令)|
-| 图鉴插图(入引擎) | 42 张 png(**v0.48.0 生成器重构**,平涂构成主义;v0.55.0 删 geo_roll)| `assets/archive/` |
+| ~~图鉴插图(入引擎)~~ | ~~42 张 png~~ | ~~`assets/archive/`~~ | **2026-09-30 孤本清退**(用户令):图鉴画面全由 CodexArt `_draw` 绘制,42 张 PNG 零运行时引用,整目录删除;`data/mech/portal_frames.tres`(自身零引用)随批删 |
 | 地图整体图(编辑器占位) | 24 张 png(v0.55.0 新增,`tools/bake_level_maps.gd` 烘焙)| `assets/maps/` |
-| 图块集(入引擎) | 1(native_tiles.png,224 格 16 列×14 行)| `assets/tiles/` | v0.45 原生作关唯一图块素材,图位契约 levels.md §0;PNG 为孤本,生成器 `tools/gen_tiles.lua` 同批入库;**不在 v0.46 重绘轮**(坐标契约与物理层绑定,以 e6c5b1d 审计终态为准) |
-| aseprite 源 | 5 个(icon_construct 1 + native_tiles 1 + icons 1 + ui 卡框 2)| `assets/art/`、`assets/art/ui/` | v0.48.0 起 icons.aseprite = 全部 UI 图标的唯一源;v0.46.0 清退 mech 精灵源 12 + strip 12;v0.39.0 清退地图皮源 30 + 图鉴源 33 |
+| 图块集(入引擎) | 1(native_tiles.png,224 格 16 列×14 行)| `assets/tiles/` | v0.45 原生作关唯一图块素材,图位契约 levels.md §0;PNG 为 TileSet 贴图(`data/tiles/native_tileset.tres` 引用),生成器 `tools/gen_tiles.lua` 保留;**不在 v0.46 重绘轮**(坐标契约与物理层绑定,以 e6c5b1d 审计终态为准) |
+| aseprite 源 | 2 个(icon_construct 1 + native_tiles 1)| `assets/art/` | 2026-09-30 清退后仅剩在用产出之源;v0.46.0 清退 mech 精灵源 12 + strip 12;v0.39.0 清退地图皮源 30 + 图鉴源 33 |
 | 音频数据 .tres | 34(data/music 6 + data/sfx 28)| `data/music/`、`data/sfx/` | M-7/M-8 数值资源化(v0.38):BGM motif 与音效规格全 @export,Inspector 直调 |
-| ~~svg 图标~~ | ~~18~~ | ~~`assets/svg/`~~ | **v0.48.0 SVG 全面退役**(用户令):UI 图标 = `assets/ui/icons.png` 图集(aseprite 源 `assets/art/icons.aseprite`,生成器 `tools/gen_icons.lua`) |
+| ~~svg 图标~~ | ~~18~~ | ~~`assets/svg/`~~ | v0.48.0 SVG 退役;其替代 `assets/ui/icons.png` 图集亦已随 2026-09-30 孤本清退删除(UI 图标现为 UiGlyph `_draw` 字形) |
 | 字体 | 1(NotoSansSC-VF)| `assets/fonts/` |
 
 ## 1. 几何体(角色)
@@ -46,13 +47,13 @@
 | 柒 | 待定 | 待定 | — | — | C5(高音 do) | 待定 | — | — |
 
 - 伍占**两个编号、一座几何体**:界 / 边必定同时存在,切换循环中各占一位。
-- 平面肖像源:`assets/ui/icons.png` 图集 `characters/*` 格(5 枚;
-  aseprite 源 `assets/art/icons.aseprite`,生成器 `tools/gen_icons.lua`)。
+- 平面肖像:无贴图——CodexArt `_draw` 字形绘制(`scripts/art/codex_art.gd`);
+  旧 `assets/ui/icons.png` 图集已于 2026-09-30 孤本清退删除。
 
 ## 2. 建筑物图鉴(地形、景观与 Kit 构件 · 15)
 
-来源 `archive_data.gd` BUILDINGS;`bld_*` 已随 v0.46.0 构成主义重绘
-(PNG 孤本直改,生成器 `tools/gen_archive.lua`)。
+来源 `archive_data.gd` BUILDINGS;画面全部由 CodexArt `_draw` 绘制
+(旧 `bld_*` PNG 已随 2026-09-30 孤本清退删除)。
 
 | id | 中文名 | 英文副题 | 分类 | 一句话 |
 |---|---|---|---|---|
@@ -90,7 +91,7 @@ Visual 正典帧精灵,参数化机关脚本 `@tool` 预览随导出参数实时
 | `mech_timed_bridge` | 限时桥 | TIMED BRIDGE | 机关 · 节拍 | 2 帧动态(实心 / 虚化)| 实装 v0.15 |
 | `mech_piano_tile` | 钢琴砖 | PIANO TILE | 机关 · 演奏 | 两态(常态 / 触发)| 实装 v0.15 |
 | `mech_checkpoint` | 记录点信标 | CHECKPOINT | 机关 · 存续 | 两态(未激活 / 激活)| 实装 v0.36(召回管线 v0.17)|
-| `mech_portal` | 传送对 | PORTAL | 机关 · 穿越 | 3 帧动态(闭合 / 开启 / 脉冲)| 实装 v0.27;v0.46 起 SpriteFrames 循环(`data/mech/portal_frames.tres`)|
+| `mech_portal` | 传送对 | PORTAL | 机关 · 穿越 | 3 帧动态(闭合 / 开启 / 脉冲)| 实装 v0.27;画面 = CodexArt `_draw`(旧 SpriteFrames `data/mech/portal_frames.tres` 自身零引用,已随 2026-09-30 清退删除)|
 | `mech_push_box` | 推箱 | PUSH BOX | 机关 · 解谜 | 单帧 | 实装 v0.27 |
 | `mech_ski_patch` | 滑雪带 | SKI PATCH | 机关 · 地形 | 两态(常态 / 滑雪)| 实装 v0.27 |
 | `mech_launch_pad` | 弹射板 | LAUNCH PAD | 机关 · 弹射 | 单帧 | 实装 v0.27 |
@@ -162,7 +163,7 @@ recalltest / dualtest / trait_check。
 | 几何构成 | GEOMETRIC CONSTRUCT | 游戏名;仓库 `geometric-construct` |
 | ~~重跑~~ | ~~RE-RUN~~ | ~~肉鸽模式名~~ v0.45.0 清退 |
 | 剧目 | REPERTOIRE | 主页一级目录(幕列表),二级为关卡列 |
-| 档案几何 | ARCHIVE GEOMETRY(`ArchivePanel`)| 五页签全面档案库:几何体 / 建筑物图鉴 / 机关图鉴 / 键位指南(多端一册)/ 剧情回顾 |
+| 档案几何 | ARCHIVE GEOMETRY(`ArchivePanel`)| 四页签全面档案库:几何体 / 建筑物图鉴 / 机关图鉴 / 键位指南(多端一册);剧情页签已随 v0.56.0 删剧情退役 |
 | 召回 | R 键 / 检查点召回 | 回到最近记录点(不重置关卡;区别于暂停页重开)|
 | 属性标尺 v2 | — | 六属性:基础速度 / 弹性 / 跳高 / 重量 / 负载 / 门后极速;基准 2.0,-1.0 = 关闭 |
 
@@ -177,17 +178,17 @@ recalltest / dualtest / trait_check。
 | 资产 | 数量 | 路径 | 说明 |
 |---|---|---|---|
 | ~~几何体肖像 svg~~ | ~~5~~ | ~~`assets/svg/characters/`~~ | v0.48.0 退役 → 图集 `characters/*` 格(`assets/ui/icons.png`,生成器 `tools/gen_icons.lua`) |
-| 图鉴插图 png | **43** | `assets/archive/` | 建筑 15 + 几何体 4(geo_roll.png 已随删圆退役)+ 机关 23 帧(含 `_f2/_f3` 动态帧);唯一入引擎目录,统一 200×200;**v0.46.0 全量重绘**(构成主义统一法相;v0.48.0 平涂重构,生成器 `tools/gen_archive.lua`) |
+| ~~图鉴插图 png~~ | ~~43~~ | ~~`assets/archive/`~~ | **2026-09-30 孤本清退删除**(建筑 15 + 几何体 4 + 机关 23 帧,含 portal 3 帧与 portal_frames.tres);图鉴画面 = CodexArt `_draw`,零运行时引用实证后整目录删除 |
 | ~~图鉴 aseprite 源~~ | ~~33~~ | ~~`assets/art/tiles_v2/`~~ | v0.39.0 清退(三套自研分层系统退役);assets/archive PNG 为孤本 |
 | ~~关卡美术层~~ | ~~30~~ | ~~`assets/assets/levels/`~~ | v0.39.0 清退:地图皮与语义层 PNG 全退,渲染 = 引擎原生节点分层(v0.43.0,levels.md §0) |
 | ~~机关精灵图库~~ | ~~12 源 + 12 条带~~ | ~~`assets/art/mech/`~~ | v0.46.0 清退(死库存:为已废弃的 _draw→AnimatedSprite2D 迁移备料,39 帧零引用);运行时唯一机关素材 = assets/archive 正典帧 |
 
 | 游戏图标 | 7 | `icon.png`(256,根)+ `assets/brand/`:`icon_192` + `icon_fg/bg/mono_432`(源 `assets/art/icon_construct.aseprite`)| 构成徽章 v3:墨底幽灵菱线 + 构成红斜面菱芯 + 四纸白卫星(菱/三角/圆/方);432 母版 ×4 整数导出,安全区内构图(v0.28.1,Android 启动器四字段已接线)|
-| UI 图标图集 | 1(18 格)| `assets/ui/icons.png` | v0.48.0 替代全部 SVG;源 = `assets/art/icons.aseprite`(gen_icons.lua)|
-| UI 装饰素材 | 9 | `assets/ui/` | v0.49.0 像素画绘制:开场卡框 / 面板框九宫格 / 取景角标 / 触屏轮盘底形×6;源 = `assets/art/ui/*.aseprite`(gen_ui.lua 直出),消费端 NEAREST |
+| ~~UI 图标图集~~ | ~~1(18 格)~~ | ~~`assets/ui/icons.png`~~ | v0.48.0 替代 SVG;**2026-09-30 孤本清退删除**(UI 图标现行 = UiGlyph `_draw` 字形)|
+| ~~UI 装饰素材~~ | ~~9~~ | ~~`assets/ui/`~~ | v0.49.0 像素画绘制;**2026-09-30 孤本清退删除**(装饰现行 = `_draw`:面板框 / 取景角 / 虚拟摇杆等,procedural-art §1)|
 | 关卡图块集 | 1 | `assets/tiles/native_tiles.png` | 224 格 16×14,gen_tiles.lua 直出;TileSet = `data/tiles/native_tileset.tres` |
 | 字体 | 1 | `assets/fonts/NotoSansSC-VF.ttf` | 思源黑体可变字重(全游戏唯一字体)|
-| 剧情脚本 | 7 | `story/*.ks` | 与 §5 篇目一一对应 |
+| ~~剧情脚本~~ | ~~7~~ | ~~`story/*.ks`~~ | v0.56.0 删剧情已删(用户拍板「不再有剧情」);§5 篇目表仅存历史登记 |
 | 关卡场景 | 27 | `levels_native/` | 五幕 26 场 + dev/probe 探针(v0.45.0;~~levels/*.json 26~~ 已清退)|
 
 ## 9. 权威来源对照

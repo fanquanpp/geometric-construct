@@ -2,6 +2,65 @@
 
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 
+## 清理批 · 孤本素材清退 + 收尾清理常态化(2026-09-30,无版本号)
+
+用户令:「清理项目里没有使用的各种素材,特别是档案几何里面的那些图鉴;
+删除干净本地构建物、垃圾文件、截屏、废弃物;以后每次任务完成都自动清理一次。」
+
+### 移除 · 孤本素材与死工具(128 个跟踪文件,全部零运行时引用实证)
+
+- `assets/archive/` 整目录 42 张图鉴 PNG(v0.53.0 起图鉴全由 CodexArt
+  `_draw` 绘制,PNG 即孤本;含 mech_portal 3 帧——唯一引用方
+  `data/mech/portal_frames.tres` 自身也零引用,整条传送门贴图链全死,
+  一并删除);配套 42 个 `.import`。
+- `assets/ui/` 整目录 12 张:`icons.png` 图标图集(UiGlyph 字形化后无消费)
+  + card/panel/poster/intro 卡框 + viewfinder 取景角 + 触屏摇杆 6 件
+  (摇杆已 `_draw` 化)。
+- `assets/art/icons.aseprite` + `assets/art/ui/` 11 个 aseprite 源
+  (对应产出全死,源同步清退);`data/mech/` 目录随 portal_frames 删除。
+- tools 死工具 7 件:`gen_archive.lua` / `gen_icons.lua` / `gen_ui.lua`
+  (产物全删)、`inspect_mech_frames.gd`(唯一用途是 load archive PNG)、
+  `ks_stylometry.py` / `zato_stylometry.py`(剧情文本分析,story/*.ks
+  已随 v0.56.0 删除,输入不复存在)。
+- 本地未跟踪 34M:`addons/konado`(v0.56.0 已停用的剧情插件)整目录删除;
+  **连带发现 project.godot 残留 `KND_I18n` autoload(UID 指向 konado,
+  停用时漏删,此前每次运行都在实例化它)——已删行**。
+- v0.56.0 删剧情漏网:`boot_intro.gd.uid` / `story_layer.gd.uid` 两个
+  孤儿 `.uid` 清掉(脚本已删、元数据残留)。
+
+### 新增 · 收尾清理常态化(AGENTS 第 8 条,用户拍板常设)
+
+- `tools/clean_waste.py`:任务收尾一键清理——删 `.shots*` 截图、
+  `build/` 与散落 APK、`*.tmp/*.bak/__pycache__` 等临时件、孤儿
+  `.import`/`.uid`,并打印未引用素材报告(孤儿 / 仅生成器文档提及的
+  疑似孤儿,后者即「生成器引用不算使用」甄别口径);词干匹配兜住
+  动态路径拼接(editor_map_placeholder 的 `%s.png` 一类),试运行
+  误报已核正:maps 24 张(动态拼名)、brand 4 张(export_presets)、
+  native_tiles(tileset 引用)均为在用。
+- AGENTS.md 固定要求新增第 8 条:每次任务交付前必须跑
+  `python tools/clean_waste.py`,报告出的未引用素材甄别后删除或登记。
+
+### 变更 · 文档换代
+
+- procedural-art.md:头部「保留孤本」条款改写为「孤本已清退」,§0
+  生成器表 gen_archive/gen_icons/gen_ui 标记已删除(gen_tiles 保留)。
+- ASSETS.md:头部声明、§0 计数、§1 肖像源、§2 生成器行、§3 传送对行、
+  §7 档案五页签→四页签(v0.56.0 漏改)、§8 统计表全部换代;剧情篇目
+  行标记 v0.56.0 已删。
+- ARCHITECTURE.md:目录树删 story .ks 三行(v0.56.0 漏删)、archive/ui
+  目录与四个死生成器改为清退注记,增 clean_waste.py 条目。
+- UPDATE.md:几何体包 / 档案条目 / §4 素材管线 / §5 检查单全部从
+  「生成器直出 PNG」换代为「_draw 配方零贴图」,增 clean_waste 检查项。
+
+### 验收
+
+- `--headless --import` 零错误;native_check ALL PASS(25 关)+
+  flow_check PASS,且删除后无任何资源缺失报错;UID 兜底校验:被删
+  文件无 UID 残留引用(git 暂存区提取 ∩ 现存引用 = 空)。
+- 保留判据逐项核实:图块集 native_tiles.png(tileset .tres 引用)、
+  assets/maps 24 张(EditorMapPlaceholder 动态拼名)、brand 图标 4 张
+  (export_presets launcher_icons)、字体、fx shader、根 icon.png。
+
 ## v0.56.0 · 删剧情 + 转场隐身修复 + 关卡体检常态化(2026-09-29)
 
 用户 PC 编辑器实测报障第三批:通关文字错位 / 地块高度不水平 / 多处死关 /
