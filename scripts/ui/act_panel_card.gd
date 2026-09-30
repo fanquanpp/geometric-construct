@@ -167,7 +167,27 @@ func _populate_rows(idx: int) -> void:
 		status.offset_left = -122
 		status.offset_right = -14
 		status.offset_top = (54.0 - 24.0) / 2.0
+	_wire_rows_focus()
 	_level_hint.text = ""
+
+
+# 卡片内闭合焦点图(v0.56.2):行间上下链 + 末行/返回钮互达,首行上缘与
+# 全部左右自指——杜绝十字键逃出模态卡片选中底层菜单按钮。
+func _wire_rows_focus() -> void:
+	if _row_list.is_empty():
+		return
+	for i in _row_list.size():
+		var b: Button = _row_list[i]
+		b.focus_neighbor_left = b.get_path_to(b)
+		b.focus_neighbor_right = b.get_path_to(b)
+		b.focus_neighbor_top = b.get_path_to(_row_list[i - 1]) if i > 0 \
+			else b.get_path_to(b)
+		b.focus_neighbor_bottom = b.get_path_to(_row_list[i + 1]) \
+			if i < _row_list.size() - 1 else b.get_path_to(_back_btn)
+	_back_btn.focus_neighbor_top = _back_btn.get_path_to(_row_list[_row_list.size() - 1])
+	_back_btn.focus_neighbor_bottom = _back_btn.get_path_to(_back_btn)
+	_back_btn.focus_neighbor_left = _back_btn.get_path_to(_back_btn)
+	_back_btn.focus_neighbor_right = _back_btn.get_path_to(_back_btn)
 
 
 func error_feedback_row(li: int) -> void:
@@ -197,6 +217,7 @@ func _add_wip_row(k: int) -> void:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(700, 54)
 	b.modulate = Color(1, 1, 1, 0.28)
+	b.focus_mode = Control.FOCUS_NONE
 	Ui.glyph_row(b, "ui/none", 26.0,
 		"%02d   —— 未上演 · 排练中 ——" % (k + 1), Ui.HEAD, 19)
 	Ui.wire_button(b, "ui_error")

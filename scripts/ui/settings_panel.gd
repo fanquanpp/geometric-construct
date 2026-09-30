@@ -268,6 +268,8 @@ func open() -> void:
 	Sfx.play("ui_open")
 	_sync_from_settings()
 	_root.visible = true
+	# 手柄/键盘开面板即入面板(首项:轮盘布局),A 键不再穿透到底层菜单
+	_wheel_fixed_btn.grab_focus()
 	if _tween != null:
 		_tween.kill()
 	_shade.modulate.a = 0.0

@@ -92,6 +92,11 @@ func close() -> void:
 	_root.visible = false
 
 
+func grab_resume() -> void:
+	# 面板(档案/设置)自暂停菜单打开又关闭后,焦点归还「继续」
+	_resume.grab_focus()
+
+
 func _input(ev: InputEvent) -> void:
 	if not _root.visible:
 		return

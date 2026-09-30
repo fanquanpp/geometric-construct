@@ -10,6 +10,7 @@ var _tween: Tween
 var _root: Control
 var _content: Control
 var _shade: ColorRect
+var _close_btn: Button
 
 
 func _ready() -> void:
@@ -102,6 +103,7 @@ func _build_page() -> void:
 	close_btn.add_theme_font_size_override("font_size", 15)
 	Ui.wire_button(close_btn)
 	close_btn.pressed.connect(func() -> void: close())
+	_close_btn = close_btn
 	close_btn.anchor_left = 1.0
 	close_btn.anchor_right = 1.0
 	close_btn.anchor_top = 1.0
@@ -184,6 +186,8 @@ func open() -> void:
 	Sfx.play("ui_open")
 	_fit_content()
 	_root.visible = true
+	# 手柄/键盘开面板即入面板(关闭钮),杜绝 A 键穿透到底层菜单
+	_close_btn.grab_focus()
 	if _tween != null:
 		_tween.kill()
 	_shade.modulate.a = 0.0

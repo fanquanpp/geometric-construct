@@ -244,6 +244,8 @@ func open(index := 0, tab := "geo") -> void:
 	_fit_content()
 	_root.visible = true
 	_apply_tab()
+	# 手柄/键盘开面板即入面板(当前页签),A 键不再穿透到底层菜单
+	(_tab_btns[_tab] as Button).grab_focus()
 	if _tween != null:
 		_tween.kill()
 

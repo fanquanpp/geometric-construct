@@ -141,7 +141,62 @@ func _ready() -> void:
 	Adaptive.fit_design(_content)
 	root.resized.connect(func() -> void: Adaptive.fit_design(_content))
 
+	_wire_focus()
 	_play_entrance()
+
+
+func _wire_focus() -> void:
+	# 手柄/键盘焦点图全显式(v0.56.2):引擎自动寻邻在本版式会把
+	# 双人竞速/键位指南的左右导航吸到跨排的「开始/继续」上(十字键真值
+	# 表实证),故底部按钮网格与剧目行上下链全部钉死;自指 = 原地不动。
+	var rows: Array = _act_btns
+	for i in rows.size():
+		var r: Button = rows[i]
+		r.focus_neighbor_left = r.get_path_to(r)
+		r.focus_neighbor_right = r.get_path_to(r)
+		r.focus_neighbor_top = r.get_path_to(rows[i - 1]) if i > 0 else r.get_path_to(r)
+		r.focus_neighbor_bottom = r.get_path_to(rows[i + 1]) if i < rows.size() - 1 \
+			else r.get_path_to(_start_btn)
+	_pin_focus(_start_btn, _start_btn, _start_btn, rows[rows.size() - 1], _dual_btn)
+	_pin_focus(_keys_btn, _keys_btn, _dual_btn, _start_btn, _panel_btn)
+	_pin_focus(_dual_btn, _keys_btn, _dual_btn, _start_btn, _settings_btn)
+	_pin_focus(_panel_btn, _panel_btn, _settings_btn, _keys_btn, _panel_btn)
+	_pin_focus(_settings_btn, _panel_btn, _settings_btn, _dual_btn, _settings_btn)
+
+
+func _pin_focus(b: Button, l: Button, r: Button, t: Button, d: Button) -> void:
+	b.focus_neighbor_left = b.get_path_to(l)
+	b.focus_neighbor_right = b.get_path_to(r)
+	b.focus_neighbor_top = b.get_path_to(t)
+	b.focus_neighbor_bottom = b.get_path_to(d)
+
+
+# 模态(面板/卡片)开启期间把菜单侧全部按钮摘出焦点集,关闭时归还并
+# 回到记忆中的按钮——根治「卡片开着能选中开始钮」与「面板关闭后焦点
+# 死亡」两类穿透/失联。
+var _focus_memory: Control
+
+
+func set_menu_focusable(on: bool) -> void:
+	var all: Array = _act_btns.duplicate()
+	for b: Button in [_start_btn, _dual_btn, _keys_btn, _panel_btn, _settings_btn]:
+		all.append(b)
+	if on:
+		for b: Button in all:
+			b.focus_mode = Control.FOCUS_ALL
+		var target: Control = _focus_memory
+		if target == null or not is_instance_valid(target) \
+				or target.focus_mode != Control.FOCUS_ALL:
+			target = _act_btns[clampi(_last_act, 0, _act_btns.size() - 1)]
+		_focus_memory = null
+		if _root.visible:
+			target.grab_focus()
+	else:
+		var owner_c: Control = get_viewport().gui_get_focus_owner()
+		if owner_c != null and owner_c in all:
+			_focus_memory = owner_c
+		for b: Button in all:
+			b.focus_mode = Control.FOCUS_NONE
 
 
 func _floaters_node(i: int) -> UiGlyph:
@@ -213,11 +268,15 @@ func _on_level_pressed(li: int) -> void:
 
 func _open_dual_pick() -> void:
 	Sfx.play("ui_open")
+	set_menu_focusable(false)
 	_dual_pick.open_card(Adaptive.is_touch_mode())
 
 
 func close_dual_pick() -> void:
+	if not _dual_pick.is_open():
+		return
 	_dual_pick.close_card()
+	set_menu_focusable(true)
 
 
 func is_dual_pick_open() -> bool:
@@ -226,6 +285,7 @@ func is_dual_pick_open() -> bool:
 
 func _open_act_panel(idx: int) -> void:
 	_act_idx = idx
+	set_menu_focusable(false)
 	_act_panel.open_act(idx, _unlocked)
 
 
@@ -234,6 +294,7 @@ func close_act_panel() -> void:
 		return
 	_act_idx = -1
 	_act_panel.close_panel()
+	set_menu_focusable(true)
 
 
 func act_level_digit(digit: int) -> void:

@@ -81,6 +81,7 @@ var _level_info: Dictionary:
 var debug_solo := false
 
 var _held_keys := {}
+var _panel_opener := ""
 
 
 var _auto_test := false
@@ -144,6 +145,10 @@ func _ready() -> void:
 	add_child(controls_panel)
 	settings_panel = SETTINGS_SCENE.instantiate() as SettingsPanel
 	add_child(settings_panel)
+	# 面板关闭 → 焦点归还打开方(菜单记忆位 / 暂停「继续」)
+	archive_panel.closed.connect(_on_top_panel_closed)
+	controls_panel.closed.connect(_on_top_panel_closed)
+	settings_panel.closed.connect(_on_top_panel_closed)
 	_pause = PAUSE_SCENE.instantiate() as PauseMenu
 	_pause.m = self
 	add_child(_pause)
@@ -488,15 +493,29 @@ func start_chapter(index: int) -> void:
 
 
 func open_archive() -> void:
+	_panel_opener = "pause" if _state == State.PAUSED else "menu"
+	_menu.set_menu_focusable(false)
 	archive_panel.open(_unlocked)
 
 
 func open_controls() -> void:
+	_panel_opener = "menu"
+	_menu.set_menu_focusable(false)
 	controls_panel.open()
 
 
 func open_settings() -> void:
+	_panel_opener = "pause" if _state == State.PAUSED else "menu"
+	_menu.set_menu_focusable(false)
 	settings_panel.open()
+
+
+func _on_top_panel_closed() -> void:
+	if _panel_opener == "pause" and _state == State.PAUSED:
+		_pause.grab_resume()
+	elif _state == State.MENU:
+		_menu.set_menu_focusable(true)
+	_panel_opener = ""
 
 
 func resume_game() -> void:
