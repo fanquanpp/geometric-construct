@@ -37,12 +37,12 @@ func _ready() -> void:
 	_root.resized.connect(_fit_content)
 
 	_build_header()
-	# 五页签构建器装配(scripts/ui/archive/,数据驱动页 = 动态生成豁免)
+	# 三页签构建器装配(scripts/ui/archive/,数据驱动页 = 动态生成豁免;
+	# 键位指南已独立为 ControlsPanel,v0.56.1)
 	builders = {
 		"geo": ArchiveGeoPage.new(),
 		"bld": ArchiveCodexPage.new(),
 		"mech": ArchiveCodexPage.new(),
-		"keys": ArchiveKeysPage.new(),
 	}
 	builders["bld"].kind = "bld"
 	builders["mech"].kind = "mech"
@@ -56,7 +56,7 @@ func _build_header() -> void:
 	var header := Ui.poster_label("档案几何", 34, Palette.I.paper, true, Palette.I.red)
 	header.position = Vector2(64, 40)
 	_content.add_child(header)
-	var header_sub := Ui.l("ARCHIVE GEOMETRY · 几何 × 建筑 × 机关 × 键位", 13, Ui.LIGHT, Palette.I.dim)
+	var header_sub := Ui.l("ARCHIVE GEOMETRY · 几何 × 建筑 × 机关", 13, Ui.LIGHT, Palette.I.dim)
 	header_sub.position = Vector2(66, 88)
 	_content.add_child(header_sub)
 
@@ -77,8 +77,7 @@ func _build_header() -> void:
 	tab_row.offset_top = 44
 	tab_row.alignment = BoxContainer.ALIGNMENT_END
 	_content.add_child(tab_row)
-	for spec in [["geo", "几何体"], ["bld", "建 筑"], ["mech", "机 关"],
-			["keys", "键 位"]]:
+	for spec in [["geo", "几何体"], ["bld", "建 筑"], ["mech", "机 关"]]:
 		var b := _tab_button(str(spec[1]))
 		b.pressed.connect(func() -> void: _switch_tab(str(spec[0])))
 		tab_row.add_child(b)
@@ -275,7 +274,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		var k: Key = event.keycode
 		match k:
-			KEY_ESCAPE, KEY_C:
+			KEY_ESCAPE:
 				get_viewport().set_input_as_handled()
 
 				close()
@@ -321,7 +320,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _cycle_tab(dir: int) -> void:
-	var tabs := ["geo", "bld", "mech", "keys"]
+	var tabs := ["geo", "bld", "mech"]
 	var i := tabs.find(_tab)
 	if i < 0:
 		i = 0

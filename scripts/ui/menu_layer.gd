@@ -25,6 +25,7 @@ var _last_act := 0
 @onready var _toast_label: Label = %Toast
 @onready var _start_btn: Button = %StartBtn
 @onready var _dual_btn: Button = %DualBtn
+@onready var _keys_btn: Button = %KeysBtn
 @onready var _panel_btn: Button = %PanelBtn
 @onready var _settings_btn: Button = %SettingsBtn
 @onready var _act_panel: ActPanelCard = %ActPanel
@@ -48,7 +49,7 @@ func _ready() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, false, 8)
 	_intro.text = "四个几何体,被丢进一个不存在的地方。\n形状即性格,属性即命运——\n速度、弹性、置换与惯性,\n唯有互相依靠,才能找到各自的出口。"
 
-	_keys.text = "1–5 选择剧目    C 档案几何    S 设置    Esc 退出" \
+	_keys.text = "1–5 选择剧目    K 键位指南    C 档案几何    S 设置    Esc 退出" \
 		if not Adaptive.is_touch_mode() \
 		else "点按剧目进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
 	Ui.style(_keys, 13, Ui.LIGHT, Color(Palette.I.dim, 0.9))
@@ -101,6 +102,10 @@ func _ready() -> void:
 	Ui.wire_button(_dual_btn)
 	_dual_btn.pressed.connect(func() -> void: _open_dual_pick())
 
+	_keys_btn.add_theme_font_size_override("font_size", 18)
+	Ui.wire_button(_keys_btn)
+	_keys_btn.pressed.connect(func() -> void: m.open_controls())
+
 	_panel_btn.add_theme_font_size_override("font_size", 18)
 	Ui.wire_button(_panel_btn)
 	_panel_btn.pressed.connect(func() -> void: m.open_archive())
@@ -149,7 +154,7 @@ func _play_entrance() -> void:
 	tw.tween_property(_kicker, "modulate:a", 1.0, 0.30).set_delay(0.10)
 	tw.tween_property(_intro, "modulate:a", 1.0, 0.35).set_delay(0.72)
 	for item: Control in [_sec, _chapter_hint, _start_btn, _dual_btn,
-			_panel_btn, _settings_btn]:
+			_keys_btn, _panel_btn, _settings_btn]:
 		item.modulate.a = 0.0
 		tw.tween_property(item, "modulate:a", 1.0, 0.22).set_delay(0.55)
 

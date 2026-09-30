@@ -2,6 +2,53 @@
 
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 
+## v0.56.1 · 键位指南独立成面板(2026-09-30)
+
+用户令:「将档案几何里面的按键操作独立出来到双人竞速左边。」
+
+### 新增
+
+- `scenes/ui/controls_panel.tscn` + `scripts/ui/controls_panel.gd`:
+  「键位指南」独立面板(CanvasLayer 层 36,面板带),档案面板外壳同款
+  (poster 标题 + 墨卡双栏 + 滚动 + 就地「关 闭」钮),内容四节
+  (PC 键鼠 / 手柄 / 触屏 / 界面导航)由数据驱动动态生成;Esc / B 关闭
+  (K 为打开键不参与关闭),滚轮 / 拖动翻阅,Adaptive 安全区适配,
+  触屏提示文案随模式自适应(双端)。
+- `scripts/data/controls_data.gd`:键位数据表(CONTROLS)自
+  ArchiveData 迁出独立,唯一消费方 = ControlsPanel;界面导航节补
+  K 键行。
+- 主菜单「键位指南」按钮:落「双人竞速」左侧空档(670–910 @
+  y596–638,与「档案几何」同宽同排),K 键直达,菜单提示行补
+  「K 键位指南」,Main.open_controls() 接线;输入门控
+  (_physics_process 早退)、Android 返回链(设置 → 键位 → 档案)、
+  暂停菜单 Esc 守卫、game_flow 进关 / 回菜单两处面板收口全部纳入
+  controls_panel。
+- 同机修掉档案面板「C 键关闭」既有抖动隐患:开关键同时参与关闭时,
+  同一次按键会在面板 _input 关闭后又被 Main._physics_process 键轮询
+  重开(表现为关不掉)——档案面板关闭键只留 Esc,与键位面板同规。
+
+### 变更
+
+- 档案几何 五页签 → 三页签(几何体 / 建筑 / 机关):键位页签移除,
+  页眉副题(几何 × 建筑 × 机关)与 Q / E 切页链同步;
+  `scripts/ui/archive/archive_keys_page.gd` 随内容迁出删除。
+- shot_harness `--panelshot` 键位腿:原「合成点击键位页签」改为直开
+  ControlsPanel(截 panel_keys 后即关)。
+- 文档同步:ARCHITECTURE UI 树(controls_data / controls_panel + 档案
+  三构建器)、ASSETS 术语表(键位指南行)、ui-flow(层带表 / 输入门控
+  约定 / Overlay 成员 / 页面树 / Esc 表 / Android 返回链,顺带清掉
+  v0.56.0 漏网的剧情回顾 bullet 与 StoryLayer 残留)。
+- 版本三件:version.gd 0.56.1、export_presets 0.56.1 / code 30。
+
+### 门禁
+
+- check-only 八脚本全绿(controls_panel / controls_data /
+  archive_panel / menu_layer / main / game_flow / pause_menu /
+  shot_harness;exit code 权威,ext_resource 报错=4.7 上游噪音);
+  native_check 25 关 ALL PASS;flow_check PASS;桌面 panelshot +
+  menushot 目检:菜单「键位指南」落位双人竞速左、键位面板四节双栏
+  完整(含键帽与滚动条)、档案三页签与页副题正常。
+
 ## 清理批 · 孤本素材清退 + 收尾清理常态化(2026-09-30,无版本号)
 
 用户令:「清理项目里没有使用的各种素材,特别是档案几何里面的那些图鉴;

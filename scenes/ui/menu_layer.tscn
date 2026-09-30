@@ -185,6 +185,14 @@ offset_right = 1170.0
 offset_bottom = 638.0
 text = "双人竞速"
 
+[node name="KeysBtn" type="Button" parent="Root/Content"]
+unique_name_in_owner = true
+offset_left = 670.0
+offset_top = 596.0
+offset_right = 910.0
+offset_bottom = 638.0
+text = "键位指南"
+
 [node name="PanelBtn" type="Button" parent="Root/Content"]
 unique_name_in_owner = true
 offset_left = 670.0

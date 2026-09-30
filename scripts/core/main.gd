@@ -18,6 +18,7 @@ const TOUCH_SCENE := preload("res://scenes/ui/touch_controls.tscn")
 const HUD_SCENE := preload("res://scenes/ui/hud.tscn")
 const MENU_SCENE := preload("res://scenes/ui/menu_layer.tscn")
 const ARCHIVE_SCENE := preload("res://scenes/ui/archive_panel.tscn")
+const CONTROLS_SCENE := preload("res://scenes/ui/controls_panel.tscn")
 const SETTINGS_SCENE := preload("res://scenes/ui/settings_panel.tscn")
 const PAUSE_SCENE := preload("res://scenes/ui/pause_menu.tscn")
 const NET_SESSION_SCENE := preload("res://scenes/net/net_session.tscn")
@@ -30,6 +31,7 @@ var _hud: Hud
 var _menu: MenuLayer
 var _pause: PauseMenu
 var archive_panel: ArchivePanel
+var controls_panel: ControlsPanel
 var settings_panel: SettingsPanel
 var touch_controls: TouchControls
 var _save: SaveManager
@@ -138,6 +140,8 @@ func _ready() -> void:
 	add_child(_menu)
 	archive_panel = ARCHIVE_SCENE.instantiate() as ArchivePanel
 	add_child(archive_panel)
+	controls_panel = CONTROLS_SCENE.instantiate() as ControlsPanel
+	add_child(controls_panel)
 	settings_panel = SETTINGS_SCENE.instantiate() as SettingsPanel
 	add_child(settings_panel)
 	_pause = PAUSE_SCENE.instantiate() as PauseMenu
@@ -177,6 +181,8 @@ func _is_local_session() -> bool:
 func _android_back() -> void:
 	if settings_panel.is_open:
 		settings_panel.close()
+	elif controls_panel.is_open:
+		controls_panel.go_back()
 	elif archive_panel.is_open:
 		archive_panel.go_back()
 	elif _state == State.PLAYING:
@@ -377,7 +383,7 @@ func _on_race_finished(winner: int, t_win_ms: int, t_other_ms: int) -> void:
 
 func _physics_process(_delta: float) -> void:
 	frame_no += 1
-	if archive_panel.is_open or settings_panel.is_open:
+	if archive_panel.is_open or controls_panel.is_open or settings_panel.is_open:
 		return
 	if _state == State.PLAYING:
 
@@ -436,6 +442,8 @@ func _physics_process(_delta: float) -> void:
 		for i in LevelData.ACTS.size():
 			if _key_pressed(KEY_1 + i):
 				_menu.try_open_act(i)
+		if _key_pressed(KEY_K):
+			open_controls()
 		if _key_pressed(KEY_C):
 			open_archive()
 		if _key_pressed(KEY_S):
@@ -481,6 +489,10 @@ func start_chapter(index: int) -> void:
 
 func open_archive() -> void:
 	archive_panel.open(_unlocked)
+
+
+func open_controls() -> void:
+	controls_panel.open()
 
 
 func open_settings() -> void:

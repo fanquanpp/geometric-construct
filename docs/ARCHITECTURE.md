@@ -53,7 +53,8 @@ geometric-construct/
 │   │   ├── geometry_def.gd  #   几何体定义 Resource(全字段 @export,值在 data/characters)
 │   │   ├── geometries.gd    #   几何体注册表(装载 data/characters/*.tres;UNIT_PX 标尺)
 │   │   ├── movement_tuning.gd # 手感调参 Resource(值在 data/tuning;static I 访问)
-│   │   ├── archive_data.gd  #   档案几何条目表(建筑 / 机关 / 剧情目录,纯字典)
+│   │   ├── archive_data.gd  #   档案几何条目表(建筑 / 机关,纯字典)
+│   │   ├── controls_data.gd #   键位指南数据表(PC 键鼠 / 手柄 / 触屏 / 界面导航)
 │   │   └── level_data.gd    #   关卡目录(SCENES/ACTS:levels_native/*.tscn 幕-场登记)
 │   ├── entities/            # 场景内实体
 │   │   ├── player.gd        #   几何体控制器(编排+跳跃/爬墙/置换/承载状态机;
@@ -87,12 +88,14 @@ geometric-construct/
 │   │   ├── net_room_layer.gd#   N2 房间流程页(带 30:选择/创建/加入/等待;Flow 型)
 │   │   ├── menu_layer.gd    #   标题菜单(动态标题 TitleMark + 分层入场演出)
 │   │   ├── title_mark.gd    #   动态标题:逐字落位 / 呼吸浮动 / 印刷错位 / 红块节拍
-│   │   ├── archive_panel.gd #   档案几何壳(五页签路由/翻页/输入/版面适配;页内容
-│   │   │                    #   由 builders 委托 scripts/ui/archive/ 五构建器,
+│   │   ├── archive_panel.gd #   档案几何壳(三页签路由/翻页/输入/版面适配;页内容
+│   │   │                    #   由 builders 委托 scripts/ui/archive/ 三构建器,
 │   │   │                    #   v0.39.3 页签拆分;数据只读自 ArchiveData)
-│   │   ├── archive/         #   档案页构建器 ×5:geo(肖像+数值条)/ codex(建筑·机关
-│   │   │                    #   主从+两态/动态精灵)/ keys(键位一册)/ gallery(剧情目录)
-│   │   │                    #   (v0.56.0 删 gallery/story 页,现四页)——RefCounted
+│   │   ├── archive/         #   档案页构建器 ×3:geo(肖像+数值条)/ codex(建筑·机关
+│   │   │                    #   主从+两态/动态精灵;v0.56.0 删 gallery/story 页,
+│   │   │                    #   v0.56.1 keys 键位页迁出为 ControlsPanel)——RefCounted
+│   │   ├── controls_panel.gd#   键位指南独立面板(层 36;K 键 / 菜单「键位指南」钮打开;
+│   │   │                    #   内容由 ControlsData 驱动动态生成,v0.56.1)
 │   │   ├── touch_controls.gd#   虚拟按键层(TouchScreenButton → InputMap 动作)
 │   │   └── pause_menu.gd    #   暂停菜单
 │   ├── fx/                  # 表现层辅助

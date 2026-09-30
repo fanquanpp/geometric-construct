@@ -240,23 +240,11 @@ func run_panel_shot() -> void:
 		await m.get_tree().create_timer(0.4).timeout
 		await _shot("panel_geo%d" % page)
 
-	var keys_tab: Button = m.archive_panel._tab_btns["keys"]
-	var tab_center: Vector2 = keys_tab.get_global_rect().get_center()
-	var to_window: Transform2D = m.get_viewport().get_final_transform()
-	var press := InputEventMouseButton.new()
-	press.button_index = MOUSE_BUTTON_LEFT
-	press.pressed = true
-	press.position = to_window * tab_center
-	Input.parse_input_event(press)
-	await m.get_tree().process_frame
-	var release := InputEventMouseButton.new()
-	release.button_index = MOUSE_BUTTON_LEFT
-	release.pressed = false
-	release.position = to_window * tab_center
-	Input.parse_input_event(release)
+	# 键位指南已独立为 ControlsPanel(v0.56.1),直开直关
+	m.controls_panel.open()
 	await m.get_tree().create_timer(0.4).timeout
-
 	await _shot("panel_keys")
+	m.controls_panel.close()
 
 	m.archive_panel.open(0, "bld")
 	await m.get_tree().create_timer(0.5).timeout

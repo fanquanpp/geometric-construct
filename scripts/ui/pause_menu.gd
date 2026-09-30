@@ -101,6 +101,9 @@ func _input(ev: InputEvent) -> void:
 			if Main.I != null and Main.I.archive_panel != null \
 					and Main.I.archive_panel.is_open:
 				return
+			if Main.I != null and Main.I.controls_panel != null \
+					and Main.I.controls_panel.is_open:
+				return
 			if Main.I != null and Main.I.settings_panel != null \
 					and Main.I.settings_panel.is_open:
 				return

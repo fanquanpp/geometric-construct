@@ -53,6 +53,7 @@ func start_level(index: int, intro := true) -> void:
 	main._menu.visible = false
 	main._menu.close_act_panel()
 	main.archive_panel.close()
+	main.controls_panel.close()
 	main.settings_panel.close()
 	main._hud.visible = true
 	main.touch_controls.set_in_game(true)
@@ -110,6 +111,7 @@ func show_menu() -> void:
 	main._hud.visible = false
 	main.touch_controls.set_in_game(false)
 	main.archive_panel.close()
+	main.controls_panel.close()
 	main.settings_panel.close()
 	main._menu.visible = true
 	main._menu.set_unlocked(main._unlocked)

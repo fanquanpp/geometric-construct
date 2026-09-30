@@ -15,7 +15,7 @@
 | 游戏带 | 10–12 | Hud(10)· TouchControls(12) | 玩法伴随层,只在局内可见 |
 | 菜单带 | 20 | MenuLayer(标题 / 剧目二级 / 档案几何入口 / toast) | **前端根**:MENU 态的宿主 |
 | 流程带 | 30 | PauseMenu(30)· RogueLayer(30) | 子流程覆盖页(暂停 / 肉鸽四页 + 局内状态条) |
-| 面板带 | 35–38 | ArchivePanel 档案几何(35)· SettingsPanel(38) | **跨父全局面板**(标题菜单与暂停菜单共用) |
+| 面板带 | 35–38 | ArchivePanel 档案几何(35)· ControlsPanel 键位指南(36)· SettingsPanel(38) | **跨父全局面板**(标题菜单与暂停菜单共用) |
 | 叙事带 | 45–46+ | StoryLayer(45,对话子层 46+i) | 模态剧情,横切一切(见 §4 规则 5) |
 | 引导带 | 60 | BootIntro | 开屏揭示,最高权 |
 
@@ -24,7 +24,8 @@
 1. 数字段即权限域:高带盖低带;新页面**先落既有带**,确需新段先在本表登记。
 2. Overlay 型页面必须实现 `open() / close() / is_open` + 输入独占声明
    (现状约定:`Main._physics_process` 开头 `archive_panel.is_open or
-   settings_panel.is_open → return`,面板优先吃输入)。
+   controls_panel.is_open or settings_panel.is_open → return`,面板优先
+   吃输入)。
 3. 同带互斥:同一带内同时只应有一个页面可见(现状例外见 §5 隐患 R1)。
 4. Screen 型切换永远经 `Main.State` 流转,禁止页面互相拉起屏幕。
 
@@ -34,7 +35,7 @@
 |---|---|---|---|
 | **Screen 独占屏** | 一屏一页,切换即换态 | Boot · 标题菜单 · 关卡(PLAYING) | `Main.State`(MENU/PLAYING/PAUSED/TRANSITION/WIN) |
 | **Flow 流程页** | 子流程的步骤页,不改 Main.State | 肉鸽:选主角 / 选路 / 词条 / 结算(+局内状态条) · WIN 画面 | RogueDirector.phase(含 auto 模式回调链) |
-| **Overlay 覆盖层** | 可叠加,带返回语义,不改变所属屏 | PauseMenu · SettingsPanel · ArchivePanel · StoryLayer · Hud 开场卡与旁白(非阻塞) | 打开者 push,Esc/完成 pop |
+| **Overlay 覆盖层** | 可叠加,带返回语义,不改变所属屏 | PauseMenu · SettingsPanel · ControlsPanel · ArchivePanel · Hud 开场卡与旁白(非阻塞;StoryLayer 已随 v0.56.0 删剧情退役) | 打开者 push,Esc/完成 pop |
 
 划分判据:独占输入吗(是→Screen)?有父屏幕且可返回吗(是→Overlay)?
 是某个子流程的固定一步吗(是→Flow)?
@@ -49,10 +50,11 @@ BootIntro(60) ── 开屏,点按跳过
 	│    下一场 / 未解锁,v0.51.0;「完美」=零死亡归位永久标记,v0.52.0;
 	│    页脚「已归位 X / 26 场」随通关实时刷新)
 	│    └─ 选场 → start_level() ⇒ 关卡 Screen
-	├─ 剧情回顾(档案几何 · 剧情页签)→ 全文本阅读器(同面板内,整段
-	│    文本展开,台词按角色着色;不再走 StoryLayer 对话重演,v0.15)
-	├─ 档案几何 ArchivePanel(35)[C 键 / 菜单入口;五页签:
-	│    几何体档案 / 建筑物图鉴 / 机关图鉴(两态预览 · 动态精灵)/ 键位指南(多端一册,v0.21.2)/ 剧情回顾]
+	├─ 键位指南 ControlsPanel(36)[K 键 / 菜单「键位指南」钮(双人竞速左);
+	│    PC 键鼠 × 手柄 × 触屏 × 界面导航一册,v0.56.1 自档案几何独立]
+	├─ 档案几何 ArchivePanel(35)[C 键 / 菜单入口;三页签:
+	│    几何体档案 / 建筑物图鉴 / 机关图鉴(两态预览 · 动态精灵);
+	│    键位页 v0.56.1 迁出为 ControlsPanel,剧情页签 v0.56.0 删剧情退役]
 	├─ 设置 SettingsPanel(38)[S 键 / 菜单入口]
 	├─ 重跑入口(肉鸽)→ RogueLayer 流程(30):
 	│    ├─ 序说 rogue_intro(45,仅首局)
@@ -88,7 +90,8 @@ rogue_intro 与单章剧(肉鸽流程内)/ epilogue(WIN)——统一走
 | StoryLayer | 结束本段对话(剧本内推进) |
 | SettingsPanel(父=暂停)▲ | 回暂停 |
 | SettingsPanel(父=菜单) | 关面板回菜单 |
-| ArchivePanel | 关面板回菜单(阅读器内先回剧情目录) |
+| ControlsPanel 键位指南 | 关面板回菜单(K 为打开键,不参与关闭) |
+| ArchivePanel | 关面板回菜单 |
 | act panel / story panel | 关二级面板回标题 |
 | 关卡 PLAYING | 暂停(PauseMenu) |
 | PauseMenu ▲ | 继续游戏(现状仅按钮,补键盘路径) |
@@ -96,12 +99,12 @@ rogue_intro 与单章剧(肉鸽流程内)/ epilogue(WIN)——统一走
 
 **Android 返回键(v0.44.2 实装)**:`project.godot` 设
 `config/quit_on_go_back=false`,返回键以 `WM_GO_BACK_REQUEST` 进
-`Main._android_back()`,按上表自栈顶向下路由——设置 → 档案(阅读器
-先回剧情目录)→ 暂停(=继续)→ 局内(=弹暂停)→ 房间(`back_out`
-逐级)→ 菜单弹层(肉鸽选体 / 双人卡片 / 剧目二级,依次收)→ 标题根
+`Main._android_back()`,按上表自栈顶向下路由——设置 → 键位指南 →
+档案 → 暂停(=继续)→ 局内(=弹暂停)→ 房间(`back_out`
+逐级)→ 菜单弹层(双人卡片 / 剧目二级,依次收)→ 标题根
 (退出应用;Android 惯例,确认弹窗不作▲立项)。任何页面按返回都不再
-被系统直接杀进程;触屏不可达的页面必须配就地返回钮(键位页 / 剧情
-目录页关闭栏、双人卡片「返回」、房间选择页「返回」同批补齐)。
+被系统直接杀进程;触屏不可达的页面必须配就地返回钮(键位指南「关 闭」钮、双人卡片
+「返回」、房间选择页「返回」同批补齐)。
 
 **切后台自动暂停(v0.51.0 实装)**:本机单局(非联机对局)中,
 `APPLICATION_PAUSED`(移动端切后台/来电)与
