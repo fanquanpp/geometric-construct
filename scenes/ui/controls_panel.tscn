@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/controls_panel.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/art/frame_draw.gd" id="frame_draw_scr"]
@@ -35,3 +35,68 @@ offset_right = -16.0
 offset_bottom = -16.0
 mouse_filter = 2
 script = ExtResource("frame_draw_scr")
+
+[node name="Zone" type="Control" parent="Root/Content"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = 118.0
+offset_right = -48.0
+offset_bottom = -92.0
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="Root/Content/Zone"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Card" type="PanelContainer" parent="Root/Content/Zone/Center"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(1184, 0)
+
+[node name="BodyWrap" type="PanelContainer" parent="Root/Content/Zone/Center/Card"]
+unique_name_in_owner = true
+
+[node name="Scroll" type="ScrollContainer" parent="Root/Content/Zone/Center/Card/BodyWrap"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(1148, 420)
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="Cols" type="HBoxContainer" parent="Root/Content/Zone/Center/Card/BodyWrap/Scroll"]
+unique_name_in_owner = true
+theme_override_constants/separation = 44
+
+[node name="LeftCol" type="VBoxContainer" parent="Root/Content/Zone/Center/Card/BodyWrap/Scroll/Cols"]
+unique_name_in_owner = true
+theme_override_constants/separation = 20
+
+[node name="RightCol" type="VBoxContainer" parent="Root/Content/Zone/Center/Card/BodyWrap/Scroll/Cols"]
+unique_name_in_owner = true
+theme_override_constants/separation = 20
+
+[node name="Hints" type="Label" parent="Root/Content"]
+unique_name_in_owner = true
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 64.0
+offset_top = -52.0
+offset_right = 760.0
+offset_bottom = -30.0
+
+[node name="CloseBtn" type="Button" parent="Root/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 42)
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -224.0
+offset_top = -66.0
+offset_right = -64.0
+offset_bottom = -24.0
+text = "关 闭"

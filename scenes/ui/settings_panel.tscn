@@ -52,5 +52,319 @@ unique_name_in_owner = true
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
+[node name="SectionControl" type="VBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 4
+
+[node name="Head" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body/SectionControl"]
+theme_override_constants/separation = 8
+
+[node name="ControlMark" type="ColorRect" parent="Root/Content/ScrollWrap/Scroll/Body/SectionControl/Head"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(10, 10)
+size_flags_vertical = 4
+
+[node name="ControlHeadLabel" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/SectionControl/Head"]
+unique_name_in_owner = true
+text = "操控 CONTROL"
+
+[node name="WheelCaption" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+text = "轮盘位置(移动端):固定在左下角,或在左半屏按下处展开;两种模式下,右半屏点按均为跳跃"
+
+[node name="WheelRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 10
+
+[node name="WheelFixedBtn" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/WheelRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 40)
+size_flags_vertical = 4
+toggle_mode = true
+theme_override_font_sizes/font_size = 15
+text = "固定位置"
+
+[node name="WheelFloatBtn" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/WheelRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 40)
+size_flags_vertical = 4
+toggle_mode = true
+theme_override_font_sizes/font_size = 15
+text = "按下位置"
+
+[node name="VibRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/VibRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+text = "触感反馈(按键轻震)"
+
+[node name="Spacer" type="Control" parent="Root/Content/ScrollWrap/Scroll/Body/VibRow"]
+size_flags_horizontal = 3
+
+[node name="VibBtn" type="CheckButton" parent="Root/Content/ScrollWrap/Scroll/Body/VibRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+toggle_mode = true
+
+[node name="ShakeRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/ShakeRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+text = "屏幕震动(打击反馈)"
+
+[node name="Spacer" type="Control" parent="Root/Content/ScrollWrap/Scroll/Body/ShakeRow"]
+size_flags_horizontal = 3
+
+[node name="ShakeBtn" type="CheckButton" parent="Root/Content/ScrollWrap/Scroll/Body/ShakeRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+toggle_mode = true
+
+[node name="Rule1" type="ColorRect" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 1)
+
+[node name="SectionVideo" type="VBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 4
+
+[node name="Head" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body/SectionVideo"]
+theme_override_constants/separation = 8
+
+[node name="VideoMark" type="ColorRect" parent="Root/Content/ScrollWrap/Scroll/Body/SectionVideo/Head"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(10, 10)
+size_flags_vertical = 4
+
+[node name="VideoHeadLabel" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/SectionVideo/Head"]
+unique_name_in_owner = true
+text = "画面 VIDEO"
+
+[node name="VideoResRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/VideoResRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+text = "窗口分辨率"
+
+[node name="Spacer" type="Control" parent="Root/Content/ScrollWrap/Scroll/Body/VideoResRow"]
+size_flags_horizontal = 3
+
+[node name="ResRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body/VideoResRow"]
+theme_override_constants/separation = 10
+
+[node name="ResBtn0" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/VideoResRow/ResRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 40)
+size_flags_vertical = 4
+toggle_mode = true
+theme_override_font_sizes/font_size = 15
+
+[node name="ResBtn1" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/VideoResRow/ResRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 40)
+size_flags_vertical = 4
+toggle_mode = true
+theme_override_font_sizes/font_size = 15
+
+[node name="ResBtn2" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/VideoResRow/ResRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 40)
+size_flags_vertical = 4
+toggle_mode = true
+theme_override_font_sizes/font_size = 15
+
+[node name="VideoAdaptiveRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/VideoAdaptiveRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+text = "自由拉伸"
+
+[node name="Spacer" type="Control" parent="Root/Content/ScrollWrap/Scroll/Body/VideoAdaptiveRow"]
+size_flags_horizontal = 3
+
+[node name="AdaptiveBtn" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/VideoAdaptiveRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 40)
+size_flags_vertical = 4
+toggle_mode = true
+theme_override_font_sizes/font_size = 15
+text = "自适应缩放"
+
+[node name="VideoFsRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/VideoFsRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+text = "全屏"
+
+[node name="Spacer" type="Control" parent="Root/Content/ScrollWrap/Scroll/Body/VideoFsRow"]
+size_flags_horizontal = 3
+
+[node name="FsBtn" type="CheckButton" parent="Root/Content/ScrollWrap/Scroll/Body/VideoFsRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+toggle_mode = true
+
+[node name="Rule2" type="ColorRect" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 1)
+
+[node name="SectionAudio" type="VBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 4
+
+[node name="Head" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body/SectionAudio"]
+theme_override_constants/separation = 8
+
+[node name="AudioMark" type="ColorRect" parent="Root/Content/ScrollWrap/Scroll/Body/SectionAudio/Head"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(10, 10)
+size_flags_vertical = 4
+
+[node name="AudioHeadLabel" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/SectionAudio/Head"]
+unique_name_in_owner = true
+text = "音频 AUDIO"
+
+[node name="SfxRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/SfxRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+text = "音效音量"
+
+[node name="Spacer" type="Control" parent="Root/Content/ScrollWrap/Scroll/Body/SfxRow"]
+size_flags_horizontal = 3
+
+[node name="SfxSlider" type="HSlider" parent="Root/Content/ScrollWrap/Scroll/Body/SfxRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 28)
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="SfxValue" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/SfxRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 0)
+size_flags_vertical = 4
+horizontal_alignment = 2
+text = "100%"
+
+[node name="AmbRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/AmbRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+text = "垫乐 / BGM"
+
+[node name="Spacer" type="Control" parent="Root/Content/ScrollWrap/Scroll/Body/AmbRow"]
+size_flags_horizontal = 3
+
+[node name="AmbSlider" type="HSlider" parent="Root/Content/ScrollWrap/Scroll/Body/AmbRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 28)
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="AmbValue" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/AmbRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 0)
+size_flags_vertical = 4
+horizontal_alignment = 2
+text = "100%"
+
+[node name="Rule3" type="ColorRect" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 1)
+
+[node name="SectionAccess" type="VBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 4
+
+[node name="Head" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body/SectionAccess"]
+theme_override_constants/separation = 8
+
+[node name="AccessMark" type="ColorRect" parent="Root/Content/ScrollWrap/Scroll/Body/SectionAccess/Head"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(10, 10)
+size_flags_vertical = 4
+
+[node name="AccessHeadLabel" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/SectionAccess/Head"]
+unique_name_in_owner = true
+text = "无障碍 ACCESSIBILITY"
+
+[node name="MotionRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/MotionRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+text = "减动效(关闭震屏 / 演出转场,保留硬切)"
+
+[node name="Spacer" type="Control" parent="Root/Content/ScrollWrap/Scroll/Body/MotionRow"]
+size_flags_horizontal = 3
+
+[node name="MotionBtn" type="CheckButton" parent="Root/Content/ScrollWrap/Scroll/Body/MotionRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+toggle_mode = true
+
+[node name="BgfxRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/BgfxRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+text = "背景动效(星空闪烁 / 浮尘 / 幕变奏,关=静态画面)"
+
+[node name="Spacer" type="Control" parent="Root/Content/ScrollWrap/Scroll/Body/BgfxRow"]
+size_flags_horizontal = 3
+
+[node name="BgfxBtn" type="CheckButton" parent="Root/Content/ScrollWrap/Scroll/Body/BgfxRow"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+toggle_mode = true
+
+[node name="Rule4" type="ColorRect" parent="Root/Content/ScrollWrap/Scroll/Body"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 1)
+
 [node name="Foot" type="HBoxContainer" parent="Root/Content"]
 unique_name_in_owner = true
+
+[node name="VerLabel" type="Label" parent="Root/Content/Foot"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+
+[node name="Spacer" type="Control" parent="Root/Content/Foot"]
+size_flags_horizontal = 3
+
+[node name="CloseBtn" type="Button" parent="Root/Content/Foot"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 42)
+theme_override_font_sizes/font_size = 16
+text = "关 闭"

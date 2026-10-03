@@ -2,40 +2,36 @@ class_name Main
 extends Node2D
 
 
-static var I
-
 enum State { MENU, ROOM, PLAYING, PAUSED, TRANSITION, WIN }
 
 
-const CHARACTER_MANAGER_SCENE := preload("res://scenes/core/character_manager.tscn")
-const ROSTER_SCENE := preload("res://scenes/core/roster_controller.tscn")
-const GAME_FLOW_SCENE := preload("res://scenes/core/game_flow.tscn")
-const RACE_SCENE := preload("res://scenes/core/race_controller.tscn")
-const GHOST_SCENE := preload("res://scenes/core/ghost_recorder.tscn")
-const BACKDROP_SCENE := preload("res://scenes/world/backdrop.tscn")
-const AMBIENCE_SCENE := preload("res://scenes/fx/ambience.tscn")
-const TOUCH_SCENE := preload("res://scenes/ui/touch_controls.tscn")
-const HUD_SCENE := preload("res://scenes/ui/hud.tscn")
-const MENU_SCENE := preload("res://scenes/ui/menu_layer.tscn")
-const ARCHIVE_SCENE := preload("res://scenes/ui/archive_panel.tscn")
-const CONTROLS_SCENE := preload("res://scenes/ui/controls_panel.tscn")
-const SETTINGS_SCENE := preload("res://scenes/ui/settings_panel.tscn")
-const PAUSE_SCENE := preload("res://scenes/ui/pause_menu.tscn")
-const NET_SESSION_SCENE := preload("res://scenes/net/net_session.tscn")
-const NET_ROOM_SCENE := preload("res://scenes/ui/net_room_layer.tscn")
+# v0.61.0 节点化:16 子系统常驻场景全部改在 Main.tscn 编辑器组装
+# (R1:场景组合优于脚本拼树);本脚本只做接线与运行期分派。
+# 装配时序契约:设置/字体/Main.I 前置 _enter_tree(先于全部子节点
+# _ready);子节点间 _ready 顺序 = 场景子节点顺序,勿重排。
+
+static var I
+
+
+## 唯一正规构造入口:Main 的子系统全部是 Main.tscn 里的场景子节点,
+## 裸 Main.new() 没有子树(旧代码装配时代的产物),一律走本工厂。
+static func create() -> Main:
+	var ps: PackedScene = load("res://scenes/Main.tscn")
+	return ps.instantiate() as Main
+
 
 var _state: State = State.MENU
 
 var _level_root: Node2D
-var _hud: Hud
-var _menu: MenuLayer
-var _pause: PauseMenu
-var archive_panel: ArchivePanel
-var controls_panel: ControlsPanel
-var settings_panel: SettingsPanel
-var touch_controls: TouchControls
-var _save: SaveManager
-var _ambience: Ambience
+@onready var _hud: Hud = $Hud
+@onready var _menu: MenuLayer = $MenuLayer
+@onready var _pause: PauseMenu = $PauseMenu
+@onready var archive_panel: ArchivePanel = $ArchivePanel
+@onready var controls_panel: ControlsPanel = $ControlsPanel
+@onready var settings_panel: SettingsPanel = $SettingsPanel
+@onready var touch_controls: TouchControls = $TouchControls
+@onready var _save: SaveManager = SaveManager.new()
+@onready var _ambience: Ambience = $Ambience
 
 
 var _current := -1:
@@ -52,11 +48,13 @@ var debug_jump := false
 var debug_zoom := 0.0
 var frame_no := 0
 
-var roster: RosterController
-var game_flow: GameFlow
-var race: RaceController
-var ghost: GhostRecorder
-var backdrop: Backdrop
+@onready var roster: RosterController = $RosterController
+@onready var game_flow: GameFlow = $GameFlow
+@onready var race: RaceController = $RaceController
+@onready var ghost: GhostRecorder = $GhostRecorder
+@onready var backdrop: Backdrop = $Backdrop
+@onready var net_session: NetSession = $NetSession
+@onready var net_room_layer: NetRoomLayer = $NetRoomLayer
 var players: Array:
 	get:
 		return roster.players
@@ -64,10 +62,6 @@ var camera_rig = null
 var _doors: Dictionary:
 	get:
 		return roster.doors
-
-
-var net_session: NetSession
-var net_room_layer: NetRoomLayer
 
 
 var _level_info: Dictionary:
@@ -88,47 +82,32 @@ var _auto_test := false
 var dev_run := false
 
 
-func _ready() -> void:
-	# 场景装配顺序即行为:设置先于 UI、触屏先于 HUD,勿重排。
+func _enter_tree() -> void:
+	# 前置于全部子节点 _ready:子场景(设置面板/触屏轮盘/天幕门控/
+	# net_session._m 等)就绪期即读到已载入的设置与 Main.I。
 	I = self
 	Ui.init_font()
-	var cm: CharacterManager = CHARACTER_MANAGER_SCENE.instantiate()
-	add_child(cm)
-
-	roster = ROSTER_SCENE.instantiate() as RosterController
-	roster.main = self
-	add_child(roster)
-
-	game_flow = GAME_FLOW_SCENE.instantiate() as GameFlow
-	game_flow.main = self
-	add_child(game_flow)
-	race = RACE_SCENE.instantiate() as RaceController
-	race.main = self
-	add_child(race)
-	ghost = GHOST_SCENE.instantiate() as GhostRecorder
-	ghost.main = self
-	add_child(ghost)
-	_setup_dual_input()
-
-	if OS.has_feature("mobile"):
-		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
-	backdrop = BACKDROP_SCENE.instantiate() as Backdrop
-	add_child(backdrop)
-	Sfx.init(self)
-	var amb: Ambience = AMBIENCE_SCENE.instantiate()
-	amb.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(amb)
-	_ambience = amb
-
 	SettingsManager.load_settings()
 	SettingsManager.apply_all_at_boot()
-	backdrop.refresh_gate()
 
-	touch_controls = TOUCH_SCENE.instantiate() as TouchControls
-	touch_controls.process_mode = Node.PROCESS_MODE_PAUSABLE
-	add_child(touch_controls)
-	_hud = HUD_SCENE.instantiate() as Hud
-	add_child(_hud)
+
+func _ready() -> void:
+	# 场景结构在 Main.tscn(16 子系统按装配顺序入场景);此处只做
+	# 接线。子节点 _ready 已全部先行,回引与信号在此挂接。
+	if OS.has_feature("mobile"):
+		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
+	Sfx.init(self)
+	backdrop.refresh_gate()
+	_setup_dual_input()
+
+	roster.main = self
+	game_flow.main = self
+	race.main = self
+	ghost.main = self
+	_menu.m = self
+	_pause.m = self
+	net_room_layer.m = self
+
 	_hud.chip_tapped.connect(switch_to_geo)
 	_hud.race_rematch_requested.connect(func() -> void:
 		if race != null and race.phase == RaceController.Phase.FINISHED:
@@ -136,30 +115,12 @@ func _ready() -> void:
 	race.countdown.connect(_hud.race_countdown)
 	race.race_go.connect(_hud.race_go)
 	race.race_finished.connect(_on_race_finished)
-	_menu = MENU_SCENE.instantiate() as MenuLayer
-	_menu.m = self
-	add_child(_menu)
-	archive_panel = ARCHIVE_SCENE.instantiate() as ArchivePanel
-	add_child(archive_panel)
-	controls_panel = CONTROLS_SCENE.instantiate() as ControlsPanel
-	add_child(controls_panel)
-	settings_panel = SETTINGS_SCENE.instantiate() as SettingsPanel
-	add_child(settings_panel)
+
 	# 面板关闭 → 焦点归还打开方(菜单记忆位 / 暂停「继续」)
 	archive_panel.closed.connect(_on_top_panel_closed)
 	controls_panel.closed.connect(_on_top_panel_closed)
 	settings_panel.closed.connect(_on_top_panel_closed)
-	_pause = PAUSE_SCENE.instantiate() as PauseMenu
-	_pause.m = self
-	add_child(_pause)
 
-	net_session = NET_SESSION_SCENE.instantiate() as NetSession
-	add_child(net_session)
-	net_room_layer = NET_ROOM_SCENE.instantiate() as NetRoomLayer
-	net_room_layer.m = self
-	add_child(net_room_layer)
-
-	_save = SaveManager.new()
 	_save.load_save()
 	_save.clamp_unlocked(LevelData.campaign_last())
 	_unlocked = _save.unlocked

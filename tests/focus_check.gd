@@ -116,7 +116,7 @@ func _run() -> void:
 	root.remove_child(_menu)
 	_menu.queue_free()
 	await process_frame
-	var main := Main.new()
+	var main := Main.create()
 	root.add_child(main)
 	await process_frame
 	await process_frame

@@ -28,7 +28,7 @@ func _ready() -> void:
 	if FileAccess.file_exists(SAVE_PATH):
 		DirAccess.remove_absolute(SAVE_PATH)
 
-	var main := Main.new()
+	var main := Main.create()
 	add_child(main)
 	await get_tree().process_frame
 	main.start_level(0, false)

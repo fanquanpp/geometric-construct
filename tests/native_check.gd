@@ -2,7 +2,7 @@ extends Node2D
 
 
 func _ready() -> void:
-	var main := Main.new()
+	var main := Main.create()
 	add_child(main)
 	await get_tree().process_frame
 	var fails := 0

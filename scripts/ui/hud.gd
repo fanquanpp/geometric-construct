@@ -34,8 +34,15 @@ var hints := HudHints.new()
 @onready var _win_hint: Label = %WinHint
 @onready var _shapes_row: HBoxContainer = %ShapesRow
 @onready var _fade: ColorRect = %Fade
+@onready var _fx: TransitionFX = %FX
+@onready var _race_root: Control = %RaceRoot
+@onready var _race_count: Label = %RaceCount
+@onready var _race_panel: PanelContainer = %RacePanel
+@onready var _race_title: Label = %RaceTitle
+@onready var _race_times: Label = %RaceTimes
+@onready var _race_wins: Label = %RaceWins
+@onready var _race_hint: Label = %RaceHint
 
-var _fx: TransitionFX
 var _anchor_flash := {
 	"layer": null, "active": false, "t": 0.0}
 
@@ -49,22 +56,11 @@ func _ready() -> void:
 
 	_fade.visible = false
 
-	_fx = TransitionFX.new()
-	add_child(_fx)
-
-	_build_race_ui()
-
-	var flash_layer := CanvasLayer.new()
-	flash_layer.layer = 90
-	var flash_ctl := Control.new()
-	flash_ctl.set_anchors_preset(Control.PRESET_FULL_RECT)
-	flash_ctl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	flash_ctl.visible = false
-	flash_ctl.draw.connect(_anchor_flash_draw)
-	flash_layer.add_child(flash_ctl)
-	add_child(flash_layer)
-	_anchor_flash["layer"] = flash_layer
-	_anchor_flash["ctl"] = flash_ctl
+	# FX 层 / 竞速面板 / anchor 闪屏层结构在 hud.tscn,此处只接线。
+	%FlashCtl.draw.connect(_anchor_flash_draw)
+	_anchor_flash["layer"] = %FlashLayer
+	_anchor_flash["ctl"] = %FlashCtl
+	_style_race_ui()
 	if touch:
 		_narration.anchor_top = 0.68
 		_narration.anchor_bottom = 0.80
@@ -318,56 +314,23 @@ func set_net_badge(text: String) -> void:
 	_net_badge.visible = not text.is_empty()
 
 
-var _race_root: Control
-var _race_count: Label
-var _race_panel: PanelContainer
-var _race_title: Label
-var _race_times: Label
-var _race_wins: Label
-var _race_hint: Label
 var _race_tween: Tween
 
 
-func _build_race_ui() -> void:
-	_race_root = Control.new()
-	_race_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_race_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_race_root.visible = false
-	_root.add_child(_race_root)
-
-	_race_count = Ui.l("", 130, Ui.TITLE, Palette.I.paper,
-		HORIZONTAL_ALIGNMENT_CENTER, true)
-	_race_count.set_anchors_preset(Control.PRESET_CENTER)
-	_race_count.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_race_count.grow_vertical = Control.GROW_DIRECTION_BOTH
-	_race_count.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_race_root.add_child(_race_count)
-
-	_race_panel = PanelContainer.new()
-	_race_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	_race_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_race_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_race_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
-	var sb := Ui.sb(Color(Palette.I.ink_2, 0.97), 0, Color(Palette.I.paper, 0.5), 2, 40, 26)
-	_race_panel.add_theme_stylebox_override("panel", sb)
+func _style_race_ui() -> void:
+	_race_panel.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.97), 0, Color(Palette.I.paper, 0.5), 2, 40, 26))
 	_race_panel.gui_input.connect(func(ev: InputEvent) -> void:
-		if ev is InputEventScreenTouch and ev.pressed \
-				or ev is InputEventMouseButton and ev.pressed:
+		if ev is InputEventScreenTouch and ev.pressed 				or ev is InputEventMouseButton and ev.pressed:
 			race_rematch_requested.emit())
-	_race_root.add_child(_race_panel)
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 10)
-	_race_panel.add_child(vb)
-	_race_title = Ui.l("", 52, Ui.TITLE, Palette.I.paper, HORIZONTAL_ALIGNMENT_CENTER)
-	vb.add_child(_race_title)
-	_race_times = Ui.l("", 22, Ui.HEAD, Color(Palette.I.paper, 0.9),
+	Ui.style(_race_count, 130, Ui.TITLE, Palette.I.paper,
+		HORIZONTAL_ALIGNMENT_CENTER, true)
+	Ui.style(_race_title, 52, Ui.TITLE, Palette.I.paper, HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.style(_race_times, 22, Ui.HEAD, Color(Palette.I.paper, 0.9),
 		HORIZONTAL_ALIGNMENT_CENTER)
 	_race_times.add_theme_font_override("font", Ui.tabular())
-	vb.add_child(_race_times)
-	_race_wins = Ui.l("", 18, Ui.HEAD, Palette.I.yellow, HORIZONTAL_ALIGNMENT_CENTER)
-	vb.add_child(_race_wins)
-	_race_hint = Ui.l("", 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
-	vb.add_child(_race_hint)
+	Ui.style(_race_wins, 18, Ui.HEAD, Palette.I.yellow, HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.style(_race_hint, 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func race_countdown(n: int) -> void:

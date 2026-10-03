@@ -5,7 +5,7 @@ const PROBE_IDX := 2
 
 
 func _ready() -> void:
-	var main := Main.new()
+	var main := Main.create()
 	add_child(main)
 	main.debug_solo = true
 	await get_tree().process_frame

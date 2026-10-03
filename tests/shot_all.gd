@@ -5,7 +5,7 @@ var OUT_DIR := ProjectSettings.globalize_path("res://.shots")
 
 
 func _ready() -> void:
-	var main := Main.new()
+	var main := Main.create()
 	add_child(main)
 	main.debug_solo = true
 	await get_tree().process_frame

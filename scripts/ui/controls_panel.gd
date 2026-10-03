@@ -7,28 +7,40 @@ signal closed
 var is_open := false
 var _tween: Tween
 
-var _root: Control
-var _content: Control
-var _shade: ColorRect
-var _close_btn: Button
+@onready var _root: Control = %Root
+@onready var _content: Control = %Content
+@onready var _shade: ColorRect = %Shade
+@onready var _close_btn: Button = %CloseBtn
+@onready var _hints: Label = %Hints
+@onready var _left_col: VBoxContainer = %LeftCol
+@onready var _right_col: VBoxContainer = %RightCol
+@onready var _card: PanelContainer = %Card
+@onready var _body_wrap: PanelContainer = %BodyWrap
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	# 内容由 ControlsData 数据驱动动态生成(数据驱动页 = 动态生成豁免)
-	_root = %Root
-	_shade = %Shade
-	_content = %Content
+	# 骨架容器/关闭钮/提示条在 controls_panel.tscn;键位四节由
+	# ControlsData 数据驱动生成(数据驱动页 = 动态生成豁免)。
 	_root.theme = Ui.make_theme()
 	_shade.color = Palette.I.ink
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.resized.connect(_fit_content)
 
+	_card.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
+	_body_wrap.add_theme_stylebox_override("panel",
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 14))
+	_close_btn.add_theme_font_size_override("font_size", 15)
+	Ui.wire_button(_close_btn)
+	_close_btn.pressed.connect(func() -> void: close())
+
 	_build_page()
 
 
 func _build_page() -> void:
+	# 标题 = Ui.poster_label 内聚工厂产物(已登记豁免),非代码建树。
 	var header := Ui.poster_label("键位指南", 34, Palette.I.paper, true, Palette.I.red)
 	header.position = Vector2(64, 40)
 	_content.add_child(header)
@@ -37,82 +49,17 @@ func _build_page() -> void:
 	header_sub.position = Vector2(66, 88)
 	_content.add_child(header_sub)
 
-	var zone := Control.new()
-	zone.anchor_left = 0.0
-	zone.anchor_right = 1.0
-	zone.anchor_top = 0.0
-	zone.anchor_bottom = 1.0
-	zone.offset_left = 48
-	zone.offset_right = -48
-	zone.offset_top = 118
-	zone.offset_bottom = -92
-	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_content.add_child(zone)
+	_left_col.add_child(_keys_section(ControlsData.CONTROLS[0]))
+	_left_col.add_child(Ui.rule(520, 1, Color(Palette.I.paper, 0.14)))
+	_left_col.add_child(_keys_section(ControlsData.CONTROLS[1]))
+	_right_col.add_child(_keys_section(ControlsData.CONTROLS[2]))
+	_right_col.add_child(Ui.rule(520, 1, Color(Palette.I.paper, 0.14)))
+	_right_col.add_child(_keys_section(ControlsData.CONTROLS[3]))
 
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	zone.add_child(center)
-
-	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(1184, 0)
-	card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
-	center.add_child(card)
-
-	var body_wrap := PanelContainer.new()
-	body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 14))
-	card.add_child(body_wrap)
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(1148, 420)
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	body_wrap.add_child(scroll)
-	var cols := HBoxContainer.new()
-	cols.add_theme_constant_override("separation", 44)
-	scroll.add_child(cols)
-
-	var left := VBoxContainer.new()
-	left.add_theme_constant_override("separation", 20)
-	left.add_child(_keys_section(ControlsData.CONTROLS[0]))
-	left.add_child(Ui.rule(520, 1, Color(Palette.I.paper, 0.14)))
-	left.add_child(_keys_section(ControlsData.CONTROLS[1]))
-	cols.add_child(left)
-	var right := VBoxContainer.new()
-	right.add_theme_constant_override("separation", 20)
-	right.add_child(_keys_section(ControlsData.CONTROLS[2]))
-	right.add_child(Ui.rule(520, 1, Color(Palette.I.paper, 0.14)))
-	right.add_child(_keys_section(ControlsData.CONTROLS[3]))
-	cols.add_child(right)
-
-	var touch := Adaptive.is_touch_mode()
-	var hints_text := "滚轮 / 拖动翻阅 · Esc / B 返回" if not touch else "上下拖动翻阅 · 点「关 闭」返回"
-	var hints := Ui.l(hints_text, 13, Ui.BODY, Palette.I.dim)
-	hints.anchor_top = 1.0
-	hints.anchor_bottom = 1.0
-	hints.offset_left = 64
-	hints.offset_top = -52
-	hints.offset_right = 760
-	hints.offset_bottom = -30
-	_content.add_child(hints)
-
-	var close_btn := Button.new()
-	close_btn.text = "关 闭"
-	close_btn.custom_minimum_size = Vector2(160, 42)
-	close_btn.add_theme_font_size_override("font_size", 15)
-	Ui.wire_button(close_btn)
-	close_btn.pressed.connect(func() -> void: close())
-	_close_btn = close_btn
-	close_btn.anchor_left = 1.0
-	close_btn.anchor_right = 1.0
-	close_btn.anchor_top = 1.0
-	close_btn.anchor_bottom = 1.0
-	close_btn.offset_left = -224
-	close_btn.offset_right = -64
-	close_btn.offset_top = -66
-	close_btn.offset_bottom = -24
-	_content.add_child(close_btn)
+	var hints_text := "滚轮 / 拖动翻阅 · Esc / B 返回" if not Adaptive.is_touch_mode() \
+		else "上下拖动翻阅 · 点「关 闭」返回"
+	Ui.style(_hints, 13, Ui.BODY, Palette.I.dim)
+	_hints.text = hints_text
 
 
 func _keys_section(sec: Dictionary) -> Control:

@@ -1,6 +1,56 @@
-[gd_scene format=3 uid="uid://bvesfn5yhoqwk"]
+[gd_scene load_steps=18 format=3 uid="uid://bvesfn5yhoqwk"]
 
-[ext_resource type="Script" uid="uid://d4hc45td1j3r7" path="res://scripts/core/main.gd" id="1"]
+[ext_resource type="Script" uid="uid://d4hc45td1j3r7" path="res://scripts/core/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/core/character_manager.tscn" id="2_cm"]
+[ext_resource type="PackedScene" path="res://scenes/core/roster_controller.tscn" id="3_roster"]
+[ext_resource type="PackedScene" path="res://scenes/core/game_flow.tscn" id="4_flow"]
+[ext_resource type="PackedScene" path="res://scenes/core/race_controller.tscn" id="5_race"]
+[ext_resource type="PackedScene" path="res://scenes/core/ghost_recorder.tscn" id="6_ghost"]
+[ext_resource type="PackedScene" path="res://scenes/world/backdrop.tscn" id="7_backdrop"]
+[ext_resource type="PackedScene" path="res://scenes/fx/ambience.tscn" id="8_amb"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_controls.tscn" id="9_touch"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="10_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menu_layer.tscn" id="11_menu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/archive_panel.tscn" id="12_archive"]
+[ext_resource type="PackedScene" path="res://scenes/ui/controls_panel.tscn" id="13_controls"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_panel.tscn" id="14_settings"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="15_pause"]
+[ext_resource type="PackedScene" path="res://scenes/net/net_session.tscn" id="16_net"]
+[ext_resource type="PackedScene" path="res://scenes/ui/net_room_layer.tscn" id="17_room"]
 
 [node name="Main" type="Node2D" unique_id=787400698]
-script = ExtResource("1")
+script = ExtResource("1_main")
+
+[node name="CharacterManager" parent="." instance=ExtResource("2_cm")]
+
+[node name="RosterController" parent="." instance=ExtResource("3_roster")]
+
+[node name="GameFlow" parent="." instance=ExtResource("4_flow")]
+
+[node name="RaceController" parent="." instance=ExtResource("5_race")]
+
+[node name="GhostRecorder" parent="." instance=ExtResource("6_ghost")]
+
+[node name="Backdrop" parent="." instance=ExtResource("7_backdrop")]
+
+[node name="Ambience" parent="." instance=ExtResource("8_amb")]
+process_mode = 3
+
+[node name="TouchControls" parent="." instance=ExtResource("9_touch")]
+process_mode = 1
+
+[node name="Hud" parent="." instance=ExtResource("10_hud")]
+
+[node name="MenuLayer" parent="." instance=ExtResource("11_menu")]
+
+[node name="ArchivePanel" parent="." instance=ExtResource("12_archive")]
+
+[node name="ControlsPanel" parent="." instance=ExtResource("13_controls")]
+
+[node name="SettingsPanel" parent="." instance=ExtResource("14_settings")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("15_pause")]
+
+[node name="NetSession" parent="." instance=ExtResource("16_net")]
+
+[node name="NetRoomLayer" parent="." instance=ExtResource("17_room")]

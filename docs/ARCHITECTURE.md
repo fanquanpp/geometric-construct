@@ -12,19 +12,24 @@ geometric-construct/
 ├── project.godot            # 引擎配置(主场景 scenes/Main.tscn)
 ├── icon.png                 # 项目图标(构成主义红方标记)
 ├── scenes/                  # 全部场景文件(v0.31.0 起多场景组合,禁单场景巨石)
-│   ├── Main.tscn            # 组合根:根 Node2D + core/main.gd(main.gd 按
-│   │                        #   既定装配顺序实例化下列子系统场景,顺序即行为)
+│   ├── Main.tscn            # 组合根:16 子系统常驻场景在编辑器组装(v0.61.0
+│   │                        #   节点化;main.gd 只接线,_enter_tree 前置设置,
+│   │                        #   子节点 _ready 顺序=场景子节点顺序,勿重排;
+│   │                        #   构造一律 Main.create() 工厂,裸 Main.new() 无子树)
 │   ├── core/                #   character_manager(角色建体入池发信号,R3)
 │   │                        #   / roster_controller(名册域)
 │   │                        #   / game_flow(流转域:关卡装载/幕流转/通关,v0.38.2)
 │   ├── world/               #   level_root(表现层宿主,预连接 character_created)
 │   │                        #   / backdrop / camera_rig
 │   ├── entities/            #   player(几何体实体;碰撞形按角色动态建,豁免)
-│   ├── ui/                  #   hud(结构骨架 + EdgeIndicator 子场景)/ menu_layer
-│   │                        #   (海报骨架 + ActPanelCard / DualPickCard 弹层子场景)
-│   │                        #   / pause_menu / settings_panel(骨架)/ archive_panel
-│   │                        #   / touch_controls / net_room_layer
-│   │                        #   (v0.56.0 删 boot_intro / story_layer)
+│   ├── ui/                  #   hud(结构骨架 + EdgeIndicator 子场景 + FX/闪屏/
+│   │                        #   竞速面板 v0.61.0 入场景)/ menu_layer(海报骨架 +
+│   │                        #   ActPanelCard / DualPickCard 弹层子场景)/ pause_menu
+│   │                        #   / settings_panel(全行结构入场景 v0.61.0)
+│   │                        #   / controls_panel(卡体容器入场景 v0.61.0)
+│   │                        #   / archive_panel / touch_controls(Root+双钮+轮盘
+│   │                        #   入场景 v0.61.0;WheelPad 独立组件 scripts/ui/touch/)
+│   │                        #   / net_room_layer(v0.56.0 删 boot_intro / story_layer)
 │   ├── fx/                  #   ambience
 │   └── net/                 #   net_session
 ├── data/                    # 静态数据资源 .tres(R2:数值权威,Inspector 直调;

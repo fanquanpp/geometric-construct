@@ -11,130 +11,102 @@ var _tween: Tween
 @onready var _shade: ColorRect = %Shade
 @onready var _content: Control = %Content
 @onready var _frame: Control = %Frame
-@onready var _scroll: ScrollContainer = %Scroll
 @onready var _foot: HBoxContainer = %Foot
-var _wheel_fixed_btn: Button
-var _wheel_float_btn: Button
-var _vib_btn: Button
-var _shake_btn: Button
-var _bgfx_btn: CheckButton
-var _sfx_slider: HSlider
-var _sfx_value: Label
-var _amb_slider: HSlider
-var _amb_value: Label
-var _res_btns: Array = []
-var _fs_btn: CheckButton
-var _adaptive_btn: Button
+@onready var _wheel_fixed_btn: Button = %WheelFixedBtn
+@onready var _wheel_float_btn: Button = %WheelFloatBtn
+@onready var _vib_btn: CheckButton = %VibBtn
+@onready var _shake_btn: CheckButton = %ShakeBtn
+@onready var _bgfx_btn: CheckButton = %BgfxBtn
+@onready var _sfx_slider: HSlider = %SfxSlider
+@onready var _sfx_value: Label = %SfxValue
+@onready var _amb_slider: HSlider = %AmbSlider
+@onready var _amb_value: Label = %AmbValue
+@onready var _fs_btn: CheckButton = %FsBtn
+@onready var _adaptive_btn: Button = %AdaptiveBtn
+@onready var _motion_btn: CheckButton = %MotionBtn
+@onready var _res_btns: Array = [%ResBtn0, %ResBtn1, %ResBtn2]
+@onready var _video_nodes: Array = [%SectionVideo, %VideoResRow,
+	%VideoAdaptiveRow, %VideoFsRow, %Rule2]
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_apply_styles()
-	var body: VBoxContainer = %Body
 
-	body.add_child(_section_label("操控 CONTROL"))
-	body.add_child(_caption("轮盘位置(移动端):固定在左下角,或在左半屏按下处展开;"
-		+ "两种模式下,右半屏点按均为跳跃"))
-	var wheel_row := HBoxContainer.new()
-	wheel_row.add_theme_constant_override("separation", 10)
-	_wheel_fixed_btn = _mode_btn("固定位置")
-	_wheel_float_btn = _mode_btn("按下位置")
+	# 行结构/控件在 settings_panel.tscn;此处只做调色派生样式、
+	# 文案 SSOT(分辨率档取自 SettingsManager)与信号接线。
+	if OS.has_feature("mobile"):
+		for n: Control in _video_nodes:
+			n.visible = false
+
+	_style_section(%SectionControl, %ControlMark, %ControlHeadLabel)
+	_style_section(%SectionVideo, %VideoMark, %VideoHeadLabel)
+	_style_section(%SectionAudio, %AudioMark, %AudioHeadLabel)
+	_style_section(%SectionAccess, %AccessMark, %AccessHeadLabel)
+	Ui.style(%WheelCaption, 12, Ui.LIGHT, Palette.I.dim)
+	for rl: Label in [%VibRow/Label, %ShakeRow/Label, %VideoResRow/Label,
+			%VideoAdaptiveRow/Label, %VideoFsRow/Label, %SfxRow/Label,
+			%AmbRow/Label, %MotionRow/Label, %BgfxRow/Label]:
+		Ui.style(rl, 15, Ui.BODY, Color(Palette.I.paper, 0.88))
+	for rule: ColorRect in [%Rule1, %Rule2, %Rule3, %Rule4]:
+		rule.color = Color(Palette.I.paper, 0.10)
+
+	for b: Button in [_wheel_fixed_btn, _wheel_float_btn, _adaptive_btn] \
+			+ _res_btns:
+		Ui.wire_button(b)
+	for c: CheckButton in [_vib_btn, _shake_btn, _fs_btn, _motion_btn, _bgfx_btn]:
+		Ui.wire_button(c, "")
+
+	for i: int in SettingsManager.RESOLUTIONS.size():
+		var r: Vector2i = SettingsManager.RESOLUTIONS[i]
+		(_res_btns[i] as Button).text = "%d×%d" % [r.x, r.y]
+		(_res_btns[i] as Button).pressed.connect(func() -> void: _set_resolution(r))
 	_wheel_fixed_btn.pressed.connect(func() -> void: _set_wheel(SettingsManager.WHEEL_FIXED))
 	_wheel_float_btn.pressed.connect(func() -> void: _set_wheel(SettingsManager.WHEEL_FLOAT))
-	wheel_row.add_child(_wheel_fixed_btn)
-	wheel_row.add_child(_wheel_float_btn)
-	body.add_child(wheel_row)
-
-	_vib_btn = _toggle_btn()
 	_vib_btn.toggled.connect(func(on: bool) -> void:
 		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 		SettingsManager.set_vibration(on))
-	body.add_child(_row("触感反馈(按键轻震)", _vib_btn))
-
-	_shake_btn = _toggle_btn()
 	_shake_btn.toggled.connect(func(on: bool) -> void:
 		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 		SettingsManager.set_screen_shake(on))
-	body.add_child(_row("屏幕震动(打击反馈)", _shake_btn))
+	_adaptive_btn.pressed.connect(func() -> void: _set_adaptive())
+	_fs_btn.toggled.connect(func(on: bool) -> void:
+		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
+		SettingsManager.set_fullscreen(on))
 
-	body.add_child(_rule())
-
-	if not OS.has_feature("mobile"):
-		body.add_child(_section_label("画面 VIDEO"))
-		var res_row := HBoxContainer.new()
-		res_row.add_theme_constant_override("separation", 10)
-		_res_btns.clear()
-		for r: Vector2i in SettingsManager.RESOLUTIONS:
-			var btn := _mode_btn("%d×%d" % [r.x, r.y])
-			btn.pressed.connect(func() -> void: _set_resolution(r))
-			_res_btns.append(btn)
-			res_row.add_child(btn)
-		body.add_child(_row("窗口分辨率", res_row))
-		_adaptive_btn = _mode_btn("自适应缩放")
-		_adaptive_btn.pressed.connect(func() -> void: _set_adaptive())
-		body.add_child(_row("自由拉伸", _adaptive_btn))
-		_fs_btn = _toggle_btn()
-		_fs_btn.toggled.connect(func(on: bool) -> void:
-			Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
-			SettingsManager.set_fullscreen(on))
-		body.add_child(_row("全屏", _fs_btn))
-		body.add_child(_rule())
-
-	body.add_child(_section_label("音频 AUDIO"))
-	_sfx_slider = _volume_slider()
+	_style_slider(_sfx_slider)
 	_sfx_slider.value_changed.connect(func(v: float) -> void:
 		SettingsManager.set_sfx_volume(v)
 		_sfx_value.text = "%d%%" % roundi(v * 100.0))
-	_sfx_value = Ui.l("100%", 15, Ui.HEAD, Palette.I.paper)
-	_sfx_value.custom_minimum_size = Vector2(56, 0)
-	_sfx_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	body.add_child(_row("音效音量", _sfx_slider, _sfx_value))
-
-	_amb_slider = _volume_slider()
+	_style_slider(_amb_slider)
 	_amb_slider.value_changed.connect(func(v: float) -> void:
 		SettingsManager.set_ambience_volume(v)
 		_amb_value.text = "%d%%" % roundi(v * 100.0))
-	_amb_value = Ui.l("100%", 15, Ui.HEAD, Palette.I.paper)
-	_amb_value.custom_minimum_size = Vector2(56, 0)
-	_amb_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	body.add_child(_row("垫乐 / BGM", _amb_slider, _amb_value))
 
-	body.add_child(_rule())
-
-	body.add_child(_section_label("无障碍 ACCESSIBILITY"))
-	var motion_btn := _toggle_btn()
-	motion_btn.button_pressed = SettingsManager.reduced_motion
-	motion_btn.toggled.connect(func(on: bool) -> void:
+	_motion_btn.set_pressed_no_signal(SettingsManager.reduced_motion)
+	_motion_btn.toggled.connect(func(on: bool) -> void:
 		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 		SettingsManager.set_reduced_motion(on))
-	body.add_child(_row("减动效(关闭震屏 / 演出转场,保留硬切)", motion_btn))
-
-	_bgfx_btn = _toggle_btn()
-	_bgfx_btn.button_pressed = SettingsManager.background_fx
+	_bgfx_btn.set_pressed_no_signal(SettingsManager.background_fx)
 	_bgfx_btn.toggled.connect(func(on: bool) -> void:
 		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 		SettingsManager.set_background_fx(on)
 		if Main.I != null and Main.I.backdrop != null:
 			Main.I.backdrop.refresh_gate())
-	body.add_child(_row("背景动效(星空闪烁 / 浮尘 / 幕变奏,关=静态画面)", _bgfx_btn))
-
-	body.add_child(_rule())
 
 	_foot.add_theme_constant_override("separation", 12)
-	var ver := Ui.l("%s · %s" % [Version.GAME_TITLE_EN, Version.full_string()],
-		12, Ui.LIGHT, Palette.I.dim)
-	ver.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_foot.add_child(ver)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_foot.add_child(spacer)
-	var close_btn := Button.new()
-	close_btn.text = "关 闭"
-	close_btn.custom_minimum_size = Vector2(120, 42)
-	close_btn.add_theme_font_size_override("font_size", 16)
-	Ui.wire_button(close_btn)
-	close_btn.pressed.connect(func() -> void: close())
-	_foot.add_child(close_btn)
+	Ui.style(%VerLabel, 12, Ui.LIGHT, Palette.I.dim)
+	%VerLabel.text = "%s · %s" % [Version.GAME_TITLE_EN, Version.full_string()]
+	Ui.wire_button(%CloseBtn)
+	(%CloseBtn as Button).pressed.connect(func() -> void: close())
+
+
+func _style_section(section: Control, mark: ColorRect, label: Label) -> void:
+	section.add_theme_constant_override("separation", 4)
+	(section.get_child(0) as HBoxContainer) \
+		.add_theme_constant_override("separation", 8)
+	mark.color = Palette.I.red
+	Ui.style(label, 16, Ui.HEAD, Palette.I.paper)
 
 
 func _apply_styles() -> void:
@@ -181,71 +153,7 @@ func _fit_content() -> void:
 	_foot.size = Vector2(Adaptive.DESIGN.x - 128, 46)
 
 
-func _section_label(text: String) -> Control:
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 4)
-	var hb := HBoxContainer.new()
-	hb.add_theme_constant_override("separation", 8)
-	var mark := ColorRect.new()
-	mark.color = Palette.I.red
-	mark.custom_minimum_size = Vector2(10, 10)
-	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	hb.add_child(mark)
-	hb.add_child(Ui.l(text, 16, Ui.HEAD, Palette.I.paper))
-	col.add_child(hb)
-	return col
-
-
-func _caption(text: String) -> Label:
-	return Ui.l(text, 12, Ui.LIGHT, Palette.I.dim)
-
-
-func _rule() -> Control:
-	return Ui.rule(0, 1, Color(Palette.I.paper, 0.10))
-
-
-func _row(label_text: String, ctl: Control, extra: Control = null) -> HBoxContainer:
-	var hb := HBoxContainer.new()
-	hb.add_theme_constant_override("separation", 12)
-	var lab := Ui.l(label_text, 15, Ui.BODY, Color(Palette.I.paper, 0.88))
-	lab.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	hb.add_child(lab)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hb.add_child(spacer)
-	ctl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	hb.add_child(ctl)
-	if extra != null:
-		extra.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		hb.add_child(extra)
-	return hb
-
-
-func _mode_btn(text: String) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.toggle_mode = true
-	b.custom_minimum_size = Vector2(132, 40)
-	b.add_theme_font_size_override("font_size", 15)
-	Ui.wire_button(b)
-	return b
-
-
-func _toggle_btn() -> CheckButton:
-	var c := CheckButton.new()
-	c.toggle_mode = true
-	Ui.wire_button(c, "")
-	return c
-
-
-func _volume_slider() -> HSlider:
-	var s := HSlider.new()
-	s.min_value = 0.0
-	s.max_value = 1.0
-	s.step = 0.05
-	s.custom_minimum_size = Vector2(200, 28)
-	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
+func _style_slider(s: HSlider) -> void:
 	var track := Ui.sb(Color(Palette.I.paper, 0.16), 0, null, 0, 0, 0)
 	track.content_margin_top = 3
 	track.content_margin_bottom = 3
@@ -255,9 +163,7 @@ func _volume_slider() -> HSlider:
 	fill.content_margin_bottom = 3
 	s.add_theme_stylebox_override("grabber_area", fill)
 	s.add_theme_stylebox_override("grabber_area_highlight", fill)
-
 	s.value_changed.connect(func(_v: float) -> void: Sfx.play("ui_slider"))
-	return s
 
 
 func open() -> void:

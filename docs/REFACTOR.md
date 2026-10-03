@@ -250,6 +250,17 @@ dev(shot_harness)→ core data entities rogue world        (导出剥离,豁免)
   (数据驱动页 / 动画编排 / 运行时实体)。P4-5 档案页签子构建器
   原代码已成立。
   Theme 不做 .tres(主题色为 Palette 派生混合,副本破坏 SSOT,v0.33.0 裁定)。
+- **M-9 · Main 组合根节点化 ✅(v0.61.0)**:Main.tscn 从 6 行空壳升级为
+  16 子系统常驻场景的编辑器组装(装配顺序=场景子节点顺序);main.gd
+  649→~600 行只做接线与分派,设置/字体/Main.I 前置 `_enter_tree`(先于
+  全部子节点 `_ready`);新增 `Main.create()` 静态工厂为唯一构造入口
+  (裸 `Main.new()` 无子树,七处测试/分镜已换用)。同批:controls_panel
+  / settings_panel / touch_controls(Root+双钮+轮盘)/ hud(FX 层+闪屏层+
+  竞速面板)四件代码建树清偿入场景;WheelPad 自 touch_controls 内嵌类
+  抽独立组件 `scripts/ui/touch/wheel_pad.gd`。数据驱动页豁免口径不变
+  (ControlsData 键位四节 / net_room 会话态 Body / 标题 poster_label
+  内聚工厂)。门禁 13 项全绿 + 12 张截图目检(触屏「召回/暂停」标签
+  场景化漏 text 当场抓获修复)。
 - **M-4 · 角色参数表管理器化 ✅(v0.31.0)**:GeometryDef → Resource
   (data/characters/*.tres 五份)+ CharacterManager(读表建体入池,
   发 `character_created`)+ LevelRoot 表现层预连接挂载——兑现 Phase 4

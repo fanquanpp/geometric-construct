@@ -2,6 +2,61 @@
 
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 
+## v0.61.0 · 全项目节点化:Main 组合根场景化 + 四面板代码建树清偿 + WheelPad 组件化(2026-10-03)
+
+用户令:「洞察分析深度重构,增强组件化,模块化地图机关制作。节点化全项目。联网搜索。全项目自主优化。」
+
+【联网洞察】Godot 官方 Best Practices(Scene organization)核对:场景应自包含、父上下文初始化
+子场景、静态结构入编辑器组合、动态生成留代码——与 AGENTS.md R1 同向;本轮以「装配即行为」的
+时序契约为核心做实证重构(子节点 `_ready` 先于父、`_enter_tree` 先于全部子节点,官方文档
+child-ready-before-parent 语义)。
+
+【Main 组合根节点化(旗舰)】Main.tscn 从 6 行空壳(根节点+脚本)升级为 **16 子系统常驻场景的
+编辑器组装**:CharacterManager → RosterController → GameFlow → RaceController → GhostRecorder →
+Backdrop → Ambience → TouchControls → Hud → MenuLayer → ArchivePanel → ControlsPanel →
+SettingsPanel → PauseMenu → NetSession → NetRoomLayer,装配顺序=场景子节点顺序(与旧代码
+顺序逐位一致,「装配顺序即行为」注释契约随迁)。main.gd 649→约 600 行:16 个 `preload 常量+
+instantiate+add_child` 全删,改 `@onready` 场景引用;**设置载入/字体/Main.I 前置 `_enter_tree`**
+(先于全部子节点 `_ready`,一次解决 settings_panel/touch 轮盘/backdrop 门控/net_session._m
+四类就绪期依赖);Ambience 的 PROCESS_MODE_ALWAYS 与 TouchControls 的 PAUSABLE 落进场景属性。
+
+【Main.create() 工厂】Main 的子系统全部是场景子节点,裸 `Main.new()` 得到无子树的空 Main
+(flow_check 实证:archive_panel null 循环报错)。新增 `static func create()` 经
+`load("res://scenes/Main.tscn")` 实例化为唯一正规构造入口;tests 七处(flow/stats/focus/
+native/replay_transition/win_shot/shot_all)全部换用。
+
+【四面板代码建树清偿】
+- controls_panel:卡体容器链(Zone→Center→Card→BodyWrap→Scroll→Cols→双列)+关闭钮+提示条
+  入场景(5→25 节点);ControlsData 键位四节仍为数据驱动生成(豁免口径不变)。
+- settings_panel:四分节+全部行结构(轮盘双钮/触感/震动/分辨率三钮/自适应/全屏/双音量滑条/
+  减动效/背景动效)+页脚关闭钮入场景(12→70 节点);移动端隐藏 VIDEO 区改为节点 visible 开关;
+  六个行工厂函数退役,调色派生样式与信号接线留代码。
+- touch_controls:Root+召回/暂停双钮(含 UiGlyph 字形)+标签+WheelPad 节点入场景(1→12 节点);
+  **WheelPad 自内嵌类抽独立组件** `scripts/ui/touch/wheel_pad.gd`(类名不变,场景可单独预览);
+  点击爆点/涟漪仍为运行时瞬态实体(豁免)。
+- hud:TransitionFX 层+anchor 闪屏层(CanvasLayer 90)+竞速面板(倒计时数字/结果卡五件)
+  入场景(39→56 节点);`_build_race_ui` 改 `_style_race_ui`(样式与接线留代码)。
+- net_room_layer 审计:静态框体已在场景、Body 为会话态驱动整建(既有豁免登记),零改动。
+
+【触屏标签回归当场抓获】场景化时 RecallLabel/PauseLabel 漏写 `text`(原 `_add_button` 的
+label_text 参数没搬全),--autoshot=0 --touch 截图目检发现右上双钮下方文字丢失,补
+`text = "召回"/"暂停"` 后复截归位。教训:代码→场景搬运以「节点属性逐项对账」验收,截图必拍触屏。
+
+【地图机关模块化现状对账】机关/实体场景壳在册 9 件(exit_door / speed_gate / player /
+checkpoint_beacon / hint_marker / spawn_marker / mover / piano_tile / ski_patch /
+timed_bridge),16 关机关排关全部为编辑器实例化(grep 实证:ExitDoor30 / HintMarker28 /
+CheckpointBeacon21 / TimedBridge4 / SpeedGate·SkiPatch·PianoTile·Mover 各2/1),R1 模块化
+达标;本轮无机关行为改动。
+
+【门禁】import 过 + check-only 全部改动脚本绿 + flow PASS(经 Main.create 真场景链)+
+native 17 场 ALL PASS + stats PASS + focus ALL PASS + trait ALL PASS + ambience 六表 PASS +
+transition 五式+single-flight PASS + replay 三腿 ALL PASS + recalltest 三链 PASS +
+dualtest 七链 ALL PASS + nettest ALL PASS + LEVELAUDIT ALL PASS(13 项)。
+截图目检 12 张:菜单/键位指南/设置/档案几何×3/建筑×2/机关×3/触屏关内 HUD 全过。
+
+【文档】ARCHITECTURE(组合根注释换代+ui 场景清单)/REFACTOR §八(M-9 台账)/本节。
+版本三件 0.61.0/code 36。
+
 ## v0.60.0 · 手柄确认链修复 + 图鉴二次对账清退 + 背景动效风格化 + 全关卡视觉检测(2026-09-30)
 
 用户令:「手柄操作存在逻辑缺少。选关不能确认。全量勘察修复相似问题。完成后提交推送。

@@ -13,7 +13,7 @@ var _fails := 0
 
 
 func _ready() -> void:
-	main = Main.new()
+	main = Main.create()
 	add_child(main)
 	main.debug_solo = true
 	await get_tree().process_frame
