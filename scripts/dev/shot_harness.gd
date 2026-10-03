@@ -244,7 +244,13 @@ func run_panel_shot() -> void:
 	m.archive_panel.open(0, "bld")
 	await m.get_tree().create_timer(0.5).timeout
 	await _shot("panel_bld0")
-	m.archive_panel._sel["bld"] = 6
+	# 按 id 查找选中(索引自 v0.60 清退后漂移过一次,硬编码曾错拍台阶)
+	var beam_idx := 0
+	for i in ArchiveData.BUILDINGS.size():
+		if ArchiveData.BUILDINGS[i]["id"] == "bld_beam":
+			beam_idx = i
+			break
+	m.archive_panel._sel["bld"] = beam_idx
 	m.archive_panel.builders["bld"].refresh()
 	await m.get_tree().create_timer(0.4).timeout
 	await _shot("panel_bld_beam")

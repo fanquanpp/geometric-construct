@@ -405,17 +405,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 				dashed_rect(c, R.call(88, 140, 24, 20), Color(paper, 0.3), 1.2 * k)
 				DrawKit.chevron(c, P.call(100, 148), Vector2(0, 1), 12.0 * k,
 					Color(paper, 0.45), 2.0 * k)
-			"bld_slab_ceiling":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(30, 24, 140, 20), ink3)
-				c.draw_rect(R.call(30, 40, 140, 5), Color(Palette.I.blue, 0.8))
-				codex_char(c, P, "fall", 100, 62, 24)
-				dashed_line(c, P.call(52, 52), P.call(52, 148),
-					Color(Palette.I.blue, 0.4), 1.5 * k)
-				dashed_line(c, P.call(148, 52), P.call(148, 148),
-					Color(Palette.I.blue, 0.4), 1.5 * k)
-				DrawKit.chevron(c, P.call(128, 62), Vector2(1, 0), 14.0 * k,
-					Color(Palette.I.blue, 0.7), 2.5 * k)
 			"bld_ghost_frame":
 				dashed_rect(c, R.call(40, 40, 120, 120), Color(paper, 0.4), 2.0 * k)
 				c.draw_rect(R.call(56, 56, 88, 88), Color(paper, 0.06))
@@ -445,15 +434,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 				DrawKit.arrow(c, P.call(136, 30), P.call(136, 70),
 					Color(paper, 0.4), 1.5 * k, 7.0 * k)
 				codex_char(c, P, "spring", 100, 60, 20)
-			"bld_stair":
-				codex_stage(c, R, paper)
-				for st in 4:
-					c.draw_rect(R.call(26 + st * 36, 148 - st * 30, 36, 30), ink2)
-					c.draw_rect(R.call(26 + st * 36, 148 - st * 30, 36, 5),
-						Color(paper, 0.55))
-				codex_char(c, P, "dash", 62, 122, 20)
-				dashed_line(c, P.call(40, 142), P.call(40, 116),
-					Color(Palette.I.red, 0.55), 1.5 * k)
 			"bld_bridge":
 				codex_stage(c, R, paper)
 				c.draw_rect(R.call(20, 88, 160, 18), ink2)
@@ -468,25 +448,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 				codex_char(c, P, "dash", 100, 76, 20)
 				DrawKit.chevron(c, P.call(132, 78), Vector2(1, 0), 14.0 * k,
 					Color(paper, 0.4), 2.5 * k)
-			"bld_frame":
-				c.draw_rect(R.call(36, 52, 20, 128), ink2)
-				c.draw_rect(R.call(144, 52, 20, 128), ink2)
-				c.draw_rect(R.call(28, 32, 144, 20), ink2)
-				c.draw_rect(R.call(28, 32, 144, 5), Color(paper, 0.55))
-				dashed_rect(c, R.call(66, 66, 68, 114), Color(paper, 0.3), 2.0 * k)
-				codex_stage(c, R, paper)
-				codex_char(c, P, "spring", 100, 150, 20)
-				DrawKit.brackets(c, R.call(62, 62, 76, 14), Color(Palette.I.red, 0.6),
-					6.0 * k, 1.5 * k)
-			"bld_hall":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(16, 146, 168, 6), ink2)
-				c.draw_rect(R.call(16, 40, 14, 106), ink2)
-				c.draw_rect(R.call(170, 40, 14, 106), ink2)
-				c.draw_rect(R.call(16, 26, 168, 14), ink3)
-				c.draw_rect(R.call(90, 76, 20, 70), ink2)
-				codex_char(c, P, "dash", 56, 134, 16)
-				codex_char(c, P, "spring", 146, 134, 16)
 			"bld_corridor":
 				codex_stage(c, R, paper)
 				c.draw_rect(R.call(56, 24, 30, 140), ink2)
@@ -498,17 +459,6 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 				DrawKit.chevron(c, P.call(100, 100), Vector2(1, 0), 20.0 * k,
 					Color(paper, 0.25), 3.0 * k)
 				codex_char(c, P, "dash", 100, 140, 20)
-			"bld_gate":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(36, 48, 26, 116), ink2)
-				c.draw_rect(R.call(138, 48, 26, 116), ink2)
-				c.draw_rect(R.call(28, 28, 144, 20), ink2)
-				c.draw_rect(R.call(28, 28, 144, 6), Color(Palette.I.red, 0.8))
-				c.draw_rect(R.call(60, 152, 80, 8), ink3)
-				dashed_rect(c, R.call(70, 58, 60, 106), Color(paper, 0.3), 2.0 * k)
-				codex_char(c, P, "dash", 100, 138, 20)
-				DrawKit.chevron(c, P.call(100, 96), Vector2(0, 1), 16.0 * k,
-					Color(Palette.I.red, 0.55), 2.5 * k)
 			_:
 				c.draw_rect(R.call(40, 40, 120, 120), ink2)
 				codex_stage(c, R, paper)
