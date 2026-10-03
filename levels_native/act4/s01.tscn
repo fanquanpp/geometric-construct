@@ -15,7 +15,7 @@
 
 [node name="LevelRoot" type="Node2D" unique_id=716187050]
 script = ExtResource("1_nl")
-level_name = "疾 · 学会停"
+level_name = "第三幕·第一关"
 intro_text = "全游戏最快的形状,走进了一条快不起来的路。每一跳都要等——等,不是停下。"
 roster = Array[int]([0])
 level_size = Vector2(3200, 1200)

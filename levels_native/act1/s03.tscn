@@ -14,7 +14,7 @@
 
 [node name="LevelRoot" type="Node2D" unique_id=1487196177]
 script = ExtResource("1_nl")
-level_name = "疾 · 门厅"
+level_name = "第一幕·第二关"
 intro_text = "穿过加速门,冲刺跨过门厅断口。
 Shift 是他的第二条腿。"
 roster = Array[int]([0])

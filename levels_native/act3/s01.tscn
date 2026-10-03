@@ -15,7 +15,7 @@
 
 [node name="LevelRoot" type="Node2D" unique_id=1346437642]
 script = ExtResource("1_nl")
-level_name = "疾 · 独行"
+level_name = "第二幕·第一关"
 intro_text = "分岔的第一条路只有疾。没有同伴的脚步声——只有风,和自己的加速。"
 roster = Array[int]([0])
 level_size = Vector2(3200, 1200)

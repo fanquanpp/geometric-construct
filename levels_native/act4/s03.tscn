@@ -15,7 +15,7 @@
 
 [node name="LevelRoot" type="Node2D" unique_id=1246189129]
 script = ExtResource("1_nl")
-level_name = "逆 · 落地"
+level_name = "第三幕·第三关"
 intro_text = "这一整关没有天花板。逆把置换键收起来,用自己的脚,走完一段地上的路。"
 focus = 2
 roster = Array[int]([2])

@@ -13,7 +13,7 @@
 
 [node name="LevelRoot" type="Node2D" unique_id=1554927428]
 script = ExtResource("1_nl")
-level_name = "疾 · 初速"
+level_name = "第一幕·第一关"
 intro_text = "A/D 移动,Space 跳过缺口;空中再按一次 Space——二段跳。
 速度是他的答案。"
 roster = Array[int]([0])

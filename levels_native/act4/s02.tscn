@@ -15,7 +15,7 @@
 
 [node name="LevelRoot" type="Node2D" unique_id=2063241555]
 script = ExtResource("1_nl")
-level_name = "跃 · 为自己折"
+level_name = "第三幕·第二关"
 intro_text = "第一次,跃不接住自己——深谷底下没有尖刺,只有记录点接住每一次坠落。"
 focus = 1
 roster = Array[int]([1])

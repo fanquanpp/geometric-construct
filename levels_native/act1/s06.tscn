@@ -15,7 +15,7 @@
 
 [node name="LevelRoot" type="Node2D" unique_id=1194828138]
 script = ExtResource("1_nl")
-level_name = "三门并立"
+level_name = "第一幕·第四关"
 intro_text = "第一幕终场:三扇门并立——各自的形状,各自的归处。"
 roster = Array[int]([0, 1, 2])
 level_size = Vector2(6400, 1200)

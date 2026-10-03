@@ -13,7 +13,7 @@
 
 [node name="LevelRoot" type="Node2D"]
 script = ExtResource("1_nl")
-level_name = "跃 · 折叠"
+level_name = "第一幕·第三关"
 intro_text = "跃落得越深,弹得越高。\n折叠自己,是为了更高的起飞。"
 focus = 1
 roster = Array[int]([1])

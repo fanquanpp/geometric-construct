@@ -17,7 +17,7 @@
 
 [node name="LevelRoot" type="Node2D" unique_id=1837958236]
 script = ExtResource("1_nl")
-level_name = "代价"
+level_name = "第四幕·第二关"
 intro_text = "桥会塌,等它回来——代价第一次看得见。"
 roster = Array[int]([0, 1, 2])
 level_size = Vector2(4800, 1200)
