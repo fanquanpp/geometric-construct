@@ -2,6 +2,47 @@
 
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 
+## v0.62.0 · 文档大清退:只留本日志,删除内容整合为下方唯一存档摘要(2026-10-03)
+
+用户令:「删除全部的记忆和规划文档等等非主要游戏内容。只保留一个更新日志文档。你的各种
+各样的记忆和文档全部删除。虽然是删除,但是将这些删除的内容统一整合为简短干练的唯一单份
+记录文档。提交推送全部更改到远程仓库。」
+
+【删除清单】docs/ 全目录(ARCHITECTURE / ASSETS / DESIGN / REFACTOR / UPDATE 五总纲 +
+design 15 份规范 + research + story 历史三档 + ui 图册文档,共 42 文件)与根目录 AGENTS.md
+(AI 协作规范)。AI 侧记忆库同步清空,与本文摘要同源整合。代码仅两处注释提及旧文档路径,
+已改中性口径;零运行时依赖(grep 实证),游戏本体不受影响。
+
+---
+
+## 存档摘要(唯一记录 · 被删文档与记忆的整合,速览即用)
+
+**项目**:几何构成 GEOMETRIC CONSTRUCT · Godot 4.7 · PC(键鼠/手柄)+ Android 触屏双端 ·
+三几何体(疾/跃/逆)16 关四幕横版速通;全程序化美术(_draw 配方,取色只经 data/palette.tres),
+原 PNG 素材已清退。
+
+**架构铁律**:①引擎自带优先(R0);②场景组合禁单场景巨石——Main.tscn 组合根 16 子系统
+编辑器组装,构造一律 `Main.create()`(裸 Main.new() 无子树);③数值 .tres(resource 只读
+静态);④Manager 建体入池只发信号,表现层预连接挂载;⑤装配顺序=Main.tscn 子节点顺序,
+设置载入在 main.gd `_enter_tree` 前置。
+
+**门禁 13 项**(headless,输出文本断言为准,exit code 权威):flow / native_check 17 场 /
+stats / focus / trait / ambience / transition / replay 三腿 / recalltest / dualtest 七链 /
+nettest / LEVELAUDIT;CLI `C:/Atian/tools/godot/Godot_v4.7.2-stable_win64_console.exe`;
+新 class_name 须先 `--headless --path . --import`。check-only 的 ext_resource 报错为 4.7
+上游噪音。
+
+**环境**:Android SDK 根=C:/Atian/android-sdk;真机 Redmi K60(a5c4e730,包名
+com.example.speedrouge);debug.keystore 勿删;截图一律项目根目录;每次交付前跑
+`python tools/clean_waste.py`。
+
+**历史里程碑**:v0.45 原生编辑器作关换代(JSON 管线/肉鸽清退)→ v0.53 全程序化美术 →
+v0.55 删剧情 → v0.57 删伍(双体三角形),名册定三体 → v0.59 第一幕 6→4,16 关四幕 +
+存档 v10 → v0.60 手柄确认链(ui_accept/ui_cancel 绑 A/B)+ 图鉴对账实机 → v0.61 全项目
+节点化(Main 组合根 + WheelPad 组件化)。剧情系统 v0.55/0.56 已整体退役,仓库无剧情代码。
+
+---
+
 ## v0.61.0 · 全项目节点化:Main 组合根场景化 + 四面板代码建树清偿 + WheelPad 组件化(2026-10-03)
 
 用户令:「洞察分析深度重构,增强组件化,模块化地图机关制作。节点化全项目。联网搜索。全项目自主优化。」

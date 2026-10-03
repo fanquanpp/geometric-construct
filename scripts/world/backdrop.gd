@@ -2,7 +2,7 @@ class_name Backdrop
 extends CanvasLayer
 
 # 背景层(常驻 CanvasLayer -10):四幕变奏 + 装饰活化 + 操作互动。
-# 契约见 docs/design/procedural-art.md「背景动效」:
+# 背景动效契约(构成主义化):
 # - 结构全部落 scenes/world/backdrop.tscn;取色 SSOT = data/palette.tres,
 #   幕变奏参数经 data/backdrop/*.tres(BackdropPreset)下发给装饰脚本与 shader;
 # - 常驻动画走节点 transform(零重绘)/ shader TIME(GPU) / 粒子 speed_scale,
