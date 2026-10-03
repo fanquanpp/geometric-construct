@@ -347,7 +347,7 @@ static func codex_geo(c: CanvasItem, d: GeometryDef, rect: Rect2) -> void:
 	c.draw_rect(R.call(dx - 3.0, 163.0, 6, 2), dim)
 
 
-## 角色剪影:形状即性格的迷你注记(疾/跃/逆),scale≈0.5 格档。
+## 角色剪影:形状即性格的迷你注记(红/黄/蓝),scale≈0.5 格档。
 static func codex_char(c: CanvasItem, P: Callable, slug: String, x: float,
 		y: float, s := 24.0, face_left := false) -> void:
 	var hs := s * 0.5

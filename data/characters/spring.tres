@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 index = 1
-name = "跃"
+name = "黄"
 full_name = "黄色长方形"
 slug = "spring"
 note = "D4"

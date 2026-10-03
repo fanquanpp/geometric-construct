@@ -16,7 +16,7 @@
 [node name="LevelRoot" type="Node2D" unique_id=251012184]
 script = ExtResource("1_nl")
 level_name = "第二幕·第三关"
-intro_text = "逆的分岔在天与地之间摆荡。上面走一段,下面走一段——两个面,同一条路。"
+intro_text = "蓝的分岔在天与地之间摆荡。上面走一段,下面走一段——两个面,同一条路。"
 focus = 2
 roster = Array[int]([2])
 level_size = Vector2(3200, 1200)

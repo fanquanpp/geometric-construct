@@ -310,7 +310,7 @@ func run_recall_test() -> void:
 	p.position = p.spawn_pos + Vector2(600, -300)
 	await _recall_keypress()
 	var ok: bool = p.position.distance_to(p.spawn_pos) < 2.0 and not p.dying
-	print("RECALLTEST 疾 ", "PASS" if ok else "FAIL",
+	print("RECALLTEST 红 ", "PASS" if ok else "FAIL",
 		" pos=", p.position, " spawn=", p.spawn_pos)
 	if not ok:
 		fails += 1

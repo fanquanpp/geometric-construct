@@ -16,7 +16,7 @@
 [node name="LevelRoot" type="Node2D" unique_id=1186343938]
 script = ExtResource("1_nl")
 level_name = "第三幕·第四关"
-intro_text = "第三幕终场:疾停得下来,跃折得起来,逆落得了地——三形各自反着来了一次。"
+intro_text = "第三幕终场:红停得下来,黄折得起来,蓝落得了地——三形各自反着来了一次。"
 roster = Array[int]([0, 1, 2])
 level_size = Vector2(6400, 1200)
 kill_y = 1400.0
