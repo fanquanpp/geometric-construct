@@ -124,6 +124,10 @@ func _ready() -> void:
 	_save.load_save()
 	_save.clamp_unlocked(LevelData.campaign_last())
 	_unlocked = _save.unlocked
+	# unlock_all 构建特性(测试发布包):全解锁只覆写运行时值,不写回存档,
+	# 换回普通构建即恢复真实进度。
+	if OS.has_feature("unlock_all"):
+		_unlocked = LevelData.campaign_last()
 	_menu.set_unlocked(_unlocked)
 	_menu.visible = true
 	_hud.visible = false

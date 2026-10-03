@@ -2,6 +2,27 @@
 
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 
+## v0.63.2 · 测试发布包:关卡全解锁特性 + GitHub Releases 首发(2026-10-03)
+
+用户令:「打开Godot4.7编辑器导出apk推送到releass发布。关卡全解锁。我远程下载进行测试。」
+
+【新增·unlock_all 构建特性】Android 导出预设注入 `custom_features="unlock_all"`,
+main.gd 装配点检测 `OS.has_feature("unlock_all")` 时把菜单解锁档覆写为
+`LevelData.campaign_last()`(16 关全开)。**只覆写运行时值、不写回存档**——测试机真实
+进度(v10 档)原样保留,换回不带该特性的普通构建即恢复原解锁节奏。正式 progression
+发布前须摘除 Android 预设的该特性键。Windows 预设不带此特性。
+
+【移除·scripts/net/README.md】上轮标记待拍板,用户拍板删除。该 README 为「预留」
+模块的旧设计说明,所述设计权威(docs/design/net.md、ROADMAP.md §3)与落位目录
+(scripts/modes/)均已随文档清退不存在,零代码引用(grep 实证)。
+
+【发布流程】版本三件 0.63.2 / code 41;headless 导出 debug APK
+(`--export-debug "Android"`,debug.keystore,与 K60 在装包同签名可直接覆盖安装);
+git tag v0.63.2;`gh release create` 附 APK。
+
+【门禁】import 过 + flow PASS + native 17 场 ALL PASS + focus ALL PASS(菜单解锁链
+触及)。
+
 ## v0.63.1 · 全资产二轮勘探:孤儿场景壳清退(2026-10-03)
 
 用户令:「再进行一次现有资产与素材勘探,删除未使用的。提交推送。」
