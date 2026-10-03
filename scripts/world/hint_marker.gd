@@ -1,3 +1,4 @@
+@icon("res://assets/editor/hint_marker.svg")
 @tool
 class_name HintMarker
 extends Node2D

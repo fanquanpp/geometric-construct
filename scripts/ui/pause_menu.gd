@@ -34,14 +34,14 @@ func _apply_styles() -> void:
 	_root.theme = Ui.make_theme()
 	_dim.color = Color(Palette.I.ink, 0.78)
 	_panel.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, Color(Palette.I.paper, 0.2), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, Color(Palette.I.paper, 0.2), 1, 0, 0, true))
 	Adaptive.register_card(_panel)
 	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",
 		Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
 	Ui.style(%TitleLabel, 34, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	Ui.style(%SubLabel, 13, Ui.LIGHT, Color(1, 1, 1, 0.7), HORIZONTAL_ALIGNMENT_CENTER)
 	(%BodyWrap as PanelContainer).add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, null, 0, 24, 20))
+		Ui.sb(Color(Palette.I.ink_2, 0.98), 0, null, 0, 24, 20, true))
 	Ui.style(%Caption, 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
 	Ui.style(%EscHint, 12, Ui.LIGHT, Color(Palette.I.dim, 0.85), HORIZONTAL_ALIGNMENT_CENTER)
 	for b: Button in [%ResumeBtn, %RestartBtn, %ArchiveBtn, %SettingsBtn,

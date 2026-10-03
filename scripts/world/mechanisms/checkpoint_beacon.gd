@@ -1,3 +1,5 @@
+@icon("res://assets/editor/checkpoint_beacon.svg")
+@tool
 class_name CheckpointBeacon
 extends Area2D
 
@@ -10,6 +12,9 @@ var _t := 0.0
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		queue_redraw()
+		return
 	add_to_group("checkpoint")
 	set_meta("checkpoint_id", beacon_id)
 	collision_layer = 0

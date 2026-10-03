@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
 [ext_resource type="Texture2D" path="res://assets/maps/act1_s01.png" id="emp_map"]
 
+[ext_resource type="PackedScene" path="res://scenes/world/spawn_marker.tscn" id="15_spn"]
+
 [node name="LevelRoot" type="Node2D" unique_id=1554927428]
 script = ExtResource("1_nl")
 level_name = "疾 · 初速"
@@ -26,9 +28,9 @@ tile_set = ExtResource("3_ts")
 z_index = 1
 tile_set = ExtResource("3_ts")
 
-[node name="Spawn0" type="Marker2D" parent="." unique_id=1891360649]
+[node name="Spawn0" parent="." instance=ExtResource("15_spn")]
+geo_index = 0
 position = Vector2(300, 1275)
-
 [node name="CheckpointBeacon0" parent="." unique_id=185038611 instance=ExtResource("4_bc")]
 position = Vector2(1700, 1275)
 
@@ -48,7 +50,7 @@ text = "A/D 移动 · Space 跳跃"
 [node name="HintMarker1" parent="." unique_id=1095525932 instance=ExtResource("14_hint")]
 position = Vector2(1350, 1050)
 text = "跳过缺口"
-[node name="HintMarker2" parent="." unique_id=1732050807]
+[node name="HintMarker2" parent="." unique_id=1732050807 instance=ExtResource("14_hint")]
 position = Vector2(1900, 1050)
 text = "空中再按 Space = 二段跳"
 [node name="EditorMap" type="Sprite2D" parent="." unique_id=1886242853]

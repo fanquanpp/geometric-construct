@@ -155,7 +155,7 @@ static func tag(text: String, bg: Color, fg := Palette.I.paper, size := 14, pad_
 
 
 static func sb(bg: Color, radius := 0, border = null, border_w := 1,
-		margin_h := 12, margin_v := 7) -> StyleBoxFlat:
+		margin_h := 12, margin_v := 7, elevate := false) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = bg
 	box.corner_radius_top_left = radius
@@ -169,6 +169,11 @@ static func sb(bg: Color, radius := 0, border = null, border_w := 1,
 	box.content_margin_right = margin_h
 	box.content_margin_top = margin_v
 	box.content_margin_bottom = margin_v
+	if elevate:
+		# 构成主义硬投影:零模糊直角偏移影,面板/按钮脱离底面。
+		box.shadow_color = Color(Palette.I.ink, 0.55)
+		box.shadow_size = 0
+		box.shadow_offset = Vector2(6, 6)
 	return box
 
 
@@ -179,9 +184,14 @@ static func make_theme(size := 18) -> Theme:
 	th.default_font = BODY
 	th.default_font_size = size
 
-	var normal := sb(Color(Palette.I.paper, 0.04), 0, Color(Palette.I.paper, 0.22), 1, 20, 9)
-	var hover := sb(Palette.I.red, 0, Palette.I.red, 1, 20, 9)
+	# 层次感:常态投影悬浮;按压态影距收短 = 按钮物理下沉。
+	var normal := sb(Color(Palette.I.paper, 0.04), 0, Color(Palette.I.paper, 0.22), 1, 20, 9,
+		true)
+	var hover := sb(Palette.I.red, 0, Palette.I.red, 1, 20, 9, true)
 	var pressed := sb(Color(Palette.I.red, 0.72), 0, Palette.I.red, 1, 20, 9)
+	pressed.shadow_color = Color(Palette.I.ink, 0.55)
+	pressed.shadow_size = 0
+	pressed.shadow_offset = Vector2(2, 2)
 	var disabled := sb(Color(Palette.I.paper, 0.02), 0, Color(Palette.I.paper, 0.08), 1, 20, 9)
 	var focus := sb(Color.TRANSPARENT, 0)
 	focus.draw_center = false
@@ -200,7 +210,8 @@ static func make_theme(size := 18) -> Theme:
 	th.set_color("font_disabled_color", "Button", Color(Palette.I.dim, 0.45))
 
 	th.set_stylebox("panel", "PanelContainer",
-		sb(Color(Palette.I.ink_2, 0.97), 0, Color(Palette.I.paper, 0.14), 1, 14, 12))
+		sb(Color(Palette.I.ink_2, 0.97), 0, Color(Palette.I.paper, 0.14), 1, 14, 12,
+			true))
 	th.set_color("font_color", "Label", Palette.I.paper)
 	_theme = th
 	return th

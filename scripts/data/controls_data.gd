@@ -25,6 +25,8 @@ const CONTROLS := [
 		{"act": "切换几何体", "keys": ["RB", "LB"], "note": "RB 下一个 · LB 上一个"},
 		{"act": "召回", "keys": ["Back"], "note": "即 View / Select 键"},
 		{"act": "暂停", "keys": ["Start"]},
+		{"act": "菜单 · 确认", "keys": ["A 键"], "note": "剧目行开卡 · 关卡行开演 · 面板按钮"},
+		{"act": "菜单 · 返回", "keys": ["B 键"], "note": "关面板 / 归还焦点;十字键上下导航"},
 	]},
 	{"title": "触屏 · 安卓", "en": "TOUCH", "kind": "touch", "rows": [
 		{"act": "移动",
@@ -39,10 +41,11 @@ const CONTROLS := [
 	]},
 	{"title": "界面导航", "en": "INTERFACE", "kind": "ui", "rows": [
 		{"act": "主菜单", "keys": ["1–4"], "note": "选剧目;K 键位指南 · C 档案几何 · S 设置 · Esc 退出"},
+		{"act": "菜单确认 / 返回", "keys": ["Enter / 空格", "Esc"], "note": "手柄 A 确认 · B 返回"},
 		{"act": "键位指南", "keys": ["K"], "note": "K 键或菜单「键位指南」按钮打开;Esc / B 返回"},
 		{"act": "档案几何", "keys": ["A", "D", "滚轮"],
 			"note": "切条目 / 翻页;1–9 直达;Q / E 或 LB / RB 切页;Esc / B 返回"},
-		{"act": "暂停菜单", "keys": ["Esc", "P"], "note": "恢复游戏"},
+		{"act": "暂停菜单", "keys": ["Esc", "P"], "note": "恢复游戏;手柄 Start 暂停 · B 继续"},
 		{"act": "触屏", "note": "全部界面均有可点按的按钮 / 页签,无键盘依赖"},
 	]},
 ]

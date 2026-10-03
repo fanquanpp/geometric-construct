@@ -25,7 +25,7 @@ func _ready() -> void:
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	%Center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0, true))
 	_card.mouse_filter = Control.MOUSE_FILTER_STOP
 	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",
 		Ui.sb(Palette.I.orange, 0, null, 0, 24, 12))

@@ -1,3 +1,4 @@
+@icon("res://assets/editor/ski_patch.svg")
 @tool
 class_name SkiPatch
 extends Area2D

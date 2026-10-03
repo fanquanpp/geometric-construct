@@ -42,7 +42,7 @@ func _ready() -> void:
 	Ui.style(_title_label, 32, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	Ui.style(%SubLabel, 13, Ui.LIGHT, Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER)
 	(%BodyWrap as PanelContainer).add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 22, 16))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 22, 16, true))
 	Ui.style(_level_hint, 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT, false, 4)
 	_back_btn.add_theme_font_size_override("font_size", 16)
 	Ui.wire_button(_back_btn, "ui_back")

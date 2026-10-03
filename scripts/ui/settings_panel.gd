@@ -120,7 +120,8 @@ func _apply_styles() -> void:
 	Ui.style(%TitleSub, 14, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT)
 	(%TitleRule as ColorRect).color = Palette.I.red
 	(%ScrollWrap as PanelContainer).add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.14), 1, 6, 6))
+		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.14), 1, 6, 6,
+			true))
 	(%Scroll as ScrollContainer).get_h_scroll_bar().visible = false
 	_root.resized.connect(_fit_content)
 	_fit_content()

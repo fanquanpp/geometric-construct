@@ -1,3 +1,4 @@
+@icon("res://assets/editor/mover.svg")
 @tool
 class_name Mover
 extends AnimatableBody2D

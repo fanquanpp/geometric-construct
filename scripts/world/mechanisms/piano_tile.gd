@@ -1,3 +1,4 @@
+@icon("res://assets/editor/piano_tile.svg")
 @tool
 class_name PianoTile
 extends StaticBody2D

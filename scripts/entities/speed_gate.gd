@@ -1,3 +1,4 @@
+@icon("res://assets/editor/speed_gate.svg")
 @tool
 class_name SpeedGate
 extends Area2D

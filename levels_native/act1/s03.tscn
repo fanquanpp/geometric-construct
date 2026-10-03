@@ -10,6 +10,8 @@
 [ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
 [ext_resource type="Texture2D" path="res://assets/maps/act1_s03.png" id="emp_map"]
 
+[ext_resource type="PackedScene" path="res://scenes/world/spawn_marker.tscn" id="15_spn"]
+
 [node name="LevelRoot" type="Node2D" unique_id=1487196177]
 script = ExtResource("1_nl")
 level_name = "疾 · 门厅"
@@ -27,9 +29,9 @@ z_index = 1
 tile_map_data = PackedByteArray("AAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAAFAA0AAAAAAAAAAAAGAA0AAAAAAAAAAAAHAA0AAAAAAAAAAAAIAA0AAAAAAAAAAAAJAA0AAAAAAAAAAAAKAA0AAAAAAAAAAAALAA0AAAAAAAAAAAAMAA0AAAAAAAAAAAANAA0AAAAAAAAAAAAOAA0AAAAAAAAAAAAPAA0AAAAAAAAAAAAQAA0AAAAAAAAAAAARAA0AAAAAAAAAAAASAA0AAAAAAAAAAAAYAA0AAAAAAAAAAAAZAA0AAAAAAAAAAAAaAA0AAAAAAAAAAAAbAA0AAAAAAAAAAAAcAA0AAAAAAAAAAAAdAA0AAAAAAAAAAAAeAA0AAAABAAAAAAAfAA0AAAAAAAAAAAAgAA0AAAAAAAAAAAAhAA0AAAAAAAAAAAA=")
 tile_set = ExtResource("3_ts")
 
-[node name="Spawn0" type="Marker2D" parent="." unique_id=1372303255]
+[node name="Spawn0" parent="." instance=ExtResource("15_spn")]
+geo_index = 0
 position = Vector2(300, 1275)
-
 [node name="ExitDoor0" parent="." unique_id=896211365 instance=ExtResource("4_door")]
 position = Vector2(3050, 1254)
 

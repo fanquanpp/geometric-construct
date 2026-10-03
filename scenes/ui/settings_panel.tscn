@@ -97,7 +97,6 @@ unique_name_in_owner = true
 theme_override_constants/separation = 12
 
 [node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/VibRow"]
-unique_name_in_owner = true
 size_flags_vertical = 4
 text = "触感反馈(按键轻震)"
 
@@ -114,7 +113,6 @@ unique_name_in_owner = true
 theme_override_constants/separation = 12
 
 [node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/ShakeRow"]
-unique_name_in_owner = true
 size_flags_vertical = 4
 text = "屏幕震动(打击反馈)"
 
@@ -151,7 +149,6 @@ unique_name_in_owner = true
 theme_override_constants/separation = 12
 
 [node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/VideoResRow"]
-unique_name_in_owner = true
 size_flags_vertical = 4
 text = "窗口分辨率"
 
@@ -187,7 +184,6 @@ unique_name_in_owner = true
 theme_override_constants/separation = 12
 
 [node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/VideoAdaptiveRow"]
-unique_name_in_owner = true
 size_flags_vertical = 4
 text = "自由拉伸"
 
@@ -207,7 +203,6 @@ unique_name_in_owner = true
 theme_override_constants/separation = 12
 
 [node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/VideoFsRow"]
-unique_name_in_owner = true
 size_flags_vertical = 4
 text = "全屏"
 
@@ -244,7 +239,6 @@ unique_name_in_owner = true
 theme_override_constants/separation = 12
 
 [node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/SfxRow"]
-unique_name_in_owner = true
 size_flags_vertical = 4
 text = "音效音量"
 
@@ -272,7 +266,6 @@ unique_name_in_owner = true
 theme_override_constants/separation = 12
 
 [node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/AmbRow"]
-unique_name_in_owner = true
 size_flags_vertical = 4
 text = "垫乐 / BGM"
 
@@ -320,7 +313,6 @@ unique_name_in_owner = true
 theme_override_constants/separation = 12
 
 [node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/MotionRow"]
-unique_name_in_owner = true
 size_flags_vertical = 4
 text = "减动效(关闭震屏 / 演出转场,保留硬切)"
 
@@ -337,7 +329,6 @@ unique_name_in_owner = true
 theme_override_constants/separation = 12
 
 [node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/BgfxRow"]
-unique_name_in_owner = true
 size_flags_vertical = 4
 text = "背景动效(星空闪烁 / 浮尘 / 幕变奏,关=静态画面)"
 

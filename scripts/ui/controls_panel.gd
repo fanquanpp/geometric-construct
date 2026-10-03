@@ -29,9 +29,9 @@ func _ready() -> void:
 	_root.resized.connect(_fit_content)
 
 	_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0, true))
 	_body_wrap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 14))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 14, true))
 	_close_btn.add_theme_font_size_override("font_size", 15)
 	Ui.wire_button(_close_btn)
 	_close_btn.pressed.connect(func() -> void: close())

@@ -193,30 +193,51 @@ func _wire_button(action: String, btn: Button, glyph: UiGlyph, label: Label,
 	# v0.55.1:改用引擎 Button 控件(R0 引擎自带优先):命中即整键,
 	# 触屏经 emulate_mouse_from_touch 走引擎命中;动作语义保持 Input.action_*
 	# 管线不变(is_action_just_pressed 消费方无感)。
-	btn.add_theme_stylebox_override("normal", _keycap_style(0.72, 0.30))
-	btn.add_theme_stylebox_override("hover", _keycap_style(0.80, 0.45))
-	btn.add_theme_stylebox_override("pressed", _keycap_style(0.92, 0.85))
+	# v0.65.0 项目风格重置:硬投影键帽 + 按压红缘下沉 + 缩放回弹手感。
+	var tick: ColorRect = btn.get_node_or_null("RecallTick")
+	if tick == null:
+		tick = btn.get_node_or_null("PauseTick")
+	if tick != null:
+		tick.color = Color(Palette.I.red, 0.9)
+	btn.add_theme_stylebox_override("normal", _keycap_style(0.78, 0.30, 4.0, 0.50))
+	btn.add_theme_stylebox_override("hover", _keycap_style(0.84, 0.45, 4.0, 0.50))
+	btn.add_theme_stylebox_override("pressed", _keycap_style(0.92, 0.85, 1.0, 0.40,
+		Palette.I.red))
 	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	btn.pivot_offset = btn.size / 2.0
 	btn.button_down.connect(func() -> void:
 		buzz(24)
 		Input.action_press(action)
-		_flash_icon(action, true))
+		_flash_icon(action, true)
+		_press_pop(btn, 0.92))
 	btn.button_up.connect(func() -> void:
 		Input.action_release(action)
-		_flash_icon(action, false))
+		_flash_icon(action, false)
+		_press_pop(btn, 1.0))
 	Ui.style(label, 12, Ui.LIGHT, Color(Palette.I.paper, 0.8),
 		HORIZONTAL_ALIGNMENT_CENTER)
 	_buttons[action] = {"btn": btn, "label": label, "icon_px": ICON_SIZE_SMALL,
 		"rect": Rect2(), "glyph": glyph, "icon": icon_rel, "icon_on": icon_on_rel}
 
 
-static func _keycap_style(bg_a: float, edge_a: float) -> StyleBoxFlat:
+static func _keycap_style(bg_a: float, edge_a: float, shadow_off := 4.0,
+		shadow_a := 0.50, edge_col: Color = Color(0, 0, 0, 0)) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(Palette.I.ink_2, bg_a)
-	sb.border_color = Color(Palette.I.paper, edge_a)
+	sb.border_color = edge_col if edge_col.a > 0.0 else Color(Palette.I.paper, edge_a)
 	sb.set_border_width_all(2)
 	sb.set_content_margin_all(0)
+	sb.shadow_color = Color(Palette.I.ink, shadow_a)
+	sb.shadow_size = 0
+	sb.shadow_offset = Vector2(shadow_off, shadow_off)
 	return sb
+
+
+## 按压缩放回弹(手感):pivot 中心,短 tween 弹回。
+func _press_pop(btn: Button, target: float) -> void:
+	btn.pivot_offset = btn.size / 2.0
+	var tw := btn.create_tween()
+	tw.tween_property(btn, "scale", Vector2.ONE * target, 0.06) 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func _flash_icon(action: String, on: bool) -> void:

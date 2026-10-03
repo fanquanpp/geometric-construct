@@ -43,7 +43,7 @@ func _ready() -> void:
 	_root.theme = Ui.make_theme()
 	_shade.color = Color(Palette.I.ink, 0.96)
 	_card.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0))
+		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0, true))
 	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",
 		Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
 	Ui.style(_title, 30, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)

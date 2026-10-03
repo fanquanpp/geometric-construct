@@ -6,6 +6,8 @@
 [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="5_door"]
 [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="6_door"]
 
+[ext_resource type="PackedScene" path="res://scenes/world/spawn_marker.tscn" id="15_spn"]
+
 [node name="LevelRoot" type="Node2D"]
 script = ExtResource("1_nl")
 level_name = "probe · 门禁探针"
@@ -23,9 +25,11 @@ tile_map_data = PackedByteArray("AAA=")
 z_index = 1
 tile_set = ExtResource("3_ts")
 tile_map_data = PackedByteArray("AAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAAFAA0AAAAAAAAAAAAGAA0AAAAAAAAAAAAHAA0AAAAAAAAAAAAIAA0AAAAAAAAAAAAJAA0AAAAAAAAAAAAKAA0AAAAAAAAAAAALAA0AAAAAAAAAAAAMAA0AAAAAAAAAAAANAA0AAAAAAAAAAAAOAA0AAAAAAAAAAAAPAA0AAAAAAAAAAAAQAA0AAAAAAAAAAAARAA0AAAAAAAAAAAASAA0AAAAAAAAAAAATAA0AAAAAAAAAAAA=")
-[node name="Spawn0" type="Marker2D" parent="."]
+[node name="Spawn0" parent="." instance=ExtResource("15_spn")]
+geo_index = 0
 position = Vector2(300, 1275)
-[node name="Spawn1" type="Marker2D" parent="."]
+[node name="Spawn1" parent="." instance=ExtResource("15_spn")]
+geo_index = 1
 position = Vector2(500, 1275)
 [node name="CheckpointBeacon0" parent="." instance=ExtResource("4_bc")]
 position = Vector2(1400, 1275)

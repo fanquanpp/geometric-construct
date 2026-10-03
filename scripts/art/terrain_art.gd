@@ -1,3 +1,4 @@
+@icon("res://assets/editor/terrain_art.svg")
 @tool
 class_name TerrainArt
 extends Node2D
@@ -13,11 +14,16 @@ var _solids: Array = []
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint():
-		visible = false
-		return
 	z_index = -1
 	_rebuild()
+	if Engine.is_editor_hint():
+		# 所见即所得作关(v0.65.0):编辑器里实时渲染程序化地形,
+		# 画瓦片即见成品;TileMapLayer 数据变更( painting /擦除 )随画随刷。
+		var parent := get_parent()
+		if parent != null:
+			for child in parent.get_children():
+				if child is TileMapLayer:
+					(child as TileMapLayer).changed.connect(_rebuild)
 
 
 func _rebuild() -> void:

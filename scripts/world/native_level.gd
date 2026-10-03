@@ -1,3 +1,5 @@
+@icon("res://assets/editor/native_level.svg")
+@tool
 class_name NativeLevel
 extends LevelRoot
 
@@ -16,11 +18,16 @@ const FOCUS_SCENE := preload("res://scenes/art/focus_system.tscn")
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		# 所见即所得作关(v0.65.0):编辑器内只挂程序化地形渲染层,
+		# 画瓦片 / 摆机关 / 摆出生点即见成品;运行时装配路径不变。
+		add_child(TERRAIN_ART_SCENE.instantiate())
+		return
 	for idx in roster:
 		var gdef: GeometryDef = Geometries.ALL[idx]
 		var mask := 1 | (1 << (idx + 1))
 		CharacterManager.I.create_character(gdef, idx,
-			_marker("Spawn%d" % idx), mask)
+			_marker(idx), mask)
 	var cam := CAMERA_RIG_SCENE.instantiate()
 	cam.limit_left = 0
 	cam.limit_top = 0
@@ -34,11 +41,15 @@ func _ready() -> void:
 	_add_boundary_walls()
 
 
-func _marker(node_name: String) -> Vector2:
-	var node := get_node_or_null(NodePath(node_name)) as Marker2D
+## 出生点定位:优先 SpawnMarker 组件(geo_index 绑定),回退旧 Spawn%d 命名。
+func _marker(idx: int) -> Vector2:
+	for child in get_children():
+		if child is SpawnMarker and (child as SpawnMarker).geo_index == idx:
+			return (child as Node2D).global_position
+	var node := get_node_or_null(NodePath("Spawn%d" % idx)) as Marker2D
 	if node != null:
 		return node.global_position
-	push_warning("NativeLevel %s: 缺 %s,退回场景原点" % [level_name, node_name])
+	push_warning("NativeLevel %s: 缺出生点 %d,退回场景原点" % [level_name, idx])
 	return Vector2(300, 800)
 
 

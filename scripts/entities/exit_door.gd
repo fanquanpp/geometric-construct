@@ -1,3 +1,4 @@
+@icon("res://assets/editor/exit_door.svg")
 @tool
 class_name ExitDoor
 extends Area2D

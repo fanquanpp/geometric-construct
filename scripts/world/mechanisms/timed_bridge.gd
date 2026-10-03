@@ -1,3 +1,4 @@
+@icon("res://assets/editor/timed_bridge.svg")
 @tool
 class_name TimedBridge
 extends StaticBody2D

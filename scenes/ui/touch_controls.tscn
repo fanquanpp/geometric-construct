@@ -23,6 +23,15 @@ offset_bottom = 84.0
 focus_mode = 0
 self_modulate = Color(1, 1, 1, 0.85)
 
+[node name="RecallTick" type="ColorRect" parent="Root/RecallBtn"]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 22.0
+offset_bottom = 11.0
+mouse_filter = 2
+color = Color(0.88, 0.29, 0.18, 0.9)
+
 [node name="RecallGlyph" type="Control" parent="Root/RecallBtn"]
 unique_name_in_owner = true
 offset_left = 20.0
@@ -47,6 +56,15 @@ offset_right = 84.0
 offset_bottom = 84.0
 focus_mode = 0
 self_modulate = Color(1, 1, 1, 0.85)
+
+[node name="PauseTick" type="ColorRect" parent="Root/PauseBtn"]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 22.0
+offset_bottom = 11.0
+mouse_filter = 2
+color = Color(0.88, 0.29, 0.18, 0.9)
 
 [node name="PauseGlyph" type="Control" parent="Root/PauseBtn"]
 unique_name_in_owner = true
