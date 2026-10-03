@@ -53,3 +53,6 @@ speed-dev/
 # 像素回归基线 / 对比目录(基线 .base_*,对比 .mNN)
 /.base_*/
 /.m[0-9]*/
+
+# ===== ZCode 工作区工具残留 =====
+.zcodeignore
