@@ -2,6 +2,79 @@
 
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 
+## v0.67.0 · 体验全面排查修复 + 多端视觉优化 + UI 质感/色彩层次 + 装饰统一(2026-10-03)
+
+用户令:「深度细致全面排查项目各种各样的体验问题,修复全部。然后优化各种各样的 UI/UX
+已经多设备分辨率情况下的视觉效果。增强各种各样的 UI 质感,色彩层次等等。最后,对各种
+各样的装饰进行排查,删除突兀的,统一不符合的风格美术装饰。提交推送与更新 release。」
+
+【勘察】全套 UI 截图逐页目检(菜单/选关/图鉴三签/键位/设置/联机六页/四幕实机/触控)+
+勘察代理通读 scripts/ui 19 个 .gd 与 scenes/ui 11 个 .tscn 交叉核对 main/game_flow 接线,
+建表 19 项按严重度实施;门禁基线先行(import 0 错/flow/native 全绿后才动刀)。
+
+【修复·交互链断裂】①联机房间层全程无焦点管理:手柄/键盘进入后无钮可聚焦,A 键按不了
+「创建房间」——新增 _page_ready 统一收口:每页重建后滚动体封顶 + _grab_first 首个可用钮
+grab(选角页首个可用=未认领芯片,房主页=解散房间当开演未就绪),六个 _show_* 与 open/
+autostart_host/reopen_after_game 全接。②跨设备链焦点闪现:close_dual_pick(restore_focus)
+参数化,跨设备路径焦点直交房间层不再中转菜单钮;show_menu 补 set_menu_focusable(true)
+归还焦点集(联机路径让菜单钮滞留 FOCUS_NONE,set_unlocked 内 grab 静默失效实锤)。③
+触屏浮动轮盘吞左半屏点击:HUD 编队芯片全在左上,浮动模式整左半屏触摸被 float_begin 吃掉
+= 换几何体永远失效;新增 hud.ui_touch_rects()(芯片行+竞速结算面板)保留区,TouchControls
+轮盘/跳跃两侧让行。④竞速结算面板「点按此处·再战一局」被右半屏跳跃吞(固定+浮动两分支)
+同修。⑤archive_panel.open(_unlocked) 把关卡进度当几何体索引传(通关 2 场后档案永远落在
+随机几何体页)——固定从红开。⑥beacon.rooms_changed 进「加入房间」一次连一次从不断开,
+返回再进重建翻倍闪抖——is_connected 防重连(_refresh_rooms 自带 _phase 守卫)。⑦选图页
+状态行被 _refresh_status_line 的空串默认分支抹掉(历代「选定后双方各认领…」从未显形)
+——MAP 分支 pass 保页面自管文案。
+
+【修复·布局溢出】⑧联机「选择剧目」16 关直塞无滚动 Body,总高 1500px+ 超屏近半,后半
+关卡与返回键不可达(宽屏手机可见高更矮)——tscn 手术 Body 外包 ScrollContainer,
+_page_ready 按当页内容收紧滚动体(上限 452px),queue_free 旧页子节点帧末才真删、
+combined_minimum_size 仍计入的坑以同步摘除待删节点解决(实测 deferred 晚于删除的假设
+不成立);卡片随之随页收紧。⑨幕选卡/双人卡固定 780 宽无缩放,窄窗三边裁切——
+Adaptive.register_card 接入(与暂停面板同一自适应)。⑩register_card 的 0.05s 守卫
+Timer 永久 20Hz 轮询——改绑定卡片的 Tween 收敛补拍(0.5s 内 8 次),卡亡 Tween 即亡,
+update 空安全先挡(focus_check 实证 freed 捕获踩空)。
+
+【质感/色彩层次】⑪CheckButton 开关继承 Button 的实心板:hover 红/pressed 红垫在药丸后
+= 一块突兀的红色直角板(设置页两枚开关读作故障)——主题层清成透明板+纸缘焦点框,药丸
+图标本体即状态,设置页观感回归干净。⑫LineEdit 品牌化(联机 IP 输入框此前裸奔默认主题):
+暗板+纸缘常态、聚焦红缘、纸字/红 caret/红选区。⑬HSlider 抓块方形化:默认圆形抓块不在
+构成主义语言,程序化 20×20 方形抓块(纸色/悬停红+墨缘)与开关药丸同工艺。⑭联机流程
+橙链统一:房间各页标题板红→橙(菜单「双人竞速」钮→双人卡→房间六页→HUD 联机徽章一条
+橙链),红保留给单人/主操作语义。⑮禁用态可读性:主题 font_disabled_color 0.45→0.62,
+双选卡「移动端不可用」/联机大按钮/房间列表满员项去 modulate 双重减淡(墨底上叠 0.42
+不可读实锤)。⑯ScrollContainer 内容右缘留 6px,可见滚动条压不到行内容。
+
+【多端/触屏】⑰桌面最小窗尺寸 960×540(极端小窗 fit 缩放兜底)。⑱开场卡「跳过 »」触屏
+命中 44px 下限(pad_v 12+min 高);⑲HUD 编队芯片实高 44px(核心切换操作 40px 不达标);
+⑳开场卡换行宽度挪进 _layout_intro_skip 随视口实时算(旋转/改窗不背过期宽度);㉑触屏
+叙事带锚点随「虚拟按键·开/关」重算(apply_touch_anchors,不再只在进关时定死);㉒纯触屏
+开面板不 grab_focus(设置/键位/图鉴,消灭无意义选中框)。
+
+【输入/状态】㉓图鉴 A/D/Q/E/数字直达 set_input_as_handled(焦点导航不再二次消费,高亮框
+与展示条目脱节根除);㉔图鉴滚轮悬停滚动列表时归列表不翻条目(双重响应根除);㉕
+wire_button 减动效跳过缩放弹跳(与 error_feedback 同门控,音效保留)。
+
+【装饰排查/统一】全仓装饰逐件过堂:菜单漂浮三何体/红角框/标题 mark+扫描线+glitch 微移/
+档案取景框角括弧/切体双色带闪屏/边缘指示红箭头/背景八件套(太阳棱环/几何面/轨道环/
+山脊/尘粒/速度线/红波/深空)全数在构成主义语言内,保留;突兀源=⑪红色开关实心板,已除。
+菜单键提示「1–5 选择剧目」勘正「1–4」(第五幕不存在,main 数字键实际只到 4,键位指南
+已是 1–4);漂浮体 alpha 0.30→0.42(黄体低透明泛闷橄榄);图鉴条目 EN 微字 9px→11px、
+键位节 EN 10px→11px(可读下限);net_room tscn 重复 glyph_key 行清理。
+
+【字体】新文案引入 20 个子集外字符,按纪律从 git 原版(17.77MB)重建子集
+0.63MB(+9KB,corpus 1398 字符);fvar wght 轴实证保留;fontcover ALL PASS。
+(考据:原版 Noto Sans SC VF 自身无 tnum 特性,Ui.tabular() 静默回落比例数字,
+v0.66 记述过誉,行为无回归,Timer 数字观感历代一致。)
+
+【门禁】import 0 错+check-only 全绿+flow/native 17 场/stats/focus(零自有告警)/trait/
+ambience/transition/replay 三腿/recall/dual 七链/nettest/tiledata/level_audit/
+door_audit/fontcover/progen 全 PASS;autoshot×3 幕/setshot/roomshot×6 页/tapshot/
+bootshot/introshot/actshot 目检(联机橙链六页/选图滚动收紧/设置页无红板+方形抓块/
+芯片 44px/键位提示 1–4)。版本三件 0.67.0/code 47
+
+
 ## v0.66.0 · native 大图集退役 + 分类瓦片图集与地形画笔 + 程序化 0→1 作关管线(2026-10-03)
 
 用户令:「编辑器里看不见瓦片地块了。程序化从 0 生成地图,通过后照着用瓦片和地块描摹,

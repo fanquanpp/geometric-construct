@@ -2,7 +2,7 @@ class_name Version
 
 
 const MAJOR := 0
-const MINOR := 66
+const MINOR := 67
 const PATCH := 0
 
 const CHANNEL := ""

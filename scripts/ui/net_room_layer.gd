@@ -21,6 +21,39 @@ var _role_start: Button
 
 var _toast_tw: Tween
 
+
+## 每页重建后统一调用:封顶滚动体高度(选图 16 关不溢屏)+
+## 焦点入卡(手柄/键盘开页即可导航,不悬死在已释放的菜单焦点上)。
+## queue_free 的旧页子节点要到帧末才真删,最小尺寸仍计入;先摘除
+## 再测量,卡片高度随当页内容即时收紧(帧末延迟也晚于删除的实测)。
+func _page_ready() -> void:
+	for c in _body.get_children():
+		if c.is_queued_for_deletion():
+			_body.remove_child(c)
+	(%Scroll as ScrollContainer).custom_minimum_size.y = clampf(
+		_body.get_combined_minimum_size().y, 0.0, 452.0)
+	_grab_first()
+
+
+func _grab_first() -> void:
+	if not visible:
+		return
+	var first: Button = null
+	var any: Button = null
+	var stack: Array = _body.get_children()
+	while not stack.is_empty():
+		var c: Node = stack.pop_front()
+		if c is Button:
+			any = c
+			if not (c as Button).disabled:
+				first = c
+				break
+		stack.append_array(c.get_children())
+	if first == null:
+		first = any
+	if first != null:
+		first.grab_focus()
+
 @onready var _root: Control = %Root
 @onready var _shade: ColorRect = %Shade
 @onready var _card: PanelContainer = %Card
@@ -44,17 +77,18 @@ func _ready() -> void:
 	_shade.color = Color(Palette.I.ink, 0.96)
 	_card.add_theme_stylebox_override("panel",
 		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0, true))
+	# 标题板=橙:全联机流程一条橙链(菜单「双人竞速」钮 → 双人卡 →
+	# 房间各页 → HUD 联机徽章),红保留给单人/主操作语义。
 	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",
-		Ui.sb(Palette.I.red, 0, null, 0, 24, 12))
+		Ui.sb(Palette.I.orange, 0, null, 0, 24, 12))
 	Ui.style(_title, 30, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	Ui.style(_sub, 13, Ui.LIGHT, Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER)
+	Adaptive.register_card(_card)
 
 
 func open() -> void:
 	visible = true
 	_show_pick()
-
-
 func beacon_stop_only() -> void:
 	NetSession.I.beacon.stop()
 	_phase = Phase.NONE
@@ -64,8 +98,6 @@ func autostart_host() -> void:
 	visible = true
 	if NetSession.I.host_room("联机协作房间"):
 		_show_host()
-
-
 func autostart_join() -> void:
 	visible = true
 	_show_join()
@@ -157,6 +189,8 @@ func _refresh_status_line() -> void:
 					if n < NetConfig.MAX_PLAYERS else "对手已就位 · 可开演"
 			Phase.LOBBY:
 				_status.text = "已连接 · 等待主机开演"
+			Phase.MAP:
+				pass  # 页面自管提示行(「选定后双方各认领…」),不得抹回空串
 			_:
 				_status.text = ""
 
@@ -169,7 +203,7 @@ func _big_btn(text: String, sub: String, on_press: Callable, disabled := false) 
 	b.add_theme_font_override("font", Ui.HEAD)
 	b.add_theme_font_size_override("font_size", 21)
 	b.disabled = disabled
-	b.modulate = Color(1, 1, 1, 0.42 if disabled else 1.0)
+	# 禁用态靠主题的暗体字与暗板表达,不再叠 modulate(双重减淡不可读)。
 	Ui.wire_button(b)
 	b.pressed.connect(on_press)
 	return b
@@ -188,6 +222,7 @@ func _show_pick() -> void:
 
 	_body.add_child(_big_btn("返回", "回到标题菜单",
 		func() -> void: back_out()))
+	_page_ready()
 
 
 func _enter_host() -> void:
@@ -215,6 +250,7 @@ func _show_host() -> void:
 		func() -> void: back_out()))
 	_refresh_status_line()
 	_refresh_host_btn()
+	_page_ready()
 
 
 func _show_join() -> void:
@@ -236,9 +272,11 @@ func _show_join() -> void:
 	_body.add_child(_big_btn("返回", "回到上一步",
 		func() -> void: back_out()))
 	NetSession.I.beacon.start_seek()
-	NetSession.I.beacon.rooms_changed.connect(_refresh_rooms)
+	if not NetSession.I.beacon.rooms_changed.is_connected(_refresh_rooms):
+		NetSession.I.beacon.rooms_changed.connect(_refresh_rooms)
 	_refresh_rooms()
 	_refresh_status_line()
+	_page_ready()
 
 
 func _refresh_rooms() -> void:
@@ -263,7 +301,7 @@ func _refresh_rooms() -> void:
 			"版本不同,无法加入" if not ok_gate else
 			"房间已满" if full else "点击加入"]
 		b.disabled = not ok_gate or full
-		b.modulate = Color(1, 1, 1, 0.42 if b.disabled else 1.0)
+		# 禁用态靠主题暗板/暗字表达(房间满 / 版本不同),不叠 modulate。
 		Ui.wire_button(b)
 		b.pressed.connect(func() -> void: _join_ip(ip))
 		_rooms_box.add_child(b)
@@ -300,6 +338,7 @@ func _show_lobby() -> void:
 	_body.add_child(_big_btn("离开房间", "断开连接,返回标题菜单",
 		func() -> void: back_out()))
 	_refresh_status_line()
+	_page_ready()
 
 
 func _show_map() -> void:
@@ -328,6 +367,7 @@ func _show_map() -> void:
 	_body.add_child(_big_btn("返回", "回到房间等待页",
 		func() -> void: _show_host()))
 	_refresh_status_line()
+	_page_ready()
 
 
 func _show_role() -> void:
@@ -365,6 +405,7 @@ func _show_role() -> void:
 			func() -> void: _show_lobby()))
 	_refresh_role_line()
 	_refresh_role_btn()
+	_page_ready()
 
 
 func _role_chip(gi: int, mine: Array, other: Array) -> Button:

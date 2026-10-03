@@ -207,7 +207,7 @@ static func make_theme(size := 18) -> Theme:
 	th.set_color("font_hover_color", "Button", Color.WHITE)
 	th.set_color("font_focus_color", "Button", Color.WHITE)
 	th.set_color("font_pressed_color", "Button", Color.WHITE)
-	th.set_color("font_disabled_color", "Button", Color(Palette.I.dim, 0.45))
+	th.set_color("font_disabled_color", "Button", Color(Palette.I.dim, 0.62))
 
 	th.set_stylebox("panel", "PanelContainer",
 		sb(Color(Palette.I.ink_2, 0.97), 0, Color(Palette.I.paper, 0.14), 1, 14, 12,
@@ -221,6 +221,30 @@ static func make_theme(size := 18) -> Theme:
 	th.set_icon("unchecked", "CheckButton", _toggle_icon(false))
 	th.set_icon("checked_disabled", "CheckButton", _toggle_icon(true, true))
 	th.set_icon("unchecked_disabled", "CheckButton", _toggle_icon(false, true))
+	# 开关不继承 Button 的实心板(hover 红/pressed 红会垫在药丸后面,
+	# 读作一块突兀的红色直角板):清成透明,焦点以纸缘细框示意。
+	var flat := sb(Color(0, 0, 0, 0), 0, null, 0, 6, 6)
+	for st: String in ["normal", "hover", "pressed", "disabled"]:
+		th.set_stylebox(st, "CheckButton", flat)
+	var cb_focus := sb(Color(0, 0, 0, 0), 0, Color(Palette.I.paper, 0.7), 1, 6, 6)
+	cb_focus.draw_center = false
+	th.set_stylebox("focus", "CheckButton", cb_focus)
+
+	# LineEdit(联机 IP 输入等):品牌化暗板 + 纸缘,聚焦红缘。
+	var le := sb(Color(Palette.I.ink_3, 1.0), 0, Color(Palette.I.paper, 0.24), 1, 12, 8)
+	var le_focus := sb(Color(Palette.I.ink_3, 1.0), 0, Palette.I.red, 2, 12, 8)
+	th.set_stylebox("normal", "LineEdit", le)
+	th.set_stylebox("focus", "LineEdit", le_focus)
+	th.set_color("font_color", "LineEdit", Palette.I.paper)
+	th.set_color("font_placeholder_color", "LineEdit", Color(Palette.I.dim, 0.55))
+	th.set_color("caret_color", "LineEdit", Palette.I.red)
+	th.set_color("selection_color", "LineEdit", Color(Palette.I.red, 0.35))
+
+	# HSlider 抓块:默认圆形不在构成主义语言里,换程序化方形抓块
+	# (常态纸色 / 悬停红,带墨缘),与开关药丸同一工艺。
+	for spec: Array in [["grabber", false], ["grabber_highlight", true],
+			["grabber_disabled", false]]:
+		th.set_icon(str(spec[0]), "HSlider", _slider_grabber(bool(spec[1])))
 
 	# 滚动条(嵌套面板):加宽 grabber + 暗轨,右列控件与滚动条以自身
 	# 留宽分隔,不再顶贴。
@@ -234,10 +258,28 @@ static func make_theme(size := 18) -> Theme:
 		th.set_stylebox("grabber", bar, grabber)
 		th.set_stylebox("grabber_highlight", bar, grabber_hi)
 		th.set_stylebox("grabber_pressed", bar, grabber_hi)
-	th.set_stylebox("panel", "ScrollContainer",
-		sb(Color(0, 0, 0, 0), 0, null, 0, 0, 0))
+	# ScrollContainer 内容右缘留 6px:可见滚动条压不到行内容。
+	var sc_panel := sb(Color(0, 0, 0, 0), 0, null, 0, 0, 0)
+	sc_panel.content_margin_right = 6.0
+	th.set_stylebox("panel", "ScrollContainer", sc_panel)
 	_theme = th
 	return th
+
+
+## HSlider 方形抓块图标:20×20 纸色(悬停红)方块 + 墨缘,禁用减淡。
+static func _slider_grabber(highlight: bool) -> ImageTexture:
+	var img := Image.create_empty(20, 20, false, Image.FORMAT_RGBA8)
+	var core := Palette.I.red if highlight else Color(Palette.I.paper, 0.95)
+	var edge := Palette.I.ink
+	if highlight:
+		edge = Color(Palette.I.ink, 0.8)
+	for y in 20:
+		for x in 20:
+			if x >= 2 and x < 18 and y >= 2 and y < 18:
+				img.set_pixel(x, y, core)
+			elif x >= 1 and x < 19 and y >= 1 and y < 19:
+				img.set_pixel(x, y, edge)
+	return ImageTexture.create_from_image(img)
 
 
 ## 两态开关药丸图标:64×32,圆角板 + 纸色旋钮(开=右,关=左)。
@@ -278,12 +320,14 @@ static func _rounded_rect_dist(x: int, y: int, r: Rect2, radius: float) -> float
 static func wire_button(b: Button, click_sfx := "ui_click") -> void:
 	b.pivot_offset = b.size / 2.0
 	b.resized.connect(func() -> void: b.pivot_offset = b.size / 2.0)
-	b.mouse_entered.connect(func() -> void: _button_scale(b, 1.03))
-	b.mouse_exited.connect(func() -> void: _button_scale(b, 1.0))
-	b.focus_entered.connect(func() -> void: _button_scale(b, 1.03))
-	b.focus_exited.connect(func() -> void: _button_scale(b, 1.0))
-	b.button_down.connect(func() -> void: _button_scale(b, 0.92))
-	b.button_up.connect(func() -> void: _button_scale(b, 1.0))
+	# 减动效:缩放弹跳全部跳过(与 error_feedback 同门控),音效保留。
+	if not SettingsManager.reduced_motion:
+		b.mouse_entered.connect(func() -> void: _button_scale(b, 1.03))
+		b.mouse_exited.connect(func() -> void: _button_scale(b, 1.0))
+		b.focus_entered.connect(func() -> void: _button_scale(b, 1.03))
+		b.focus_exited.connect(func() -> void: _button_scale(b, 1.0))
+		b.button_down.connect(func() -> void: _button_scale(b, 0.92))
+		b.button_up.connect(func() -> void: _button_scale(b, 1.0))
 	b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 	if click_sfx != "":
 		b.pressed.connect(func() -> void: Sfx.play(click_sfx))

@@ -49,7 +49,7 @@ func _ready() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, false, 8)
 	_intro.text = "三个几何体,被丢进一个不存在的地方。\n形状即性格,属性即命运——\n速度、弹性、置换与惯性,\n唯有互相依靠,才能找到各自的出口。"
 
-	_keys.text = "1–5 选择剧目    K 键位指南    C 档案几何    S 设置    Esc 退出" \
+	_keys.text = "1–4 选择剧目    K 键位指南    C 档案几何    S 设置    Esc 退出" \
 		if not Adaptive.is_touch_mode() \
 		else "点按剧目进入关卡    左下轮盘移动    点屏跳跃    拉满加速"
 	Ui.style(_keys, 13, Ui.LIGHT, Color(Palette.I.dim, 0.9))
@@ -123,7 +123,9 @@ func _ready() -> void:
 		m.start_level_dual())
 	_dual_pick.cross_pressed.connect(func() -> void:
 		Sfx.play("ui_open")
-		close_dual_pick()
+		# 焦点直交房间层:先还焦点给菜单钮再隐藏菜单会闪一帧焦点框,
+		# 且房间层 open 后自己 grab,无需中转。
+		close_dual_pick(false)
 		m.open_net_room())
 	_dual_pick.back_pressed.connect(func() -> void: close_dual_pick())
 
@@ -272,11 +274,12 @@ func _open_dual_pick() -> void:
 	_dual_pick.open_card(Adaptive.is_touch_mode())
 
 
-func close_dual_pick() -> void:
+func close_dual_pick(restore_focus := true) -> void:
 	if not _dual_pick.is_open():
 		return
 	_dual_pick.close_card()
-	set_menu_focusable(true)
+	if restore_focus:
+		set_menu_focusable(true)
 
 
 func is_dual_pick_open() -> bool:

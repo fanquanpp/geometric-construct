@@ -463,7 +463,9 @@ func start_chapter(index: int) -> void:
 func open_archive() -> void:
 	_panel_opener = "pause" if _state == State.PAUSED else "menu"
 	_menu.set_menu_focusable(false)
-	archive_panel.open(_unlocked)
+	# 几何体页固定从红开(0):_unlocked 是关卡索引,误当几何体索引
+	# 传会在通关数增长后落到随机的几何体页。
+	archive_panel.open(0)
 
 
 func open_controls() -> void:

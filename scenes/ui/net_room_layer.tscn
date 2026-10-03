@@ -48,6 +48,11 @@ theme_override_constants/margin_right = 40
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_bottom = 26
 
-[node name="Body" type="VBoxContainer" parent="Root/Center/Card/VB/Pad"]
+[node name="Scroll" type="ScrollContainer" parent="Root/Center/Card/VB/Pad"]
 unique_name_in_owner = true
+horizontal_scroll_mode = 0
+
+[node name="Body" type="VBoxContainer" parent="Root/Center/Card/VB/Pad/Scroll"]
+unique_name_in_owner = true
+size_flags_horizontal = 3
 theme_override_constants/separation = 12

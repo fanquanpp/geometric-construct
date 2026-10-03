@@ -52,7 +52,7 @@ func build(p, page: Control) -> void:
 		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_theme_constant_override("separation", 1)
 		col.add_child(Ui.l(str(e["name"]), 16, Ui.HEAD, Palette.I.paper))
-		col.add_child(Ui.l(str(e["en"]), 9, Ui.LIGHT, Palette.I.dim))
+		col.add_child(Ui.l(str(e["en"]), 11, Ui.LIGHT, Palette.I.dim))
 		col.position = Vector2(20.0 + icon_px + 10.0, (row_h - 30.0) * 0.5)
 		b.add_child(col)
 

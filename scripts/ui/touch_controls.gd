@@ -52,7 +52,7 @@ func _input(event: InputEvent) -> void:
 	if t.pressed:
 		if _wheel != null and _wheel.wheel_mode == WheelPad.MODE_FLOAT:
 
-			if _is_on_button(t.position):
+			if _is_on_button(t.position) or _gui_reserved(t.position):
 				return
 			var vis := Adaptive.visible_size(get_viewport())
 			if t.position.x <= vis.x * 0.5:
@@ -61,14 +61,14 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 
-			if _jump_finger == -1 and t.position.y > UI_STRIP_TOP:
+			if _jump_finger == -1 and t.position.y > UI_STRIP_TOP 				and not _gui_reserved(t.position):
 				_jump_finger = t.index
 				Input.action_press("jump")
 				tap_burst_at(t.position)
 				get_viewport().set_input_as_handled()
 			return
 
-		if _jump_finger == -1 and t.position.y > UI_STRIP_TOP 			and not _pos_reserved(t.position):
+		if _jump_finger == -1 and t.position.y > UI_STRIP_TOP 			and not _pos_reserved(t.position) 				and not _gui_reserved(t.position):
 			_jump_finger = t.index
 			Input.action_press("jump")
 			tap_burst_at(t.position)
@@ -97,6 +97,18 @@ func _pos_reserved(pos: Vector2) -> bool:
 		if (b.rect as Rect2).grow(HIT_MARGIN).has_point(pos):
 			return true
 	return _wheel != null and _wheel.holds_point(pos)
+
+
+# HUD 交互矩形(编队芯片 / 竞速结算面板):这些点必须落进引擎 GUI,
+# 不能被轮盘展开或跳跃吞掉(芯片切换、再战一局曾双双失效)。
+func _gui_reserved(pos: Vector2) -> bool:
+	var main = Main.I
+	if main == null or main._hud == null or not main._hud.visible:
+		return false
+	for r: Rect2 in main._hud.ui_touch_rects():
+		if r.grow(6.0).has_point(pos):
+			return true
+	return false
 
 
 func _notification(what: int) -> void:

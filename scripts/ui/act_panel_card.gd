@@ -43,6 +43,8 @@ func _ready() -> void:
 	Ui.style(%SubLabel, 13, Ui.LIGHT, Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER)
 	(%BodyWrap as PanelContainer).add_theme_stylebox_override("panel",
 		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 22, 16, true))
+	# 窄窗/竖窗防裁切:卡片超界即整体缩放(与暂停面板同一自适应)。
+	Adaptive.register_card(_card)
 	Ui.style(_level_hint, 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT, false, 4)
 	_back_btn.add_theme_font_size_override("font_size", 16)
 	Ui.wire_button(_back_btn, "ui_back")

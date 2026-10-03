@@ -244,8 +244,10 @@ func open(index := 0, tab := "geo") -> void:
 	_fit_content()
 	_root.visible = true
 	_apply_tab()
-	# 手柄/键盘开面板即入面板(当前页签),A 键不再穿透到底层菜单
-	(_tab_btns[_tab] as Button).grab_focus()
+	# 手柄/键盘开面板即入面板(当前页签),A 键不再穿透到底层菜单;
+	# 纯触屏不抓焦点(无意义选中框)。
+	if not Adaptive.is_touch_mode():
+		(_tab_btns[_tab] as Button).grab_focus()
 	if _tween != null:
 		_tween.kill()
 
@@ -282,17 +284,22 @@ func _input(event: InputEvent) -> void:
 				close()
 			KEY_A, KEY_LEFT:
 				if _is_paged(_tab):
+					get_viewport().set_input_as_handled()
 					_switch(-1)
 			KEY_D, KEY_RIGHT:
 				if _is_paged(_tab):
+					get_viewport().set_input_as_handled()
 					_switch(1)
 			KEY_Q:
+				get_viewport().set_input_as_handled()
 				_cycle_tab(-1)
 			KEY_E:
+				get_viewport().set_input_as_handled()
 				_cycle_tab(1)
 			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9:
 				var idx := k - KEY_1
 				if _tab == "geo" and idx < Geometries.ALL.size():
+					get_viewport().set_input_as_handled()
 					current = idx
 					_sel["geo"] = idx
 					Sfx.play("ui_page")
@@ -316,9 +323,11 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed and _is_paged(_tab):
 		match (event as InputEventMouseButton).button_index:
 			MOUSE_BUTTON_WHEEL_UP:
-				_switch(-1)
+				if not _hover_in_scroller():
+					_switch(-1)
 			MOUSE_BUTTON_WHEEL_DOWN:
-				_switch(1)
+				if not _hover_in_scroller():
+					_switch(1)
 
 
 func _cycle_tab(dir: int) -> void:
@@ -327,3 +336,14 @@ func _cycle_tab(dir: int) -> void:
 	if i < 0:
 		i = 0
 	_switch_tab(tabs[wrapi(i + dir, 0, tabs.size())])
+
+
+## 悬停在面板内的滚动列表(条目列表等)上时滚轮归列表,不翻条目,
+## 避免「一格滚轮 = 列表滚动 + 换条目」双重响应。
+func _hover_in_scroller() -> bool:
+	var h: Control = get_viewport().gui_get_hovered_control()
+	while h != null:
+		if h is ScrollContainer:
+			return true
+		h = h.get_parent() as Control
+	return false

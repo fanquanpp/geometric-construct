@@ -27,6 +27,8 @@ func _ready() -> void:
 	_card.add_theme_stylebox_override("panel",
 		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, Color(Palette.I.paper, 0.18), 1, 0, 0, true))
 	_card.mouse_filter = Control.MOUSE_FILTER_STOP
+	# 窄窗/竖窗防裁切:卡片超界即整体缩放(与暂停面板同一自适应)。
+	Adaptive.register_card(_card)
 	(%TitleBar as PanelContainer).add_theme_stylebox_override("panel",
 		Ui.sb(Palette.I.orange, 0, null, 0, 24, 12))
 	Ui.style(%TitleLabel, 32, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
@@ -73,7 +75,9 @@ func open_card(touch: bool) -> void:
 		"移动端不可用 · 同屏分区需键鼠 / 双手柄" if touch
 		else "同屏分键 · P1 键盘左区 + P2 右区 / 双手柄 · 先归位者胜")
 	_same.disabled = touch
-	_same.modulate = Color(1, 1, 1, 0.42 if touch else 1.0)
+	# 禁用文案保持可读:主题暗字 + 暗板已足够区分,不再叠 modulate
+	# (墨底上双重减淡曾把提示压到看不清)。
+	_same.modulate = Color.WHITE
 
 	(%Hint as Label).text = "" if touch else "Esc 返回"
 

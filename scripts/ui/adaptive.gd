@@ -64,6 +64,9 @@ static func fit_design(c: Control) -> void:
 
 static func register_card(card: Control, margin := Vector2(56, 40)) -> void:
 	var update := func() -> void:
+		# 卡片可能先亡(测试导航/换页释放),捕获变 null 须先挡。
+		if card == null or not is_instance_valid(card):
+			return
 		var vp := card.get_viewport()
 		if vp == null or card.size.x <= 1.0:
 			return
@@ -80,8 +83,9 @@ static func register_card(card: Control, margin := Vector2(56, 40)) -> void:
 
 	for i in 3:
 		update.call_deferred()
-	var guard := Timer.new()
-	guard.wait_time = 0.05
-	guard.timeout.connect(update)
-	card.get_viewport().call_deferred("add_child", guard)
-	guard.call_deferred("start")
+	# 收敛补拍:0.5s 内再校 8 次(迟到的字体/内容布局);Tween 绑定卡片,
+	# 卡亡即静默销毁——不引入常驻轮询,也不留跨生命周期的捕获。
+	var settle := card.create_tween()
+	for i in 8:
+		settle.tween_interval(0.0625)
+		settle.tween_callback(update)

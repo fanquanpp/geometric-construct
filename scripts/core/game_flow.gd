@@ -112,6 +112,9 @@ func show_menu() -> void:
 	main.controls_panel.close()
 	main.settings_panel.close()
 	main._menu.visible = true
+	# 归还焦点集(联机房间路径会让菜单钮留在 FOCUS_NONE),
+	# set_unlocked 内的 grab 在钮不可聚焦时静默失效。
+	main._menu.set_menu_focusable(true)
 	main._menu.set_unlocked(main._unlocked)
 
 
@@ -257,5 +260,8 @@ func net_host_lost(was_in_game: bool) -> void:
 	main._hud.set_net_badge("")
 	main._state = Main.State.MENU
 	main._menu.visible = true
+	# 归还焦点集(联机房间路径会让菜单钮留在 FOCUS_NONE),
+	# set_unlocked 内的 grab 在钮不可聚焦时静默失效。
+	main._menu.set_menu_focusable(true)
 	main._menu.set_unlocked(main._unlocked)
 	main._menu.toast("主机已离开房间" if was_in_game else "与主机的连接已断开")

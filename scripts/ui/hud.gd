@@ -61,20 +61,22 @@ func _ready() -> void:
 	_anchor_flash["layer"] = %FlashLayer
 	_anchor_flash["ctl"] = %FlashCtl
 	_style_race_ui()
-	if touch:
-		_narration.anchor_top = 0.68
-		_narration.anchor_bottom = 0.80
+	apply_touch_anchors()
 
 	_intro_card.resized.connect(_layout_intro_skip)
 
 	_intro_skip.add_theme_font_override("font", Ui.HEAD)
 	_intro_skip.add_theme_font_size_override("font_size", 14)
+	# 触屏命中下限 44px:竖向边距与最小高随模式放宽。
+	var skip_pad_v := 12 if touch else 5
 	_intro_skip.add_theme_stylebox_override("normal",
-		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.30), 1, 12, 5))
+		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.30), 1, 12, skip_pad_v))
 	_intro_skip.add_theme_stylebox_override("hover",
-		Ui.sb(Palette.I.red, 0, Palette.I.red, 1, 12, 5))
+		Ui.sb(Palette.I.red, 0, Palette.I.red, 1, 12, skip_pad_v))
 	_intro_skip.add_theme_stylebox_override("pressed",
-		Ui.sb(Color(Palette.I.red, 0.68), 0, Palette.I.red, 1, 12, 5))
+		Ui.sb(Color(Palette.I.red, 0.68), 0, Palette.I.red, 1, 12, skip_pad_v))
+	if touch:
+		_intro_skip.custom_minimum_size = Vector2(0, 44)
 	_intro_skip.add_theme_color_override("font_color", Color(Palette.I.paper, 0.85))
 	_intro_skip.add_theme_color_override("font_hover_color", Color.WHITE)
 	_intro_skip.add_theme_color_override("font_pressed_color", Color.WHITE)
@@ -135,6 +137,25 @@ func _touch_mode() -> bool:
 	return Adaptive.is_touch_mode()
 
 
+## 触屏文案锚点与触控手感随模式重算(暂停菜单「虚拟按键·开/关」后
+## 也调用,不再只在 _ready 定死)。
+func apply_touch_anchors() -> void:
+	var touch := _touch_mode()
+	_narration.anchor_top = 0.68 if touch else 0.8
+	_narration.anchor_bottom = 0.80 if touch else 0.92
+
+
+## 触屏保留区(全局坐标):编队芯片与竞速结算面板。TouchControls 在
+## _input 里放行这些矩形,轮盘/跳跃不再吞掉芯片切换与「再战一局」。
+func ui_touch_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if _roster.is_visible_in_tree():
+		out.append(_roster.get_global_rect())
+	if _race_panel.is_visible_in_tree():
+		out.append(_race_panel.get_global_rect())
+	return out
+
+
 func _process(delta: float) -> void:
 	if _intro.visible:
 		_layout_intro_skip()
@@ -187,8 +208,6 @@ func show_intro(kicker: String, def: Dictionary) -> void:
 	_intro_title_label.text = def["name"]
 	_intro_text.text = hints.adapt_copy(str(def.get("intro", "")))
 
-	var vis := Adaptive.visible_size(get_viewport())
-	_intro_text.custom_minimum_size = Vector2(minf(vis.x * 0.72, 860.0), 0)
 	if _intro_tween != null:
 		_intro_tween.kill()
 	_intro.modulate = Color(1, 1, 1, 0)
@@ -206,6 +225,9 @@ func show_intro(kicker: String, def: Dictionary) -> void:
 
 
 func _layout_intro_skip() -> void:
+	# 换行宽度随当前视口实时算(旋转/改窗不背过期宽度)。
+	var vis := Adaptive.visible_size(get_viewport())
+	_intro_text.custom_minimum_size = Vector2(minf(vis.x * 0.72, 860.0), 0)
 	_intro_skip.reset_size()
 	_intro_skip.position = _intro_card.position + Vector2(
 		_intro_card.size.x - _intro_skip.size.x - 14.0, 14.0)

@@ -71,7 +71,7 @@ func _keys_section(sec: Dictionary) -> Control:
 	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(mark)
 	head.add_child(Ui.l(str(sec["title"]), 16, Ui.HEAD, Palette.I.paper))
-	var en := Ui.l(str(sec["en"]), 10, Ui.LIGHT, Palette.I.dim)
+	var en := Ui.l(str(sec["en"]), 11, Ui.LIGHT, Palette.I.dim)
 	en.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(en)
 	box.add_child(head)
@@ -133,8 +133,10 @@ func open() -> void:
 	Sfx.play("ui_open")
 	_fit_content()
 	_root.visible = true
-	# 手柄/键盘开面板即入面板(关闭钮),杜绝 A 键穿透到底层菜单
-	_close_btn.grab_focus()
+	# 手柄/键盘开面板即入面板(关闭钮),杜绝 A 键穿透到底层菜单;
+	# 纯触屏不抓焦点(无意义选中框)。
+	if not Adaptive.is_touch_mode():
+		_close_btn.grab_focus()
 	if _tween != null:
 		_tween.kill()
 	_shade.modulate.a = 0.0

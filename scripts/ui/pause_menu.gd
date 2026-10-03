@@ -55,6 +55,9 @@ func _toggle_touch(btn: Button) -> void:
 		return
 	m.touch_controls.toggle()
 	btn.text = "虚拟按键 · 开" if m.touch_controls.is_forced() else "虚拟按键 · 关"
+	# 触屏锚点(叙事带)与触控保留区随模式重算,不再只在进关时定死。
+	if m._hud != null:
+		m._hud.apply_touch_anchors()
 
 
 func open() -> void:

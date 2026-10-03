@@ -53,6 +53,8 @@ func _rebuild_chips(roster: Array) -> void:
 	for i in roster:
 		var c: GeometryDef = Geometries.ALL[i]
 		var chip := PanelContainer.new()
+		# 触控命中下限:芯片是「切换几何体」核心操作,实高不足 44px。
+		chip.custom_minimum_size = Vector2(0, 44)
 		chip.mouse_filter = Control.MOUSE_FILTER_STOP
 		var geo_index: int = i
 		var last_fire := [0]
