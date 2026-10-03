@@ -207,7 +207,7 @@ func _sync_from_settings() -> void:
 		for i in _res_btns.size():
 			var r: Vector2i = SettingsManager.RESOLUTIONS[i]
 			(_res_btns[i] as Button).set_pressed_no_signal(
-				SettingsManager.resolution == r)
+				SettingsManager.resolution == r and not SettingsManager.adaptive)
 		_fs_btn.set_pressed_no_signal(SettingsManager.fullscreen)
 	_sfx_slider.set_value_no_signal(SettingsManager.sfx_volume)
 	_sfx_value.text = "%d%%" % roundi(SettingsManager.sfx_volume * 100.0)
