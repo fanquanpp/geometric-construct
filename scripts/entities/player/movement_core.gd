@@ -27,8 +27,7 @@ static func gravity_step(vel: Vector2, def: GeometryDef, gravity_dir: int,
 
 static func eff_weight(p: Player) -> float:
 	return p.def.weight
-\
-		
+
 
 static func accel_factor(p: Player) -> float:
 	var t := MovementTuning.I

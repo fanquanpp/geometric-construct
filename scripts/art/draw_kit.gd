@@ -272,9 +272,10 @@ static func char_shape(c: CanvasItem, shape: int, rect: Rect2, col: Color) -> vo
 
 
 # —— 图鉴配方(200×200 设计坐标,等比缩放进 rect)——
-# v0.55.0 场景化重绘:每条示例 = 地台 + 幽灵格尺 + 构件正典形态 +
-# 角色剪影演示 + 动势标注,读图即懂玩法;构成主义纪律不变(全直角、
-# 取色经 Palette、透明度分档、单条图元远低于 5k 预算)。
+# v0.55.0 场景化重绘;v0.64.0 全量简化(用户令「图鉴图片不美观简洁」):
+# 统一「细地线 + 单焦点构件 + 正典画法」——删厚石板地台/十字格尺/悬空
+# 箭头/装饰点阵,红只留红刻度与状态语义,一图一处;构成主义纪律不变
+# (全直角、取色经 Palette、透明度分档)。codex_stage 仅几何体画像沿用。
 
 static func dashed_line(c: CanvasItem, a: Vector2, b: Vector2, col: Color,
 		w := 1.5, dash := 8.0, gap := 6.0) -> void:
@@ -289,18 +290,18 @@ static func dashed_line(c: CanvasItem, a: Vector2, b: Vector2, col: Color,
 		t += dash + gap
 
 
-## 地台:底部承重石板 + 纸白顶缘 + 右侧红刻度,示例图统一落脚面。
+## 地台(v0.64.0 起仅几何体画像沿用):厚石板 + 纸白顶缘 + 红刻度。
 static func codex_stage(c: CanvasItem, R: Callable, paper: Color) -> void:
 	c.draw_rect(R.call(10, 164, 180, 16), Color(Palette.I.ink_2, 1.0))
 	c.draw_rect(R.call(10, 164, 180, 3), Color(paper, 0.5))
 	c.draw_rect(R.call(170, 167, 12, 3), Color(Palette.I.red, 0.55))
 
 
-## 格尺:中线十字幽灵虚线,标注「1 格 = 100px」的量尺语言。
-static func codex_grid(c: CanvasItem, R: Callable, P: Callable, paper: Color) -> void:
-	var g := Color(paper, 0.10)
-	dashed_line(c, P.call(100, 8), P.call(100, 156), g, 1.0, 5.0, 7.0)
-	dashed_line(c, P.call(12, 82), P.call(188, 82), g, 1.0, 5.0, 7.0)
+## 细地线:建筑/机关图鉴统一立足面(一道弱线 + 两端支点刻)。
+static func codex_ground(c: CanvasItem, R: Callable, paper: Color) -> void:
+	c.draw_rect(R.call(14, 170, 172, 3), Color(paper, 0.30))
+	c.draw_rect(R.call(14, 165, 3, 8), Color(paper, 0.20))
+	c.draw_rect(R.call(183, 165, 3, 8), Color(paper, 0.20))
 
 
 ## 几何体图鉴画像(v0.60.0,用户令「图鉴画像采用游戏实际的内容;
@@ -383,208 +384,166 @@ static func codex(c: CanvasItem, id: String, rect: Rect2, pose := 0) -> void:
 	var ink2 := Color(Palette.I.ink_2, 1.0)
 	var ink3 := Color(Palette.I.ink_3, 1.0)
 	if id.begins_with("bld_"):
-		codex_grid(c, R, P, paper)
+		codex_ground(c, R, paper)
 		match id:
 			"bld_slab_full":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(30, 122, 140, 60), ink2)
-				c.draw_rect(R.call(30, 122, 140, 8), Color(paper, 0.55))
-				c.draw_rect(R.call(30, 122, 140, 22), Color(paper, 0.14))
-				c.draw_rect(R.call(88, 122, 14, 3), Color(Palette.I.red, 0.55))
-				codex_char(c, P, "dash", 76, 110, 24)
-				DrawKit.chevron(c, P.call(120, 110), Vector2(1, 0), 16.0 * k,
-					Color(paper, 0.4), 2.5 * k)
+				# 实机正典四层:体色 + 纸白顶缘(承重面)+ 红刻度;角色示比例。
+				c.draw_rect(R.call(30, 118, 140, 52), ink2)
+				c.draw_rect(R.call(30, 118, 140, 5), Color(paper, 0.65))
+				c.draw_rect(R.call(96, 118, 14, 3), Color(Palette.I.red, 0.6))
+				codex_char(c, P, "dash", 66, 106, 22)
 			"bld_slab_oneway":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(30, 100, 140, 20), ink3)
-				c.draw_rect(R.call(30, 100, 140, 5), Color(paper, 0.65))
-				codex_char(c, P, "dash", 76, 88, 22)
-				dashed_line(c, P.call(100, 128), P.call(100, 152),
-					Color(paper, 0.35), 2.0 * k)
-				c.draw_rect(R.call(88, 140, 24, 20), Color(paper, 0.10))
-				dashed_rect(c, R.call(88, 140, 24, 20), Color(paper, 0.3), 1.2 * k)
-				DrawKit.chevron(c, P.call(100, 148), Vector2(0, 1), 12.0 * k,
-					Color(paper, 0.45), 2.0 * k)
+				# 薄板悬置:顶缘加亮可站,下方一道上行箭头 = 自下可穿。
+				c.draw_rect(R.call(30, 92, 140, 13), ink3)
+				c.draw_rect(R.call(30, 92, 140, 4), Color(paper, 0.7))
+				codex_char(c, P, "dash", 100, 78, 20)
+				DrawKit.chevron(c, P.call(100, 126), Vector2(0, -1), 13.0 * k,
+					Color(paper, 0.4), 2.0 * k)
 			"bld_ghost_frame":
-				dashed_rect(c, R.call(40, 40, 120, 120), Color(paper, 0.4), 2.0 * k)
-				c.draw_rect(R.call(56, 56, 88, 88), Color(paper, 0.06))
-				dashed_rect(c, R.call(64, 64, 72, 72), Color(paper, 0.22), 1.2 * k)
-				codex_char(c, P, "dash", 100, 118, 22)
-				codex_stage(c, R, paper)
+				# 虚线框 + 6% 体,角色穿行,无地台纠缠。
+				dashed_rect(c, R.call(50, 44, 100, 100), Color(paper, 0.38), 2.0 * k)
+				c.draw_rect(R.call(58, 52, 84, 84), Color(paper, 0.06))
+				codex_char(c, P, "dash", 100, 132, 22)
 			"bld_pillar":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(84, 36, 32, 128), ink2)
-				c.draw_rect(R.call(74, 24, 52, 12), ink3)
-				c.draw_rect(R.call(74, 152, 52, 12), ink3)
-				c.draw_rect(R.call(84, 36, 8, 128), Color(paper, 0.25))
-				c.draw_line(P.call(116, 36), P.call(108, 48), Color(Palette.I.red, 0.6), 2.0 * k)
-				codex_char(c, P, "dash", 46, 152, 20)
+				# 柱身 + 柱冠 + 左缘受光条,角色立基座旁示体量。
+				c.draw_rect(R.call(79, 42, 42, 128), ink2)
+				c.draw_rect(R.call(71, 30, 58, 12), ink3)
+				c.draw_rect(R.call(79, 42, 5, 128), Color(paper, 0.28))
+				codex_char(c, P, "dash", 148, 158, 18)
 			"bld_beam":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(30, 76, 140, 30), ink2)
-				c.draw_rect(R.call(30, 76, 140, 6), Color(paper, 0.5))
-				c.draw_rect(R.call(18, 80, 12, 22), ink3)
-				c.draw_rect(R.call(170, 80, 12, 22), ink3)
-				for x in 4:
-					c.draw_rect(R.call(46 + x * 28, 88, 10, 8), Color(paper, 0.14))
-				dashed_line(c, P.call(100, 24), P.call(100, 70),
-					Color(paper, 0.28), 1.5 * k)
-				DrawKit.arrow(c, P.call(64, 30), P.call(64, 70),
-					Color(paper, 0.4), 1.5 * k, 7.0 * k)
-				DrawKit.arrow(c, P.call(136, 30), P.call(136, 70),
-					Color(paper, 0.4), 1.5 * k, 7.0 * k)
-				codex_char(c, P, "spring", 100, 60, 20)
+				# 双支墩上架横梁,梁上走人 = 高空路线。
+				c.draw_rect(R.call(25, 96, 150, 22), ink2)
+				c.draw_rect(R.call(25, 96, 150, 4), Color(paper, 0.6))
+				c.draw_rect(R.call(31, 118, 14, 52), ink3)
+				c.draw_rect(R.call(155, 118, 14, 52), ink3)
+				codex_char(c, P, "spring", 100, 84, 18)
 			"bld_bridge":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(20, 88, 160, 18), ink2)
-				c.draw_rect(R.call(20, 88, 160, 5), Color(paper, 0.6))
-				c.draw_rect(R.call(34, 106, 14, 58), ink3)
-				c.draw_rect(R.call(152, 106, 14, 58), ink3)
-				dashed_line(c, P.call(100, 106), P.call(100, 160),
-					Color(paper, 0.12), 2.0 * k)
-				for hz in 3:
-					c.draw_rect(R.call(60 + hz * 24, 118 + hz * 12, 14, 3),
-						Color(paper, 0.10))
-				codex_char(c, P, "dash", 100, 76, 20)
-				DrawKit.chevron(c, P.call(132, 78), Vector2(1, 0), 14.0 * k,
-					Color(paper, 0.4), 2.5 * k)
+				# 两端支墩 + 一贯通桥面,角色过桥。
+				c.draw_rect(R.call(14, 126, 40, 44), ink2)
+				c.draw_rect(R.call(146, 126, 40, 44), ink2)
+				c.draw_rect(R.call(14, 112, 172, 14), ink2)
+				c.draw_rect(R.call(14, 112, 172, 4), Color(paper, 0.65))
+				codex_char(c, P, "dash", 100, 100, 18)
 			"bld_corridor":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(56, 24, 30, 140), ink2)
-				c.draw_rect(R.call(114, 24, 30, 140), ink2)
-				c.draw_rect(R.call(56, 24, 30, 140), Color(paper, 0.2), false, 2.0 * k)
-				c.draw_rect(R.call(114, 24, 30, 140), Color(paper, 0.2), false, 2.0 * k)
-				DrawKit.chevron(c, P.call(100, 60), Vector2(1, 0), 20.0 * k,
-					Color(paper, 0.35), 3.0 * k)
-				DrawKit.chevron(c, P.call(100, 100), Vector2(1, 0), 20.0 * k,
-					Color(paper, 0.25), 3.0 * k)
-				codex_char(c, P, "dash", 100, 140, 20)
+				# 双壁夹窄槽,一箭头示通行向,角色在槽底。
+				c.draw_rect(R.call(54, 34, 26, 136), ink2)
+				c.draw_rect(R.call(120, 34, 26, 136), ink2)
+				c.draw_rect(R.call(54, 34, 26, 136), Color(paper, 0.16), false, 1.5 * k)
+				c.draw_rect(R.call(120, 34, 26, 136), Color(paper, 0.16), false, 1.5 * k)
+				DrawKit.chevron(c, P.call(100, 84), Vector2(1, 0), 16.0 * k,
+					Color(paper, 0.3), 2.0 * k)
+				codex_char(c, P, "dash", 100, 158, 18)
 			_:
-				c.draw_rect(R.call(40, 40, 120, 120), ink2)
-				codex_stage(c, R, paper)
+				c.draw_rect(R.call(50, 60, 100, 110), ink2)
 	elif id.begins_with("mech_"):
-		codex_grid(c, R, P, paper)
+		codex_ground(c, R, paper)
 		match id:
 			"mech_exit_door":
-				codex_stage(c, R, paper)
-				# 正典 = 实机 ExitDoor(v0.11.1 门框):墨腔 + 角色色锐利
-				# 门框 + 呼吸核心方点 + 悬挑门楣 + 门上方悬浮角色图标。
+				# 正典 = 实机 ExitDoor:墨腔 + 角色色门框 + 门楣 + 悬浮图标。
 				var dcol: Color = Palette.I.red
-				c.draw_rect(R.call(62, 36, 76, 128), Color(Palette.I.ink, 0.7))
-				c.draw_rect(R.call(67, 41, 66, 118),
+				c.draw_rect(R.call(70, 46, 60, 124), Color(Palette.I.ink, 0.7))
+				c.draw_rect(R.call(74, 50, 52, 116),
 					Color(dcol, 0.55 if pose > 0 else 0.30), false, 2.0 * k)
-				c.draw_rect(R.call(62, 36, 76, 128), Color(dcol, 0.85), false, 3.0 * k)
-				c.draw_rect(R.call(56, 26, 88, 6), Color(dcol, 0.8))
-				codex_char(c, P, "dash", 100, 14, 16)
+				c.draw_rect(R.call(70, 46, 60, 124), Color(dcol, 0.85), false, 3.0 * k)
+				c.draw_rect(R.call(64, 36, 72, 6), Color(dcol, 0.8))
+				codex_char(c, P, "dash", 100, 24, 15)
 				if pose == 1:
-					codex_char(c, P, "dash", 100, 124, 14)
+					codex_char(c, P, "dash", 100, 152, 13)
 					for t in 3:
-						c.draw_rect(R.call(82 + t * 12, 134 + t * 5, 5, 5),
+						c.draw_rect(R.call(86 + t * 10, 128 + t * 5, 5, 5),
 							Color(dcol, 0.8 - t * 0.22))
 				elif pose == 2:
-					c.draw_rect(R.call(55, 29, 90, 142),
+					c.draw_rect(R.call(62, 40, 76, 136),
 						Color(Palette.I.red, 0.9), false, 1.5 * k)
 				else:
-					DrawKit.ngon_fill(c, P.call(100, 100), 6.0 * k, 4,
+					DrawKit.ngon_fill(c, P.call(100, 108), 6.0 * k, 4,
 						dcol.lerp(paper, 0.45), PI / 4.0)
 			"mech_speed_gate":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(50, 24, 100, 140), Color(Palette.I.ink, 0.5))
-				c.draw_line(P.call(52, 24), P.call(52, 164), Color(paper, 0.5), 3.0 * k)
-				c.draw_line(P.call(148, 24), P.call(148, 164), Color(paper, 0.5), 3.0 * k)
+				# 通道 + 三折角;强化态折角转红,角色携速度线穿出。
+				c.draw_rect(R.call(52, 40, 96, 130), Color(Palette.I.ink, 0.45))
+				c.draw_line(P.call(52, 40), P.call(52, 170), Color(paper, 0.5), 3.0 * k)
+				c.draw_line(P.call(148, 40), P.call(148, 170), Color(paper, 0.5), 3.0 * k)
 				var cc := Color(Palette.I.red, 0.85) if pose == 1 else Color(paper, 0.5)
 				for t in 3:
-					DrawKit.chevron(c, P.call(68 + t * 26, 94), Vector2(1, 0),
-						26.0 * k, cc, 3.0 * k)
+					DrawKit.chevron(c, P.call(72 + t * 22, 96), Vector2(1, 0),
+						20.0 * k, cc, 2.5 * k)
 				if pose == 1:
-					codex_char(c, P, "dash", 108, 142, 22)
-					for t in 3:
-						c.draw_rect(R.call(38 - t * 12, 132 + t * 4, 10, 3),
-							Color(Palette.I.red, 0.7 - t * 0.18))
+					codex_char(c, P, "dash", 156, 158, 20)
+					c.draw_rect(R.call(116, 148, 14, 3), Color(Palette.I.red, 0.6))
+					c.draw_rect(R.call(104, 154, 10, 3), Color(Palette.I.red, 0.4))
 				else:
-					codex_char(c, P, "dash", 40, 142, 22)
-					DrawKit.chevron(c, P.call(70, 142), Vector2(1, 0), 12.0 * k,
+					codex_char(c, P, "dash", 34, 158, 20)
+					DrawKit.chevron(c, P.call(66, 158), Vector2(1, 0), 12.0 * k,
 						Color(paper, 0.4), 2.0 * k)
 			"mech_mover":
-				codex_stage(c, R, paper)
-				c.draw_line(P.call(24, 116), P.call(176, 116), Color(paper, 0.2), 2.0 * k)
-				for t in 5:
-					c.draw_rect(R.call(28 + t * 32, 114, 4, 5), Color(paper, 0.3))
-				var px := 84.0 if pose == 1 else 56.0
-				c.draw_rect(R.call(px, 96, 76, 20), ink2)
-				c.draw_rect(R.call(px, 96, 76, 5), Color(paper, 0.6))
-				codex_char(c, P, "spring", px + 38, 84, 18)
-				DrawKit.chevron(c, P.call(30, 116), Vector2(-1, 0), 12.0 * k,
+				# 虚线轨道 + 往返双刻,平台载角色分置两态。
+				dashed_line(c, P.call(20, 128), P.call(180, 128),
+					Color(paper, 0.22), 2.0 * k, 6.0, 8.0)
+				var px := 92.0 if pose == 1 else 46.0
+				c.draw_rect(R.call(px, 112, 62, 16), ink2)
+				c.draw_rect(R.call(px, 112, 62, 4), Color(paper, 0.6))
+				codex_char(c, P, "spring", px + 31, 100, 16)
+				DrawKit.chevron(c, P.call(184, 128), Vector2(1, 0), 12.0 * k,
 					Color(Palette.I.red, 0.7), 2.0 * k)
-				DrawKit.chevron(c, P.call(170, 116), Vector2(1, 0), 12.0 * k,
+				DrawKit.chevron(c, P.call(16, 128), Vector2(-1, 0), 12.0 * k,
 					Color(Palette.I.red, 0.7), 2.0 * k)
 			"mech_timed_bridge":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(16, 88, 30, 14), ink3)
-				c.draw_rect(R.call(154, 88, 30, 14), ink3)
+				# 两端桥墩 + 实桥/虚化板条两态,顶部四枚节拍灯。
+				c.draw_rect(R.call(12, 116, 28, 16), ink3)
+				c.draw_rect(R.call(160, 116, 28, 16), ink3)
 				if pose == 1:
-					var x := 52.0
-					while x < 148.0:
-						c.draw_rect(R.call(x, 92, 12, 6), Color(paper, 0.4))
-						x += 24.0
-					dashed_line(c, P.call(30, 96), P.call(170, 96),
-						Color(paper, 0.16), 1.0 * k)
+					var x := 48.0
+					while x < 152.0:
+						c.draw_rect(R.call(x, 122, 10, 5), Color(paper, 0.38))
+						x += 20.0
 				else:
-					c.draw_rect(R.call(46, 86, 108, 20), ink2)
-					c.draw_rect(R.call(46, 86, 108, 5), Color(paper, 0.6))
-					codex_char(c, P, "dash", 100, 74, 18)
+					c.draw_rect(R.call(40, 116, 120, 16), ink2)
+					c.draw_rect(R.call(40, 116, 120, 4), Color(paper, 0.6))
+					codex_char(c, P, "dash", 100, 104, 16)
 				for t in 4:
 					var on := (t % 2) == pose
-					c.draw_rect(R.call(84 + t * 8, 22, 6, 6),
+					c.draw_rect(R.call(86 + t * 8, 32, 6, 6),
 						Color(Palette.I.red, 0.8) if on else Color(paper, 0.18))
 			"mech_piano_tile":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(30, 96, 64, 18), Color(paper, 0.3) if pose == 1 else ink2)
-				c.draw_rect(R.call(30, 96, 64, 18),
+				# 低音砖 + 高音砖 + 上行音点;触发态低砖点亮。
+				c.draw_rect(R.call(24, 152, 60, 18), Color(paper, 0.3) if pose == 1 else ink2)
+				c.draw_rect(R.call(24, 152, 60, 18),
 					Color(paper, 0.8 if pose == 1 else 0.4), false, 2.0 * k)
-				c.draw_rect(R.call(106, 78, 64, 18), ink2)
-				c.draw_rect(R.call(106, 78, 64, 18), Color(paper, 0.4), false, 2.0 * k)
-				codex_char(c, P, "spring", 58, 84 if pose == 1 else 82, 18)
+				c.draw_rect(R.call(104, 104, 60, 18), ink2)
+				c.draw_rect(R.call(104, 104, 60, 18), Color(paper, 0.4), false, 2.0 * k)
+				codex_char(c, P, "spring", 54, 136 if pose == 1 else 140, 16)
 				for t in 3:
-					var ny := 52.0 - t * 12.0
-					c.draw_rect(R.call(58 + t * 14, ny, 6, 6),
-						Color(paper, 0.7 - t * 0.18))
-				DrawKit.ngon_fill(c, P.call(138, 58), 8.0 * k, 12,
-					Color(paper, 0.85))
+					c.draw_rect(R.call(118 + t * 13, 78 - t * 12, 5, 5),
+						Color(paper, 0.7 - t * 0.2))
 			"mech_checkpoint":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(40, 156, 120, 8), Color(paper, 0.35))
-				c.draw_rect(R.call(97, 56, 6, 100), Color(paper, 0.5))
+				# 信标杆 + 菱首;激活态菱首实心黄 + 呼吸环。
+				c.draw_rect(R.call(97, 82, 6, 88), Color(paper, 0.5))
+				c.draw_rect(R.call(86, 167, 28, 3), Color(paper, 0.35))
 				if pose == 1:
-					DrawKit.ngon_fill(c, P.call(100, 48), 14.0 * k, 4,
+					DrawKit.ngon_fill(c, P.call(100, 72), 13.0 * k, 4,
 						Color(Palette.I.yellow, 0.95), PI / 4.0)
-					DrawKit.ngon_line(c, P.call(100, 48), 26.0 * k, 12,
-						Color(Palette.I.yellow, 0.5), 2.0 * k)
-					codex_char(c, P, "dash", 100, 138, 20)
-					DrawKit.arrow(c, P.call(126, 120), P.call(112, 102),
-						Color(Palette.I.yellow, 0.7), 2.0 * k, 8.0 * k)
+					DrawKit.ngon_line(c, P.call(100, 72), 24.0 * k, 12,
+						Color(Palette.I.yellow, 0.45), 2.0 * k)
+					codex_char(c, P, "dash", 100, 158, 18)
 				else:
-					DrawKit.ngon_line(c, P.call(100, 48), 14.0 * k, 4,
+					DrawKit.ngon_line(c, P.call(100, 72), 13.0 * k, 4,
 						Color(paper, 0.45), 2.0 * k, PI / 4.0)
-					codex_char(c, P, "dash", 56, 138, 20)
-					dashed_line(c, P.call(66, 130), P.call(92, 122),
+					codex_char(c, P, "dash", 52, 158, 18)
+					dashed_line(c, P.call(62, 150), P.call(88, 144),
 						Color(paper, 0.25), 1.5 * k)
 			"mech_ski_patch":
-				codex_stage(c, R, paper)
-				c.draw_rect(R.call(30, 132, 140, 32), Color(Palette.I.blue, 0.2))
-				DrawKit.hatch45(c, R.call(30, 132, 140, 32), Color(Palette.I.blue, 0.35),
+				# 冰蓝斜纹带;滑雪态角色入带并拖速度线。
+				var band: Rect2 = R.call(30, 146, 140, 24)
+				c.draw_rect(band, Color(Palette.I.blue, 0.3 if pose == 1 else 0.16))
+				DrawKit.hatch45(c, band, Color(Palette.I.blue, 0.35),
 					10.0 * k + 1.0, 1.5 * k)
-				c.draw_rect(R.call(30, 132, 140, 32), Color(Palette.I.blue, 0.55), false, 2.0 * k)
-				codex_char(c, P, "dash", 74, 118, 20)
-				DrawKit.chevron(c, P.call(104, 148), Vector2(1, 0), 14.0 * k,
-					Color(paper, 0.6), 2.5 * k)
-				DrawKit.chevron(c, P.call(128, 148), Vector2(1, 0), 14.0 * k,
-					Color(paper, 0.35), 2.5 * k)
-				dashed_line(c, P.call(36, 110), P.call(76, 110),
-					Color(paper, 0.28), 1.5 * k)
+				c.draw_rect(band, Color(Palette.I.blue, 0.55), false, 2.0 * k)
+				var sx := 112.0 if pose == 1 else 72.0
+				codex_char(c, P, "dash", sx, 132, 20)
+				c.draw_rect(R.call(sx - 34.0, 152, 16, 3), Color(paper, 0.5))
+				c.draw_rect(R.call(sx - 48.0, 158, 10, 3), Color(paper, 0.3))
 			_:
-				c.draw_rect(R.call(40, 40, 120, 120), ink2)
-				codex_stage(c, R, paper)
+				c.draw_rect(R.call(50, 60, 100, 110), ink2)
 	else:
 		var slug := id.trim_prefix("geo_")
 		for d in Geometries.ALL:

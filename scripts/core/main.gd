@@ -124,8 +124,8 @@ func _ready() -> void:
 	_save.load_save()
 	_save.clamp_unlocked(LevelData.campaign_last())
 	_unlocked = _save.unlocked
-	# unlock_all 构建特性(测试发布包):全解锁只覆写运行时值,不写回存档,
-	# 换回普通构建即恢复真实进度。
+	# unlock_all 构建特性(测试发布包):全解锁只覆写「选关显示档」,
+	# 不写回存档;继续键仍按真实存档进度起跳,不直跳终场。
 	if OS.has_feature("unlock_all"):
 		_unlocked = LevelData.campaign_last()
 	_menu.set_unlocked(_unlocked)
@@ -450,7 +450,8 @@ func _open_pause() -> void:
 func start_game() -> void:
 	if _state != State.MENU:
 		return
-	start_level(_unlocked)
+	# 继续/开始按真实存档进度起跳(unlock_all 只放开选关,不改继续语义)
+	start_level(_save.unlocked)
 
 
 func start_chapter(index: int) -> void:
