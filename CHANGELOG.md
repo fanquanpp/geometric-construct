@@ -2,6 +2,27 @@
 
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 
+## v0.63.1 · 全资产二轮勘探:孤儿场景壳清退(2026-10-03)
+
+用户令:「再进行一次现有资产与素材勘探,删除未使用的。提交推送。」
+
+【勘探范围与结论】全仓 92 个资产 / 数据文件逐一引用普查:assets(brand 四图标=导出配置
+四键全引用、fonts 字体+LICENSE、fx 天空 shader=backdrop.tscn 引用、maps 蓝图 16 张=16 关
+一一对应、tiles 图集=tileset 纹理、art/tiles aseprite 源=v0.62.0 既定保留且可由
+gen_tiles.lua 再生)、data(palette / 三体 / 调参 / tileset / 背景 5 份=幕序字典全引用 /
+音乐 5 份=prologue+四幕全加载 / 音效 27 份=逐名实证播放点,含跃 can_climb=true 的 climb
+实机制)、default_bus_layout.tres(SFX/Music 双总线,引擎默认路径加载,实引用)、
+icon.png(双端图标)。tests 六场景=门禁 CLI 入口,levels_native/_template=作关模板,
+皆保留。孤儿 .uid / .import:零。
+
+【移除·三文件】scenes/world/spawn_marker.tscn + scripts/world/spawn_marker.gd——
+出生点收集按名(`Spawn%d` 裸 Marker2D,native_level._marker),SpawnMarker 类与场景
+全战役零实例零类型引用(geo_index 编辑器画法为旧作关期遗留);scenes/world/level_root.tscn
+——LevelRoot 基类场景壳零引用(**level_root.gd 本体保留**:NativeLevel extends LevelRoot,
+池清理 / 角色挂载在基类,删壳不删类)。
+
+【门禁】import 过 + flow PASS + native 17 场 ALL PASS。版本三件 0.63.1 / code 40。
+
 ## v0.63.0 · 图鉴三度对账:建筑 12→7 清退 + 版本三件漂移修复(2026-10-03)
 
 用户令:「洞察分析图鉴系统及其内容。删除未实际使用组件图鉴素材。并且更新素材版本为当前最新版本。」
