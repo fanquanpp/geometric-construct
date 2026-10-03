@@ -123,6 +123,9 @@ func _apply_styles() -> void:
 		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.14), 1, 6, 6,
 			true))
 	(%Scroll as ScrollContainer).get_h_scroll_bar().visible = false
+	# 加宽纵向滚动条预留位:右列开关 / 分辨率钮与滚动条脱开,触控不互扰
+	(%Scroll as ScrollContainer).get_v_scroll_bar().custom_minimum_size = \
+		Vector2(16, 0)
 	_root.resized.connect(_fit_content)
 	_fit_content()
 

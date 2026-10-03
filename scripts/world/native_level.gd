@@ -13,15 +13,13 @@ extends LevelRoot
 @export var top_kill_y := -600.0
 
 const CAMERA_RIG_SCENE := preload("res://scenes/world/camera_rig.tscn")
-const TERRAIN_ART_SCENE := preload("res://scenes/art/terrain_art.tscn")
 const FOCUS_SCENE := preload("res://scenes/art/focus_system.tscn")
 
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
-		# 所见即所得作关(v0.65.0):编辑器内只挂程序化地形渲染层,
-		# 画瓦片 / 摆机关 / 摆出生点即见成品;运行时装配路径不变。
-		add_child(TERRAIN_ART_SCENE.instantiate())
+		# 真瓦片所见即所得(v0.66.0):Solid/Decor 直渲染分类图集纹理,
+		# 程序化 _draw 接管层退役;画瓦片 / 摆机关 / 摆出生点即见成品。
 		return
 	for idx in roster:
 		var gdef: GeometryDef = Geometries.ALL[idx]
@@ -34,7 +32,6 @@ func _ready() -> void:
 	cam.limit_right = int(level_size.x)
 	cam.limit_bottom = int(level_size.y)
 	add_child(cam)
-	add_child(TERRAIN_ART_SCENE.instantiate())
 	var fs: FocusSystem = FOCUS_SCENE.instantiate()
 	fs.main = Main.I
 	add_child(fs)

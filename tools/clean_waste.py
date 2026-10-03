@@ -121,7 +121,7 @@ def read_refs():
 def report_unused_images():
     refs = read_refs()
     # 子串判断:文件名(含扩展名)或去扩展名的词干——词干兜住动态路径拼接
-    # (editor_map_placeholder "res://assets/maps/%s.png" % level_id 一类)
+    # (v0.66.0 起瓦片美术为分类生成 PNG,生成器 tools/gen_tile_assets.gd 引用即使用)
     combined = "\n".join(refs)
     orphans, suspects = [], []
     assets = os.path.join(ROOT, "assets")

@@ -254,27 +254,36 @@ func fade_from_black() -> void:
 
 
 func fade_to_black(dur: float, on_done: Callable) -> void:
-	if not _fx.transition(TransitionFX.Style.FADE, dur, on_done):
-		on_done.call()
+	_queue_transition(TransitionFX.Style.FADE, dur, on_done)
 
 
 func transition_sweep(dur: float, on_covered: Callable) -> void:
-	if not _fx.transition(TransitionFX.Style.SWEEP, dur, on_covered):
-		on_covered.call()
+	_queue_transition(TransitionFX.Style.SWEEP, dur, on_covered)
 
 
 func transition_blocks(dur: float, on_covered: Callable) -> void:
-	if not _fx.transition(TransitionFX.Style.BLOCKS_RED, dur, on_covered):
-		on_covered.call()
+	_queue_transition(TransitionFX.Style.BLOCKS_RED, dur, on_covered)
 
 
+## 布尔契约:供调用方区分「已入过渡」与「未入(hud 缺席 / 忙)」。
+## 忙时返回 false,由调用方兜底(game_flow.return_to_menu 直切菜单)。
 func transition_curtain(dur: float, on_covered: Callable) -> bool:
 	return _fx.transition(TransitionFX.Style.CURTAIN, dur, on_covered)
 
 
 func transition_corners(dur: float, on_covered: Callable) -> void:
-	if not _fx.transition(TransitionFX.Style.CORNERS, dur, on_covered):
-		on_covered.call()
+	_queue_transition(TransitionFX.Style.CORNERS, dur, on_covered)
+
+
+## 忙时下一帧重试(v0.66.0 多端勘误):过渡忙 * 吞回调 = 「有的端动画
+## 后续不触发 / 按钮点了没反应」;重试保证回调必达,且不在半程强切。
+## 忙只存在于过渡动画期(有界 ~2.2×dur),重试必然收敛。
+func _queue_transition(style: int, dur: float, on_covered: Callable) -> void:
+	if _fx.transition(style, dur, on_covered):
+		return
+	await get_tree().process_frame
+	if is_inside_tree():
+		_queue_transition(style, dur, on_covered)
 
 
 func reveal_corners() -> void:

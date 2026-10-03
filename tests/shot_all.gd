@@ -31,9 +31,11 @@ func _ready() -> void:
 	await _shot("ui_touch")
 	main.touch_controls.visible = false
 
-	main.show_story("prologue")
-	await get_tree().create_timer(1.6).timeout
-	await _shot("ui_story")
+	# 开场卡(v0.66.0 修:原 show_story 调用随剧情层退役成幽灵方法,运行时
+	# 中断 sweep 且进程永不退出;改用现行 intro 卡实拍并复位暂停)
+	main.start_level(0, true)
+	await get_tree().create_timer(1.2).timeout
+	await _shot("ui_intro")
 
 	get_tree().paused = false
 	print("TEST: SHOT ALL DONE")

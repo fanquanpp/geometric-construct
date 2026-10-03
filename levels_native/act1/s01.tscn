@@ -6,8 +6,6 @@
 [ext_resource type="PackedScene" uid="uid://qx6nh26q86sp" path="res://scenes/entities/exit_door.tscn" id="5_door"]
 [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/piano_tile.tscn" id="6_sc"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="14_hint"]
-[ext_resource type="Script" path="res://scripts/art/editor_map_placeholder.gd" id="emp_scr"]
-[ext_resource type="Texture2D" path="res://assets/maps/act1_s01.png" id="emp_map"]
 
 [ext_resource type="PackedScene" path="res://scenes/world/spawn_marker.tscn" id="15_spn"]
 
@@ -21,13 +19,12 @@ level_size = Vector2(3200, 2000)
 top_kill_y = -420
 
 [node name="Decor" type="TileMapLayer" parent="." unique_id=1125665061]
-tile_map_data = PackedByteArray("AAAAAA0AAAABAAAAAAABAA0AAAABAAAAAAACAA0AAAABAAAAAAADAA0AAAABAAAAAAAEAA0AAAABAAAAAAAFAA0AAAABAAAAAAAGAA0AAAABAAAAAAAHAA0AAAABAAAAAAAIAA0AAAABAAAAAAAJAA0AAAABAAAAAAAKAA0AAAABAAAAAAAPAA0AAAABAAAAAAAQAA0AAAABAAAAAAARAA0AAAABAAAAAAASAA0AAAABAAAAAAATAA0AAAABAAAAAAAUAA0AAAABAAAAAAAVAA0AAAABAAAAAAAWAA0AAAABAAAAAAAXAA0AAAABAAAAAAAYAA0AAAABAAAAAAAZAA0AAAABAAAAAAAaAA0AAAABAAAAAAAbAA0AAAABAAAAAAALAA0AAAAAAAAAAAAMAA0AAAAAAAAAAAA=")
 tile_set = ExtResource("3_ts")
 
 [node name="Solid" type="TileMapLayer" parent="." unique_id=1984725737]
 z_index = 1
 tile_set = ExtResource("3_ts")
-
+tile_map_data = PackedByteArray("AAAAAA0AAAACAAAAAAABAA0AAAAAAAEAAAACAA0AAAAAAAEAAAADAA0AAAAAAAEAAAAEAA0AAAAAAAEAAAAFAA0AAAAAAAEAAAAGAA0AAAAAAAEAAAAHAA0AAAAAAAEAAAAIAA0AAAAAAAEAAAAJAA0AAAAAAAEAAAAKAA0AAAAAAAEAAAAPAA0AAAACAAAAAAAQAA0AAAAAAAEAAAARAA0AAAAAAAEAAAASAA0AAAAAAAEAAAATAA0AAAAAAAEAAAAUAA0AAAAAAAEAAAAVAA0AAAAAAAEAAAAWAA0AAAAAAAEAAAAXAA0AAAAAAAEAAAAYAA0AAAAAAAEAAAAZAA0AAAAAAAEAAAAaAA0AAAAAAAEAAAAbAA0AAAAIAAAAAAALAA0AAAAAAAEAAAAMAA0AAAAIAAAAAAA=")
 [node name="Spawn0" parent="." instance=ExtResource("15_spn")]
 geo_index = 0
 position = Vector2(300, 1275)
@@ -53,8 +50,3 @@ text = "跳过缺口"
 [node name="HintMarker2" parent="." unique_id=1732050807 instance=ExtResource("14_hint")]
 position = Vector2(1900, 1050)
 text = "空中再按 Space = 二段跳"
-[node name="EditorMap" type="Sprite2D" parent="." unique_id=1886242853]
-visible = false
-centered = false
-texture = ExtResource("emp_map")
-script = ExtResource("emp_scr")

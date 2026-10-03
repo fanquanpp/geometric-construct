@@ -213,8 +213,66 @@ static func make_theme(size := 18) -> Theme:
 		sb(Color(Palette.I.ink_2, 0.97), 0, Color(Palette.I.paper, 0.14), 1, 14, 12,
 			true))
 	th.set_color("font_color", "Label", Palette.I.paper)
+
+	# CheckButton 开关(设置页等):默认主题的药丸是图标绘制,stylebox
+	# 覆盖不可达;改为程序化生成两态同尺寸药丸图标——关=暗板+纸缘,
+	# 开=红板,触控命中区一致,暗场状态可辨。
+	th.set_icon("checked", "CheckButton", _toggle_icon(true))
+	th.set_icon("unchecked", "CheckButton", _toggle_icon(false))
+	th.set_icon("checked_disabled", "CheckButton", _toggle_icon(true, true))
+	th.set_icon("unchecked_disabled", "CheckButton", _toggle_icon(false, true))
+
+	# 滚动条(嵌套面板):加宽 grabber + 暗轨,右列控件与滚动条以自身
+	# 留宽分隔,不再顶贴。
+	var track := sb(Color(Palette.I.paper, 0.06), 0, null, 0, 3, 3)
+	track.content_margin_left = 4
+	track.content_margin_right = 4
+	var grabber := sb(Color(Palette.I.paper, 0.30), 0, null, 0, 3, 3)
+	var grabber_hi := sb(Color(Palette.I.paper, 0.52), 0, null, 0, 3, 3)
+	for bar in ["VScrollBar", "HScrollBar"]:
+		th.set_stylebox("scroll", bar, track)
+		th.set_stylebox("grabber", bar, grabber)
+		th.set_stylebox("grabber_highlight", bar, grabber_hi)
+		th.set_stylebox("grabber_pressed", bar, grabber_hi)
+	th.set_stylebox("panel", "ScrollContainer",
+		sb(Color(0, 0, 0, 0), 0, null, 0, 0, 0))
 	_theme = th
 	return th
+
+
+## 两态开关药丸图标:64×32,圆角板 + 纸色旋钮(开=右,关=左)。
+static func _toggle_icon(on: bool, disabled := false) -> ImageTexture:
+	var img := Image.create_empty(64, 32, false, Image.FORMAT_RGBA8)
+	var fill := Palette.I.red if on else Color(Palette.I.paper, 0.10)
+	var edge := Color(Palette.I.paper, 0.65) if on else Color(Palette.I.paper, 0.38)
+	if disabled:
+		fill = Color(Palette.I.red, 0.40) if on else Color(Palette.I.paper, 0.04)
+		edge = Color(Palette.I.paper, 0.30)
+	var knob := Color(Palette.I.paper, 0.92) if not disabled else Color(Palette.I.paper, 0.55)
+	for y in 32:
+		for x in 64:
+			var d := _rounded_rect_dist(x, y, Rect2(2, 2, 60, 28), 14.0)
+			if d <= 0.0:
+				img.set_pixel(x, y, fill)
+			elif d <= 2.0:
+				img.set_pixel(x, y, edge)
+	var kx := 46.0 if on else 18.0
+	for y in range(6, 26):
+		for x in range(6, 58):
+			if Vector2(x + 0.5, y + 0.5).distance_to(Vector2(kx, 16.0)) <= 9.0:
+				img.set_pixel(x, y, knob)
+	return ImageTexture.create_from_image(img)
+
+
+## 点到圆角矩形的有符号距离(外正内负),供药丸绘制判定。
+static func _rounded_rect_dist(x: int, y: int, r: Rect2, radius: float) -> float:
+	var p := Vector2(x + 0.5, y + 0.5)
+	var c := r.get_center()
+	var h := r.size * 0.5 - Vector2(radius, radius)
+	var q := (p - c).abs() - h
+	var outer := Vector2(maxf(q.x, 0.0), maxf(q.y, 0.0)).length()
+	var inner := minf(maxf(q.x, q.y), 0.0)
+	return outer + inner - radius
 
 
 static func wire_button(b: Button, click_sfx := "ui_click") -> void:

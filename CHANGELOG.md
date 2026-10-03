@@ -2,6 +2,91 @@
 
 格式:每个版本一节,分类为 新增 / 变更 / 修复 / 移除。
 
+## v0.66.0 · native 大图集退役 + 分类瓦片图集与地形画笔 + 程序化 0→1 作关管线(2026-10-03)
+
+用户令:「编辑器里看不见瓦片地块了。程序化从 0 生成地图,通过后照着用瓦片和地块描摹,
+1 到完美是人工设计;编辑器里要有对应的地块、瓦块和组件;旧的大地块图删除干净;
+native 图集过时,按最新程序化生成内容的美式风格为标准,不喜欢大型图集,分类要独立
+细致,不要单个文件;tscn 深度清理与绘制。」
+
+【联网调研】Godot 官方文档实证:terrains(autotiling)以 TerrainSet 分组,组内模式
+三选(Match Corners and Sides = 3×3 minimal,即 47 变体全集;Match Sides = 16 变体),
+地形即图集瓦上的属性(terrain_set / terrain / peering bits),绘制走 TileMap 画笔的
+智能选瓦;TileData 编程面为 terrain_set、set_terrain_peering_bit、
+add/set_collision_polygon(_points / _one_way)。来源:docs.godotengine.org
+(using_tilesets · class TileData / TileSet)。
+
+【根因】v0.65.0 的所见即所得是 TerrainArt 接管:TileMapLayer 被置 visible=false
+持久化进 tscn,画面由 _draw 重绘——编辑器里因此看不见瓦片本体,也没有可画的地形。
+本轮改为真瓦片所见即所得:瓦片自带纹理,Solid / Decor 层编辑器与运行时同图直渲染,
+TerrainArt 整体退役;程序化 _draw 的造型语言(肩带、纸缘、内角括弧、单向板底虚线、
+挂板青缘)逐条转译进瓦片像素,风格基准不变(取色 data/palette.tres)。
+
+【新增·分类图集】gen_tile_assets 程序化生成四件独立图集 PNG + 重建
+native_tileset.tres(原 uid / 6 物理层保留),告别 1600×1400 单体大图:
+ground_tiles.png(47 变体正则地面,terrain set 0「地面」MATCH_CORNERS_AND_SIDES,
+peering bits 全量写入,整格物理)/ platform_tiles.png(8 变体单向平台,terrain set 1
+「平台」MATCH_SIDES,顶板单向物理)/ decor_tiles.png(暗板 / 括弧 / 十二边环 /
+条纹 / 窗槽 / 红刻三件 / 四色刻度柱,零物理)/ special_tiles.png(双 45 度坡 / 半高块
+/ 半柱 / 窄柱 / 垂板,独立物理)。47 变体推导:角位仅在两邻侧齐备时才有意义,
+256 邻域坍缩为 47 正则代表(算法与 peering 同源 scripts/data/tile_atlas.gd,
+Python 侧 migrate 同式,双侧 47 实证)。PNG 可随时由 gen_tile_assets 重建
+(两阶段:先图后 --import 再重建 tres),tools/gen_tiles.lua 随旧图集退役删除。
+
+【新增·0→1 作关管线】①progen_level:按作关语法从 0 生成整关(地面段 1-3 行厚 /
+断口 2-3 格跳距内 / 断口上方随机单向平台 / 记录点中置 / 门封尾 / 装饰按语义撒布),
+自检(断口上限、门与出生下有地、平台不嵌地)通过后以纯文本手术产出可直接编辑的
+.tscn(真瓦片落盘,不经引擎 PackedScene 往返)与参考蓝图 PNG;生成物不登记
+LevelData.SCENES,收录由人工执行。②export_level_refs:全 16 关瓦片真值参考图导出
+(tools/level_refs/,出生=几何体色块 / 门=纸环 / 记录点=黄菱 / 提示=十字),
+供「照着程序化图描摹,1 到完美人工设计」的工作流。③check_tiledata 改造为新图集
+物理哨兵(地面整格 / 平台单向 / 装饰零物理 / 坡与垂板形状逐一断言)。
+
+【变更·16 关+probe 文本手术】migrate_level_tiles 一次性完成:Decor 层误摆物理瓦
+归位 Solid(act1/s01 整层 26 瓦搬家);全部地面瓦按 47 变体正则位邻域重铺
+(2229+20 瓦,端帽 / 中段 / 内角自动归位);单向板迁 source 1 左中右分形;装饰件
+逐一映射 source 2;EditorMap 占位节点与两条 ext_resource 全量摘除;Solid / Decor
+去 visible=false 归可见、Solid 保 z_index=1、空层去 tile_map_data 行。手术纯文本
+逐字节重编 tile_map_data(12 字节格布局),不走引擎往返(丢 uid / 展平实例教训
+沿用 v0.65.0 纪律)。native_level 编辑器分支改直渲染注释;运行时不再挂渲染层。
+
+【移除·旧大地块图清底】assets/maps/ 16 张烘焙房间图 + .import 全删;
+assets/tiles/native_tiles.png(1600×1400 旧大图集)删除;TerrainArt 场景 / 脚本 /
+编辑器图标删除;editor_map_placeholder、bake_level_maps、gen_tiles.lua、
+scan_tiles 随体系退役。运行时关卡树不再有 TerrainArt 节点(flow_check 实证)。
+
+【新增·性能正面增益】①TerrainKit 查询索引化:floor/ceil 表面查询由「逐层
+全格扫描 O(全格)」改「列桶直取 O(该列)」,索引按 TileMapLayer.changed 失效
+重建,弱引用不延长关卡生命周期。②过渡忙时硬化:transition_sweep / blocks /
+corners / fade_to_black 忙时原「立即执行回调」改「下一帧重试直至入队」——
+多端快速连点 / 过渡叠加期回调被吞(按钮点了没反应、后续动画不触发)的病灶
+根除;忙期有界(~2.2×dur)必然收敛。③shot_all 幽灵方法修复:show_story 随
+剧情层退役后 sweep 运行时中断、进程永不退出,改用现行 intro 卡实拍。
+
+【新增·存储优化】NotoSansSC-VF 字体子集化:17,773,244B -> 628,656B(-96.5%),
+pyftsubset 按全库文本面语料(gd/tscn/tres/godot 全文 + ASCII + CJK 标点 +
+全角安全集)裁剪,wght 100-900 变体轴与 tnum 特性保留,三级字重菜单 / 设置页
+实拍目检不变。新门禁 font_coverage_check.py(cmap 层语料覆盖断言;原版字体
+自缺 ₀▸◂ 三字符由系统回退渲染,与历代行为一致,登记白名单)。纪律:子集
+必须从 git 原版重建(对子集再子集不回字),新增文案后跑门禁拦截 tofu。
+
+【变更·多端勘误与 UI 勘误】①Android VIBRATE 权限补声明:export_presets
+permissions/vibrate=false 而触感反馈两处调用 vibrate_handheld——安卓上触感
+静默失效的实锤修复。②CheckButton 开关重绘:默认主题药丸为图标绘制、关态
+暗色隐身,改程序化两态同尺寸药丸图标(关=暗板纸缘 / 开=红板,disabled 变体
+随行),触控命中区一致。③设置页纵向滚动条加宽预留 16px,右列开关 / 分辨率钮
+与滚动条脱开,嵌套触控不再互扰;滚动条按构成主义 grabber 样式。④Version.gd
+升 0.66.0(设置页页脚版本源)。⑤多端面复核:canvas_items+expand 拉伸、
+sensor_landscape、immersive_mode、D3D12/ETC2_ASTC 均健全;废弃剧情文本全仓
+排查为零(门厅 / 折叠 / 巨构等均为活叙事与图鉴条目,不属废弃)。
+
+【门禁】import 0 错;tiledata ALL PASS;level_audit ALL PASS(2 条动件盲区 WARN
+为既有提示);door_audit ALL PASS;native_check 17 场 ALL PASS(迁移后瓦片物理
+实机落地实证);flow PASS;progen 试作 seed=7 全绿(93 地 / 4 板 / 4 饰);
+fontcover ALL PASS;autoshot / setshot / roomshot 目检(菜单三级字重 / 实机
+瓦片渲染 / 开关两态 / 版本页脚 v0.66.0 全过)。
+版本三件 0.66.0 / code 46。
+
 ## v0.65.2 · 三体更名「红 / 黄 / 蓝」+ 废弃物清底(2026-10-03)
 
 用户令:「全部角色名称更改。直接颜色命名。红,蓝,黄。然后彻底清理干净废弃物等等。」

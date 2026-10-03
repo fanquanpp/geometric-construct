@@ -3,6 +3,12 @@ class_name TerrainKit
 
 const SURFACE_MISS := INF
 
+# 列索引缓存(v0.66.0 正面增益):floor/ceil 查询由「逐层全格扫描」改为
+# 「按列桶直取」——建索引一次 O(全格),查询 O(该列格数)。层体 TileMapLayer
+# changed 信号(画瓦 / 擦瓦 / 场景数据变更)即失效重建;层释放后弱引用
+# 失效自动弃缓存,不延长关卡生命周期。
+static var _col_cache := {}   # layer 实例 id -> {"layer": WeakRef, "cols": Dictionary}
+
 
 static func floor_top_at(root: Node, x: float, y: float, drop := 320.0) -> float:
 	var best := SURFACE_MISS
@@ -27,18 +33,49 @@ static func _has_phys(td: TileData) -> bool:
 	return false
 
 
-static func _layer_floor_top(layer: TileMapLayer, x: float, y: float,
-		drop: float) -> float:
-	var best := SURFACE_MISS
+static func _cols_of(layer: TileMapLayer) -> Dictionary:
+	var key := layer.get_instance_id()
+	var entry: Dictionary = _col_cache.get(key, {})
+	if not entry.is_empty() and (entry["layer"] as WeakRef).get_ref() == layer:
+		return entry["cols"]
+	var cols := {}
+	var ts := 100.0
+	if layer.tile_set != null:
+		ts = maxf(float(layer.tile_set.tile_size.x), 1.0)
 	for c: Vector2i in layer.get_used_cells():
 		var td := layer.get_cell_tile_data(c)
 		if td == null or not _has_phys(td):
 			continue
-		var top: float = layer.map_to_local(c).y - 50.0
+		var center: Vector2 = layer.map_to_local(c)
+		var left: float = center.x - ts * 0.5
+		cols.get_or_add(int(floorf(left / ts)), []).append({
+			"top": center.y - ts * 0.5,
+			"bottom": center.y + ts * 0.5,
+		})
+	_col_cache[key] = {"layer": weakref(layer), "cols": cols}
+	var bound := _on_layer_changed.bind(key)
+	if not layer.changed.is_connected(bound):
+		layer.changed.connect(bound)
+	return cols
+
+
+static func _on_layer_changed(key: int) -> void:
+	_col_cache.erase(key)
+
+
+static func _column_at(layer: TileMapLayer, cols: Dictionary, x: float) -> Array:
+	var ts := 100.0
+	if layer.tile_set != null:
+		ts = maxf(float(layer.tile_set.tile_size.x), 1.0)
+	return cols.get(int(floorf(x / ts)), [])
+
+
+static func _layer_floor_top(layer: TileMapLayer, x: float, y: float,
+		drop: float) -> float:
+	var best := SURFACE_MISS
+	for e: Dictionary in _column_at(layer, _cols_of(layer), x):
+		var top: float = e["top"]
 		if top < y - 2.0 or top > y + drop:
-			continue
-		var left: float = layer.map_to_local(c).x - 50.0
-		if x < left or x > left + 100.0:
 			continue
 		best = minf(best, top)
 	return best
@@ -47,15 +84,9 @@ static func _layer_floor_top(layer: TileMapLayer, x: float, y: float,
 static func _layer_ceil_bottom(layer: TileMapLayer, x: float, y: float,
 		rise: float) -> float:
 	var best := -SURFACE_MISS
-	for c: Vector2i in layer.get_used_cells():
-		var td := layer.get_cell_tile_data(c)
-		if td == null or not _has_phys(td):
-			continue
-		var bottom: float = layer.map_to_local(c).y + 50.0
+	for e: Dictionary in _column_at(layer, _cols_of(layer), x):
+		var bottom: float = e["bottom"]
 		if bottom > y + 2.0 or bottom < y - rise:
-			continue
-		var left: float = layer.map_to_local(c).x - 50.0
-		if x < left or x > left + 100.0:
 			continue
 		best = maxf(best, bottom)
 	return best
