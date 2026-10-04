@@ -20,3 +20,7 @@ static func _static_init() -> void:
 @export var yellow := Color("E8B33A")
 @export var blue := Color("4E86D8")
 @export var orange := Color("E07E2E")
+# —— 机关域语义槽(消费面限机关域:orange 保持 UI 联机链专属,
+# red 保持危险 + 红体身份,新增两槽不与 UI/角色争义)——
+@export var buff := Color("4E9E58")
+@export var cool := Color("45B0BE")

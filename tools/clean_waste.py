@@ -25,6 +25,14 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WASTE_EXTS = (".tmp", ".bak", ".orig", ".rej", ".pyc", ".log")
 BUILD_EXTS = (".apk", ".aab", ".idsig")
+# Windows 保留设备名(NUL/CON/…):bash 里 `… > NUL` 之类误落库的散件会让
+# os.walk 列出实体,而 abspath/relpath 将其解析成 \\.\NUL 设备,relpath 抛
+# 「path is on mount '\\.\NUL'」致门禁崩(2026-10-04 实测)。跳过并提示,
+# 不自动删(须手工 del \\.\盘:\路径\NUL)。
+RESERVED_NAMES = set(
+    ["CON", "PRN", "AUX", "NUL"]
+    + ["COM%d" % i for i in range(1, 10)]
+    + ["LPT%d" % i for i in range(1, 10)])
 CODE_DIRS = ("scripts", "scenes", "tests", "levels_native", "data")
 CODE_FILES = ("project.godot", "export_presets.cfg", "default_bus_layout.tres")
 
@@ -74,6 +82,10 @@ def prune_waste():
                 human(rm(os.path.join(dirpath, "__pycache__")))))
             dirnames.remove("__pycache__")
         for f in filenames:
+            if f.upper() in RESERVED_NAMES:
+                print("[保留名跳过] %s(手工 del \\\\.\\%s%s%s 删除)"
+                      % (f, os.path.normcase(ROOT), os.sep, f))
+                continue
             p = os.path.join(dirpath, f)
             rel = os.path.relpath(p, ROOT)
             if f.endswith(WASTE_EXTS) or f.endswith("~"):
@@ -87,6 +99,9 @@ def prune_orphan_meta():
     for dirpath, dirnames, filenames in os.walk(ROOT):
         dirnames[:] = [d for d in dirnames if d not in (".git",)]
         for f in filenames:
+            if f.upper() in RESERVED_NAMES:
+                print("[保留名跳过] %s" % f)
+                continue
             p = os.path.join(dirpath, f)
             if f.endswith(".import") and not os.path.exists(p[: -len(".import")]):
                 print("[孤儿.import] %s" % os.path.relpath(p, ROOT))

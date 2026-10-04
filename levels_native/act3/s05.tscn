@@ -3,10 +3,7 @@
 [ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
 [ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="3_ts"]
 [ext_resource type="PackedScene" path="res://scenes/world/checkpoint_beacon.tscn" id="4_bc"]
-[ext_resource type="Script" path="res://scripts/world/mechanisms/checkpoint_beacon.gd" id="4_tjwvg"]
-[ext_resource type="Script" path="res://scripts/entities/exit_door.gd" id="6_shmyo"]
 [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="8_door"]
-[ext_resource type="Script" path="res://scripts/world/hint_marker.gd" id="8_vhipp"]
 [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="17_hint"]
 
 [ext_resource type="PackedScene" path="res://scenes/world/spawn_marker.tscn" id="15_spn"]
@@ -37,40 +34,26 @@ position = Vector2(350, 880)
 geo_index = 2
 position = Vector2(500, 880)
 [node name="CheckpointBeacon0" type="Area2D" parent="." unique_id=1554959678 instance=ExtResource("4_bc")]
-z_index = 3
 position = Vector2(1800, 850)
-script = ExtResource("4_tjwvg")
 
 [node name="CheckpointBeacon1" type="Area2D" parent="." unique_id=1301265585 instance=ExtResource("4_bc")]
-z_index = 3
 position = Vector2(3100, 850)
-script = ExtResource("4_tjwvg")
 
 [node name="ExitDoor0" type="Area2D" parent="." unique_id=1718461576 instance=ExtResource("8_door")]
-z_index = 3
 position = Vector2(4450, 854)
-script = ExtResource("6_shmyo")
 
 [node name="ExitDoor1" type="Area2D" parent="." unique_id=1581987226 instance=ExtResource("8_door")]
-z_index = 3
 position = Vector2(2850, 254)
-script = ExtResource("6_shmyo")
 geo_index = 1
 
 [node name="ExitDoor2" type="Area2D" parent="." unique_id=437052382 instance=ExtResource("8_door")]
-z_index = 3
-position = Vector2(4000, 554)
-script = ExtResource("6_shmyo")
+position = Vector2(4150, 854)
 geo_index = 2
 
 [node name="HintMarker0" type="Node2D" parent="." unique_id=1596170293 instance=ExtResource("17_hint")]
-z_index = 4
 position = Vector2(1000, 700)
-script = ExtResource("8_vhipp")
 text = "三条路,一个路口"
 
 [node name="HintMarker1" type="Node2D" parent="." unique_id=597024511 instance=ExtResource("17_hint")]
-z_index = 4
 position = Vector2(3500, 560)
-script = ExtResource("8_vhipp")
 text = "各自走来的,互相看见"

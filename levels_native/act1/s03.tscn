@@ -20,7 +20,7 @@ top_kill_y = -420
 
 [node name="Decor" type="TileMapLayer" parent="." unique_id=1407939438]
 tile_set = ExtResource("3_ts")
-tile_map_data = PackedByteArray("AAAJAAYAAgAAAAEAAAA=")
+tile_map_data = PackedByteArray("AAAJAAYAAgAAAAEAAAASAAwAAgABAAEAAAAYAAwAAgABAAEAAAA=")
 [node name="Solid" type="TileMapLayer" parent="." unique_id=423284627]
 z_index = 1
 tile_set = ExtResource("3_ts")
@@ -42,8 +42,17 @@ position = Vector2(896, 1296)
 size = Vector2(500, 40)
 
 [node name="SpeedGate0" parent="." unique_id=1870063121 instance=ExtResource("11_sc")]
-position = Vector2(1504, 1216)
+position = Vector2(1504, 1200)
+zone_size = Vector2(260, 160)
 
 [node name="HintMarker0" parent="." unique_id=158872475 instance=ExtResource("12_hint")]
 position = Vector2(900, 1050)
-text = "Shift 冲刺 · 穿门更快"
+text = "冲刺 · 穿门更快"
+
+[node name="HintMarker1" parent="." instance=ExtResource("12_hint")]
+position = Vector2(550, 1050)
+text = "滑雪带:顺箭头方向更快"
+
+[node name="HintMarker2" parent="." instance=ExtResource("12_hint")]
+position = Vector2(1750, 1050)
+text = "桥会消失 · 等它回来"

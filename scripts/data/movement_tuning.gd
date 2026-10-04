@@ -51,3 +51,10 @@ static func _static_init() -> void:
 @export var swap_launch := 300.0
 
 
+# 动量语言:超速不回拉只渗漏 / 空中转向权随速度衰减 / 切带动量继承。
+# 数值只读静态放 .tres(运行期零写入,规避 Resource 共享引用串改)。
+@export var over_speed_bleed_mult := 1.0
+@export var air_accel_min_ratio := 0.20
+@export var switch_momentum_ratio := 0.6
+
+

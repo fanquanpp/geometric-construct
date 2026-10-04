@@ -1,6 +1,16 @@
 class_name Ui
 
 
+# —— 动效档位(v0.68 收敛:全 UI 动效时长/缓动只从这三档取值)——
+# 小反馈 100–150ms / 页面进出 200–300ms / 大转场 400–500ms。
+# 进页 EASE_OUT(减速入场)、退页 EASE_IN(加速离场);
+# 禁 ELASTIC/BACK 过冲(结算强调帧除外)。
+const MOTION_MICRO_MS := 120
+const MOTION_PAGE_MS := 240
+const MOTION_SCENE_MS := 450
+const EASE_ENTER := Tween.EASE_OUT
+const EASE_EXIT := Tween.EASE_IN
+
 static var BODY: Font
 static var HEAD: Font
 static var TITLE: Font
@@ -209,6 +219,68 @@ static func make_theme(size := 18) -> Theme:
 	th.set_color("font_pressed_color", "Button", Color.WHITE)
 	th.set_color("font_disabled_color", "Button", Color(Palette.I.dim, 0.62))
 
+	# —— 主题变体(theme_type_variation,一次定义处处复用)——
+	# 纸面质感三层固化:暗底(场景/墨)→ 纸面板(变体面板/卡槽)→ 高亮
+	# (hover/焦点);投影一律硬边偏移影(shadow_size=0 不模糊),沉降态
+	# 用 1-2px 级短影(panel 浮层的 6px 悬浮影为既有面板语言,不在此改)。
+	# 变体未显式给出的态回落基类 Button(主题继承),消费方只钉字符串,
+	# 不逐节点覆写样式。
+	# Button_danger 破坏性警示分层(解散房间/离开房间):暗红板+警示红边,
+	# hover/pressed 红权重递进,不再是基类 hover 的整块实心红。
+	th.set_type_variation("Button_danger", "Button")
+	var dgr_normal := sb(Color(Palette.I.red, 0.14), 0,
+		Color(Palette.I.red, 0.78), 1, 20, 9, true)
+	var dgr_hover := sb(Color(Palette.I.red, 0.34), 0, Palette.I.red, 1, 20, 9,
+		true)
+	var dgr_pressed := sb(Color(Palette.I.red, 0.52), 0, Palette.I.red, 1, 20, 9)
+	dgr_pressed.shadow_color = Color(Palette.I.ink, 0.55)
+	dgr_pressed.shadow_size = 0
+	dgr_pressed.shadow_offset = Vector2(2, 2)
+	var dgr_disabled := sb(Color(Palette.I.red, 0.05), 0,
+		Color(Palette.I.red, 0.22), 1, 20, 9)
+	th.set_stylebox("normal", "Button_danger", dgr_normal)
+	th.set_stylebox("hover", "Button_danger", dgr_hover)
+	th.set_stylebox("pressed", "Button_danger", dgr_pressed)
+	th.set_stylebox("disabled", "Button_danger", dgr_disabled)
+	th.set_stylebox("focus", "Button_danger", focus)
+	th.set_color("font_color", "Button_danger", Palette.I.paper)
+	th.set_color("font_hover_color", "Button_danger", Color.WHITE)
+	th.set_color("font_focus_color", "Button_danger", Color.WHITE)
+	th.set_color("font_pressed_color", "Button_danger", Color.WHITE)
+	th.set_color("font_disabled_color", "Button_danger", Color(Palette.I.dim, 0.62))
+
+	# Button_ghost 纯导航次级(返回/上一步):暗板无红垫,hover 纸色提亮
+	# 不落实心红——全级实心红只保留给主操作语义单一权重。
+	th.set_type_variation("Button_ghost", "Button")
+	var gh_normal := sb(Color(Palette.I.paper, 0.03), 0,
+		Color(Palette.I.paper, 0.16), 1, 20, 9)
+	var gh_hover := sb(Color(Palette.I.paper, 0.10), 0,
+		Color(Palette.I.paper, 0.38), 1, 20, 9)
+	var gh_pressed := sb(Color(Palette.I.paper, 0.16), 0,
+		Color(Palette.I.paper, 0.30), 1, 20, 9)
+	gh_pressed.shadow_color = Color(Palette.I.ink, 0.55)
+	gh_pressed.shadow_size = 0
+	gh_pressed.shadow_offset = Vector2(2, 2)
+	var gh_disabled := sb(Color(Palette.I.paper, 0.01), 0,
+		Color(Palette.I.paper, 0.07), 1, 20, 9)
+	th.set_stylebox("normal", "Button_ghost", gh_normal)
+	th.set_stylebox("hover", "Button_ghost", gh_hover)
+	th.set_stylebox("pressed", "Button_ghost", gh_pressed)
+	th.set_stylebox("disabled", "Button_ghost", gh_disabled)
+	th.set_stylebox("focus", "Button_ghost", focus)
+	th.set_color("font_color", "Button_ghost", Color(Palette.I.paper, 0.82))
+	th.set_color("font_hover_color", "Button_ghost", Palette.I.paper)
+	th.set_color("font_focus_color", "Button_ghost", Palette.I.paper)
+	th.set_color("font_pressed_color", "Button_ghost", Palette.I.paper)
+	th.set_color("font_disabled_color", "Button_ghost", Color(Palette.I.dim, 0.62))
+
+	# Panel_slot 纸面板卡槽(成员位/存档位等可点选卡):纸色亮板+纸缘,
+	# 与墨底面板(基类 PanelContainer)拉开层次。
+	th.set_type_variation("Panel_slot", "PanelContainer")
+	th.set_stylebox("panel", "Panel_slot",
+		sb(Color(Palette.I.paper, 0.07), 0, Color(Palette.I.paper, 0.24), 1,
+			14, 12, true))
+
 	th.set_stylebox("panel", "PanelContainer",
 		sb(Color(Palette.I.ink_2, 0.97), 0, Color(Palette.I.paper, 0.14), 1, 14, 12,
 			true))
@@ -328,6 +400,9 @@ static func wire_button(b: Button, click_sfx := "ui_click") -> void:
 		b.focus_exited.connect(func() -> void: _button_scale(b, 1.0))
 		b.button_down.connect(func() -> void: _button_scale(b, 0.92))
 		b.button_up.connect(func() -> void: _button_scale(b, 1.0))
+	# 焦点导航音:手柄/键盘导航与鼠标 hover 反馈一致(音效不走
+	# 减动效门控,-8dB 压低以免连导航时盖过点击音)。
+	b.focus_entered.connect(func() -> void: Sfx.play("ui_hover", -8.0))
 	b.mouse_entered.connect(func() -> void: Sfx.play("ui_hover"))
 	if click_sfx != "":
 		b.pressed.connect(func() -> void: Sfx.play(click_sfx))
@@ -346,6 +421,34 @@ static func error_feedback(node: Control) -> void:
 		flash.tween_property(node, "modulate",
 			Color(Palette.I.red.r, Palette.I.red.g, Palette.I.red.b, a), 0.05)
 	flash.tween_property(node, "modulate", Color.WHITE, 0.05)
+
+
+## 页面进出统一动效(v0.68 页面级语义,房间页/面板页层消费):
+## 正常档 MOTION_PAGE_MS 淡入/淡出 + 可选水平推拉(slide_px,进页
+## EASE_OUT 自 +slide_px 滑入,退页 EASE_IN 滑出——仅限布局不受容器
+## 约束的浮层页,容器内页传 0);reduced_motion 一律降级为 ≤100ms
+## 纯交叉溶解(零位移,消费 SettingsManager.reduced_motion 静态量)。
+## 返回绑定 page 的 Tween(页面释放自动失效),调用方以 tween_callback
+## 接续显隐收尾。
+static func page_motion(page: Control, enter: bool, slide_px := 0.0) -> Tween:
+	var reduced := SettingsManager.reduced_motion
+	var dur: float = (MOTION_MICRO_MS if reduced else MOTION_PAGE_MS) / 1000.0
+	var tw := page.create_tween()
+	var target_a := 1.0 if enter else 0.0
+	if reduced or slide_px == 0.0:
+		tw.tween_property(page, "modulate:a", target_a, dur)
+		return tw
+	tw.set_parallel(true)
+	var rest: Vector2 = page.position
+	if enter:
+		page.position = rest + Vector2(slide_px, 0.0)
+		tw.tween_property(page, "position", rest, dur).set_ease(EASE_ENTER)
+	else:
+		tw.tween_property(page, "position", rest + Vector2(slide_px, 0.0),
+			dur).set_ease(EASE_EXIT)
+	tw.tween_property(page, "modulate:a", target_a, dur) \
+		.set_ease(EASE_ENTER if enter else EASE_EXIT)
+	return tw
 
 
 static func _button_scale(b: Button, target: float) -> void:

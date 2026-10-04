@@ -10,11 +10,10 @@ const SCENES := [
 	"res://levels_native/act5/s03.tscn", "res://levels_native/act5/s04.tscn",
 ]
 
-const ACT_FOCUS := {2: Vector2i(13, 7), 3: Vector2i(14, 7), 4: Vector2i(12, 7), 5: Vector2i(15, 7)}
-
 const FAM := Vector2i(0, 4)
-const DARK_PLATES := [Vector2i(0, 2), Vector2i(4, 2), Vector2i(9, 2), Vector2i(10, 2)]
-const RED_MARKS := [Vector2i(2, 3), Vector2i(14, 3), Vector2i(1, 3)]
+# 装饰语义(刻度柱 / 红刻 / 暗板)单真值已收编 TileAtlas.DECOR_SEMANTICS,
+# 此处不再持有坐标副本(_paint_decor 直接查表)。
+const PILLAR_ACT0 := 2  # 刻度柱变体下标 = 幕号 - PILLAR_ACT0(act2→0 … act5→3)
 
 
 func _initialize() -> void:
@@ -155,7 +154,8 @@ func _paint_decor(path: String, solid: TileMapLayer, decor: TileMapLayer,
 	var main: Array = runs[0]
 	var focus_c: Vector2i = Vector2i((main[1] as Vector2i).x + (main[0] as int) / 2,
 		(main[1] as Vector2i).y - 3)
-	var focus_atlas: Vector2i = ACT_FOCUS.get(act, Vector2i(15, 7))
+	# 刻度柱按幕号取变体(act2→0 … act5→3),与 progen / 机关坞同源查表。
+	var focus_atlas: Vector2i = TileAtlas.decor_atlas("pillar", act - PILLAR_ACT0)
 	if free_check.call(focus_c):
 		decor.set_cell(focus_c, 0, focus_atlas)
 		painted += 1
@@ -164,15 +164,15 @@ func _paint_decor(path: String, solid: TileMapLayer, decor: TileMapLayer,
 		var rc: Vector2i = Vector2i((runs[1][1] as Vector2i).x + (runs[1][0] as int) / 2,
 			(runs[1][1] as Vector2i).y - 2)
 		if free_check.call(rc):
-			decor.set_cell(rc, 0, RED_MARKS[rng.randi() % RED_MARKS.size()])
+			decor.set_cell(rc, 0, TileAtlas.decor_atlas("red_mark", rng.randi()))
 			painted += 1
 
-	var plate_i := rng.randi() % DARK_PLATES.size()
+	var plate_i := rng.randi()
 	for ri in [2, 3]:
 		if runs.size() > ri and (runs[ri][0] as int) >= 3:
 			var dc: Vector2i = Vector2i((runs[ri][1] as Vector2i).x + (runs[ri][0] as int) / 2,
 				(runs[ri][1] as Vector2i).y - 2)
 			if free_check.call(dc):
-				decor.set_cell(dc, 0, DARK_PLATES[(plate_i + ri) % DARK_PLATES.size()])
+				decor.set_cell(dc, 0, TileAtlas.decor_atlas("dark_plate", plate_i + ri))
 				painted += 1
 	return painted

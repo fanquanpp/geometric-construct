@@ -1,0 +1,61 @@
+; 新手教程关(v0.69 tutorial 波):四拍阶梯教「移动/跳·置换/召回·冲刺」
+; 与首个机关(加速门)。不登记 SCENES/ACTS(level_data.gd 契约:存档下标
+; 不得插删);入口唯一 = GameFlow.TUTORIAL_SCENE 常量路径,ui 波菜单钮
+; 按此路径守卫。单屏单意、首屏无惩罚:出生段 0-1000 纯平地。
+;   拍1 移动 0-1000 平地  拍2 跳 1000-2200(200/400px 缺口,二段跳)
+;   拍3 冲刺·召回 2200-3500(600px 断口,记录点接应)
+;   拍4 加速门 3500-4100 → 700px 大断口 → 终点门
+[gd_scene format=4]
+
+[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2_ts"]
+[ext_resource type="PackedScene" path="res://scenes/world/spawn_marker.tscn" id="3_spn"]
+[ext_resource type="PackedScene" path="res://scenes/world/checkpoint_beacon.tscn" id="4_bc"]
+[ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="5_hint"]
+[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="6_door"]
+[ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="7_gate"]
+
+[node name="LevelRoot" type="Node2D"]
+script = ExtResource("1_nl")
+level_name = "新手教程"
+intro_text = "第一课:移动、跳跃、冲刺——穿过加速门,走进门,归位。"
+focus = 0
+roster = Array[int]([0])
+level_size = Vector2(5800, 2000)
+kill_y = 2600.0
+top_kill_y = -420.0
+[node name="Decor" type="TileMapLayer" parent="."]
+tile_set = ExtResource("2_ts")
+tile_map_data = PackedByteArray("AAAFAAoAAgADAAMAAAAFAAsAAgADAAMAAAAFAAwAAgADAAMAAAAZAAoAAgADAAMAAAAZAAsAAgADAAMAAAAZAAwAAgADAAMAAAAtAAoAAgADAAMAAAAtAAsAAgADAAMAAAAtAAwAAgADAAMAAAAHAAsAAgABAAAAAAAYAAsAAgACAAAAAAA0AAwAAgADAAEAAAA=")
+[node name="Solid" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = ExtResource("2_ts")
+tile_map_data = PackedByteArray("AAAAAA0AAAACAAAAAAABAA0AAAAAAAEAAAACAA0AAAAAAAEAAAADAA0AAAAAAAEAAAAEAA0AAAAAAAEAAAAFAA0AAAAAAAEAAAAGAA0AAAAAAAEAAAAHAA0AAAAAAAEAAAAIAA0AAAAAAAEAAAAJAA0AAAAIAAAAAAAMAA0AAAACAAAAAAANAA0AAAAAAAEAAAAOAA0AAAAAAAEAAAAPAA0AAAAAAAEAAAAQAA0AAAAAAAEAAAARAA0AAAAIAAAAAAAWAA0AAAACAAAAAAAXAA0AAAAAAAEAAAAYAA0AAAAAAAEAAAAZAA0AAAAAAAEAAAAaAA0AAAAAAAEAAAAbAA0AAAAAAAEAAAAcAA0AAAAIAAAAAAAjAA0AAAACAAAAAAAkAA0AAAAAAAEAAAAlAA0AAAAAAAEAAAAmAA0AAAAAAAEAAAAnAA0AAAAAAAEAAAAoAA0AAAAIAAAAAAAwAA0AAAACAAAAAAAxAA0AAAAAAAEAAAAyAA0AAAAAAAEAAAAzAA0AAAAAAAEAAAA0AA0AAAAAAAEAAAA1AA0AAAAAAAEAAAA2AA0AAAAAAAEAAAA3AA0AAAAIAAAAAAA=")
+[node name="Spawn0" parent="." instance=ExtResource("3_spn")]
+geo_index = 0
+position = Vector2(300, 1275)
+[node name="CheckpointBeacon0" parent="." instance=ExtResource("4_bc")]
+position = Vector2(2400, 1250)
+[node name="CheckpointBeacon1" parent="." instance=ExtResource("4_bc")]
+beacon_id = 1
+position = Vector2(4950, 1250)
+[node name="ExitDoor0" parent="." instance=ExtResource("6_door")]
+position = Vector2(5300, 1254)
+[node name="SpeedGate0" parent="." instance=ExtResource("7_gate")]
+position = Vector2(3700, 1200)
+zone_size = Vector2(260, 160)
+[node name="HintMarker0" parent="." instance=ExtResource("5_hint")]
+position = Vector2(550, 1100)
+text = "A/D 移动 · Space 跳跃"
+[node name="HintMarker1" parent="." instance=ExtResource("5_hint")]
+position = Vector2(1350, 1100)
+text = "Space 跳过缺口 · 空中再按一次 = 二段跳"
+[node name="HintMarker2" parent="." instance=ExtResource("5_hint")]
+position = Vector2(2550, 1100)
+text = "冲刺 · 断口要助跑"
+[node name="HintMarker3" parent="." instance=ExtResource("5_hint")]
+position = Vector2(3600, 1100)
+text = "加速门 · 冲刺更快"
+[node name="HintMarker4" parent="." instance=ExtResource("5_hint")]
+position = Vector2(5250, 1100)
+text = "走进红色的门 · 归位"

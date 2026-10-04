@@ -3,6 +3,8 @@ extends Node2D
 # 死亡红波(v0.60.0 风格化重置,源自 fandex decor-wave):三道折线波自左向右横扫,
 # phase 0→1 由 Backdrop 的 Tween 推动 setter 重绘(TransitionFX CurtainDraw 同款),
 # alpha 按 sin(phase*PI) 包络,单场约 0.9s,一次性开销。
+# 五层深度带体系中的「事件层」:无视差深度(整层 CanvasLayer 坐标),
+# 仅死亡事件触发,不参与逐幕变奏。
 
 const PERIOD := 320.0
 const AMP := 18.0

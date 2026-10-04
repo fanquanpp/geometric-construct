@@ -4,11 +4,20 @@ class_name CheckpointBeacon
 extends Area2D
 
 
-@export var beacon_id := 0
+## 记录点索引(负值 = 未登记,检查器黄条提示)。
+@export var beacon_id := 0:
+	set(v):
+		beacon_id = v
+		update_configuration_warnings()
 
 var _on := false
 var _lit := {}
 var _t := 0.0
+var _acc := 0.0
+
+# 激活态呼吸重绘节流(deep_space 惯例 0.125s 桶):脉冲半径 20+6·pulse
+# 在 8Hz 采样下每步 ≤0.94px,与星阵闪烁同一纪律。
+const REDRAW_STEP := 0.125
 
 
 func _ready() -> void:
@@ -34,7 +43,10 @@ func _process(delta: float) -> void:
 	if not _on:
 		return
 	_t += delta
-	queue_redraw()
+	_acc += delta
+	if _acc >= REDRAW_STEP:
+		_acc = 0.0
+		queue_redraw()
 
 
 func _on_body_entered(body: Node2D) -> void:
@@ -71,6 +83,13 @@ func _set_on(v: bool) -> void:
 	queue_redraw()
 
 
+func _get_configuration_warnings() -> PackedStringArray:
+	var out := PackedStringArray()
+	if beacon_id < 0:
+		out.append("beacon_id 不能为负(记录点索引)。")
+	return out
+
+
 func _draw() -> void:
 	if Palette.I == null:
 		return
@@ -81,11 +100,13 @@ func _draw() -> void:
 	var head := Vector2(0, base_y - 96)
 	if _on:
 		var pulse := 0.5 + 0.5 * sin(_t * 4.0)
+		# 激活语义收敛:黄只在菱首实心 + 呼吸脉冲环(柱身保持纸体,
+		# 消「黄角色门」误读);叠加静环构成双环形态差——激活/未激活
+		# 靠环数与实心/空心可辨,不依赖色相(WCAG 1.4.1)。
 		DrawKit.ngon_fill(self, head, 13.0, 4, Color(Palette.I.yellow, 0.95), PI / 4.0)
+		DrawKit.ngon_line(self, head, 19.0, 12, Color(Palette.I.paper, 0.5), 1.5)
 		DrawKit.ngon_line(self, head, 20.0 + 6.0 * pulse, 12,
 			Color(Palette.I.yellow, 0.55 - 0.3 * pulse), 2.0)
-		draw_rect(Rect2(Vector2(-3, base_y - 84), Vector2(6, 84)),
-			Color(Palette.I.yellow, 0.8))
 	else:
 		DrawKit.ngon_line(self, head, 13.0, 4, Color(Palette.I.paper, 0.45), 2.0, PI / 4.0)
 		draw_circle(head, 3.0, Color(Palette.I.paper, 0.4))

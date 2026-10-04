@@ -31,3 +31,6 @@ bounce_min = 240.0
 bounce_settle = 0.8
 swap_settle = 0.55
 swap_launch = 300.0
+over_speed_bleed_mult = 1.0
+air_accel_min_ratio = 0.2
+switch_momentum_ratio = 0.6

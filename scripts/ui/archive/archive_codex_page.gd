@@ -2,6 +2,9 @@ class_name ArchiveCodexPage
 extends RefCounted
 
 
+const TagKit := preload("res://scripts/ui/archive/archive_kit.gd")
+
+
 var panel
 var kind := "bld"
 
@@ -117,7 +120,9 @@ func build(p, page: Control) -> void:
 	name_row.add_theme_constant_override("separation", 12)
 	var name_l := Ui.l("", 34, Ui.TITLE, Palette.I.paper)
 	name_row.add_child(name_l)
-	var tag_panel := Ui.tag("", Color(Palette.I.ink_3, 1.0), Palette.I.paper, 12, 10, 4)
+	# tag 工艺统一(ArchiveKit):墨底语义保留,描边/内距语言与角色页归一。
+	var tag_panel := TagKit.make_tag("", Color(Palette.I.ink_3, 1.0),
+		Palette.I.paper, 12)
 	tag_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	name_row.add_child(tag_panel)
 	text.add_child(name_row)

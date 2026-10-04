@@ -15,6 +15,7 @@ const NOTE := {
 const NOTE_LETTERS := ["C", "D", "E", "F", "G", "A", "B"]
 
 static var _players := {}
+static var _pool_next := {}
 static var _vols := {}
 static var _jitters := {}
 static var _loops := {}
@@ -34,10 +35,12 @@ static func set_volume_scale(scale: float) -> void:
 	_volume_scale = clampf(scale, 0.0, 1.0)
 	var idx := AudioServer.get_bus_index("SFX")
 	if idx >= 0:
-
-		var lp := AudioEffectLowPassFilter.new()
-		lp.cutoff_hz = 5200.0
-		AudioServer.add_bus_effect(idx, lp)
+		# 低通只挂一枚:滑条拖动一次连发此入口 20+ 次,没有这道判断时
+		# 每次 add_bus_effect 都会多挂一枚低通(音色失真、链上几十枚)。
+		if AudioServer.get_bus_effect_count(idx) == 0:
+			var lp := AudioEffectLowPassFilter.new()
+			lp.cutoff_hz = 5200.0
+			AudioServer.add_bus_effect(idx, lp)
 		AudioServer.set_bus_volume_db(idx,
 			linear_to_db(maxf(_volume_scale, 0.0001)) if _volume_scale > 0.001 else -80.0)
 
@@ -136,10 +139,34 @@ static func init(parent: Node) -> void:
 			continue
 		_reg_spec(parent, spec)
 
+	# 音符声部池随 init 一并落树:懒建路径在 Main._ready 窗口首次响起,
+	# root 正忙(ready 传播中)add_child 直接失败,池节点永不入树,
+	# 此后每次 play() 都打「Playback can only happen …」错误。
+	_ensure_note_pool(parent)
+
 	for octave in [4, 5]:
 		for letter in NOTE_LETTERS:
 			_note_stream("%s%d" % [letter, octave], false)
 			_note_stream("%s%d" % [letter, octave], true)
+
+
+static func _ensure_note_pool(parent: Node) -> void:
+	if not _note_pool.is_empty():
+		return
+	for i in 8:
+		var np := AudioStreamPlayer.new()
+		np.bus = _bus_name("SFX")
+		np.volume_db = -6.0
+		np.process_mode = Node.PROCESS_MODE_ALWAYS
+		if parent != null:
+			parent.add_child(np)
+		else:
+			# 兜底(未走 init 的调用方):延迟挂 root,避开 root 忙窗口;
+			# 同帧 play 由 play_note 的入树守卫跳过,不丢错误。
+			var ml := Engine.get_main_loop()
+			if ml is SceneTree:
+				(ml as SceneTree).root.add_child.call_deferred(np)
+		_note_pool.append(np)
 
 
 static func _reg_spec(parent: Node, spec: SfxSpec) -> void:
@@ -160,13 +187,19 @@ static func _reg_spec(parent: Node, spec: SfxSpec) -> void:
 		if ly.vib.size() == 2:
 			d["vib"] = ly.vib
 		layers.append(d)
-	var p := AudioStreamPlayer.new()
-	p.stream = _render(layers)
-	p.volume_db = spec.base_db
-	p.process_mode = Node.PROCESS_MODE_ALWAYS
-	p.bus = _bus_name("SFX")
-	parent.add_child(p)
-	_players[spec.id] = p
+	# 每规格小声部组(3 枚,同流共享):连跳/连弹/双人同跳不再互断尾音。
+	var stream := _render(layers)
+	var pool: Array = []
+	for i in 3:
+		var p := AudioStreamPlayer.new()
+		p.stream = stream
+		p.volume_db = spec.base_db
+		p.process_mode = Node.PROCESS_MODE_ALWAYS
+		p.bus = _bus_name("SFX")
+		parent.add_child(p)
+		pool.append(p)
+	_players[spec.id] = pool
+	_pool_next[spec.id] = 0
 	_vols[spec.id] = spec.base_db
 	_jitters[spec.id] = spec.jitter
 
@@ -178,14 +211,33 @@ static func _bus_name(want: String) -> StringName:
 static func play(sfx_name: String, vol_offset := 0.0, pitch := 1.0) -> void:
 	if not _players.has(sfx_name):
 		return
-	var p: AudioStreamPlayer = _players[sfx_name]
-
-	p.volume_db = _vols[sfx_name] + vol_offset \
-		+ (linear_to_db(maxf(_volume_scale, 0.0001)) if _volume_scale > 0.001 else -80.0)
+	# 音量刻度只在总线侧生效一次(set_volume_scale 已写 SFX 总线
+	# volume_db);此处不再乘 _volume_scale,否则滑条 50% 实听 25%。
+	var p := _pick_voice(sfx_name)
+	if p == null:
+		return
+	p.volume_db = _vols[sfx_name] + vol_offset
 	var j: float = _jitters[sfx_name]
 	p.pitch_scale = pitch * (1.0 + randf_range(-j, j))
 	p.stop()
 	p.play()
+
+
+## 声部轮换(同 _note_player 模式):先取没在响的一枚,全忙时轮替最旧。
+static func _pick_voice(sfx_name: String) -> AudioStreamPlayer:
+	var pool: Array = _players[sfx_name]
+	var n: int = pool.size()
+	if n == 0:
+		return null
+	var i: int = int(_pool_next.get(sfx_name, 0))
+	for k in n:
+		var cand: AudioStreamPlayer = pool[(i + k) % n]
+		if not cand.playing:
+			_pool_next[sfx_name] = (i + k + 1) % n
+			return cand
+	var oldest: AudioStreamPlayer = pool[i]
+	_pool_next[sfx_name] = (i + 1) % n
+	return oldest
 
 
 static func note_ratio(note_name: String) -> float:
@@ -194,7 +246,7 @@ static func note_ratio(note_name: String) -> float:
 
 static func play_note(note_name: String, long := false, vol := 1.0) -> void:
 	var p := _note_player(note_name, long)
-	if p == null:
+	if p == null or not p.is_inside_tree():
 		return
 	p.volume_db = -6.0 + linear_to_db(clampf(vol, 0.05, 1.0))
 	p.play()
@@ -206,15 +258,7 @@ static func play_chord(notes: Array, vol := 1.0) -> void:
 
 
 static func _note_player(note_name: String, long: bool) -> AudioStreamPlayer:
-	if _note_pool.is_empty():
-		for i in 8:
-			var np := AudioStreamPlayer.new()
-			np.bus = _bus_name("SFX")
-			np.volume_db = -6.0
-			np.process_mode = Node.PROCESS_MODE_ALWAYS
-
-			Engine.get_main_loop().root.add_child(np)
-			_note_pool.append(np)
+	_ensure_note_pool(null)
 	var key := "%s|%s" % [note_name, "l" if long else "s"]
 	if not _note_streams.has(key):
 		_note_streams[key] = _note_stream(note_name, long)

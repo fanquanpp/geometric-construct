@@ -19,6 +19,7 @@ const EV_SEAL := 6
 const EV_COMPLETE := 7
 const EV_BACK := 8
 const EV_CHECKPOINT := 10
+const EV_RESONANCE := 11
 
 static var I: NetSession
 
@@ -513,6 +514,10 @@ func rpc_event(kind: int, arg: int, arg2 := 0) -> void:
 			for b in m.get_tree().get_nodes_in_group("checkpoint"):
 				if b.get_meta("checkpoint_id", -1) == arg:
 					b.net_apply_activate()
+		EV_RESONANCE:
+			for b in m.get_tree().get_nodes_in_group("resonance_pedal"):
+				if b.get_meta("resonance_channel", -1) == arg:
+					b.net_apply(arg2 != 0)
 
 
 func request_recall(slot: int) -> void:

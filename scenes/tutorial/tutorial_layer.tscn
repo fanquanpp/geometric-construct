@@ -1,0 +1,66 @@
+; 教程导演层场景(v0.69 tutorial 波):结构在此、样式/接线在
+; tutorial_director.gd(hud 同款分工)。layer=15:压 HUD(10)、让
+; 菜单(20)/暂停(30)/转场(100)。
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/tutorial/tutorial_director.gd" id="1_dir"]
+
+[node name="TutorialLayer" type="CanvasLayer"]
+layer = 15
+script = ExtResource("1_dir")
+
+[node name="Root" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Bar" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = -140.0
+offset_right = 0.0
+offset_bottom = -140.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Row" type="HBoxContainer" parent="Root/Bar"]
+unique_name_in_owner = true
+theme_override_constants/separation = 10
+mouse_filter = 2
+
+[node name="Mark" type="ColorRect" parent="Root/Bar/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(4, 16)
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Copy" type="Label" parent="Root/Bar/Row"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Ticks" type="HBoxContainer" parent="Root/Bar/Row"]
+unique_name_in_owner = true
+size_flags_vertical = 4
+theme_override_constants/separation = 6
+mouse_filter = 2
+
+[node name="Skip" type="Button" parent="Root"]
+unique_name_in_owner = true
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -80.0
+offset_top = -64.0
+offset_right = 80.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+focus_mode = 0
+text = "跳过教程 »"

@@ -131,6 +131,34 @@ static func encode_tile_map_data(cells: Array) -> PackedByteArray:
 	return out
 
 
+## 装饰语义单一真值表(source 2 decor_tiles.png)。原散落
+## tools/restyle_native_acts.gd:13-17 的 ACT_FOCUS / DARK_PLATES / RED_MARKS
+## 硬编码收编于此;机关坞装饰页 / progen 撒布 / restyle 三方同源查表。
+## 值 = {"label": 机关坞显示名, "atlas": 图集坐标数组(变体,按下标注明)。
+const DECOR_SEMANTICS := {
+	"pillar": {
+		"label": "刻度柱(幕主题)",
+		"atlas": [Vector2i(13, 7), Vector2i(14, 7), Vector2i(12, 7), Vector2i(15, 7)],
+	},
+	"red_mark": {
+		"label": "红刻",
+		"atlas": [Vector2i(2, 3), Vector2i(14, 3), Vector2i(1, 3)],
+	},
+	"dark_plate": {
+		"label": "暗板",
+		"atlas": [Vector2i(0, 2), Vector2i(4, 2), Vector2i(9, 2), Vector2i(10, 2)],
+	},
+}
+
+
+## 按语义取图集坐标(pick 沿变体数组取模,与 restyle 的随机下标、
+## progen 的确定性撒布共用同一条取值路径)。
+static func decor_atlas(sem: String, pick := 0) -> Vector2i:
+	assert(DECOR_SEMANTICS.has(sem), "TileAtlas: 未登记装饰语义 %s" % sem)
+	var arr: Array = DECOR_SEMANTICS[sem]["atlas"]
+	return arr[posmod(pick, arr.size())]
+
+
 static func decode_tile_map_data(data: PackedByteArray) -> Array:
 	if data.size() < 2:
 		return []

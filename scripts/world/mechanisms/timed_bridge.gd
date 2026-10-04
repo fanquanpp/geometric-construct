@@ -4,16 +4,29 @@ class_name TimedBridge
 extends StaticBody2D
 
 
-@export var size := Vector2(400, 24)
-@export var on_time := 2.0
-@export var off_time := 2.0
-@export var phase := 0.0
-@export var sync_beat := false
+@export_group("外形")
+@export var size := Vector2(400, 24):
+	set(v):
+		size = v
+		update_configuration_warnings()
 @export var sig_value := 1
+@export_group("节拍")
+## 实桥维持时长(秒);翻转前 0.75s 进入警示(红色闪烁 + 裂纹倒计时)。
+@export_range(0.1, 20.0, 0.1) var on_time := 2.0:
+	set(v):
+		on_time = v
+		update_configuration_warnings()
+@export_range(0.0, 20.0, 0.1) var off_time := 2.0:
+	set(v):
+		off_time = v
+		update_configuration_warnings()
+@export_range(0.0, 20.0, 0.1) var phase := 0.0
+@export var sync_beat := false
 var hl_color := Color(0, 0, 0, 0)
 var _t := 0.0
 var _solid := true
 var _warning := false
+var _t_to_flip := 0.0
 var _beat_phase := 0.0
 var _occ: LightOccluder2D
 var _spr: Sprite2D
@@ -26,13 +39,7 @@ func _ready() -> void:
 		return
 	collision_layer = sig_value
 	collision_mask = 0
-	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if cs == null:
-		cs = CollisionShape2D.new()
-		add_child(cs)
-	if cs.shape == null:
-		cs.shape = RectangleShape2D.new()
-	cs.shape.size = size
+	MechKit.ensure_rect_shape(self, size)
 	_occ = TerrainKit.rect_occluder(Rect2(-size / 2.0, size))
 	add_child(_occ)
 	queue_redraw()
@@ -52,6 +59,15 @@ func _editor_sync(force: bool) -> void:
 	_sig = s
 	queue_redraw()
 
+
+func _get_configuration_warnings() -> PackedStringArray:
+	var out := PackedStringArray()
+	if on_time <= 0.0:
+		out.append("on_time 应 > 0(实桥维持时长)。")
+	if off_time < 0.0:
+		out.append("off_time 不应为负。")
+	return out
+
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
@@ -65,6 +81,7 @@ func _physics_process(delta: float) -> void:
 	var solid := t < on_time
 
 	var t_to_flip := (on_time - t) if solid else (cycle - t)
+	_t_to_flip = t_to_flip
 	var warning := t_to_flip < 0.75
 	if warning != _warning:
 		_warning = warning
@@ -96,6 +113,19 @@ func _draw() -> void:
 		Vector2(4, 2)), Color(Palette.I.red, 0.55))
 	draw_rect(Rect2(Vector2(r.end.x + 6, r.get_center().y - 1),
 		Vector2(4, 2)), Color(Palette.I.red, 0.55))
+	if _solid and _warning:
+		# 形状冗余(WCAG 1.4.1):裂纹数 = 翻转前剩余可通过档数
+		# (每档 0.25s,3→2→1 递减倒计时)——色弱/强光触屏下不依赖
+		# 红色闪烁也能读出「还剩多久能过」。
+		var cracks := clampi(ceili(_t_to_flip / 0.25), 1, 3)
+		for k in cracks:
+			var x := r.get_center().x if cracks == 1 else lerpf(
+				r.position.x + 14.0, r.end.x - 14.0, float(k) / float(cracks - 1))
+			var mx := x + (3.0 if k % 2 == 0 else -3.0)
+			draw_line(Vector2(x, r.position.y + 3.0), Vector2(mx, r.get_center().y),
+				Color(Palette.I.red, 0.65), 1.5)
+			draw_line(Vector2(mx, r.get_center().y), Vector2(x, r.end.y - 3.0),
+				Color(Palette.I.red, 0.65), 1.5)
 	if not _solid:
 
 		draw_rect(r, Color(Palette.I.paper, 0.08))

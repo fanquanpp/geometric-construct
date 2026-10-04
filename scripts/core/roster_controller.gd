@@ -68,6 +68,14 @@ func switch_to(slot: int, quiet := false) -> void:
 				if pass_i == 0 else (not p.in_exit)
 			if not ok:
 				continue
+			# 切带动量:换体前捕获旧活跃体,水平动量按比例传给新体(仅水平
+			# 分量;超额部分由超速带自然衰减,不建第二衰减窗)。
+			if active_slot >= 0 and active_slot < n:
+				var old: Player = players[active_slot]
+				if old != null and old != p and is_instance_valid(old) \
+						and not old.dying and not old.in_exit:
+					p.velocity.x = old.velocity.x \
+						* MovementTuning.I.switch_momentum_ratio
 			active_slot = i
 			for j in n:
 				players[j].is_active = j == active_slot

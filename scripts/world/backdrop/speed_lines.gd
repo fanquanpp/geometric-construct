@@ -1,36 +1,60 @@
 extends Node2D
 
-# 移速星线:受控体横向速度超阈值后,纸白细线顺速度方向拉伸流动。
-# 速度主动拉取(active player),与重绘同频 0.125s 节流;动画关 = 不拉取不重绘。
+# 移速星线(v0.68 GPU 化重做,五层深度带之「前景」1.1-1.6):纸白细线改为
+# canvas_item shader 驱动(shaders/speed_lines.gdshader,TIME 横流硬边段),
+# 逐实例相位/长度走 instance_shader_parameter,宿主零重绘零逐帧分配;
+# 宿主只做速度采样与强度平滑下发(THRESHOLD 以下 strength 恒 0 不出现)。
+# 速度阈值穿越发 crossed 信号(事件级,Backdrop 用于静态层活化);
+# 动画关 = strength/anim 双 0 停帧,速度照常拉取但不下发。
+
+signal crossed(on: bool)
 
 const THRESHOLD := 420.0
 const FULL := 900.0
-const COUNT := 12
+const COUNT := 14
+const TILE_W := 2600.0
+const LINE_W := 1500.0
+
+const LINE_SHADER := preload("res://shaders/speed_lines.gdshader")
 
 var _cur := 0.0
 var _dir := 1.0
-var _t := 0.0
-var _acc := 0.0
+var _over := false
 var _lines: Array = []
 var _animated := true
+var _last_k := -1.0
+var _last_dir := 0.0
 
 
 func _ready() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5150
 	for i in COUNT:
-		_lines.append({
-			"y": rng.randf_range(0.08, 0.92),
-			"ph": rng.randf_range(0.0, 1.0),
-			"len": rng.randf_range(0.6, 1.4),
-		})
+		var rect := ColorRect.new()
+		rect.size = Vector2(LINE_W, 2.0)
+		rect.position = Vector2(
+			rng.randf_range(0.0, TILE_W - LINE_W), rng.randf_range(56.0, 660.0))
+		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var mat := ShaderMaterial.new()
+		mat.shader = LINE_SHADER
+		rect.material = mat
+		rect.set_instance_shader_parameter("phase", rng.randf_range(0.0, 1.0))
+		rect.set_instance_shader_parameter("len_mul", rng.randf_range(0.6, 1.4))
+		add_child(rect)
+		_lines.append(rect)
 
 
 func set_animated(on: bool) -> void:
 	_animated = on
-	if not on:
-		_cur = 0.0
-		queue_redraw()
+	set_process(on)
+	_cur = 0.0
+	_last_k = -1.0
+	if on:
+		_push_line_param("anim", 1.0)
+	else:
+		_over = false
+		_push_line_param("strength", 0.0)
+		_push_line_param("anim", 0.0)
 
 
 func _process(delta: float) -> void:
@@ -45,22 +69,26 @@ func _process(delta: float) -> void:
 			if absf(p.velocity.x) > 10.0:
 				_dir = signf(p.velocity.x)
 	_cur = lerpf(_cur, target, 1.0 - exp(-6.0 * delta))
-	_t += delta * clampf(_cur / FULL, 0.0, 1.4)
-	_acc += delta
-	if _acc >= 0.125:
-		_acc = 0.0
-		queue_redraw()
-
-
-func _draw() -> void:
 	var k := clampf((_cur - THRESHOLD) / (FULL - THRESHOLD), 0.0, 1.0)
-	if k <= 0.01:
-		return
-	var vp := get_viewport_rect().size
-	var c := Color(Palette.I.paper, 0.05 + k * 0.13)
-	var span := 90.0 + k * 260.0
-	for ln: Dictionary in _lines:
-		var y := vp.y * float(ln["y"])
-		var x := fposmod(float(ln["ph"]) * vp.x + _t * span, vp.x + 200.0) - 100.0
-		var length := (36.0 + k * 150.0) * float(ln["len"]) * _dir
-		draw_line(Vector2(x, y), Vector2(x + length, y), c, 1.2, true)
+	var over := k > 0.01
+	if over != _over:
+		_over = over
+		crossed.emit(over)
+	if absf(k - _last_k) > 0.0005:
+		_last_k = k
+		_push_line_param("strength", k)
+	if not is_equal_approx(_last_dir, _dir):
+		_last_dir = _dir
+		_push_line_param("dir", _dir)
+
+
+func _push_line_param(param: String, v: float) -> void:
+	for ln in _lines:
+		var mat := (ln as ColorRect).material as ShaderMaterial
+		if mat != null:
+			mat.set_shader_parameter(param, v)
+
+
+## 当前流向(±1):Backdrop 在阈值穿越时读取,供流光纱层同向。
+func current_dir() -> float:
+	return _dir

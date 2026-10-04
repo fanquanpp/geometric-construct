@@ -4,7 +4,10 @@ class_name ExitDoor
 extends Area2D
 
 
-@export var geo_index: int
+@export var geo_index: int:
+	set(v):
+		geo_index = v
+		update_configuration_warnings()
 @export var size := Vector2(64, 92)
 
 
@@ -21,7 +24,13 @@ var sealed := false:
 				cam.freeze(0.14)
 
 var _filled := false
-var hl_color := Color(0, 0, 0, 0)
+var _tier := -1
+var hl_color := Color(0, 0, 0, 0):
+	set(v):
+		if hl_color == v:
+			return
+		hl_color = v
+		queue_redraw()
 var _arrived_set := {}
 var _t := 0.0
 var _burst: CPUParticles2D
@@ -49,6 +58,7 @@ static func _stepped_light_texture() -> ImageTexture:
 	return _light_tex
 var _icon: UiGlyph.Node2DGlyph
 var _check: UiGlyph.Node2DGlyph
+var _core: BreathCore
 
 
 func _door_color() -> Color:
@@ -103,6 +113,12 @@ func _ready() -> void:
 	_check.visible = false
 	add_child(_check)
 
+	# 呼吸核心拆自绘子节点:门体本体不再逐帧重绘,呼吸相位由小块画布的
+	# _core 自刷新(reduced_motion 冻结同旧版门体冻结口径)。
+	_core = BreathCore.new()
+	_core.col = _door_color()
+	add_child(_core)
+
 
 func _pair_total() -> int:
 	if Main.I == null:
@@ -120,15 +136,18 @@ func _refresh_fill() -> void:
 
 	_light.energy = 0.0 if arrived == 0 else (0.85 if arrived >= total else 0.5)
 	var full := arrived >= total
-	if full == _filled:
-		return
-	_filled = full
-	_burst.emitting = full
-	_icon.visible = not full
-	_check.visible = full
-	if full and Main.I != null and Main.I.backdrop != null:
-		Main.I.backdrop.pulse_arrive(true)
-	queue_redraw()
+	if full != _filled:
+		_filled = full
+		_burst.emitting = full
+		_icon.visible = not full
+		_check.visible = full
+		if full and Main.I != null and Main.I.backdrop != null:
+			Main.I.backdrop.pulse_arrive(true)
+	# 三档就绪态(空/半/满)内框透明度变化也要重绘(旧版靠逐帧重绘掩盖)。
+	var tier := 2 if full else (1 if arrived > 0 else 0)
+	if tier != _tier:
+		_tier = tier
+		queue_redraw()
 
 
 static func net_suppressed() -> bool:
@@ -169,10 +188,17 @@ func _process(delta: float) -> void:
 		_editor_sync(false)
 		return
 	_t += delta
-	_icon.position = Vector2(0, -size.y / 2.0 - 30 + sin(_t * 2.1) * 4.0)
-	_check.position = Vector2(0, -size.y / 2.0 - 30 + sin(_t * 2.1) * 4.0)
+	# reduced_motion:图标/对勾悬停摆动静止(停在基准位),状态语义仍由
+	# 图标↔对勾换形与门体三档就绪态可辨(动效门控收口纪律)。
 	if not SettingsManager.reduced_motion:
-		queue_redraw()
+		var bob := sin(_t * 2.1) * 4.0
+		_icon.position = Vector2(0, -size.y / 2.0 - 30 + bob)
+		_check.position = Vector2(0, -size.y / 2.0 - 30 + bob)
+	# 门体本体零逐帧重绘:呼吸在 _core 子节点自绘;仅高亮聚焦环激活时
+	# (draw_focus 的时间基脉冲需要)按帧重绘;reduced_motion 静态化沿旧版。
+	if not SettingsManager.reduced_motion:
+		if hl_color.a > 0.0:
+			queue_redraw()
 	elif hl_color.a > 0.0 or get_meta("_hl_was", false):
 		queue_redraw()
 		set_meta("_hl_was", hl_color.a > 0.0)
@@ -185,19 +211,15 @@ func _draw() -> void:
 	var r := Rect2(-size / 2.0, size)
 
 	# 轮廓正典 = v0.11.1(用户拍板 2026-09-29,弃 v0.53.2 圣环版):
-	# 锐利矩形门框 + 腔内呼吸方点核心 + 悬挑门楣 + 到站/封印取景框;
+	# 锐利矩形门框 + 悬挑门楣 + 到站/封印取景框;腔内呼吸方点核心
+	# 拆自绘子节点 BreathCore(逐帧降载,视觉同版)。
 	# 动效完善 = 内框三档就绪态(空/半/满,v0.38 批口径)。
 	draw_rect(r, Color(Palette.I.ink, 0.94))
 	var inner := r.grow(-5.0)
 	var inner_alpha := 0.55 if _filled else (0.42 if not _arrived_set.is_empty() else 0.30)
 	draw_rect(inner, Color(col, inner_alpha), false, 2.0)
 
-	var pulse := 0.5 + 0.5 * sin(_t * 3.0)
-	var core := 7.0 + pulse * 3.0
-	draw_rect(Rect2(Vector2(-core / 2.0, -core / 2.0), Vector2(core, core)),
-		col.lerp(Color.WHITE, 0.45))
-
-	draw_rect(r, col.lerp(Color.WHITE, 0.35 if _filled else 0.15), false, 3.0)
+	draw_rect(r, col.lerp(Palette.I.paper, 0.35 if _filled else 0.15), false, 3.0)
 	draw_rect(Rect2(r.position - Vector2(6, 10), Vector2(size.x + 12, 6)),
 		col if _filled else Color(col, 0.8))
 
@@ -231,3 +253,25 @@ func _get_configuration_warnings() -> PackedStringArray:
 	if geo_index < 0 or geo_index >= Geometries.ALL.size():
 		w.append("geo_index 越界(有效 0-%d)。" % (Geometries.ALL.size() - 1))
 	return w
+
+
+## 腔内呼吸方点核心(v0.11.1 正典的 7-10px 方点):拆出自绘子节点后,
+## 门体本体只在 sealed/_refresh_fill 三档/hl_color 变化(及高亮脉冲激活
+## 期)重绘;本节点自带相位逐帧只重绘自己这块小画布。reduced_motion
+## 冻结口径同旧版门体(相位停在最后一次重绘)。
+class BreathCore:
+	extends Node2D
+
+	var col := Color.WHITE
+	var _t := 0.0
+
+	func _process(delta: float) -> void:
+		_t += delta
+		if not SettingsManager.reduced_motion:
+			queue_redraw()
+
+	func _draw() -> void:
+		var pulse := 0.5 + 0.5 * sin(_t * 3.0)
+		var core := 7.0 + pulse * 3.0
+		draw_rect(Rect2(Vector2(-core / 2.0, -core / 2.0), Vector2(core, core)),
+			col.lerp(Palette.I.paper, 0.45))

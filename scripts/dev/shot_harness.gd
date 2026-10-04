@@ -89,9 +89,15 @@ func boot(args: Array) -> void:
 		_shot_dir = "res://.shots"
 
 	# 承重约束:无参启动=正常游玩,不得改任何设置;钩子(带参)统一减动效
-	# 硬切防后台/遮挡窗口 Tween 冻结卡分镜,--transitionshot 例外照常播。
+	# 硬切防后台/遮挡窗口 Tween 冻结卡分镜。
 	if not args.is_empty() and not _transition_shot:
 		SettingsManager.reduced_motion = true
+	elif _transition_shot:
+		# 过渡腿专项=「转场真在播」,必须强制实速:光豁免不强制还不够——
+		# 系统减动效代理位(Windows ClientAreaAnimation 关,UserPreferencesMask
+		# 第二字节 0x20 位清零)经 system_reduced_motion_default() 代理生效后,
+		# transition() 硬切当帧完成即复位,八帧全落空菜单,专项失效(实测)。
+		SettingsManager.reduced_motion = false
 	if _auto_shot and args.has("--menushot"):
 		run_menu_shot()
 

@@ -12,6 +12,11 @@ var _glitch_idx := -1
 var _glitch_left := 0.0
 var _glitch_next := 4.0
 var _rng := RandomNumberGenerator.new()
+var _breathe_acc := 0.0
+
+# 字字 modulate 呼吸的采样桶(deep_space 惯例 0.125s):字数×Color 的
+# 每帧分配收成 8Hz;相位仍走连续 _t,肉眼无差。
+const BREATHE_STEP := 0.125
 
 
 func setup(text: String, font_size: int, color: Color, mark_color: Color) -> void:
@@ -52,6 +57,19 @@ func setup(text: String, font_size: int, color: Color, mark_color: Color) -> voi
 
 
 func play_entrance() -> void:
+	# 减动效:入场逐字错峰/回弹/扫描线全部直切终态(音效保留)。
+	if SettingsManager.reduced_motion:
+		for lb in _chars:
+			lb.modulate.a = 1.0
+			lb.position.y = 0.0
+			lb.rotation_degrees = 0.0
+		_mark.scale = Vector2.ONE
+		_mark.modulate.a = 1.0
+		_sweep.size.x = 0.0
+		_sweep.modulate.a = 0.0
+		_entered = true
+		Sfx.play("ui_open")
+		return
 	_entered = false
 	for lb in _chars:
 		lb.modulate.a = 0.0
@@ -94,13 +112,19 @@ func play_entrance() -> void:
 
 
 func _process(delta: float) -> void:
+	# 减动效:呼吸/红标脉冲/glitch 全停,定格在入场终态。
+	if SettingsManager.reduced_motion:
+		return
 	_t += delta
 	if not _entered:
 		return
 
-	for i in _chars.size():
-		var c := 0.90 + 0.14 * (0.5 + 0.5 * sin(_t * 2.0 + i * 1.05))
-		_chars[i].modulate = Color(c, c, c, 1.0)
+	_breathe_acc += delta
+	if _breathe_acc >= BREATHE_STEP:
+		_breathe_acc = 0.0
+		for i in _chars.size():
+			var c := 0.90 + 0.14 * (0.5 + 0.5 * sin(_t * 2.0 + i * 1.05))
+			_chars[i].modulate = Color(c, c, c, 1.0)
 
 	var beat := fmod(_t, 2.2) / 2.2
 	var pulse := pow(maxf(0.0, 1.0 - beat * 4.0), 2.0)

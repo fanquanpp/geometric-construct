@@ -8,6 +8,10 @@ signal back_pressed
 
 var _open := false
 var _tween: Tween
+var _close_tw: Tween
+
+# 关闭淡出时长=全局快档,收口到 Ui.MOTION_MICRO_MS。
+const CLOSE_MS := Ui.MOTION_MICRO_MS
 
 @onready var _shade: ColorRect = %Shade
 @onready var _card: PanelContainer = %Card
@@ -70,6 +74,7 @@ func _wire_focus() -> void:
 
 
 func open_card(touch: bool) -> void:
+	_abort_closing()
 	_open = true
 	_same.text = "同设备双人\n      %s" % (
 		"移动端不可用 · 同屏分区需键鼠 / 双手柄" if touch
@@ -96,10 +101,52 @@ func open_card(touch: bool) -> void:
 
 
 func close_card() -> void:
+	close_animated()
+
+
+## 页面退出(page_out,menu_layer.goto_page 消费):关闭淡出动画播完
+## 再隐藏;退出期整树禁用。动画 Tween 挂父层(禁用自身不暂停动画),
+## 减动效直切;on_done 兜底必达。
+func close_animated(on_done: Callable = Callable()) -> void:
 	if not _open:
+		_notify_done(on_done)
 		return
 	_open = false
+	if SettingsManager.reduced_motion or get_parent() == null:
+		visible = false
+		_notify_done(on_done)
+		return
+	process_mode = Node.PROCESS_MODE_DISABLED
+	_close_tw = get_parent().create_tween()
+	_close_tw.set_parallel(true)
+	_close_tw.tween_property(_shade, "modulate:a", 0.0, CLOSE_MS / 1000.0)
+	_close_tw.tween_property(_card, "modulate:a", 0.0, CLOSE_MS / 1000.0)
+	_close_tw.chain().tween_callback(_finish_close.bind(on_done))
+
+
+func _finish_close(on_done: Callable) -> void:
 	visible = false
+	process_mode = Node.PROCESS_MODE_INHERIT
+	_shade.modulate.a = 1.0
+	_card.modulate.a = 1.0
+	_close_tw = null
+	_notify_done(on_done)
+
+
+func _notify_done(on_done: Callable) -> void:
+	if on_done.is_valid():
+		on_done.call()
+
+
+## 开卡前防竞态:上一轮关闭淡出尚未播完时,先复位状态再开。
+func _abort_closing() -> void:
+	if _close_tw != null and _close_tw.is_valid():
+		_close_tw.kill()
+		_close_tw = null
+	process_mode = Node.PROCESS_MODE_INHERIT
+	visible = false
+	_shade.modulate.a = 1.0
+	_card.modulate.a = 1.0
 
 
 func _reanchor_full() -> void:

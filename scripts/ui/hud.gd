@@ -5,11 +5,18 @@ extends CanvasLayer
 signal chip_tapped(index: int)
 signal race_rematch_requested
 
+const TUTORIAL_LAYER_SCENE := "res://scenes/tutorial/tutorial_layer.tscn"
+
 var _intro_tween: Tween
 var _complete_tween: Tween
+var _win_tween: Tween
 var _narr_tween: Tween
 var chips := HudChips.new()
 var hints := HudHints.new()
+# 教程导演层:按 CanvasLayer 取型 + 运行期 load(不用 preload,避免
+# hud → 教程层场景 → director → Main → hud 的编译期类循环引用);
+# 消费面(touch_rects)走 call 动态分派。
+var _tut: CanvasLayer
 
 @onready var _root: Control = $Root
 @onready var _roster: HBoxContainer = %Roster
@@ -46,12 +53,15 @@ var hints := HudHints.new()
 var _anchor_flash := {
 	"layer": null, "active": false, "t": 0.0}
 
+var _last_timer_cs := -1
+var _ghost_chip: Label
+var _ghost_slot: Control
+
 
 func _ready() -> void:
 
 	chips.hud = self
 	hints.hud = self
-	var touch := _touch_mode()
 	_apply_styles()
 
 	_fade.visible = false
@@ -68,14 +78,14 @@ func _ready() -> void:
 	_intro_skip.add_theme_font_override("font", Ui.HEAD)
 	_intro_skip.add_theme_font_size_override("font_size", 14)
 	# 触屏命中下限 44px:竖向边距与最小高随模式放宽。
-	var skip_pad_v := 12 if touch else 5
+	var skip_pad_v := 12 if _touch_mode() else 5
 	_intro_skip.add_theme_stylebox_override("normal",
 		Ui.sb(Color(Palette.I.ink_2, 0.92), 0, Color(Palette.I.paper, 0.30), 1, 12, skip_pad_v))
 	_intro_skip.add_theme_stylebox_override("hover",
 		Ui.sb(Palette.I.red, 0, Palette.I.red, 1, 12, skip_pad_v))
 	_intro_skip.add_theme_stylebox_override("pressed",
 		Ui.sb(Color(Palette.I.red, 0.68), 0, Palette.I.red, 1, 12, skip_pad_v))
-	if touch:
+	if _touch_mode():
 		_intro_skip.custom_minimum_size = Vector2(0, 44)
 	_intro_skip.add_theme_color_override("font_color", Color(Palette.I.paper, 0.85))
 	_intro_skip.add_theme_color_override("font_hover_color", Color.WHITE)
@@ -87,8 +97,9 @@ func _ready() -> void:
 		var ico := UiGlyph.new("characters/%s" % c.slug)
 		ico.custom_minimum_size = Vector2(52, 52)
 		_shapes_row.add_child(ico)
-	_win_hint.text = "右上 重来 · 再走一遍        右上 暂停 · 回到标题" if touch \
-		else "空格 · 再走一遍        Esc · 回到标题"
+	# WIN 提示与实际绑定一致(键鼠/触屏双形态):再走是 recall(R),
+	# 回标题是 pause(Esc);触屏文案随模式切换重算(_refresh_mode_copy)。
+	_make_ghost_chip()
 
 
 func _apply_styles() -> void:
@@ -138,21 +149,36 @@ func _touch_mode() -> bool:
 
 
 ## 触屏文案锚点与触控手感随模式重算(暂停菜单「虚拟按键·开/关」后
-## 也调用,不再只在 _ready 定死)。
+## 也调用,不再只在 _ready 定死);键位提示文案同口径刷新。
 func apply_touch_anchors() -> void:
 	var touch := _touch_mode()
 	_narration.anchor_top = 0.68 if touch else 0.8
 	_narration.anchor_bottom = 0.80 if touch else 0.92
+	_refresh_mode_copy()
 
 
-## 触屏保留区(全局坐标):编队芯片与竞速结算面板。TouchControls 在
-## _input 里放行这些矩形,轮盘/跳跃不再吞掉芯片切换与「再战一局」。
+## 键位提示随触屏模式重算(与菜单/档案同口径):虚拟按键开关切换后
+## 即时换触屏语言,不再 _ready 定死。
+func _refresh_mode_copy() -> void:
+	_win_hint.text = "右上 重来 · 再走一遍        右上 暂停 · 回到标题" \
+		if _touch_mode() else "R · 再走一遍        Esc · 回到标题"
+
+
+## 触屏保留区(全局坐标):编队芯片、竞速结算面板、开场卡跳过钮与
+## 教程跳过钮。TouchControls 在 _input 里放行这些矩形,轮盘/跳跃不再
+## 吞掉芯片切换、「再战一局」「跳过 »」与「跳过教程」(触屏浮动轮盘
+## 曾吞掉左上跳过钮命中)。
 func ui_touch_rects() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	if _roster.is_visible_in_tree():
 		out.append(_roster.get_global_rect())
 	if _race_panel.is_visible_in_tree():
 		out.append(_race_panel.get_global_rect())
+	if _intro.is_visible_in_tree():
+		out.append(_intro_skip.get_global_rect().grow(8.0))
+	if _tut != null:
+		var rects: Array = _tut.call("touch_rects")
+		out.append_array(rects)
 	return out
 
 
@@ -166,22 +192,123 @@ func _process(delta: float) -> void:
 			(_anchor_flash["ctl"] as Control).visible = false
 	var gf: GameFlow = Main.I.game_flow if Main.I != null else null
 	if gf != null:
-		var s := int(gf.run_ms / 100.0)
-		_run_timer.text = "%d:%02d.%d" % [s / 600, (s / 10) % 60, s % 10]
+		# 值变才写:10Hz 实变计时,其余 ~85% 帧零字符串分配。
+		var cs := int(gf.run_ms / 100.0)
+		if cs != _last_timer_cs:
+			_last_timer_cs = cs
+			_run_timer.text = "%d:%02d.%d" % [cs / 600, (cs / 10) % 60, cs % 10]
+			_update_ghost_chip(gf)
 
 
 func set_level_info(index: int, level_name: String, num_label := "") -> void:
-	if not num_label.is_empty():
-		_level_num.text = num_label
+	if index < 0:
+		# 教程局(GameFlow.start_tutorial,current=-1,不占 SCENES 下标):
+		# 编号/总数面板收起,只留关名;进普通关时面板复位。
+		_level_num.text = ""
 		_level_total.visible = false
+		(%NumPanel as PanelContainer).visible = false
 	else:
-		var act := LevelData.act_index_of(index)
-		_level_num.text = "%02d" % LevelData.scene_no_of(index)
-		_level_total.text = "/ %02d" % ((LevelData.ACTS[act]["levels"] as Array).size() \
-			if act >= 0 else LevelData.count())
-		_level_total.visible = true
+		(%NumPanel as PanelContainer).visible = true
+		if not num_label.is_empty():
+			_level_num.text = num_label
+			_level_total.visible = false
+		else:
+			var act := LevelData.act_index_of(index)
+			_level_num.text = "%02d" % LevelData.scene_no_of(index)
+			_level_total.text = "/ %02d" % ((LevelData.ACTS[act]["levels"] as Array).size() \
+				if act >= 0 else LevelData.count())
+			_level_total.visible = true
 	_level_name.text = level_name
 	_run_timer.text = "0:00.0"
+	_last_timer_cs = 0
+	if _ghost_chip != null:
+		_ghost_chip.visible = false
+	_sync_tutorial_layer()
+
+
+## 教程导演层挂载(仅教程局):set_level_info 是每次开局必经点,教程层
+## 在此增删;导演自身另有逐帧自检(非教程局/父 HUD 隐身即自毁)兜底
+## 菜单返回路径,双保险零残留。
+func _sync_tutorial_layer() -> void:
+	var m: Main = Main.I
+	var on := m != null and m.game_flow != null and m.game_flow.tutorial_mode
+	if on and _tut == null:
+		var ps: PackedScene = load(TUTORIAL_LAYER_SCENE)
+		if ps != null:
+			_tut = ps.instantiate() as CanvasLayer
+			add_child(_tut)
+	elif not on and _tut != null:
+		_tut.free()
+		_tut = null
+
+
+## vs 幽灵差值小签:计时器旁实时显示本局相对本关最佳幽灵的领先/落后。
+## 落后 +X.Xs 用警示红;领先 −X.Xs 用领先侧(自己)的体色;无幽灵不显示。
+## 承载改定宽锚槽(代码创建,常驻 TitleRow):签显隐/宽窄不再改变
+## HBox 重排——签文本出入曾把编号/关名/计时整行顶得左右回摆。
+func _make_ghost_chip() -> void:
+	_ghost_slot = Control.new()
+	_ghost_slot.custom_minimum_size = Vector2(84, 20)
+	_ghost_slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_ghost_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_run_timer.get_parent().add_child(_ghost_slot)
+	_ghost_chip = Label.new()
+	_ghost_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ghost_chip.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_ghost_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_ghost_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_ghost_chip.add_theme_font_override("font", Ui.tabular())
+	_ghost_chip.add_theme_font_size_override("font_size", 13)
+	_ghost_chip.add_theme_color_override("font_color", Palette.I.red)
+	_ghost_chip.visible = false
+	_ghost_slot.add_child(_ghost_chip)
+
+
+func _update_ghost_chip(gf: GameFlow) -> void:
+	var m: Main = Main.I
+	if m == null or m.ghost == null or m.players.is_empty() \
+			or m._state != Main.State.PLAYING:
+		_ghost_chip.visible = false
+		return
+	var best: Dictionary = m.ghost.best_of(gf.current)
+	var samples: Dictionary = best.get("samples", {})
+	if samples.is_empty():
+		_ghost_chip.visible = false
+		return
+	var p: Player = m.players[mini(m.view_slot(), m.players.size() - 1)]
+	if p == null or p.dying:
+		_ghost_chip.visible = false
+		return
+	var arr: Array = samples.get(p.index, samples[samples.keys()[0]])
+	if arr.is_empty():
+		_ghost_chip.visible = false
+		return
+	var my_x := p.position.x
+	var last_x := -INF
+	var ghost_ms := -1.0
+	for s in arr:
+		var sx: float = (s["pos"] as Vector2).x
+		if sx <= my_x:
+			last_x = sx
+			ghost_ms = float(int(s["t"]))
+		else:
+			# 幽灵尚在我的前方:在相邻两样本间线性内插到达 my_x 的时刻。
+			if last_x > -INF and sx > last_x:
+				ghost_ms += (my_x - last_x) / (sx - last_x) \
+					* (float(int(s["t"])) - ghost_ms)
+			break
+	if ghost_ms < 0.0:
+		ghost_ms = float(int(arr[0]["t"]))
+	if my_x > (arr[arr.size() - 1]["pos"] as Vector2).x:
+		ghost_ms = float(int(best.get("ms", 0)))
+	var diff_ms := float(gf.run_ms) - ghost_ms
+	_ghost_chip.visible = true
+	if diff_ms >= 0.0:
+		_ghost_chip.add_theme_color_override("font_color", Palette.I.red)
+		_ghost_chip.text = "+%.1fs" % (diff_ms / 1000.0)
+	else:
+		_ghost_chip.add_theme_color_override("font_color", p.def.color)
+		_ghost_chip.text = "-%.1fs" % (-diff_ms / 1000.0)
 
 
 func refresh_roster(roster: Array, active: int, exited_mask: int,
@@ -204,6 +331,10 @@ func narration(text: String, color: Color, dur := 3.2) -> void:
 
 
 func show_intro(kicker: String, def: Dictionary) -> void:
+	var m: Main = Main.I
+	if m != null and m.game_flow != null and m.game_flow.tutorial_mode:
+		# 教程局开场卡:无登记关卡拿到的「正戏 · 第 0 场」抬头换教学语。
+		kicker = "教学 · %s" % Geometries.get_def(int(def.get("focus", 0))).full_name
 	_intro_num.text = kicker
 	_intro_title_label.text = def["name"]
 	_intro_text.text = hints.adapt_copy(str(def.get("intro", "")))
@@ -264,15 +395,54 @@ func show_complete(text := "归位。") -> void:
 
 func show_win(on: bool, summary := "") -> void:
 	_win.visible = on
+	if _win_tween != null:
+		_win_tween.kill()
+		_win_tween = null
 	if not on:
+		_reset_win_stage()
 		return
 	%WinKicker.text = "GEOMETRIC CONSTRUCT · 四幕全演"
 	%WinSub.text = "三个几何体,各归其位。" if summary == "" \
 		else "三个几何体,各归其位。\n%s" % summary
+	if SettingsManager.reduced_motion:
+		# 减动效:硬切直显,状态终态一次到位。
+		_reset_win_stage()
+		return
+	# 构成主义入场(SLABS 遮屏由 game_flow cover 服务先行,此处随揭幕
+	# 排布):压暗幕先落,红规尺框线横向排开,余块逐块排入——零位移,
+	# 只动透明度与框线横缩。
+	(%WinShade as ColorRect).modulate = Color(1, 1, 1, 0)
+	var rule := %WinRule as ColorRect
+	rule.pivot_offset = rule.custom_minimum_size / 2.0
+	rule.scale = Vector2(0.0, 1.0)
+	var blocks := _win_blocks()
+	for b: Control in blocks:
+		b.modulate = Color(1, 1, 1, 0)
+	var page := Ui.MOTION_SCENE_MS / 1000.0
+	var micro := Ui.MOTION_MICRO_MS / 1000.0
+	_win_tween = create_tween()
+	_win_tween.set_parallel(true)
+	_win_tween.tween_property(%WinShade, "modulate:a", 1.0, page) \
+		.set_ease(Ui.EASE_ENTER)
+	_win_tween.tween_property(rule, "scale", Vector2.ONE, page) \
+		.from(Vector2(0.0, 1.0)).set_delay(micro) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Ui.EASE_ENTER)
+	for i in blocks.size():
+		_win_tween.tween_property(blocks[i], "modulate:a", 1.0, micro) \
+			.set_delay(micro * (1.0 + float(i) * 0.6)) \
+			.set_ease(Ui.EASE_ENTER)
 
 
-func fade_from_black() -> void:
-	_fx.reveal(TransitionFX.Style.FADE, 0.55)
+## WIN 结算各块(框线 WinRule 单独走横缩,不入此列)。
+func _win_blocks() -> Array:
+	return [%WinKicker, %WinTitle, %WinSub, %ShapesRow, %WinHint]
+
+
+func _reset_win_stage() -> void:
+	(%WinShade as ColorRect).modulate = Color(1, 1, 1, 1)
+	(%WinRule as ColorRect).scale = Vector2.ONE
+	for b: Control in _win_blocks():
+		b.modulate = Color(1, 1, 1, 1)
 
 
 func fade_to_black(dur: float, on_done: Callable) -> void:
@@ -283,18 +453,16 @@ func transition_sweep(dur: float, on_covered: Callable) -> void:
 	_queue_transition(TransitionFX.Style.SWEEP, dur, on_covered)
 
 
-func transition_blocks(dur: float, on_covered: Callable) -> void:
-	_queue_transition(TransitionFX.Style.BLOCKS_RED, dur, on_covered)
-
-
 ## 布尔契约:供调用方区分「已入过渡」与「未入(hud 缺席 / 忙)」。
 ## 忙时返回 false,由调用方兜底(game_flow.return_to_menu 直切菜单)。
 func transition_curtain(dur: float, on_covered: Callable) -> bool:
 	return _fx.transition(TransitionFX.Style.CURTAIN, dur, on_covered)
 
 
-func transition_corners(dur: float, on_covered: Callable) -> void:
-	_queue_transition(TransitionFX.Style.CORNERS, dur, on_covered)
+## 死包装器清退(v0.69):三个零产品调用的转场包装器(FADE 淡入自黑、
+## BLOCKS_RED 红碎块、CORNERS 四角)整体移除——唯一使用者 shot_harness
+## 直驱 _fx 节点不经包装器。_queue_transition 分派只余现役 FADE/SWEEP
+## 两路(CORNERS 式样仍由 reveal_corners 直驱面供给,枚举与节点不动)。
 
 
 ## 忙时下一帧重试(v0.66.0 多端勘误):过渡忙 * 吞回调 = 「有的端动画

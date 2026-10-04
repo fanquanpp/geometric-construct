@@ -12,6 +12,7 @@ const CELL := 100.0
 
 var _fails := 0
 var _warns := 0
+var _infos := 0
 var _pending: Array = []
 
 
@@ -27,9 +28,15 @@ func _run() -> void:
 		_audit_level(i)
 		if fix:
 			_apply_fixes(i)
-	print("LEVELAUDIT ", "ALL PASS" if _fails == 0 else
-		"FAIL(%d fails, %d warns)" % [_fails, _warns])
-	quit(0 if _fails == 0 else 1)
+	# 口径 v0.69.0:警告不再放行(基线 7 条黄门误报已由弹跳包络清零,
+	# 分级后仅「动件路径盲区」以 INFO 存在,不计数不拦门)。
+	var tail := ""
+	if _infos > 0:
+		tail = " (%d 条动件路径盲区仅供参考)" % _infos
+	var ok := _fails == 0 and _warns == 0
+	print("LEVELAUDIT ", ("ALL PASS" + tail) if ok else
+		"FAIL(%d fails, %d warns)%s" % [_fails, _warns, tail])
+	quit(0 if ok else 1)
 
 
 func _fail(msg: String) -> void:
@@ -40,6 +47,11 @@ func _fail(msg: String) -> void:
 func _warn(msg: String) -> void:
 	_warns += 1
 	print("AUDIT WARN: ", msg)
+
+
+func _info(msg: String) -> void:
+	_infos += 1
+	print("AUDIT INFO: ", msg)
 
 
 func _vmin(a: Vector2i, b: Vector2i) -> Vector2i:
@@ -80,18 +92,20 @@ func _audit_level(index: int) -> void:
 
 	var standable := {}
 	var ceilings := {}
+	var mech_cells := {}   # 动件提供的站立格(mover 行程扫掠 + 限时桥面)
 	var doors: Array = []
 	for c in lvl.get_children():
 		if c is ExitDoor:
 			doors.append(c)
 		elif c is TimedBridge:
-			_mark_rect_standable(standable, c.position, c.size as Vector2)
+			_mark_rect_standable(standable, c.position, c.size as Vector2,
+				mech_cells)
 		elif c is Mover:
 			var msize: Vector2 = c.size as Vector2
 			var mtravel: Vector2 = c.travel as Vector2
 			for k in 5:
 				_mark_rect_standable(standable,
-					c.position + mtravel * (float(k) / 4.0), msize)
+					c.position + mtravel * (float(k) / 4.0), msize, mech_cells)
 
 	# —— 门体摆位体检(嵌墙 / 悬空)——
 	for d in doors:
@@ -161,8 +175,14 @@ func _audit_level(index: int) -> void:
 				if seen.has(dc + Vector2i(dx, dy)):
 					ok = true
 		if not ok:
-			_warn("%s g%d 的终点门静态 BFS 不可达(门@%s;动件路径盲区,仅供参考)"
-				% [tag, g, dc])
+			# 警告分级(v0.69.0):门旁有动件 = 路径依赖骑行/时机,静态模型
+			# 天然盲 → 信息级;旁无动件仍不可达 = 纯地形死路 → 警告级。
+			if _near_mechanism(dc, mech_cells):
+				_info("%s g%d 的终点门走动件路径,BFS 静态模型不可达(门@%s;动件路径盲区,仅供参考)"
+					% [tag, g, dc])
+			else:
+				_warn("%s g%d 的终点门纯地形静态不可达(门@%s;含跳跃/弹跳包络仍无路径)"
+					% [tag, g, dc])
 
 	if OS.get_cmdline_user_args().has("--fix"):
 		_collect_fixes(index, lvl, doors, roster, solid, oneway,
@@ -302,6 +322,15 @@ func _apply_fixes(index: int) -> void:
 	print("FIXAPPLIED ", path)
 
 
+## 门旁 3 格切比雪夫距内是否有动件站立格(动件路径盲区分级判据)。
+func _near_mechanism(dc: Vector2i, mech_cells: Dictionary) -> bool:
+	for dy in range(-3, 4):
+		for dx in range(-3, 4):
+			if mech_cells.has(dc + Vector2i(dx, dy)):
+				return true
+	return false
+
+
 func _has_ground(cc: Vector2i, solid: Dictionary, oneway: Dictionary) -> bool:
 	for dy in range(0, 3):
 		var below := cc + Vector2i(0, dy)
@@ -337,11 +366,21 @@ func _collect_standable(solid: Dictionary, oneway: Dictionary,
 				ceilings[c] = true
 
 
+## 入队(bonus 感知去重:同一格允许以更高的弹跳加成重访重扩)。
+func _push(queue: Array, bonus: Dictionary, seen: Dictionary,
+		c: Vector2i, b: int) -> void:
+	if b > int(bonus.get(c, -1)):
+		bonus[c] = b
+		seen[c] = true
+		queue.append({"c": c, "b": b})
+
+
 func _bfs(start: Vector2i, def: GeometryDef, solid: Dictionary,
 		oneway: Dictionary, standable: Dictionary, ceilings: Dictionary,
 		seen: Dictionary) -> void:
-	var queue: Array = [start]
-	seen[start] = true
+	var queue: Array = []
+	var bonus := {}   # 格 -> 已入队的最大弹跳加成行数
+	_push(queue, bonus, seen, start, 0)
 	var jump_h := 1
 	var jump_reach := 2
 	if def.can_jump:
@@ -349,53 +388,76 @@ func _bfs(start: Vector2i, def: GeometryDef, solid: Dictionary,
 		jump_reach = 3
 	var can_swap := def.can_swap
 	var flat_reach := (5 if def.sprint_speed > def.base_speed + 0.1 else 3) 		if def.can_jump else 2
+	# 高弹跳包络(v0.69.0 补缺,根除黄门误报):黄反弹率 100%,
+	# 与 player.gd:266 同式 restitution = clamp(bounce*0.5, 0, 1),
+	# 落深 f 行即弹回 f*restitution² 行(restitution=1.0 → 全深弹回)。
+	# 保守口径:不计按跳发力(×1.12²)与弹顶二段跳(跳跃环已单算)。
+	var rest := clampf(def.bounce * 0.5, 0.0, 1.0)
+	# 二段跳空连(与 player.gd AIR_JUMPS 同真值):空跳再抬 jump_h。
+	var air_jumps: int = Player.AIR_JUMPS if def.can_jump else 0
+	var up_h := jump_h + air_jumps * jump_h
+	# 空连段滞空更长,横移上限放开到平跳距(抛物线物理,非拍脑袋)。
+	var up_reach := maxi(jump_reach, flat_reach)
 	while not queue.is_empty():
-		var c: Vector2i = queue.pop_back()
+		var e: Dictionary = queue.pop_back()
+		var c: Vector2i = e["c"]
+		var b: int = e["b"]
+		var arc_h := up_h + b
 		for dx in [-1, 1]:
 			var n := c + Vector2i(dx, 0)
-			if standable.has(n) and not seen.has(n):
-				seen[n] = true
-				queue.append(n)
-		if def.can_jump:
-			for dy in range(1, jump_h + 1):
-				for dx in range(-jump_reach, jump_reach + 1):
+			if standable.has(n):
+				_push(queue, bonus, seen, n, 0)
+		if def.can_jump or b > 0:
+			for dy in range(1, arc_h + 1):
+				for dx in range(-up_reach, up_reach + 1):
 					var n := c + Vector2i(dx, -dy)
-					if standable.has(n) and not seen.has(n):
-						seen[n] = true
-						queue.append(n)
+					if standable.has(n):
+						_push(queue, bonus, seen, n, 0)
+			# 跃降:前跳越过断口落到低 1-2 行处,下落段加远 flat_reach+dy。
+			for dy in range(1, 3):
+				for dx in range(1, flat_reach + dy + 1):
+					for sx in [1, -1]:
+						var n := c + Vector2i(dx * sx, dy)
+						if standable.has(n):
+							_push(queue, bonus, seen, n, 0)
 		# 同层跳距:平跳跨沟(dy=0,跳跃抛物线落回同一高度)
 		for dx in range(1, flat_reach + 1):
 			for sx in [1, -1]:
 				var n := c + Vector2i(dx * sx, 0)
-				if standable.has(n) and not seen.has(n):
-					seen[n] = true
-					queue.append(n)
+				if standable.has(n):
+					_push(queue, bonus, seen, n, 0)
 		if can_swap:
 			for dy in range(-5, 6):
 				for dx in range(-2, 3):
 					var n := c + Vector2i(dx, dy)
-					if ceilings.has(n) and not seen.has(n):
-						seen[n] = true
-						queue.append(n)
-		# 下落漂移:同柱 ±2 列向下直到落面
+					if ceilings.has(n):
+						_push(queue, bonus, seen, n, 0)
+		# 下落漂移:同柱 ±2 列向下直到落面;落点深度换算弹跳加成
 		for dx in range(-2, 3):
 			var col := c.x + dx
+			var land := Vector2i(-9999, -9999)
 			for y in range(c.y + 1, c.y + 40):
 				var n := Vector2i(col, y)
 				if solid.has(n):
 					break
-				if standable.has(n) and not seen.has(n):
-					seen[n] = true
-					queue.append(n)
+				if standable.has(n):
+					_push(queue, bonus, seen, n, 0)
+					land = n
+			if land.x != -9999 and rest > 0.0:
+				var f := land.y - c.y
+				var nb := floori(float(f) * rest * rest)
+				if nb > 0:
+					_push(queue, bonus, seen, land, nb)
 
 
 func _mark_rect_standable(standable: Dictionary, center: Vector2,
-		size: Vector2) -> void:
+		size: Vector2, sink: Dictionary = {}) -> void:
 	var lo := Vector2i(((center - size * 0.5) / CELL).floor())
 	var hi := Vector2i(((center + size * 0.5) / CELL).floor())
 	for y in range(lo.y, hi.y + 1):
 		for x in range(lo.x, hi.x + 1):
 			standable[Vector2i(x, y)] = true
+			sink[Vector2i(x, y)] = true
 
 
 func _door_ext_id(text: String) -> String:

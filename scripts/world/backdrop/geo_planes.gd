@@ -3,6 +3,8 @@ extends Node2D
 # 构成巨面由种子程序生成,数量形态运行时确定(procedural-art)。
 # 每面独立子节点错峰浮沉(fandex 星尘漂移参数:9/11/13/15s alternate,幅 3~8px),
 # 浮动走 position(零重绘);动画关 = 停浮保姿态。数量由 BackdropPreset 下发。
+# 五层深度带之「远景」(scroll_scale.x 0.15-0.25):面体为纸色低 alpha
+# 中性色,远景降阶不另处理;慢巡浮沉即无 beat 时的回退节奏。
 
 const SEED := 77
 const PERIODS := [9.0, 11.0, 13.0, 15.0, 17.0]

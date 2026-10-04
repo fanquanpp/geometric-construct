@@ -99,7 +99,15 @@ func _process(_delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	var dt := delta
-	if in_exit or dying or Main.I == null:
+	if Main.I == null:
+		return
+	if dying:
+		# 死亡演出期的预输入捕获:此刻按下跳跃写入缓冲(0.12s 通道
+		# 复用),重生落地即起跳——速通连段不因死亡链断拍。
+		if is_active and PlayerInput.jump_edge(_src()):
+			_jump_buffer = 0.12
+		return
+	if in_exit:
 		return
 	if remote_driven:
 		_net_follow(dt)
@@ -374,6 +382,13 @@ func apply_speed_gate() -> void:
 			Main.I.notify_buff(_target_multiplier(true), def)
 
 
+## 惩罚门(risk/reward):清空当前冲刺增益 + 按门体系数刹速。
+## 数值由 SpeedGate.penalty_speed_scale 下发(机制实例参数,非 tuning schema)。
+func apply_penalty_gate(speed_scale: float) -> void:
+	speed_buffed = false
+	velocity.x *= clampf(speed_scale, 0.05, 1.0)
+
+
 func _src() -> InputSource:
 	if input_source == null:
 		input_source = InputSource.local(0)
@@ -419,14 +434,20 @@ func die() -> void:
 	if Main.I != null and Main.I.backdrop != null:
 		Main.I.backdrop.pulse_death()
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 0.0, 0.20)
+	# 死亡-重试总链 ≤0.35s:淡出 0.10 + 淡入 0.15,且淡入开始即
+	# 恢复可操作(dying=false,见 _reset_for_respawn)——速通节奏
+	# 不被死亡演出拖住(原 0.20+0.26≥0.5s)。
+	tw.tween_property(self, "modulate:a", 0.0, 0.10)
 	tw.tween_callback(_reset_for_respawn)
-	tw.tween_property(self, "modulate:a", 1.0, 0.26)
+	tw.tween_property(self, "modulate:a", 1.0, 0.15)
 	tw.tween_callback(_finish_respawn)
 	Main.I.on_player_died(self)
 
 
 func _reset_for_respawn() -> void:
+	# 位置已回 spawn 点,淡入开始即恢复可操作;记录点语义不变
+	# (spawn_pos 由信标/初始点决定,此处不回退到关卡起点)。
+	dying = false
 	position = spawn_pos
 	rider_of = null
 	velocity = Vector2.ZERO

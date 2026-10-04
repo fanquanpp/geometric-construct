@@ -222,7 +222,7 @@ size_flags_horizontal = 4
 
 [node name="WinSub" type="Label" parent="Root/Win/WinBox"]
 unique_name_in_owner = true
-text = "四个几何体,各归其位。"
+text = "三个几何体,各归其位。"
 horizontal_alignment = 1
 
 [node name="ShapesRow" type="HBoxContainer" parent="Root/Win/WinBox"]

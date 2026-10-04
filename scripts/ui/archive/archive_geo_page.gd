@@ -2,6 +2,9 @@ class_name ArchiveGeoPage
 extends RefCounted
 
 
+const TagKit := preload("res://scripts/ui/archive/archive_kit.gd")
+
+
 var panel
 var portrait_zone: Control
 var right_col: VBoxContainer
@@ -49,7 +52,8 @@ func build(p, page: Control) -> void:
 	name_row.add_theme_constant_override("separation", 18)
 	_name_label = Ui.l("", 76, Ui.TITLE, Palette.I.paper)
 	name_row.add_child(_name_label)
-	_role_tag = Ui.tag("", Palette.I.red, Color.WHITE, 15, 14, 5)
+	# tag 工艺统一(ArchiveKit):角色色实底语义保留,描边/内距语言归一。
+	_role_tag = TagKit.make_tag("", Palette.I.red, Color.WHITE, 15)
 	_role_tag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	name_row.add_child(_role_tag)
 	right.add_child(name_row)
@@ -78,9 +82,8 @@ func refresh() -> void:
 	_portrait_tex.set_key("codex_geo/%s" % gd.slug)
 	_name_label.text = gd.name
 	_full_label.text = gd.full_name + "  ·  " + gd.slug.to_upper()
-	(_role_tag.get_child(0) as Label).text = gd.role
-	(_role_tag.get_child(0) as Label).label_settings = Ui.ls(15, Ui.HEAD, Color.WHITE)
-	_role_tag.add_theme_stylebox_override("panel", Ui.sb(gd.color, 0, null, 0, 14, 5))
+	# tag 工艺统一(ArchiveKit):角色页保角色色实底语义,工艺归一。
+	TagKit.apply_tag(_role_tag, gd.role, gd.color, Color.WHITE, 15)
 	panel._index_label.text = "%d / %d" % [panel.current + 1, Geometries.ALL.size()]
 
 	for c in _stats_box.get_children():

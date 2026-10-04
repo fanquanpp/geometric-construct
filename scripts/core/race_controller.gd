@@ -62,7 +62,8 @@ func on_arrival(p: Player) -> void:
 
 
 func rematch() -> void:
-	main.start_level_dual(main.game_flow.current)
+	# 再战一局走 intro=false:竞速重开不重播开场卡。
+	main.start_level_dual(main.game_flow.current, false)
 
 
 func _slot_of(p: Player) -> int:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/backdrop.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/world/backdrop/deep_space.gd" id="2"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/world/backdrop/speed_lines.gd" id="8"]
 [ext_resource type="Script" path="res://scripts/world/backdrop/red_wave.gd" id="9"]
 [ext_resource type="Shader" path="res://assets/fx/backdrop_sky.gdshader" id="10"]
+[ext_resource type="Shader" path="res://shaders/light_streaks.gdshader" id="11"]
 
 [sub_resource type="FastNoiseLite" id="cloud_noise"]
 frequency = 0.008
@@ -30,6 +31,14 @@ shader_parameter/cloud_speed = 6.0
 shader_parameter/anim = 1.0
 shader_parameter/cloud_tex = SubResource("cloud_tex")
 
+[sub_resource type="ShaderMaterial" id="streak_mat"]
+shader = ExtResource("11")
+shader_parameter/col_paper = Color(0.929412, 0.917647, 0.878431, 1)
+shader_parameter/col_accent = Color(0.305882, 0.52549, 0.847059, 1)
+shader_parameter/strength = 0.0
+shader_parameter/dir = 1.0
+shader_parameter/anim = 1.0
+
 [node name="Backdrop" type="CanvasLayer"]
 layer = -10
 script = ExtResource("1")
@@ -43,7 +52,7 @@ mouse_filter = 2
 
 [node name="Deep" type="Parallax2D" parent="."]
 unique_name_in_owner = true
-scroll_scale = Vector2(0.04, 0.2)
+scroll_scale = Vector2(0.05, 0.2)
 repeat_size = Vector2(2600, 1300)
 repeat_times = 2
 
@@ -53,7 +62,7 @@ script = ExtResource("2")
 
 [node name="Planes" type="Parallax2D" parent="."]
 unique_name_in_owner = true
-scroll_scale = Vector2(0.08, 0.4)
+scroll_scale = Vector2(0.16, 0.4)
 repeat_size = Vector2(2600, 0)
 repeat_times = 3
 
@@ -63,7 +72,7 @@ script = ExtResource("3")
 
 [node name="Sun" type="Parallax2D" parent="."]
 unique_name_in_owner = true
-scroll_scale = Vector2(0.06, 0.12)
+scroll_scale = Vector2(0.08, 0.12)
 
 [node name="GeoSun" type="Node2D" parent="Sun"]
 unique_name_in_owner = true
@@ -77,13 +86,20 @@ script = ExtResource("7")
 
 [node name="Marks" type="Parallax2D" parent="."]
 unique_name_in_owner = true
-scroll_scale = Vector2(0.12, 0.5)
+scroll_scale = Vector2(0.24, 0.5)
 repeat_size = Vector2(2400, 2400)
 repeat_times = 2
 
 [node name="GeoMarks" type="Node2D" parent="Marks"]
 unique_name_in_owner = true
 script = ExtResource("5")
+
+[node name="Streaks" type="ColorRect" parent="."]
+material = SubResource("streak_mat")
+unique_name_in_owner = true
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
 
 [node name="RidgeFar" type="Parallax2D" parent="."]
 unique_name_in_owner = true
@@ -101,7 +117,7 @@ amplitude = 130.0
 
 [node name="RidgeNear" type="Parallax2D" parent="."]
 unique_name_in_owner = true
-scroll_scale = Vector2(0.58, 1)
+scroll_scale = Vector2(0.66, 1)
 repeat_size = Vector2(2600, 0)
 repeat_times = 3
 
@@ -127,6 +143,9 @@ gravity = Vector2(0, 0)
 initial_velocity_min = 7.0
 initial_velocity_max = 22.0
 scale_amount_max = 2.2
+use_fixed_seed = true
+seed = 4711
+fixed_fps = 30
 
 [node name="MotesNear" type="CPUParticles2D" parent="."]
 unique_name_in_owner = true
@@ -142,8 +161,17 @@ gravity = Vector2(0, 0)
 initial_velocity_min = 7.0
 initial_velocity_max = 22.0
 scale_amount_max = 3.8
+use_fixed_seed = true
+seed = 4712
+fixed_fps = 30
 
-[node name="SpeedLines" type="Node2D" parent="."]
+[node name="Fore" type="Parallax2D" parent="."]
+unique_name_in_owner = true
+scroll_scale = Vector2(1.25, 1)
+repeat_size = Vector2(2600, 0)
+repeat_times = 3
+
+[node name="SpeedLines" type="Node2D" parent="Fore"]
 unique_name_in_owner = true
 script = ExtResource("8")
 

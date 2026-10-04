@@ -23,7 +23,9 @@ export_credentials.cfg
 *.jks
 
 # ===== 第三方插件(不入库,按 README「第三方插件」自行安装) =====
-addons/
+# 例外:第一方编辑器插件 editor_kit(机关坞)随库发布
+addons/*
+!addons/editor_kit
 
 # ===== gode TS 工具链产物 =====
 .gode/
@@ -45,8 +47,8 @@ __pycache__/
 *.pyc
 *.log
 
-# AI 助手项目级 skills(GodotPrompter,机器本地工具配置,不入游戏仓库)
-.zcode/skills/
+# AI 助手工作区目录(skills/工作流草稿等,机器本地,不入游戏仓库)
+.zcode/
 
 # ===== 兄弟仓库(独立 .git,不入本库) =====
 speed-dev/

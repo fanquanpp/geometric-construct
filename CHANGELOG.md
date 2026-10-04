@@ -420,6 +420,145 @@ v0.55 删剧情 → v0.57 删伍(双体三角形),名册定三体 → v0.59 第�
 
 ---
 
+## v0.69.0 · 全面体验升级:装饰动效重设计 + 全路径过渡 + 新手教程 + 编辑器机关坞 + 机关语义色(2026-10-05)
+
+用户令:「联网搜索,洞察分析。删除没有实装的关卡。优化UI设计。增强多页面。对整个游戏的
+装饰背景动画动效进行重新设计与制作。增加更多的场景与页面过渡动画,并且确保各种情况下
+稳定出现。为游戏增加新手教程。增强各种各样的游戏内引导步骤。完善关卡设计以及机关设计。
+增强Godot编辑器内的便捷关卡设计功能。万物节点化。使用Godotshader。学习官方文档。模块化
+功能一致性。确保素材完整可用。确保有png可用素材。增强游戏玩法。补全不同机关对应差异化
+色彩。补全与迭代增强游戏内现有各种功能有界面和内容。」本轮以动态工作流执行:3 路联网
+调研(官方文档/玩法设计/界面动效)+ 5 路全仓只读审计 → 蓝图独立复核 → 八工坊分波实现
+(关卡/背景动效/素材/编辑器/界面 → 机关玩法/过渡 → 教程)→ 全套门禁修复循环 → 实机
+截图目检 → 终审一致性复核,另附提交前收口(CLOSE_MS 合龙/字体子集重建/editor_kit 入库
+例外/corners 误报结案)。
+
+【清底】levels_native/dev/progen_out.tscn 删除(未实装 progen 输出壳,删除前逐条重核
+证据,全仓仅存 progen_level.gd 落盘契约自引);assets/art/ 整目录清退(.gdignore 门档
+随之)。16 关四幕完整,SCENES/ACTS 数据零变化,level_data.gd 与 tscn level_name 双侧
+一致。
+
+【装饰背景动效重设计】五层视差深度带重排归档:Deep 0.04→0.05 / Sun 0.06→0.08(天幕
+带 0.05-0.1)/ Planes 0.08→0.16 / Marks 0.12→0.24(远景带 0.15-0.25)/ RidgeFar 0.32 /
+RidgeNear 0.58→0.66,滚动层次按远景惯例分带。新增 res://shaders/ 目录首批 canvas_item
+shader:light_streaks.gdshader(光痕)与 speed_lines.gdshader(速度线),装饰动效节点化
+挂载,均带 reduced_motion 降级路径。
+
+【过渡系统】式样矩阵重锚:SWEEP=关间 / CURTAIN=回菜单与进房 / FADE=重开 / CORNERS=
+进关 reveal / SLABS=WIN 入场(构成主义页面转场语汇,红/墨/纸三块斜切追尾);BLOCKS_RED
+随死包装器清退。game_flow 四条联机直切路径全部入 CURTAIN 遮挡(open_net_room 先落
+TRANSITION 锁输入再遮;net_back_to_room 抽出统一入口,PLAYING/PAUSED/TRANSITION 三态
+的回房全部有过渡,任何入口不再裸切)。UI 动效档位收敛三档:Ui.MOTION_MICRO_MS=120 /
+MOTION_PAGE_MS=240 / MOTION_SCENE_MS=450 + EASE_ENTER/EXIT,game_flow/hud/六浮层全部
+消费共享常量;转场 busy 期单飞+下一帧重试契约(cover_then)保证遮挡回调必达。菜单页面
+状态机 enum Page{MAIN,ACT,DUAL} + goto_page 单入口 + page_in/page_out 钩子(关旧页
+120ms 淡出播完再 hide,退出期整树 process DISABLED)。
+
+【新手教程与引导】新建教学关 levels_native/tutorial/tutorial.tscn(文本手术+47 变体
+正则位生成瓦片真值;Spawn0/双记录点/终点门/加速门/5 张世界提示牌/12 装饰瓦):单红体
+四拍阶梯——平地移动(0-1000 无惩罚)→200/400px 缺口教跳跃与二段跳→600px 断口→机关
+与终点门;scripts/tutorial/tutorial_director.gd + scenes/tutorial/tutorial_layer.tscn
+教程层节点化,进度落存档(结构 v10 兼容,新增字段带默认值),第一幕关卡埋世界提示牌
+引导步骤,三输入(键鼠/手柄/触屏)全适配。
+
+【编辑器·机关坞】新增第一方编辑器插件 addons/editor_kit(@tool EditorPlugin,四件:
+plugin.cfg/editor_kit.gd/dock_panel.gd/placement_table.gd):停靠面板机关摆放表 +
+_forward_canvas_draw_over_viewport 视口内绘制 Mover travel 行程箭头与加速门感应虚线
+框,Palette 判空字面兜底沿 geo 系先例;项目已注册启用,.gitignore 增设第一方插件例外
+(addons/* + !addons/editor_kit——原 addons/ 整体忽略会静默吞掉本插件,提交前 grep
+实锤纠正)。
+
+【机关·语义色彩】palette.gd 十槽冻结区后新增 buff(#4E9E58 绿·增益/安全)与 cool
+(#45B0BE 青·冷环境)两槽,data/palette.tres 同步登记;机关差异化色彩编码落地(同类
+同色、异类异色、色彩即语义),叠加形状冗余(色盲不止靠色辨)、惩罚门玩法增量、reduced_
+motion 收口、@tool 双分支纪律、编辑器态贴地;全轮取色零硬编码(diff 实证)。
+
+【UI·多页面与素材】图鉴新增三页:奖牌(archive_medals_page)/统计(archive_stats_page)/
+攻略(archive_howto_page),archive_kit 建页组件化经 preload 引用(不等全局类名缓存,
+check-only 与首跑 import 前都成立);素材面 8 个编辑器 SVG 共 13 处错色归位色板
+(#e04930→#e0492f 对齐 palette.red 等,含清单外 2 处 stroke 同步归位),assets 完整性
+全仓复验,clean_waste 零孤儿。
+
+【提交前收口】①六浮层 CLOSE_MS 本地字面量收口到 Ui.MOTION_MICRO_MS(act_panel_card/
+archive_panel/controls_panel/dual_pick_card/pause_menu/settings_panel,终审 verified
+项,模块化一致性合龙)。②字体子集从 v0.66 子集化前真原版(391cdd7,17,773,244B)重建:
+corpus 1560(新增 忘/象 等 20 字符来自过渡注释与教程文案),705,164B,wght 100-900 轴
+与 layout 特性全保留,fontcover ALL PASS(missing=18 全为白名单,unexpected=0);教训
+入档:「git 原版」=826e56b^ 的子集化前原版,HEAD 里的已是 v0.67 子集,对子集再子集
+不回字。③截图目检 2 张 corners 过渡「不播放」误报结案:一次性窗口化探针实证四象限块
+位置数学/可见性链/渲染全正常,六腿重拍(点前缀 .shots_wf 目录,Godot 导入器不扫描)
+全部真实播放——前一轮为锁屏期帧饥饿瞬态,非代码缺陷。
+
+【门禁】import 0 错+全套 20 项一轮全绿:flow/native 17 场/stats/focus/trait/ambience/
+transition(18 断言)/replay/recall/dual 七链/nettest/level_audit/tiledata/door_audit/
+hotpath/keybind/fontcover/clean_waste;check-only 六浮层全绿;Windows debug 导出包实测
+(包内 autoshot exit 0 零脚本错误,分镜实拍全渲染)+ Android debug APK 29.5MB 出包;
+实机截图六腿(菜单/实机/设置/开场/过渡四式连拍/联机六页)目检通过。版本三件
+0.69.0/code 49。
+
+---
+
+## v0.68.0 · 共鸣踏板 + 计时赛奖牌/幽灵 + 动量手感 + 性能全链收口 + 关卡勘误(2026-10-04)
+
+用户令:「增强游戏性能,联网搜索优秀设计,加入更多玩法。打磨优化现在的全部玩法和交互
+设计。增强Godot节点化,人工编辑性能,组件化。速度,摆放,合作,切换,传送,多样,多人,
+风格化。深度调研,联网搜索。全网借鉴。关卡勘误迭代。」
+
+【调研】键位三真相互证:InputMap(project.godot 运行时真值)× main.gd 键表源码正则 × 键位
+指南文档三方逐行对账,结论零漂移(v0.67「1–5 选择剧目」一类文档漂移自此被门禁拦截);
+机关组件化先勘后动:五机关碰撞形状装配与贴地/避顶判定逐场景差分,公共形收敛进 MechKit;
+性能热路径普查:全仓 _process/_physics_process 函数体扫描(无守卫重绘/热路径组查询/
+热路径字符串格式化三类),存量命中 5 处入棘轮白名单,新增违规由门禁拦截。
+
+【新玩法】①共鸣踏板:非活跃同伴驻板,为活跃体显形 320×24 纸桥;切走/死亡/离板即收,
+收桥化作 8% 幽灵线示意可回收;联机走 EV_RESONANCE 广播,双端实测一致。②计时赛血统:
+16 关全配金/银/铜奖牌(par×1.15/1.75/2.4),最速纪录自动存为幽灵(存档结构 v10 未动),
+HUD 计时旁实时差值小签——落后红字、领先用己方体色。③动量三件:超速不再被硬拉回,
+按摩擦×重力×空阻系数渗漏缓泄(over_speed_bleed_mult 可调);空中转向权随速度分级衰减
+(慢速仍灵、近极速守线,air_accel_min_ratio=0.20);置换几何体继承旧体水平速度
+×0.6(switch_momentum_ratio),切体不再是原地断速;三参数落 movement_default.tres。
+
+【性能】氛围音生成:缓冲 2048→512(64ms 尖峰摊成 16ms 小份),逐采样 fmod 改条件减一
+(结果逐位不变,顺带修正相位精度退化),乐句查表预译——运行期零字符串比较、零音名
+解析。重绘收口:门呼吸核心拆自绘子节点、门体仅高亮变更帧重绘,信标/标题字呼吸并入
+0.125s 节流桶,聚焦描边按变更刷,轨道环方点拆子节点只随位移;拖尾/琴砖特效改环形
+缓冲与复用数组,逐帧分配清零。常驻轮询收口:联机房间层删常驻 _process 改信号驱动,
+输入判定按物理帧缓存,地形索引失效帧末合并重建。新增 hotpath_audit 门禁棘轮化。
+
+【交互打磨】音效链:5200Hz 低通只挂一枚(音量滑条连发不再叠效果),音量刻度只在总线
+生效一次,每音效 3 声部轮替——连跳/连弹/双人同跳不再互断尾音。死亡-重试提速:淡出
+0.20→0.10、淡入 0.26→0.15(总链 ≤0.35s),死亡期起跳输入进 0.12s 缓冲,重生落地即跳;
+重开/再战不再重播 ≈3.0s 开场卡(首次进入路径不变)。倒计时 3→2→1 配 C5→D5→E5 上行、
+GO 配高八度;焦点导航补 hover 音(手柄/键盘与鼠标反馈一致)。HUD:触屏开场卡跳过钮
+可命中、结算键位提示与实际绑定一致、计时器值变才写字(逐帧字符串分配清零)。设置
+滑条拖动只应用不落盘,松手/关面板一次写盘(拖一次 ≈21 次同步写盘收敛为 1 次)。
+
+【架构与编辑器】MechKit 组件库落地:移动平台/限时桥/加速门/琴砖/滑雪带五机关的碰撞
+形状装配与贴地/避顶判定收敛一处(ensure_rect_shape / flush_offset),产物逐场景等价。
+native_level 编辑器化:名册空/成员缺出生点/缺门即场景黄条警告,新增 derive_bounds
+拨动属性按 Solid 包围盒一键推导 level_size/kill_y(运行期零行为)。键位对账门禁
+keybind_audit 入库:三真相互证,漂移逐条报行(KEYBIND: PASS / DRIFT)。
+
+【关卡勘误】关8 蓝门落地改地表可达(不再依赖不可跳上的悬空板);关14「限时桥」下方
+挖出真缺口,谷底加接住盆与记录点、提示牌正对缺口,假桥成真局;关15 高台嵌入桥改真
+缺口,中段加共鸣踏板免等捷径(限时桥仍是必经正路)。关6 记录点从虚空归位中板必经链;
+关10 两段深谷按关3正典加接住盆+谷底双记录点——「记录点接住每一次坠落」成真。关4
+蓝门塔旁教学提示牌+终场提示牌正对三门段+记录点移至门前+删尾部死区(关卡 6400→4400);
+关2 补滑雪带/限时桥提示牌;关3 限时桥与地表齐平消 22px 台阶。长直道补加速门+红色
+刻度节拍、限时桥关加速门挪上高台路线、末柱左移留呼吸空间;16 关同值 script/z_index
+复写清理(13 文件 190 行纯删),_template.tscn 重写为现行约定(八类常关注释样例)。
+
+【门禁】实测 16 项全 PASS:import 装载 0 错 / flow 过关链 / native_check 17 场 / stats /
+focus 焦点链 / trait 三体特性 / ambience 氛围四档 / replay 转场三腿 / recalltest 三链 /
+dualtest 七链 / nettest 联机自检 / level_audit 关卡审计 / door_ground_audit 门位审计 /
+tiledata 图集物理 / fontcover 字体覆盖 / clean_waste 孤儿清底;随包新增 hotpath_audit /
+keybind_audit / mech_resonance 三门禁入库并实测全 PASS(HOTPATH 0 新增违规 / KEYBIND 零漂移 /
+RESONANCE PASS——离板腿 settle 2→4 帧:Area2D 出区事件实测晚一拍,第 2 帧清表第 3 帧收桥,
+帧序诊断实证,机关逻辑零改)。版本三件 0.68.0/code 48
+
+
+---
+
 ## v0.61.0 · 全项目节点化:Main 组合根场景化 + 四面板代码建树清偿 + WheelPad 组件化(2026-10-03)
 
 用户令:「洞察分析深度重构,增强组件化,模块化地图机关制作。节点化全项目。联网搜索。全项目自主优化。」

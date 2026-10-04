@@ -6,6 +6,10 @@ signal closed
 
 var is_open := false
 var _tween: Tween
+var _close_tw: Tween
+
+# 关闭淡出时长=全局快档,收口到 Ui.MOTION_MICRO_MS。
+const CLOSE_MS := Ui.MOTION_MICRO_MS
 
 @onready var _root: Control = %Root
 @onready var _content: Control = %Content
@@ -131,6 +135,13 @@ func open() -> void:
 		return
 	is_open = true
 	Sfx.play("ui_open")
+	# 关闭淡出未播完时再次打开:杀掉收尾动画并复位状态。
+	if _close_tw != null and _close_tw.is_valid():
+		_close_tw.kill()
+		_close_tw = null
+		_root.mouse_filter = Control.MOUSE_FILTER_STOP
+		_shade.modulate.a = 1.0
+		_content.modulate.a = 1.0
 	_fit_content()
 	_root.visible = true
 	# 手柄/键盘开面板即入面板(关闭钮),杜绝 A 键穿透到底层菜单;
@@ -152,8 +163,25 @@ func close() -> void:
 		return
 	is_open = false
 	Sfx.play("ui_close")
-	_root.visible = false
 	closed.emit()
+	# 开合对称:关闭补与打开同参的淡出(anim 播完再隐藏);淡出期整
+	# 面板先让出鼠标,减动效直切。只动 modulate,不碰 size。
+	if SettingsManager.reduced_motion:
+		_root.visible = false
+		return
+	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if _close_tw != null and _close_tw.is_valid():
+		_close_tw.kill()
+	_close_tw = create_tween()
+	_close_tw.set_parallel(true)
+	_close_tw.tween_property(_shade, "modulate:a", 0.0, CLOSE_MS / 1000.0)
+	_close_tw.tween_property(_content, "modulate:a", 0.0, CLOSE_MS / 1000.0)
+	_close_tw.chain().tween_callback(func() -> void:
+		_root.visible = false
+		_root.mouse_filter = Control.MOUSE_FILTER_STOP
+		_shade.modulate.a = 1.0
+		_content.modulate.a = 1.0
+		_close_tw = null)
 
 
 func go_back() -> void:

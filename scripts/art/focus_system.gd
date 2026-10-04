@@ -111,6 +111,8 @@ func _apply(instant: bool, delta := 0.0) -> void:
 			want = (main.players[slot] as Player).def.color
 			if SettingsManager.reduced_motion:
 				want.a = 0.55
+		# 逐帧全量重绘收进 hl want 变更分支:仅聚焦切换那一刻重绘一次
+		# (激活门的后续脉冲重绘由门自身 _process 的高亮激活期负责)。
 		if d.hl_color != want:
 			d.hl_color = want
-		d.queue_redraw()
+			d.queue_redraw()

@@ -112,7 +112,11 @@ func _ready() -> void:
 	_hud.race_rematch_requested.connect(func() -> void:
 		if race != null and race.phase == RaceController.Phase.FINISHED:
 			race.rematch())
+	# 竞速 3-2-1 阶梯音(3→2→1 对应 C5→D5→E5 上行)+ GO 用 C6 高音。
+	race.countdown.connect(func(n: int) -> void:
+		Sfx.play_note(["C5", "D5", "E5"][clampi(3 - n, 0, 2)]))
 	race.countdown.connect(_hud.race_countdown)
+	race.race_go.connect(func() -> void: Sfx.play_note("C6", true))
 	race.race_go.connect(_hud.race_go)
 	race.race_finished.connect(_on_race_finished)
 
@@ -259,10 +263,10 @@ func _joybind(action: String, ev: InputEvent) -> void:
 	InputMap.action_add_event(action, ev)
 
 
-func start_level_dual(index := 0) -> void:
+func start_level_dual(index := 0, intro := true) -> void:
 	if NetSession.I != null and NetSession.I.is_net():
 		return
-	start_level(index)
+	start_level(index, intro)
 	dual_mode = true
 
 	if roster.players.size() >= 2:

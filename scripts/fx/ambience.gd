@@ -2,7 +2,7 @@ class_name Ambience
 extends Node
 
 
-const CHUNK := 2048
+const CHUNK := 512
 const BASE_DB := -18.0
 const RATE := 32000.0
 const MAX_VOICES := 24
@@ -31,12 +31,32 @@ static func _load_motif(id: String) -> AmbienceMotif:
 
 
 static func _motif_view(res: AmbienceMotif) -> Dictionary:
+	# 预译(set_motif 一次性成本):波形名→波形码、音名→频率、时值→秒、
+	# 衰减/发送全算好;运行期每步零字符串比较、零音名解析。
+	var bps := res.bpm / 60.0
 	var steps: Array = []
 	for st in res.steps:
-		steps.append([st.beat, st.note, st.dur_beats, st.wave, st.vol])
+		var wname: String = st.wave
+		var wcode := 0
+		if wname == "tri":
+			wcode = 1
+		elif wname == "bell":
+			wcode = 2
+		var dur_s := float(st.dur_beats) / bps
+		var dec := minf(2.2, 2.0 / maxf(dur_s, 0.5))
+		var send := 0.35
+		if wcode == 2:
+			dec = minf(1.4, dec)
+			send = 0.55
+		# 条目 = [beat, freq, dur_s, vol, dec, send, wcode]
+		steps.append([st.beat, Sfx.note_freq(st.note), dur_s, float(st.vol),
+			dec, send, wcode])
 	var pads: Array = []
 	for pad in res.pads:
-		pads.append([pad.beat, pad.notes, pad.dur_beats, pad.vol])
+		var freqs := PackedFloat64Array()
+		for note in pad.notes:
+			freqs.append(Sfx.note_freq(note))
+		pads.append([pad.beat, freqs, float(pad.dur_beats) / bps, float(pad.vol)])
 	return {"bpm": res.bpm, "cycle": res.cycle, "wind": res.wind,
 		"drone": res.drone, "steps": steps, "pads": pads}
 
@@ -224,7 +244,7 @@ func _v_kill(i: int) -> void:
 
 func _fill(buf: PackedVector2Array) -> void:
 	if _motif.is_empty():
-		for i in CHUNK:
+		for i in buf.size():
 			buf[i] = Vector2.ZERO
 		return
 	var bpm: float = _motif["bpm"]
@@ -235,7 +255,7 @@ func _fill(buf: PackedVector2Array) -> void:
 	var pads: Array = _motif["pads"]
 	var drone: Array = _motif["drone"]
 	var drone_n := drone.size()
-	for i in CHUNK:
+	for i in buf.size():
 		_t += 1.0 / RATE
 		_lfo_phase += 0.62 / RATE
 		_beat_pos += beats_per_sec / RATE
@@ -262,34 +282,27 @@ func _fill(buf: PackedVector2Array) -> void:
 			beat.emit(BeatKind.HALF, hi)
 
 		while _step_idx < steps.size() and steps[_step_idx][0] <= _beat_pos:
+			# 条目已预译:[beat, freq, dur_s, vol, dec, send, wcode]
 			var st: Array = steps[_step_idx]
-			var wname: String = st[3]
-			var wcode := 0
-			if wname == "tri":
-				wcode = 1
-			elif wname == "bell":
-				wcode = 2
-			var dur_s := float(st[2]) / beats_per_sec
-			var dec := minf(2.2, 2.0 / maxf(dur_s, 0.5))
-			var send := 0.35
-			if wcode == 2:
-				dec = minf(1.4, dec)
-				send = 0.55
-			_spawn(Sfx.note_freq(str(st[1])), wcode, dur_s, float(st[4]),
-				dec, 0.012, send, 0.0)
+			var f: float = st[1]
+			var wcode: int = st[6]
+			var dur_s: float = st[2]
+			var vol: float = st[3]
+			var dec: float = st[4]
+			var send: float = st[5]
+			_spawn(f, wcode, dur_s, vol, dec, 0.012, send, 0.0)
 			beat.emit(BeatKind.MELODY, _step_idx)
 			_step_idx += 1
 
 		while _pad_idx < pads.size() and pads[_pad_idx][0] <= _beat_pos:
 			var pd: Array = pads[_pad_idx]
-			for note in pd[1]:
-				var f := Sfx.note_freq(str(note))
-				var pad_dur := float(pd[2]) / beats_per_sec
-
-				_spawn(f, 3, pad_dur, float(pd[3]) * 0.4, 0.06, 2.2, 0.22,
-					-0.28)
-				_spawn(f * 1.0015, 3, pad_dur, float(pd[3]) * 0.4, 0.06,
-					2.4, 0.22, 0.28)
+			var freqs: PackedFloat64Array = pd[1]
+			var pad_dur: float = pd[2]
+			var pad_vol: float = pd[3] * 0.4
+			for f2 in freqs:
+				_spawn(f2, 3, pad_dur, pad_vol, 0.06, 2.2, 0.22, -0.28)
+				_spawn(f2 * 1.0015, 3, pad_dur, pad_vol, 0.06, 2.4, 0.22,
+					0.28)
 			_pad_idx += 1
 
 		var lfo := 0.5 + 0.5 * sin(TAU * _lfo_phase)
@@ -301,8 +314,11 @@ func _fill(buf: PackedVector2Array) -> void:
 		var send_r := 0.0
 
 		for d in drone_n:
-			_drone_phase[d] += _drone_inc[d]
-			var ph: float = fmod(_drone_phase[d], 1.0)
+			# 增量恒 <1:条件减一替代 fmod(结果不变,免逐采样取模)。
+			var ph: float = _drone_phase[d] + _drone_inc[d]
+			while ph >= 1.0:
+				ph -= 1.0
+			_drone_phase[d] = ph
 			var s := sin(TAU * ph)
 			var g: float = DRONE_GAIN[d] * (0.028 * (0.7 + 0.3 * lfo))
 			if d % 2 == 0:
@@ -325,7 +341,10 @@ func _fill(buf: PackedVector2Array) -> void:
 
 		var vi := 0
 		while vi < _v_n:
-			var phase: float = fmod(_v_phase[vi] + _v_inc[vi], 1.0)
+			# 增量恒 <1:条件减一替代 fmod(结果不变,免逐采样取模)。
+			var phase: float = _v_phase[vi] + _v_inc[vi]
+			while phase >= 1.0:
+				phase -= 1.0
 			_v_phase[vi] = phase
 			var env: float = _v_env[vi]
 			var atk: float = _v_atk[vi]

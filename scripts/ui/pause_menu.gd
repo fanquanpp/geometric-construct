@@ -5,6 +5,10 @@ extends CanvasLayer
 var m: Main
 
 var _open_tween: Tween
+var _close_tw: Tween
+
+# 关闭淡出时长=全局快档,收口到 Ui.MOTION_MICRO_MS。
+const CLOSE_MS := Ui.MOTION_MICRO_MS
 
 @onready var _root: Control = %Root
 @onready var _resume: Button = %ResumeBtn
@@ -67,6 +71,14 @@ func open() -> void:
 	_restart_btn.visible = not client
 	_leave_btn.text = "离开房间" if NetSession.I != null and NetSession.I.is_net() \
 		else "返 回 标 题"
+	# 关闭淡出未播完时再次打开:杀掉收尾动画并复位状态。
+	if _close_tw != null and _close_tw.is_valid():
+		_close_tw.kill()
+		_close_tw = null
+		_root.mouse_filter = Control.MOUSE_FILTER_STOP
+		_dim.modulate.a = 1.0
+		_panel.modulate.a = 1.0
+		_panel.scale = Vector2.ONE
 	_root.visible = true
 	Sfx.play("pause")
 	_resume.grab_focus()
@@ -86,13 +98,28 @@ func open() -> void:
 
 
 func close() -> void:
-	if _root.visible and _open_tween != null and _open_tween.is_running():
-
+	if not _root.visible:
+		return
+	if _open_tween != null and _open_tween.is_running():
 		_open_tween.kill()
+	# 开合对称:关闭补淡出(anim 播完再隐藏);减动效直切。
+	if SettingsManager.reduced_motion:
+		_root.visible = false
+		return
+	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if _close_tw != null and _close_tw.is_valid():
+		_close_tw.kill()
+	_close_tw = create_tween()
+	_close_tw.set_parallel(true)
+	_close_tw.tween_property(_dim, "modulate:a", 0.0, CLOSE_MS / 1000.0)
+	_close_tw.tween_property(_panel, "modulate:a", 0.0, CLOSE_MS / 1000.0)
+	_close_tw.chain().tween_callback(func() -> void:
+		_root.visible = false
+		_root.mouse_filter = Control.MOUSE_FILTER_STOP
 		_dim.modulate.a = 1.0
 		_panel.modulate.a = 1.0
 		_panel.scale = Vector2.ONE
-	_root.visible = false
+		_close_tw = null)
 
 
 func grab_resume() -> void:

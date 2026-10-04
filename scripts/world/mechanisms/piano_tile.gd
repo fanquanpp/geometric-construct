@@ -4,7 +4,10 @@ class_name PianoTile
 extends StaticBody2D
 
 
-@export var size := Vector2(300, 24)
+@export var size := Vector2(300, 24):
+	set(v):
+		size = v
+		update_configuration_warnings()
 @export var note := ""
 @export var sig_value := 1
 var hl_color := Color(0, 0, 0, 0)
@@ -12,20 +15,7 @@ var _pulse := 0.0
 var _last_played := {}
 var _in_contact := {}
 var _flush_off := 0.0
-
-
-func _calc_flush(half_h: float) -> void:
-	var gtop := TerrainKit.floor_top_at(get_parent(), global_position.x,
-		global_position.y - half_h + 2.0, 60.0)
-	if gtop != TerrainKit.SURFACE_MISS:
-		_flush_off = clampf(gtop - (global_position.y - half_h), 0.0, half_h * 2.0)
-		return
-	var cbot := TerrainKit.ceil_bottom_at(get_parent(), global_position.x,
-		global_position.y + half_h, 60.0)
-	if cbot != -TerrainKit.SURFACE_MISS:
-		_flush_off = clampf(cbot - (global_position.y + half_h), -half_h * 2.0, 0.0)
-
-
+var _floor_missed := false
 
 
 var _sig := ""
@@ -37,14 +27,9 @@ func _ready() -> void:
 	collision_layer = sig_value
 	collision_mask = 0
 	add_to_group("piano")
-	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if cs == null:
-		cs = CollisionShape2D.new()
-		add_child(cs)
-	if cs.shape == null:
-		cs.shape = RectangleShape2D.new()
-	cs.shape.size = size
-	_calc_flush(size.y / 2.0)
+	var cs := MechKit.ensure_rect_shape(self, size)
+	_flush_off = MechKit.flush_offset(get_parent(), global_position,
+		size.y / 2.0)
 	cs.position = Vector2(0, _flush_off)
 	add_child(TerrainKit.rect_occluder(
 		Rect2(Vector2(-size.x / 2.0, -size.y / 2.0 + _flush_off), size)))
@@ -64,11 +49,30 @@ func _process(delta: float) -> void:
 
 
 func _editor_sync(force: bool) -> void:
-	var s := str(size)
+	var s := str(size) + "|" + str(global_position)
 	if not force and s == _sig:
 		return
 	_sig = s
+	# 编辑器态贴地所见即所得:与运行期 _ready 同一贴地判定函数
+	# (MechKit.flush_offset → TerrainKit.floor_top_at,同参)——
+	# 编辑器/运行期零分叉;CollisionShape2D 偏移与运行期 _ready
+	# 的 cs.position 同步(组件场景自带该子节点,缺失则跳过)。
+	_flush_off = MechKit.flush_offset(get_parent(), global_position,
+		size.y / 2.0)
+	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs != null:
+		cs.position = Vector2(0, _flush_off)
+	_floor_missed = _flush_off == 0.0 and TerrainKit.floor_top_at(
+		get_parent(), global_position.x, global_position.y - size.y * 0.5 + 2.0,
+		60.0) == TerrainKit.SURFACE_MISS
 	queue_redraw()
+
+
+func _get_configuration_warnings() -> PackedStringArray:
+	var out := PackedStringArray()
+	if Engine.is_editor_hint() and _floor_missed:
+		out.append("下方无 Solid 瓦片:贴地判定落空,外观/碰撞保持原位。")
+	return out
 
 
 func strike(player: Player, impact: float) -> void:

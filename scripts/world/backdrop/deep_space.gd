@@ -3,6 +3,9 @@ extends Node2D
 # 星阵由种子程序生成,数量形态运行时确定(procedural-art)。
 # 闪烁速率倍率(twinkle)由 BackdropPreset 下发;动画关 = 定格相位 0 重绘一次后停。
 # 重绘纪律:持续动画仅星闪与十字星微漂移,统一 0.125s 节流。
+# 五层深度带之「天幕」(scroll_scale.x 0.05-0.1,最远带):星色保持纸色
+# 低 alpha;远景降阶(明度对比压/降饱和)由 Backdrop 在 accent 类色上施加,
+# 中性纸色本体不二次处理。
 
 const TILE := Vector2(2600, 1300)
 const REDRAW_STEP := 0.125

@@ -1,20 +1,74 @@
-; 关卡模板(原生作关脚手架,levels.md §0):新关卡 = 复制本文件改名
-; <场名>.tscn,再按 native_level.gd 摆放约定补 Spawn<N> / 机关 / 门 /
-; 提示 / 记录点实例。本模板不登记 LevelData.SCENES,不会进战役目录。
-[gd_scene load_steps=3 format=3]
+; 关卡模板(原生作关脚手架,v0.68 现行约定):新关卡 = 复制本文件改名
+; <场名>.tscn,按下面注释样例补齐 Spawn / 机关 / 门 / 提示 / 记录点实例,
+; 再在 scripts/data/level_data.gd SCENES 登记(不登记不进战役目录)。
+; 边界推导约定(native_level.gd derive_bounds,格 100px):
+;   level_size.x = Solid 右缘 + 200;level_size.y = Solid 下缘 + 200
+;   kill_y = level_size.y + 200;top_kill_y = Solid 上缘 - 400
+;   左缘贴 x=0 边界墙恒足额,内容自 x=0 起,勿越入负列。
+[gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1"]
-[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2"]
+[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="2_ts"]
+[ext_resource type="PackedScene" path="res://scenes/world/spawn_marker.tscn" id="3_spn"]
+
+; 常机关 ext_resource 样例(用到哪个补哪个,放上行区):
+; [ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="4_door"]
+; [ext_resource type="PackedScene" path="res://scenes/world/checkpoint_beacon.tscn" id="5_bc"]
+; [ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="6_hint"]
+; [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/timed_bridge.tscn" id="7_bridge"]
+; [ext_resource type="PackedScene" path="res://scenes/entities/speed_gate.tscn" id="8_gate"]
+; [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/mover.tscn" id="9_mover"]
+; [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/ski_patch.tscn" id="10_ski"]
+; [ext_resource type="PackedScene" path="res://scenes/world/mechanisms/resonance_pedal.tscn" id="11_pedal"]
 
 [node name="LevelRoot" type="Node2D"]
-script = ExtResource("1")
-level_name = "新关"
+script = ExtResource("1_nl")
+level_name = "第x幕·第x关"
 intro_text = "第一行教操作,第二行教原理。"
+focus = 0
+roster = Array[int]([0])
 level_size = Vector2(3600, 2000)
+kill_y = 2600.0
+top_kill_y = -420.0
 [node name="Decor" type="TileMapLayer" parent="."]
-tile_set = ExtResource("2")
+tile_set = ExtResource("2_ts")
 [node name="Solid" type="TileMapLayer" parent="."]
 z_index = 1
-tile_set = ExtResource("2")
-[node name="Spawn0" type="Marker2D" parent="."]
+tile_set = ExtResource("2_ts")
+; 出生点:每名册成员一个,geo_index 绑几何体;地表点上方(整格地表 y-25)。
+[node name="Spawn0" parent="." instance=ExtResource("3_spn")]
+geo_index = 0
 position = Vector2(300, 1275)
+; 终点门:geo_index 归属几何体;落地门 y = 地表行顶 - 46(门高 92,底边贴地)。
+; [node name="ExitDoor0" parent="." instance=ExtResource("4_door")]
+; position = Vector2(3000, 854)
+; geo_index = 0
+; 记录点:原点 = 站面上方 50(触发区 72×96 悬于原点上段);谷底盆沿用同式。
+; [node name="CheckpointBeacon0" parent="." instance=ExtResource("5_bc")]
+; position = Vector2(1500, 850)
+; 提示牌:节点上方约 200,一句一门课;文案见键位指南既有句式。
+; [node name="HintMarker0" parent="." instance=ExtResource("6_hint")]
+; position = Vector2(800, 1050)
+; text = "黄:弹性 ×4,落弹即起"
+; 限时桥:中心定位,厚 24 的桥顶与地表齐平 → y = 地表行顶 + 12;跨真缺口。
+; [node name="TimedBridge0" parent="." instance=ExtResource("7_bridge")]
+; position = Vector2(1300, 1312)
+; size = Vector2(400, 24)
+; 加速门:zone 底缘 = 地表 - 20(地表 900 时 y=800、zone 260×160)。
+; [node name="SpeedGate0" parent="." instance=ExtResource("8_gate")]
+; position = Vector2(1400, 800)
+; zone_size = Vector2(260, 160)
+; 移动平台:中心定位,travel 为行程向量;行程端不得与实心格重叠。
+; [node name="Mover0" parent="." instance=ExtResource("9_mover")]
+; position = Vector2(1820, 580)
+; size = Vector2(240, 40)
+; travel = Vector2(0, -160)
+; 滑雪带:中心定位,贴地表。
+; [node name="SkiPatch0" parent="." instance=ExtResource("10_ski")]
+; position = Vector2(1750, 1275)
+; size = Vector2(400, 40)
+; 共鸣踏板:原点 = 地表点(上半露出作触发区),桥沿 +x 自右缘延伸齐地表;
+; channel 联机按通道广播;只作捷径,不承担唯一路线。
+; [node name="ResonancePedal0" parent="." instance=ExtResource("11_pedal")]
+; position = Vector2(2800, 700)
+; channel = 1

@@ -1,7 +1,7 @@
 class_name SaveManager
 
 
-const SAVE_VERSION := 10
+const SAVE_VERSION := 11
 const SAVE_PATH := "user://speed-rouge.cfg"
 const LEGACY_PATH := "user://lonelyblocks.cfg"
 
@@ -14,8 +14,15 @@ var cleared := {}
 var best_ms := {}
 var level_deaths := {}
 var perf := {}
+var ghosts := {}
 var total_deaths := 0
 var total_play_ms := 0
+
+# 教程进度(tutorial 波,v11 纯追加):done=通关过教学关(菜单入口不再
+# 强推);seen=见过教学局(首启进过教程/按过跳过)。旧档两键缺省 false,
+# 迁移零重排——教程关不占 SCENES/ACTS 存档下标。
+var tutorial_done := false
+var tutorial_seen := false
 
 
 func _init() -> void:
@@ -34,6 +41,7 @@ func load_save() -> void:
 		var ver := int(cfg.get_value("meta", "save_version", 1))
 		unlocked = int(cfg.get_value("progress", "unlocked", 0))
 		_load_stats(cfg)
+		_load_tutorial(cfg)
 		_migrate(ver, cfg)
 		return
 
@@ -62,8 +70,12 @@ func write_save() -> void:
 		cfg.set_value("stats", "lv%d_deaths" % li, level_deaths[li])
 	for li: int in perf:
 		cfg.set_value("stats", "lv%d_perf" % li, true)
+	for li: int in ghosts:
+		cfg.set_value("stats", "lv%d_ghost" % li, ghosts[li])
 	cfg.set_value("stats", "total_deaths", total_deaths)
 	cfg.set_value("stats", "total_play_ms", total_play_ms)
+	cfg.set_value("tutorial", "done", tutorial_done)
+	cfg.set_value("tutorial", "seen", tutorial_seen)
 	var tmp := SAVE_PATH + ".tmp"
 	if cfg.save(tmp) != OK:
 		return
@@ -110,6 +122,32 @@ func best_time_of(li: int) -> int:
 	return int(best_ms.get(li, -1))
 
 
+## 最佳幽灵存取:平铺 [ms, 体数, (geo_index, 样本数, t/x/y×样本数)×体数]。
+## 旧档无此键 = 缺省空数组(无幽灵),v10 存档结构不动。
+func best_ghost_of(li: int) -> PackedFloat32Array:
+	return ghosts.get(li, PackedFloat32Array())
+
+
+func store_best_ghost(li: int, ms: int, samples: Dictionary) -> void:
+	ghosts[li] = flatten_ghost(ms, samples)
+
+
+static func flatten_ghost(ms: int, samples: Dictionary) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	out.append(float(ms))
+	out.append(float(samples.size()))
+	for key: int in samples:
+		var arr: Array = samples[key]
+		out.append(float(key))
+		out.append(float(arr.size()))
+		for s in arr:
+			var pos: Vector2 = s["pos"]
+			out.append(float(int(s["t"])))
+			out.append(pos.x)
+			out.append(pos.y)
+	return out
+
+
 func cleared_count() -> int:
 	return cleared.size()
 
@@ -129,7 +167,7 @@ func long_time_text(ms: int) -> String:
 func _load_stats(cfg: ConfigFile) -> void:
 	if not cfg.has_section("stats"):
 		return
-	var m := RegEx.create_from_string("^lv(\\d+)_(cleared|best_ms|deaths|perf)$")
+	var m := RegEx.create_from_string("^lv(\\d+)_(cleared|best_ms|deaths|perf|ghost)$")
 	for key: String in cfg.get_section_keys("stats"):
 		var hit := m.search(key)
 		if hit == null:
@@ -146,8 +184,20 @@ func _load_stats(cfg: ConfigFile) -> void:
 			"perf":
 				if bool(cfg.get_value("stats", key, false)):
 					perf[li] = true
+			"ghost":
+				var arr: PackedFloat32Array = cfg.get_value("stats", key,
+					PackedFloat32Array())
+				if arr.size() >= 3:
+					ghosts[li] = arr
 	total_deaths = int(cfg.get_value("stats", "total_deaths", 0))
 	total_play_ms = int(cfg.get_value("stats", "total_play_ms", 0))
+
+
+## 教程进度读取(独立段 tutorial,不进 stats 正则面):旧档/键缺失 =
+## 缺省 false,读侧天然兼容,无需迁移重排。
+func _load_tutorial(cfg: ConfigFile) -> void:
+	tutorial_done = bool(cfg.get_value("tutorial", "done", false))
+	tutorial_seen = bool(cfg.get_value("tutorial", "seen", false))
 
 
 func _migrate(from_version: int, _cfg: ConfigFile) -> void:
@@ -215,6 +265,11 @@ func _migrate(from_version: int, _cfg: ConfigFile) -> void:
 		level_deaths = moved10[2]
 		perf = moved10[3]
 		unlocked = maxi(remap10.call(unlocked), 0)
+	if from_version < 11:
+		# v0.69 tutorial 波:教程进度两键(tutorial/done、tutorial/seen)
+		# 纯追加,旧档(v10-)缺省 false 即正确语义(未通关、未看过),
+		# 零重排零搬移——_load_tutorial 已按缺省读出,此处仅占迁移账位。
+		pass
 	unlocked = maxi(unlocked, 0)
 
 

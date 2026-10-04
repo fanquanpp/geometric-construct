@@ -4,7 +4,10 @@ extends CanvasLayer
 
 signal covered
 
-enum Style { FADE, SWEEP, BLOCKS_RED, CORNERS, CURTAIN }
+## 式样矩阵(v0.68 重锚):SWEEP=关间 / CURTAIN=回菜单与进房 /
+## FADE=重开 / CORNERS=进关 reveal / SLABS=WIN 入场(构成主义页面
+## 转场语汇);BLOCKS_RED 随死包装器清退(tutorial 波执行 hud 侧)。
+enum Style { FADE, SWEEP, BLOCKS_RED, CORNERS, CURTAIN, SLABS }
 
 # v0.55.0 白屏根治:SWEEP/BLOCKS_RED 原为 canvas_item shader 驱动
 # (progress uniform + 白底 ColorRect),安卓 Vulkan 上 shader 首用编译
@@ -17,6 +20,7 @@ const EDGE_RED := Color(0.878, 0.286, 0.184)
 var _veil: ColorRect
 var _sweep: SweepDraw
 var _blocks: BlocksDraw
+var _slabs: SlabsDraw
 var _corners: Array[ColorRect] = []
 var _curtain: CurtainDraw
 var _busy := false
@@ -36,6 +40,8 @@ func _ready() -> void:
 	add_child(_sweep)
 	_blocks = BlocksDraw.new()
 	add_child(_blocks)
+	_slabs = SlabsDraw.new()
+	add_child(_slabs)
 	for i in 4:
 		var q := ColorRect.new()
 		q.color = Color("101216")
@@ -58,6 +64,22 @@ func _ready() -> void:
 
 func is_busy() -> bool:
 	return _busy
+
+
+## 直驱遮挡契约(v0.68,供 game_flow 消费:回菜单兜底、WIN 入场 cover):
+## transition() 被单飞拒绝时下一帧重试直至接管(忙期=在飞转场尾段,
+## 有界 ~2.2×dur 必然收敛,v0.66 忙时帧重试同款口径),cover 回调必达
+## 且调用方永不落入「无遮挡直切」。reduced_motion 由 transition() 自带
+## 硬切降级,回调当帧直达。
+func cover_then(style: int, dur: float, on_covered: Callable) -> void:
+	if not is_inside_tree():
+		on_covered.call()
+		return
+	if transition(style, dur, on_covered):
+		return
+	await get_tree().process_frame
+	if is_inside_tree():
+		cover_then(style, dur, on_covered)
 
 
 func active_style() -> int:
@@ -85,6 +107,8 @@ func transition(style: int, dur: float, on_covered: Callable) -> bool:
 			_run_wipe(_sweep, dur, my, on_covered)
 		Style.BLOCKS_RED:
 			_run_wipe(_blocks, dur, my, on_covered)
+		Style.SLABS:
+			_run_wipe(_slabs, dur, my, on_covered)
 		Style.CORNERS:
 			_run_corners(dur, my, on_covered)
 		Style.CURTAIN:
@@ -132,6 +156,8 @@ func _reset_all() -> void:
 	_sweep.visible = false
 	_blocks.phase = 0.0
 	_blocks.visible = false
+	_slabs.phase = 0.0
+	_slabs.visible = false
 	_curtain.visible = false
 	_active_style = -1
 
@@ -202,6 +228,9 @@ func _corners_cover_instant() -> void:
 
 
 func _run_corners(dur: float, my: int, on_covered: Callable) -> void:
+	# v0.55.2 同款病史(covers _run_wipe:179):层体忘了显形,象限块
+	# 子节点自 visible 也没用——整段 CORNERS 转场一帧都不渲染。
+	visible = true
 	_veil.color = Color(0, 0, 0, 0)
 	var tw := create_tween()
 	tw.tween_method(_corners_slide, 0.0, 1.0, dur)
@@ -321,6 +350,47 @@ class BlocksDraw extends WipeDraw:
 				if _edge_on() and h >= t - 0.06:
 					col = COVER_INK.lerp(Color(EDGE_RED, 1.0), 0.85)
 				draw_rect(Rect2(cx * cw, cy * ch, cw + 0.6, ch + 0.6), col)
+
+
+## 构成主义斜切色块(v0.68 页面转场语汇):红/墨/纸三块斜切平行四边形
+## 依次追尾扫过,行进前缘 1px 纸缘线;纯 _draw 几何(shader 退役路线
+## 延续),reduced_motion 下与其他式一致退化为硬切。满覆时刻三块并立
+## 铺满(红|墨|纸 斜切三分屏),收场反序退场。
+class SlabsDraw extends WipeDraw:
+
+	const COUNT := 3
+	const SLANT := 0.14  # 斜切前缘水平投影 = 屏高 14%
+	const CHASE := 0.35  # 块间追尾相位差(首块 t=0 起跑,末块恰 t=1 满覆)
+
+	static func cols() -> Array[Color]:
+		return [Palette.I.red, COVER_INK, Palette.I.paper]
+
+
+	func _draw() -> void:
+		var t := _cover_t()
+		if t <= 0.0:
+			return
+		var w := size.x
+		var h := size.y
+		var s := h * SLANT
+		var band := (w + s) / float(COUNT)
+		# 归一斜率:末块恰在 t=1 满覆,扫过全程无死等段。
+		var k := float(COUNT) + float(COUNT - 1) * CHASE
+		var palette := cols()
+		for i in COUNT:
+			# 块 i 底边区间 [b_i, b_i+1],顶边右移 s;首块底边出屏 -s,
+			# 满覆时刻顶/底两排均超出屏界,不留缝。
+			var b := band * float(i) - s
+			var p := clampf(t * k - float(i) * CHASE, 0.0, 1.0)
+			if p <= 0.0:
+				continue
+			var front := b + p * band
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(b + s, 0.0), Vector2(front + s, 0.0),
+				Vector2(front, h), Vector2(b, h)]), palette[i])
+			if _edge_on() and p < 1.0:
+				draw_line(Vector2(front + s, 0.0), Vector2(front, h),
+					Color(Palette.I.paper, 0.9), 1.0)
 
 
 class CurtainDraw extends Control:

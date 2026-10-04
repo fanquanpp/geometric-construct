@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cylps8pcntocc"
-path="res://.godot/imported/progen_out_ref.png-90a2bc179bbb5416bd23363e06fc77b0.ctex"
+uid="uid://bv3meu25slgeb"
+path="res://.godot/imported/resonance_pedal.svg-e2e2873e93ccdb4a5b8c0d4598efd468.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://tools/level_refs/progen_out_ref.png"
-dest_files=["res://.godot/imported/progen_out_ref.png-90a2bc179bbb5416bd23363e06fc77b0.ctex"]
+source_file="res://assets/editor/resonance_pedal.svg"
+dest_files=["res://.godot/imported/resonance_pedal.svg-e2e2873e93ccdb4a5b8c0d4598efd468.ctex"]
 
 [params]
 
@@ -38,3 +38,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
+svg/scale=1.0
+editor/scale_with_editor_scale=false
+editor/convert_colors_with_editor_theme=false
