@@ -34,7 +34,10 @@ const CLOSE_MS := Ui.MOTION_MICRO_MS
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_apply_styles()
+	# _apply_styles(BodyPad 重植手术)必须垫在 _ready 末尾:手术把 Body 摘挂
+	# 重植后,Body 子树内 %unique 名解析失效(4.7 实证,手术前解析正常)——
+	# 本函数 45-55 行的分区/行/分隔线 % 查找若排在手术后即全数 Node not
+	# found 并中止 _ready,信号接线与滑杆样式全断(v0.70.0 回归教训)。
 
 	# 行结构/控件在 settings_panel.tscn;此处只做调色派生样式、
 	# 文案 SSOT(分辨率档取自 SettingsManager)与信号接线。
@@ -102,10 +105,17 @@ func _ready() -> void:
 			Main.I.backdrop.refresh_gate())
 
 	_foot.add_theme_constant_override("separation", 12)
+	# 触屏 44px 命中下限:页脚导航档与关闭钮经 nav_h() 换算(全页统一,
+	# 本页曾是唯一漏网)。
+	_foot.custom_minimum_size.y = Ui.nav_h()
+	(%CloseBtn as Button).custom_minimum_size.y = Ui.nav_h()
 	Ui.style(%VerLabel, 12, Ui.LIGHT, Palette.I.dim)
 	%VerLabel.text = "%s · %s" % [Version.GAME_TITLE_EN, Version.full_string()]
 	Ui.wire_button(%CloseBtn)
 	(%CloseBtn as Button).pressed.connect(func() -> void: close())
+
+	# 手术垫尾(见 _ready 头注释):主题/标题/滚动条样式+BodyPad 重植。
+	_apply_styles()
 
 
 func _style_section(section: Control, mark: ColorRect, label: Label) -> void:
@@ -215,6 +225,11 @@ func open() -> void:
 		_tween.kill()
 	_shade.modulate.a = 0.0
 	_content.modulate.a = 0.0
+	# 减动效直切(与 pause/act_panel/controls/archive 同模):不播入场 Tween。
+	if SettingsManager.reduced_motion:
+		_shade.modulate.a = 1.0
+		_content.modulate.a = 1.0
+		return
 	var page := Ui.MOTION_PAGE_MS / 1000.0
 	_tween = create_tween()
 	_tween.set_parallel(true)

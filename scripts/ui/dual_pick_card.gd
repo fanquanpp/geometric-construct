@@ -97,6 +97,13 @@ func open_card(touch: bool) -> void:
 	_shade.modulate.a = 0.0
 	_card.modulate.a = 0.0
 	_card.pivot_offset = _card.size / 2.0
+	# 减动效直切(与 pause/act_panel/controls/archive 同模):BACK 回弹
+	# 正是减动效应跳过的动效,不播入场 Tween。
+	if SettingsManager.reduced_motion:
+		_shade.modulate.a = 1.0
+		_card.modulate.a = 1.0
+		_card.scale = Vector2.ONE
+		return
 	var page := Ui.MOTION_PAGE_MS / 1000.0
 	_tween = create_tween()
 	_tween.set_parallel(true)

@@ -529,7 +529,12 @@ func restart_from_pause() -> void:
 	_pause.close()
 	if _state == State.PAUSED:
 		_state = State.PLAYING
-		_restart_level()
+		# 双人竞速正规重开=rematch(局分保留):game_flow.restart_level 对
+		# dual 硬拒(v0.70 双护栏),此处若仍走 _restart_level 即静默死按钮。
+		if dual_mode:
+			race.rematch()
+		else:
+			_restart_level()
 
 
 func quit_to_menu() -> void:
