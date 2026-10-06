@@ -78,7 +78,7 @@ theme_override_constants/separation = 10
 
 [node name="WheelFixedBtn" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/WheelRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 40)
+custom_minimum_size = Vector2(132, 42)
 size_flags_vertical = 4
 toggle_mode = true
 theme_override_font_sizes/font_size = 15
@@ -86,27 +86,11 @@ text = "固定位置"
 
 [node name="WheelFloatBtn" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/WheelRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 40)
+custom_minimum_size = Vector2(132, 42)
 size_flags_vertical = 4
 toggle_mode = true
 theme_override_font_sizes/font_size = 15
 text = "按下位置"
-
-[node name="VibRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
-unique_name_in_owner = true
-theme_override_constants/separation = 12
-
-[node name="Label" type="Label" parent="Root/Content/ScrollWrap/Scroll/Body/VibRow"]
-size_flags_vertical = 4
-text = "触感反馈(按键轻震)"
-
-[node name="Spacer" type="Control" parent="Root/Content/ScrollWrap/Scroll/Body/VibRow"]
-size_flags_horizontal = 3
-
-[node name="VibBtn" type="CheckButton" parent="Root/Content/ScrollWrap/Scroll/Body/VibRow"]
-unique_name_in_owner = true
-size_flags_vertical = 4
-toggle_mode = true
 
 [node name="ShakeRow" type="HBoxContainer" parent="Root/Content/ScrollWrap/Scroll/Body"]
 unique_name_in_owner = true
@@ -160,21 +144,21 @@ theme_override_constants/separation = 10
 
 [node name="ResBtn0" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/VideoResRow/ResRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 40)
+custom_minimum_size = Vector2(132, 42)
 size_flags_vertical = 4
 toggle_mode = true
 theme_override_font_sizes/font_size = 15
 
 [node name="ResBtn1" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/VideoResRow/ResRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 40)
+custom_minimum_size = Vector2(132, 42)
 size_flags_vertical = 4
 toggle_mode = true
 theme_override_font_sizes/font_size = 15
 
 [node name="ResBtn2" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/VideoResRow/ResRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 40)
+custom_minimum_size = Vector2(132, 42)
 size_flags_vertical = 4
 toggle_mode = true
 theme_override_font_sizes/font_size = 15
@@ -192,7 +176,7 @@ size_flags_horizontal = 3
 
 [node name="AdaptiveBtn" type="Button" parent="Root/Content/ScrollWrap/Scroll/Body/VideoAdaptiveRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 40)
+custom_minimum_size = Vector2(132, 42)
 size_flags_vertical = 4
 toggle_mode = true
 theme_override_font_sizes/font_size = 15

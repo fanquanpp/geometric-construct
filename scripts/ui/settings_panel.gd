@@ -18,7 +18,6 @@ const CLOSE_MS := Ui.MOTION_MICRO_MS
 @onready var _foot: HBoxContainer = %Foot
 @onready var _wheel_fixed_btn: Button = %WheelFixedBtn
 @onready var _wheel_float_btn: Button = %WheelFloatBtn
-@onready var _vib_btn: CheckButton = %VibBtn
 @onready var _shake_btn: CheckButton = %ShakeBtn
 @onready var _bgfx_btn: CheckButton = %BgfxBtn
 @onready var _sfx_slider: HSlider = %SfxSlider
@@ -48,7 +47,7 @@ func _ready() -> void:
 	_style_section(%SectionAudio, %AudioMark, %AudioHeadLabel)
 	_style_section(%SectionAccess, %AccessMark, %AccessHeadLabel)
 	Ui.style(%WheelCaption, 12, Ui.LIGHT, Palette.I.dim)
-	for rl: Label in [%VibRow/Label, %ShakeRow/Label, %VideoResRow/Label,
+	for rl: Label in [%ShakeRow/Label, %VideoResRow/Label,
 			%VideoAdaptiveRow/Label, %VideoFsRow/Label, %SfxRow/Label,
 			%AmbRow/Label, %MotionRow/Label, %BgfxRow/Label]:
 		Ui.style(rl, 15, Ui.BODY, Color(Palette.I.paper, 0.88))
@@ -58,7 +57,7 @@ func _ready() -> void:
 	for b: Button in [_wheel_fixed_btn, _wheel_float_btn, _adaptive_btn] \
 			+ _res_btns:
 		Ui.wire_button(b)
-	for c: CheckButton in [_vib_btn, _shake_btn, _fs_btn, _motion_btn, _bgfx_btn]:
+	for c: CheckButton in [_shake_btn, _fs_btn, _motion_btn, _bgfx_btn]:
 		Ui.wire_button(c, "")
 
 	for i: int in SettingsManager.RESOLUTIONS.size():
@@ -67,9 +66,6 @@ func _ready() -> void:
 		(_res_btns[i] as Button).pressed.connect(func() -> void: _set_resolution(r))
 	_wheel_fixed_btn.pressed.connect(func() -> void: _set_wheel(SettingsManager.WHEEL_FIXED))
 	_wheel_float_btn.pressed.connect(func() -> void: _set_wheel(SettingsManager.WHEEL_FLOAT))
-	_vib_btn.toggled.connect(func(on: bool) -> void:
-		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
-		SettingsManager.set_vibration(on))
 	_shake_btn.toggled.connect(func(on: bool) -> void:
 		Sfx.play("ui_toggle_on" if on else "ui_toggle_off")
 		SettingsManager.set_screen_shake(on))
@@ -137,6 +133,19 @@ func _apply_styles() -> void:
 	# 加宽纵向滚动条预留位:右列开关 / 分辨率钮与滚动条脱开,触控不互扰
 	(%Scroll as ScrollContainer).get_v_scroll_bar().custom_minimum_size = \
 		Vector2(16, 0)
+	# 行内容与滚动条真实留隙:headless 探针实证(Godot 4.8-dev6)ScrollContainer
+	# 的 panel content_margin 会连滚动条一起内缩(内容↔滚动条 gap=0,真机开关
+	# 描边与滚动条相贴 ≤2px 即此因),Theme 层留隙无效——把 Body 包进右缘
+	# 10px 的 MarginContainer,行右缘与 16px 滚动条槽位彻底脱开。
+	var pad := MarginContainer.new()
+	pad.name = "BodyPad"
+	pad.add_theme_constant_override("margin_right", 10)
+	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var body: Control = %Body
+	var scroll: ScrollContainer = %Scroll
+	scroll.remove_child(body)
+	scroll.add_child(pad)
+	pad.add_child(body)
 	_root.resized.connect(_fit_content)
 	_fit_content()
 
@@ -164,8 +173,11 @@ func _fit_content() -> void:
 	_frame.size = Adaptive.DESIGN
 	_frame.position = Vector2(16, 16)
 	_frame.size = Adaptive.DESIGN - Vector2(32, 32)
-	_foot.position = Vector2(64, Adaptive.DESIGN.y - 76)
-	_foot.size = Vector2(Adaptive.DESIGN.x - 128, 46)
+	# 关闭带归格(Ui.BAND_RIGHT/BAND_BOTTOM 单一真值,右距 64/下距 24/高 42;
+	# 原 y=DESIGN.y-76/高 46 有 10px 偏差,与 controls/archive 对齐)。
+	_foot.position = Vector2(Ui.BAND_RIGHT,
+		Adaptive.DESIGN.y - Ui.BAND_BOTTOM - Ui.BTN_NAV_H)
+	_foot.size = Vector2(Adaptive.DESIGN.x - Ui.BAND_RIGHT * 2.0, Ui.BTN_NAV_H)
 
 
 func _style_slider(s: HSlider) -> void:
@@ -197,17 +209,17 @@ func open() -> void:
 	_sync_from_settings()
 	_root.visible = true
 	# 手柄/键盘开面板即入面板(首项:轮盘布局),A 键不再穿透到底层菜单;
-	# 纯触屏不抓焦点(无意义选中框)。
-	if not Adaptive.is_touch_mode():
-		_wheel_fixed_btn.grab_focus()
+	# 纯触屏不抓焦点(无意义选中框)——守卫统一走 Ui 工厂。
+	Ui.grab_focus_guarded(_wheel_fixed_btn)
 	if _tween != null:
 		_tween.kill()
 	_shade.modulate.a = 0.0
 	_content.modulate.a = 0.0
+	var page := Ui.MOTION_PAGE_MS / 1000.0
 	_tween = create_tween()
 	_tween.set_parallel(true)
-	_tween.tween_property(_shade, "modulate:a", 1.0, 0.20)
-	_tween.tween_property(_content, "modulate:a", 1.0, 0.24).set_delay(0.04)
+	_tween.tween_property(_shade, "modulate:a", 1.0, page)
+	_tween.tween_property(_content, "modulate:a", 1.0, page).set_delay(0.04)
 
 
 func close() -> void:
@@ -243,7 +255,6 @@ func _sync_from_settings() -> void:
 		== SettingsManager.WHEEL_FIXED)
 	_wheel_float_btn.set_pressed_no_signal(SettingsManager.wheel_mode
 		== SettingsManager.WHEEL_FLOAT)
-	_vib_btn.set_pressed_no_signal(SettingsManager.vibration)
 	_shake_btn.set_pressed_no_signal(SettingsManager.screen_shake)
 	_bgfx_btn.set_pressed_no_signal(SettingsManager.background_fx)
 	if not OS.has_feature("mobile"):

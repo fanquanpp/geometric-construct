@@ -4,9 +4,8 @@ extends CanvasLayer
 
 enum Phase { NONE, PICK, HOST, JOIN, LOBBY, MAP, ROLE }
 
-# 页面转场淡出时长(120/240/450 三档精神之「快」档;transitions 波
-# 统一收口到 ui.gd 时替换为共享常量)。
-const PAGE_MS := 120.0
+# 页面转场淡出时长:收口到全局三档之「快」档(ui.gd 单一真值)。
+const PAGE_MS := Ui.MOTION_MICRO_MS
 # JOIN 搜索超时:超时后空态引导改用 IP 直连。
 const JOIN_SEARCH_TIMEOUT_S := 10.0
 
@@ -109,8 +108,9 @@ func _page_ready() -> void:
 
 
 func _grab_first() -> void:
-	# 触屏免抓焦(对齐 v0.67 面板口径:纯触屏开面板不 grab_focus)。
-	if not visible or Adaptive.is_touch_mode():
+	# 每页首钮抓焦(开面板即入页,A 键不再穿透);触屏免抓焦(对齐
+	# v0.67 面板口径)统一收口到 Ui.grab_focus_guarded 工厂。
+	if not visible:
 		return
 	var first: Button = null
 	var any: Button = null
@@ -125,8 +125,7 @@ func _grab_first() -> void:
 		stack.append_array(c.get_children())
 	if first == null:
 		first = any
-	if first != null:
-		first.grab_focus()
+	Ui.grab_focus_guarded(first)
 
 @onready var _root: Control = %Root
 @onready var _shade: ColorRect = %Shade
@@ -277,7 +276,8 @@ func _refresh_status_line() -> void:
 func _big_btn(text: String, sub: String, on_press: Callable, disabled := false,
 		variation := "") -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 78)
+	# 页内主操作档(Ui.BTN_PRIMARY_H=78,与双人卡同族同档)。
+	b.custom_minimum_size = Vector2(0, Ui.BTN_PRIMARY_H)
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.text = "%s\n      %s" % [text, sub]
 	b.add_theme_font_override("font", Ui.HEAD)
@@ -308,7 +308,7 @@ func _fill_pick() -> void:
 	_body.add_child(_big_btn("加入房间", "搜索附近房间,或手动输入主机 IP",
 		func() -> void: _show_join()))
 
-	_body.add_child(_big_btn("返回", "回到标题菜单",
+	_body.add_child(_big_btn("« 返回", "回到标题菜单",
 		func() -> void: back_out(), false, "Button_ghost"))
 	_refresh_status_line()
 	_page_ready()
@@ -392,7 +392,7 @@ func _fill_join() -> void:
 	_body.add_child(_ip_edit)
 	_body.add_child(_big_btn("直连该 IP", "与主机直连(二维码拉起后置)",
 		func() -> void: _join_ip(_ip_edit.text.strip_edges())))
-	_body.add_child(_big_btn("返回", "回到上一步",
+	_body.add_child(_big_btn("« 返回", "回到上一步",
 		func() -> void: back_out(), false, "Button_ghost"))
 	NetSession.I.beacon.start_seek()
 	if not NetSession.I.beacon.rooms_changed.is_connected(_refresh_rooms):
@@ -433,6 +433,7 @@ func _refresh_rooms() -> void:
 		var ok_gate: bool = NetConfig.compatible(str(r["ver"]), str(r["hash"]))
 		var full: bool = int(r["n"]) >= int(r["max"])
 		var b := Button.new()
+		# 高度语义豁免:房间行=两行信息列表行(62 档非三档钮)。
 		b.custom_minimum_size = Vector2(0, 62)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.add_theme_font_override("font", Ui.HEAD)
@@ -511,7 +512,7 @@ func _fill_map() -> void:
 					LevelData.scene_roster(idx).size(), " / ".join(names)],
 				func() -> void: NetSession.I.host_pick_level(idx),
 				not NetSession.I.is_host()))
-	_body.add_child(_big_btn("返回", "回到房间等待页",
+	_body.add_child(_big_btn("« 返回", "回到房间等待页",
 		func() -> void: _show_host(), false, "Button_ghost"))
 	_refresh_status_line()
 	_page_ready()
@@ -545,10 +546,10 @@ func _fill_role() -> void:
 				NetSession.I.host_start_level(ns.pick_level),
 			true)
 		_body.add_child(_role_start)
-		_body.add_child(_big_btn("返回选图", "重新选择关卡",
+		_body.add_child(_big_btn("« 返回选图", "重新选择关卡",
 			func() -> void: _show_map(), false, "Button_ghost"))
 	else:
-		_body.add_child(_big_btn("返回等待页", "收起选角(认领保留)",
+		_body.add_child(_big_btn("« 返回等待页", "收起选角(认领保留)",
 			func() -> void: _show_lobby(), false, "Button_ghost"))
 	_refresh_role_line()
 	_refresh_role_btn()
@@ -562,6 +563,7 @@ func _claim_side(mine: Array, other: Array, gi: int) -> int:
 
 func _role_chip(gi: int) -> Button:
 	var b := Button.new()
+	# 高度语义豁免:认选卡=方形选角芯片(92 档非三档钮,近方卡非行钮)。
 	b.custom_minimum_size = Vector2(112, 92)
 	b.toggle_mode = true
 	b.set_meta("geo", gi)

@@ -11,6 +11,23 @@ const MOTION_SCENE_MS := 450
 const EASE_ENTER := Tween.EASE_OUT
 const EASE_EXIT := Tween.EASE_IN
 
+# —— 按钮位置网格(同类同位,v0.70 收敛:位置/尺寸只从这些常量取)——
+## 右下关闭带:关闭/结算操作钮统一锚此带(右距 64 / 下距 24 / 高 42 档)。
+const BAND_RIGHT := 64.0
+const BAND_BOTTOM := 24.0
+## 模态卡左下返回钮模板(act_panel_card.tscn 为母版):170×42「« 返回XX」。
+const BACK_SIZE := Vector2(170, 42)
+## 主菜单底部网格:两列三行,格 240×42,列步 260 / 行步 52(间隙 20/10),
+## 原点 (670,544);开始=整行左格,教程入口=右上格(menu_grid_rect 取格)。
+const MENU_GRID_ORIGIN := Vector2(670, 544)
+const MENU_GRID_STEP := Vector2(260, 52)
+const MENU_GRID_CELL := Vector2(240, 42)
+## 高度三档:42 行内导航/返回/关闭 · 78 页内主操作 · 44 触点命中下限。
+## 触屏模式下导航档经 nav_h() 自动换算到 44(视觉差 2px,不破 42 档语义)。
+const BTN_NAV_H := 42.0
+const BTN_PRIMARY_H := 78.0
+const BTN_TOUCH_MIN := 44.0
+
 static var BODY: Font
 static var HEAD: Font
 static var TITLE: Font
@@ -287,8 +304,8 @@ static func make_theme(size := 18) -> Theme:
 	th.set_color("font_color", "Label", Palette.I.paper)
 
 	# CheckButton 开关(设置页等):默认主题的药丸是图标绘制,stylebox
-	# 覆盖不可达;改为程序化生成两态同尺寸药丸图标——关=暗板+纸缘,
-	# 开=红板,触控命中区一致,暗场状态可辨。
+	# 覆盖不可达;改为程序化生成两态同尺寸方形图标——关=暗板+纸缘,
+	# 开=红板,方钮带墨缘,触控命中区一致,暗场状态可辨。
 	th.set_icon("checked", "CheckButton", _toggle_icon(true))
 	th.set_icon("unchecked", "CheckButton", _toggle_icon(false))
 	th.set_icon("checked_disabled", "CheckButton", _toggle_icon(true, true))
@@ -313,7 +330,7 @@ static func make_theme(size := 18) -> Theme:
 	th.set_color("selection_color", "LineEdit", Color(Palette.I.red, 0.35))
 
 	# HSlider 抓块:默认圆形不在构成主义语言里,换程序化方形抓块
-	# (常态纸色 / 悬停红,带墨缘),与开关药丸同一工艺。
+	# (常态纸色 / 悬停红,带墨缘),与开关方钮同一工艺。
 	for spec: Array in [["grabber", false], ["grabber_highlight", true],
 			["grabber_disabled", false]]:
 		th.set_icon(str(spec[0]), "HSlider", _slider_grabber(bool(spec[1])))
@@ -354,7 +371,9 @@ static func _slider_grabber(highlight: bool) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
-## 两态开关药丸图标:64×32,圆角板 + 纸色旋钮(开=右,关=左)。
+## 两态开关方形图标(椭圆根除,构成主义棱角语言):64×32 方板硬角 +
+## 纸缘,方钮(开=右,关=左)带墨缘;禁用态整体减淡。消费方只认
+## CheckButton 图标槽,尺寸/接口与旧药丸一致,设置页零改动。
 static func _toggle_icon(on: bool, disabled := false) -> ImageTexture:
 	var img := Image.create_empty(64, 32, false, Image.FORMAT_RGBA8)
 	var fill := Palette.I.red if on else Color(Palette.I.paper, 0.10)
@@ -365,28 +384,57 @@ static func _toggle_icon(on: bool, disabled := false) -> ImageTexture:
 	var knob := Color(Palette.I.paper, 0.92) if not disabled else Color(Palette.I.paper, 0.55)
 	for y in 32:
 		for x in 64:
-			var d := _rounded_rect_dist(x, y, Rect2(2, 2, 60, 28), 14.0)
-			if d <= 0.0:
+			if x >= 2 and x < 62 and y >= 2 and y < 30:
 				img.set_pixel(x, y, fill)
-			elif d <= 2.0:
+			elif x >= 1 and x < 63 and y >= 1 and y < 31:
 				img.set_pixel(x, y, edge)
-	var kx := 46.0 if on else 18.0
-	for y in range(6, 26):
-		for x in range(6, 58):
-			if Vector2(x + 0.5, y + 0.5).distance_to(Vector2(kx, 16.0)) <= 9.0:
+	var kx := 38 if on else 8
+	for y in range(7, 25):
+		for x in range(kx, kx + 18):
+			if x == kx or x == kx + 17 or y == 7 or y == 24:
+				img.set_pixel(x, y, Palette.I.ink)
+			else:
 				img.set_pixel(x, y, knob)
 	return ImageTexture.create_from_image(img)
 
 
-## 点到圆角矩形的有符号距离(外正内负),供药丸绘制判定。
-static func _rounded_rect_dist(x: int, y: int, r: Rect2, radius: float) -> float:
-	var p := Vector2(x + 0.5, y + 0.5)
-	var c := r.get_center()
-	var h := r.size * 0.5 - Vector2(radius, radius)
-	var q := (p - c).abs() - h
-	var outer := Vector2(maxf(q.x, 0.0), maxf(q.y, 0.0)).length()
-	var inner := minf(maxf(q.x, q.y), 0.0)
-	return outer + inner - radius
+## 导航档高(触屏换算):命中下限纪律——触屏模式下 42 档自动换算到
+## 44 触点档,键鼠/手柄维持 42;视觉差 2px 不改档位语义。
+static func nav_h() -> float:
+	return BTN_TOUCH_MIN if Adaptive.is_touch_mode() else BTN_NAV_H
+
+
+## 触屏守卫抓焦点(v0.70 统一收口):键鼠/手柄开面板即入首钮,A 键不再
+## 穿透到底层;纯触屏不抓焦点(无意义选中框)。全部面板统一走此工厂,
+## 不再各写一遍 is_touch_mode 分支。
+static func grab_focus_guarded(ctrl: Control) -> void:
+	if ctrl != null and is_instance_valid(ctrl) and not Adaptive.is_touch_mode():
+		ctrl.grab_focus()
+
+
+## 右下关闭带锚定:按钮贴父容器右下,BAND_RIGHT=右距 64 / BAND_BOTTOM=
+## 下距 24,高 42 档(触屏经 nav_h() 换算 44,带底对齐不变);index 为
+## 从右数第几格(0 = 最右),同带宽钮间格距 10。
+static func pin_close_band(ctrl: Control, index := 0, gap := 10.0) -> void:
+	var w := ctrl.custom_minimum_size.x
+	var h := maxf(ctrl.custom_minimum_size.y, nav_h())
+	ctrl.anchor_left = 1.0
+	ctrl.anchor_top = 1.0
+	ctrl.anchor_right = 1.0
+	ctrl.anchor_bottom = 1.0
+	ctrl.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	ctrl.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	ctrl.offset_left = -(BAND_RIGHT + w + float(index) * (w + gap))
+	ctrl.offset_right = -(BAND_RIGHT + float(index) * (w + gap))
+	ctrl.offset_top = -(BAND_BOTTOM + h)
+	ctrl.offset_bottom = -BAND_BOTTOM
+
+
+## 主菜单底部网格取格(col/row 从 0 起):返回 240×42 格的设计坐标矩形
+## (触屏高换算 44 由调用方以 nav_h() 定尺寸,格位不变)。
+static func menu_grid_rect(col: int, row: int) -> Rect2:
+	return Rect2(MENU_GRID_ORIGIN + Vector2(col, row) * MENU_GRID_STEP,
+		MENU_GRID_CELL)
 
 
 static func wire_button(b: Button, click_sfx := "ui_click") -> void:
@@ -458,7 +506,8 @@ static func _button_scale(b: Button, target: float) -> void:
 			old.kill()
 	var tw := b.create_tween()
 	b.set_meta("bump_tw", tw)
-	tw.tween_property(b, "scale", Vector2.ONE * target, 0.10) \
+	tw.tween_property(b, "scale", Vector2.ONE * target,
+		Ui.MOTION_MICRO_MS / 1000.0) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 

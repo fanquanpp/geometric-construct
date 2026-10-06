@@ -83,9 +83,11 @@ func play_entrance() -> void:
 
 	var tw := create_tween()
 	tw.set_parallel(true)
+	var micro := Ui.MOTION_MICRO_MS / 1000.0
+	var page := Ui.MOTION_PAGE_MS / 1000.0
 
-	tw.tween_property(_mark, "modulate:a", 1.0, 0.12)
-	tw.tween_property(_mark, "scale", Vector2.ONE, 0.30) \
+	tw.tween_property(_mark, "modulate:a", 1.0, micro)
+	tw.tween_property(_mark, "scale", Vector2.ONE, page) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 	for i in _chars.size():
@@ -93,10 +95,10 @@ func play_entrance() -> void:
 		var lb := _chars[i]
 		var ctw := create_tween()
 		ctw.set_parallel(true)
-		ctw.tween_property(lb, "modulate:a", 1.0, 0.05).set_delay(delay)
-		ctw.tween_property(lb, "position:y", 0.0, 0.34) \
+		ctw.tween_property(lb, "modulate:a", 1.0, micro).set_delay(delay)
+		ctw.tween_property(lb, "position:y", 0.0, page) \
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT).set_delay(delay)
-		ctw.tween_property(lb, "rotation_degrees", 0.0, 0.30) \
+		ctw.tween_property(lb, "rotation_degrees", 0.0, page) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(delay)
 		ctw.chain().tween_callback(func() -> void: Sfx.play("ui_page"))
 
@@ -104,10 +106,10 @@ func play_entrance() -> void:
 	var stw := create_tween()
 	stw.tween_interval(last_delay)
 	stw.tween_callback(func() -> void: Sfx.play("ui_click"))
-	stw.tween_property(_sweep, "modulate:a", 1.0, 0.05)
-	stw.parallel().tween_property(_sweep, "size:x", custom_minimum_size.x, 0.34) \
+	stw.tween_property(_sweep, "modulate:a", 1.0, micro)
+	stw.parallel().tween_property(_sweep, "size:x", custom_minimum_size.x, page) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	stw.tween_property(_sweep, "modulate:a", 0.0, 0.22)
+	stw.tween_property(_sweep, "modulate:a", 0.0, micro)
 	stw.tween_callback(func() -> void: _entered = true)
 
 

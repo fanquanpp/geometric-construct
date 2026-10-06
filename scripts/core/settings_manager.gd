@@ -8,7 +8,6 @@ const WHEEL_FIXED := "fixed"
 const WHEEL_FLOAT := "float"
 
 static var wheel_mode := WHEEL_FIXED
-static var vibration := true
 static var screen_shake := true
 static var reduced_motion := false
 # 用户显式设置标记(设置页动过「减少动态」即永久置位):置位后系统
@@ -40,7 +39,8 @@ static func load_settings() -> void:
 	wheel_mode = str(cfg.get_value("control", "wheel_mode", WHEEL_FIXED))
 	if wheel_mode != WHEEL_FIXED and wheel_mode != WHEEL_FLOAT:
 		wheel_mode = WHEEL_FIXED
-	vibration = bool(cfg.get_value("control", "vibration", true))
+	# 旧档 control 段遗留的触感键(已全链清退)不读不写天然忽略;
+	# ConfigFile 对缺失键走缺省容错,无需迁移。
 	screen_shake = bool(cfg.get_value("accessibility", "screen_shake", true))
 	reduced_motion_set = bool(cfg.get_value("accessibility",
 		"reduced_motion_set", false))
@@ -62,7 +62,6 @@ static func load_settings() -> void:
 static func write_settings() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("control", "wheel_mode", wheel_mode)
-	cfg.set_value("control", "vibration", vibration)
 	cfg.set_value("accessibility", "screen_shake", screen_shake)
 	cfg.set_value("accessibility", "reduced_motion", reduced_motion)
 	cfg.set_value("accessibility", "reduced_motion_set", reduced_motion_set)
@@ -78,16 +77,6 @@ static func write_settings() -> void:
 static func set_wheel_mode(mode: String) -> void:
 	wheel_mode = mode if mode == WHEEL_FIXED or mode == WHEEL_FLOAT else WHEEL_FIXED
 	write_settings()
-
-
-static func set_vibration(on: bool) -> void:
-	vibration = on
-	write_settings()
-
-
-static func haptic(ms: int) -> void:
-	if vibration:
-		Input.vibrate_handheld(ms)
 
 
 static func set_sfx_volume(v: float) -> void:

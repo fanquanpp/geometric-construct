@@ -15,6 +15,12 @@ var tutorial_mode := false
 
 func _physics_process(delta: float) -> void:
 	if main != null and main._state == Main.State.PLAYING:
+		# 竞速收尾冻结(audit ⑩):FINISHED 后 run_ms 停走——HUD 计时器
+		# 与结算定格数字同口径,不再出现「结算停了、HUD 还在走」的分裂。
+		# 仅竞速局生效,单人路径零行为变化。
+		if main.dual_mode and main.race != null \
+				and main.race.phase == RaceController.Phase.FINISHED:
+			return
 		run_ms += int(delta * 1000.0)
 
 
@@ -22,13 +28,18 @@ func note_death() -> void:
 	run_deaths += 1
 
 
-func start_level(index: int, intro := true, scene_override := "") -> void:
+func start_level(index: int, intro := true, scene_override := "",
+		dual := false) -> void:
 	if main.debug_solo:
 		print("TRACE start_level(", index, ") state_was=", Main.State.keys()[main._state])
 	if scene_override.is_empty():
 		tutorial_mode = false
 	complete_seq += 1
-	main.dual_mode = false
+	# dual 入参(audit ⑤ 配套):双人竞速在建体期即置位 dual_mode——
+	# ghost.on_level_started 的 dual gate 在本函数内被调,置位晚了读不到
+	# (联机 gate 走 NetSession 持久态无此问题)。默认 false 与旧
+	# 「入场即清」逐字节一致,单人路径零行为变化。
+	main.dual_mode = dual
 	main.get_tree().paused = false
 	if main._pause != null:
 		main._pause.close()
@@ -65,8 +76,7 @@ func start_level(index: int, intro := true, scene_override := "") -> void:
 	main._hud.visible = true
 	main.touch_controls.set_in_game(true)
 
-	main.touch_controls.set_switch_available(
-		level_info.roster.size() > 1)
+	# 切换可用性死契约已清退(空实现零行为,空实现与两调用点同删)。
 	main._hud.show_win(false)
 	main._hud.set_level_info(current, level_info["name"])
 	main._refresh_roster()
@@ -148,6 +158,16 @@ func show_menu() -> void:
 
 func restart_level() -> void:
 	if main._state != Main.State.PLAYING:
+		return
+	# 竞速重开双护栏(audit ②③):
+	# a) 联机拒重开——restart 只在本机走 start_level,主机不广播 = 双端
+	#    失同步的根因;联机退路只有 EV_BACK 回房。
+	# b) 双人竞速拒重开——重开会清 race.wins 局分,dual 重开唯一正规
+	#    路径是 race.rematch()(局分保留);pause_menu 按钮语义归 ui 包,
+	#    本层硬兜底。
+	if NetSession.I != null and NetSession.I.is_net():
+		return
+	if main.dual_mode:
 		return
 	Sfx.play("restart")
 	# 重开走 intro=false:开场卡只在会话首次进关显示,重试不重播
@@ -249,10 +269,14 @@ func open_net_room() -> void:
 	# TRANSITION 锁输入(菜单数字键/面板键不再穿透,连点被吞),cover
 	# 回调才切 ROOM(时序同 return_to_menu 型);忙时兜底直开(有界收敛)。
 	main._state = Main.State.TRANSITION
-	if main._hud != null and main._hud.transition_curtain(
-			Ui.MOTION_SCENE_MS / 1000.0, func() -> void: _room_enter()):
-		return
-	_room_enter()
+	# 直切忙期保护闭环(dual 半边):hud 侧布尔回调包装器内部已改
+	# cover_then(忙时下一帧重试、回调必达),调用方不再读布尔返回值
+	# 兜底「忙→裸直切」;回调承接原尾行直呼,null 守卫走 else 直切。
+	if main._hud != null:
+		main._hud.transition_curtain(Ui.MOTION_SCENE_MS / 1000.0,
+			func() -> void: _room_enter())
+	else:
+		_room_enter()
 
 
 func _room_enter() -> void:
@@ -262,7 +286,7 @@ func _room_enter() -> void:
 
 
 func net_post_setup() -> void:
-	main.touch_controls.set_switch_available(true)
+	# 切换可用性死契约已清退(空实现零行为,空实现与两调用点同删)。
 	if NetSession.I.is_host():
 		var own: Array = NetSession.I.own_slots_arr()
 		if not own.is_empty():
@@ -304,10 +328,14 @@ func _net_back_to_room(after: Callable) -> void:
 		or main._state == Main.State.TRANSITION
 	if in_game:
 		main._state = Main.State.TRANSITION
-		if main._hud != null and main._hud.transition_curtain(
-				Ui.MOTION_SCENE_MS / 1000.0,
-				func() -> void: _room_restore(after)):
-			return
+		# 直切忙期保护闭环(dual 半边):同 open_net_room 口径——不再读
+		# 布尔返回值,回调承接 _room_restore,null 走 else 直还原。
+		if main._hud != null:
+			main._hud.transition_curtain(Ui.MOTION_SCENE_MS / 1000.0,
+				func() -> void: _room_restore(after))
+		else:
+			_room_restore(after)
+		return
 	_room_restore(after)
 
 
@@ -349,10 +377,14 @@ func net_host_lost(was_in_game: bool) -> void:
 		or main._state == Main.State.TRANSITION
 	if in_game:
 		main._state = Main.State.TRANSITION
-		if main._hud != null and main._hud.transition_curtain(
-				Ui.MOTION_SCENE_MS / 1000.0,
-				func() -> void: _host_lost_restore(msg)):
-			return
+		# 直切忙期保护闭环(dual 半边):同 open_net_room 口径——不再读
+		# 布尔返回值,回调承接 _host_lost_restore,null 走 else 直还原。
+		if main._hud != null:
+			main._hud.transition_curtain(Ui.MOTION_SCENE_MS / 1000.0,
+				func() -> void: _host_lost_restore(msg))
+		else:
+			_host_lost_restore(msg)
+		return
 	_host_lost_restore(msg)
 
 

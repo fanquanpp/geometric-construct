@@ -24,6 +24,9 @@ var _t := 0.0
 var _act_idx := -1
 var _last_act := 0
 var _tut_btn: Button
+# 入场淡入 Tween 引用:教程钮在 m 接线时(晚于本层 _ready)才创建,
+# 复用同一条 Tween 追加淡入步,不新增 create_tween 调用点。
+var _entrance_tw: Tween
 
 @onready var _root: Control = %Root
 @onready var _content: Control = %Content
@@ -73,6 +76,7 @@ func _ready() -> void:
 		var act: Dictionary = LevelData.ACTS[idx]
 		var b := Button.new()
 
+		# 高度语义豁免:剧目行=菜单主列表行(glyph 行,50 档非三档钮)。
 		b.custom_minimum_size = Vector2(490, 50)
 		b.add_theme_font_override("font", Ui.HEAD)
 		b.add_theme_font_size_override("font_size", 21)
@@ -131,7 +135,9 @@ func _ready() -> void:
 		toast("%02d — 未上演,敬请期待" % (k + 1)))
 	_dual_pick.same_pressed.connect(func() -> void:
 		close_dual_pick()
-		m.start_level_dual())
+		# 双人专关直进(LevelData.DUEL_SCENE_INDEX,levels 包落地):不再
+		# 固定第 0 关——旧路径 roster=[0] 单体关把双人开局塌成单人。
+		m.start_level_dual(LevelData.DUEL_SCENE_INDEX))
 	_dual_pick.cross_pressed.connect(func() -> void:
 		Sfx.play("ui_open")
 		# 焦点直交房间层:先还焦点给菜单钮再隐藏菜单会闪一帧焦点框,
@@ -197,6 +203,9 @@ func set_menu_focusable(on: bool) -> void:
 	var all: Array = _act_btns.duplicate()
 	for b: Button in [_start_btn, _dual_btn, _keys_btn, _panel_btn, _settings_btn]:
 		all.append(b)
+	# 教程入口同属菜单侧网格:模态期一并摘出焦点集,归还时一并恢复。
+	if _tut_btn != null:
+		all.append(_tut_btn)
 	if on:
 		for b: Button in all:
 			b.focus_mode = Control.FOCUS_ALL
@@ -228,24 +237,33 @@ func _play_entrance() -> void:
 			item.modulate.a = 1.0
 		for b: Control in _act_btns:
 			b.modulate.a = 1.0
+		if _tut_btn != null:
+			_tut_btn.modulate.a = 1.0
 		if _title_mark != null:
 			_title_mark.play_entrance()
 		return
+	var page := Ui.MOTION_PAGE_MS / 1000.0
 	var tw := create_tween()
+	_entrance_tw = tw
 	tw.set_parallel(true)
-	tw.tween_property(_kicker, "modulate:a", 1.0, 0.30).set_delay(0.10)
-	tw.tween_property(_intro, "modulate:a", 1.0, 0.35).set_delay(0.72)
+	tw.tween_property(_kicker, "modulate:a", 1.0, page).set_delay(0.10)
+	tw.tween_property(_intro, "modulate:a", 1.0, page).set_delay(0.72)
 	for item: Control in [_sec, _chapter_hint, _start_btn, _dual_btn,
 			_keys_btn, _panel_btn, _settings_btn]:
 		item.modulate.a = 0.0
-		tw.tween_property(item, "modulate:a", 1.0, 0.22).set_delay(0.55)
+		tw.tween_property(item, "modulate:a", 1.0, page).set_delay(0.55)
 
 	for i in _act_btns.size():
 		var b: Button = _act_btns[i]
 		b.modulate.a = 0.0
-		tw.tween_property(b, "modulate:a", 1.0, 0.22).set_delay(0.55 + i * 0.06)
-	tw.tween_property(_keys, "modulate:a", 1.0, 0.25).set_delay(1.30)
-	tw.tween_property(_ver_left, "modulate:a", 1.0, 0.25).set_delay(1.40)
+		tw.tween_property(b, "modulate:a", 1.0, page).set_delay(0.55 + i * 0.06)
+	# 教程入口同批淡入(m 接线晚于本层 _ready 时由 _maybe_add_tutorial_btn
+	# 追加到同一 Tween,零新增 create_tween 调用点)。
+	if _tut_btn != null:
+		_tut_btn.modulate.a = 0.0
+		tw.tween_property(_tut_btn, "modulate:a", 1.0, page).set_delay(0.55)
+	tw.tween_property(_keys, "modulate:a", 1.0, page).set_delay(1.30)
+	tw.tween_property(_ver_left, "modulate:a", 1.0, page).set_delay(1.40)
 	if _title_mark != null:
 		_title_mark.play_entrance()
 
@@ -420,9 +438,11 @@ func toast(msg: String) -> void:
 	if _toast_tw != null and _toast_tw.is_valid():
 		_toast_tw.kill()
 	_toast_tw = create_tween()
-	_toast_tw.tween_property(_toast_label, "modulate:a", 1.0, 0.12)
+	_toast_tw.tween_property(_toast_label, "modulate:a", 1.0,
+		Ui.MOTION_MICRO_MS / 1000.0)
 	_toast_tw.tween_interval(1.6)
-	_toast_tw.tween_property(_toast_label, "modulate:a", 0.0, 0.45)
+	_toast_tw.tween_property(_toast_label, "modulate:a", 0.0,
+		Ui.MOTION_SCENE_MS / 1000.0)
 
 
 var _toast_tw: Tween
@@ -511,16 +531,31 @@ func _maybe_add_tutorial_btn() -> void:
 		return
 	_tut_btn = Button.new()
 	_tut_btn.text = "新手教程"
-	_tut_btn.custom_minimum_size = Vector2(200, 48)
-	_tut_btn.position = Vector2(4, 486)
+	# 归格并入主菜单底部网格(Ui.menu_grid_rect(1,0) = 右上格 930,544,
+	# 240×42):旧 position (4,486) 越出取景框(Frame 16..1264)且不入格。
+	var cell := Ui.menu_grid_rect(1, 0)
+	_tut_btn.position = cell.position
+	_tut_btn.custom_minimum_size = Vector2(cell.size.x, Ui.nav_h())
+	_tut_btn.size = Vector2(cell.size.x, Ui.nav_h())
 	_tut_btn.add_theme_font_size_override("font_size", 16)
 	Ui.wire_button(_tut_btn)
 	_tut_btn.pressed.connect(func() -> void: m.game_flow.start_tutorial())
 	_content.add_child(_tut_btn)
-	# 键鼠点击/触屏点按直达;手柄侧由键位指南钮左向接入(左右自指
-	# 让出后仍成环:教程钮 ← KeysBtn ← DualBtn)。
-	_tut_btn.focus_neighbor_left = _tut_btn.get_path_to(_tut_btn)
-	_tut_btn.focus_neighbor_right = _tut_btn.get_path_to(_keys_btn)
-	_tut_btn.focus_neighbor_top = _tut_btn.get_path_to(_tut_btn)
-	_tut_btn.focus_neighbor_bottom = _tut_btn.get_path_to(_tut_btn)
-	_keys_btn.focus_neighbor_left = _keys_btn.get_path_to(_tut_btn)
+	# 入格淡入:m 接线晚于 _play_entrance,追加到同一条入场 Tween(零新增
+	# create_tween);入场已收/reduced_motion 则直显。
+	if SettingsManager.reduced_motion or _entrance_tw == null \
+			or not _entrance_tw.is_valid():
+		_tut_btn.modulate.a = 1.0
+	else:
+		_tut_btn.modulate.a = 0.0
+		_entrance_tw.tween_property(_tut_btn, "modulate:a", 1.0,
+			Ui.MOTION_PAGE_MS / 1000.0).set_delay(0.55)
+	# 网格焦点接线(钮在右上格):左↔开始钮互达、下↔双人钮、上归剧目行,
+	# 右自指;开始钮右向改指教程钮——十字键不出网格。
+	_tut_btn.focus_neighbor_left = _tut_btn.get_path_to(_start_btn)
+	_tut_btn.focus_neighbor_right = _tut_btn.get_path_to(_tut_btn)
+	_tut_btn.focus_neighbor_top = _tut_btn.get_path_to(
+		_act_btns[clampi(_last_act, 0, _act_btns.size() - 1)])
+	_tut_btn.focus_neighbor_bottom = _tut_btn.get_path_to(_dual_btn)
+	_start_btn.focus_neighbor_right = _start_btn.get_path_to(_tut_btn)
+	_dual_btn.focus_neighbor_top = _dual_btn.get_path_to(_tut_btn)

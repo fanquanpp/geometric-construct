@@ -15,7 +15,7 @@ intro_text = ""
 focus = 0
 roster = Array[int]([0, 1])
 level_size = Vector2(2600, 2000)
-kill_y = 1500
+kill_y = 2200
 top_kill_y = -420
 [node name="Decor" type="TileMapLayer" parent="."]
 z_index = 0

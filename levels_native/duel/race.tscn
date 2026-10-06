@@ -1,0 +1,57 @@
+[gd_scene format=4]
+
+; 双人竞速专关(SCENES index 17,DUEL_SCENE_INDEX;三工坊契约 ui/dual+net+dualtest)。
+; 对称双生点:红左黄右各奔对面之门;中央 2 格缺口是唯一地形风险(红平跳 3 格、
+; 黄平跳 3 格均可越,level_audit BFS 双向实证);踏板/限时桥刻意不用——竞速场
+; 不承担机关教学,纯地形对等。装饰只用纸色刻度 (3,3)(随幕染亦不偏色)。
+; 边界按 derive_bounds 公式:level_size=(Solid 右缘+200, 下缘+200)=(5000,1600),
+; kill_y=1800;top_kill_y 留 -420(双段跳自阶梯顶可探至 ~y700,收顶会误杀)。
+[ext_resource type="Script" path="res://scripts/world/native_level.gd" id="1_nl"]
+[ext_resource type="TileSet" path="res://data/tiles/native_tileset.tres" id="3_ts"]
+[ext_resource type="PackedScene" path="res://scenes/world/checkpoint_beacon.tscn" id="4_bc"]
+[ext_resource type="PackedScene" path="res://scenes/entities/exit_door.tscn" id="8_door"]
+[ext_resource type="PackedScene" path="res://scenes/world/hint_marker.tscn" id="17_hint"]
+[ext_resource type="PackedScene" path="res://scenes/world/spawn_marker.tscn" id="15_spn"]
+
+[node name="LevelRoot" type="Node2D"]
+script = ExtResource("1_nl")
+level_name = "第四幕·第五关"
+intro_text = "对影双生:红与黄各据一端,越过中央缺口——先触到对面之门的那一个,更快。"
+roster = Array[int]([0, 1])
+level_size = Vector2(5000, 1600)
+kill_y = 1800.0
+top_kill_y = -420.0
+
+[node name="Decor" type="TileMapLayer" parent="."]
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAKAAkAAgADAAMAAAAKAAoAAgADAAMAAAAUAAkAAgADAAMAAAAUAAoAAgADAAMAAAAbAAkAAgADAAMAAAAbAAoAAgADAAMAAAAlAAkAAgADAAMAAAAlAAoAAgADAAMAAAA=")
+[node name="Solid" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = ExtResource("3_ts")
+tile_map_data = PackedByteArray("AAAAAAwAAAAAAAIAAAAAAA0AAAAGAAEAAAABAAwAAAABAAMAAAABAA0AAAAIAAMAAAACAAwAAAABAAMAAAACAA0AAAAIAAMAAAADAAwAAAABAAMAAAADAA0AAAAIAAMAAAAEAAwAAAABAAMAAAAEAA0AAAAIAAMAAAAFAAwAAAABAAMAAAAFAA0AAAAIAAMAAAAGAAwAAAABAAMAAAAGAA0AAAAIAAMAAAAHAAwAAAABAAMAAAAHAA0AAAAIAAMAAAAIAAwAAAABAAMAAAAIAA0AAAAIAAMAAAAJAAwAAAABAAMAAAAJAA0AAAAIAAMAAAAKAAwAAAABAAMAAAAKAA0AAAAIAAMAAAALAAwAAAABAAMAAAALAA0AAAAIAAMAAAAMAAsAAAAAAAIAAAAMAAwAAAADAAMAAAAMAA0AAAAIAAMAAAANAAsAAAAGAAIAAAANAAwAAAAFAAQAAAANAA0AAAAIAAMAAAAOAAwAAAABAAMAAAAOAA0AAAAIAAMAAAAPAAwAAAABAAMAAAAPAA0AAAAIAAMAAAAQAAwAAAABAAMAAAAQAA0AAAAIAAMAAAARAAwAAAABAAMAAAARAA0AAAAIAAMAAAASAAwAAAABAAMAAAASAA0AAAAIAAMAAAATAAwAAAABAAMAAAATAA0AAAAIAAMAAAAUAAwAAAABAAMAAAAUAA0AAAAIAAMAAAAVAAwAAAABAAMAAAAVAA0AAAAIAAMAAAAWAAwAAAAGAAIAAAAWAA0AAAAEAAMAAAAZAAwAAAAAAAIAAAAZAA0AAAAGAAEAAAAaAAwAAAABAAMAAAAaAA0AAAAIAAMAAAAbAAwAAAABAAMAAAAbAA0AAAAIAAMAAAAcAAwAAAABAAMAAAAcAA0AAAAIAAMAAAAdAAwAAAABAAMAAAAdAA0AAAAIAAMAAAAeAAwAAAABAAMAAAAeAA0AAAAIAAMAAAAfAAwAAAABAAMAAAAfAA0AAAAIAAMAAAAgAAwAAAABAAMAAAAgAA0AAAAIAAMAAAAhAAwAAAABAAMAAAAhAA0AAAAIAAMAAAAiAAsAAAAAAAIAAAAiAAwAAAADAAMAAAAiAA0AAAAIAAMAAAAjAAsAAAAGAAIAAAAjAAwAAAAFAAQAAAAjAA0AAAAIAAMAAAAkAAwAAAABAAMAAAAkAA0AAAAIAAMAAAAlAAwAAAABAAMAAAAlAA0AAAAIAAMAAAAmAAwAAAABAAMAAAAmAA0AAAAIAAMAAAAnAAwAAAABAAMAAAAnAA0AAAAIAAMAAAAoAAwAAAABAAMAAAAoAA0AAAAIAAMAAAApAAwAAAABAAMAAAApAA0AAAAIAAMAAAAqAAwAAAABAAMAAAAqAA0AAAAIAAMAAAArAAwAAAABAAMAAAArAA0AAAAIAAMAAAAsAAwAAAABAAMAAAAsAA0AAAAIAAMAAAAtAAwAAAABAAMAAAAtAA0AAAAIAAMAAAAuAAwAAAABAAMAAAAuAA0AAAAIAAMAAAAvAAwAAAAGAAIAAAAvAA0AAAAEAAMAAAA=")
+[node name="Spawn0" parent="." instance=ExtResource("15_spn")]
+geo_index = 0
+position = Vector2(400, 1175)
+[node name="Spawn1" parent="." instance=ExtResource("15_spn")]
+geo_index = 1
+position = Vector2(4400, 1175)
+[node name="CheckpointBeacon0" type="Area2D" parent="." instance=ExtResource("4_bc")]
+position = Vector2(1500, 1150)
+
+[node name="CheckpointBeacon1" type="Area2D" parent="." instance=ExtResource("4_bc")]
+position = Vector2(3300, 1150)
+
+[node name="ExitDoor0" type="Area2D" parent="." instance=ExtResource("8_door")]
+position = Vector2(4400, 1154)
+
+[node name="ExitDoor1" type="Area2D" parent="." instance=ExtResource("8_door")]
+position = Vector2(400, 1154)
+geo_index = 1
+
+[node name="HintMarker0" type="Node2D" parent="." instance=ExtResource("17_hint")]
+position = Vector2(900, 1000)
+text = "竞速:冲向对面之门"
+
+[node name="HintMarker1" type="Node2D" parent="." instance=ExtResource("17_hint")]
+position = Vector2(3900, 1000)
+text = "缺口要跳:落空会坠,记录点会接"

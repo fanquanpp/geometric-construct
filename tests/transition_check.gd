@@ -23,10 +23,11 @@ const TWEEN_MANIFEST := {
 	"ui/touch/wheel_pad.gd": 1,
 	"ui/touch_controls.gd": 1,
 	"ui/ui.gd": 4,
-	"world/backdrop/geo_sun.gd": 1,
-	"world/backdrop/orbit_rings.gd": 1,
-	"world/backdrop/ridge_body.gd": 1,
 	"world/backdrop.gd": 6,
+	"world/backdrop/box_tracks.gd": 1,
+	"world/backdrop/data_net.gd": 1,
+	"world/backdrop/horizon_line.gd": 1,
+	"world/backdrop/mega_wedge.gd": 1,
 }
 
 var _fails := 0
@@ -319,4 +320,43 @@ func _source_contract() -> int:
 	if not fxtxt.contains("func cover_then"):
 		fails += 1
 		print("TRANSITION FAIL: cover_then 契约缺失")
+	fails += _backdrop_contract()
+	return fails
+
+
+## 背景重设计契约(v0.70 backdrop 包重校口径):
+## a) Backdrop 六公共方法签名逐字保留(消费面 game_flow/main/settings_panel/
+##    roster_controller/exit_door/player 零改动前提);
+## b) PRESETS 五条 data/backdrop 路径锁定(menu.tres 硬引用,换名即断链);
+## c) 五份 preset accent 逐字节等于 palette 槽位(menu=paper、
+##    act1-4=blue/yellow/orange/red,levels 包 level_audit 读取前提)。
+func _backdrop_contract() -> int:
+	var fails := 0
+	var bd := FileAccess.get_file_as_string("res://scripts/world/backdrop.gd")
+	for sig in ["func apply_act(act_i: int) -> void:",
+			"func refresh_gate() -> void:",
+			"func pulse_land(impact: float) -> void:",
+			"func pulse_switch(color: Color) -> void:",
+			"func pulse_arrive(full: bool) -> void:",
+			"func pulse_death() -> void:"]:
+		if not bd.contains(sig):
+			fails += 1
+			print("TRANSITION FAIL: Backdrop 公共方法签名漂移:%s" % sig)
+	for p in ["menu.tres", "act1.tres", "act2.tres", "act3.tres", "act4.tres"]:
+		if not bd.contains("res://data/backdrop/" + p):
+			fails += 1
+			print("TRANSITION FAIL: Backdrop PRESETS 路径漂移:%s" % p)
+	var pal: Resource = load("res://data/palette.tres")
+	var slots := {
+		"menu.tres": pal.get("paper"),
+		"act1.tres": pal.get("blue"),
+		"act2.tres": pal.get("yellow"),
+		"act3.tres": pal.get("orange"),
+		"act4.tres": pal.get("red"),
+	}
+	for key in slots:
+		var preset: Resource = load("res://data/backdrop/" + key)
+		if preset.get("accent") != slots[key]:
+			fails += 1
+			print("TRANSITION FAIL: %s accent 与 palette 槽位不一致" % key)
 	return fails

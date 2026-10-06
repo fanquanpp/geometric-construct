@@ -39,6 +39,8 @@ var _tut: CanvasLayer
 @onready var _complete_label: Label = %CompleteLabel
 @onready var _win: Control = %Win
 @onready var _win_hint: Label = %WinHint
+@onready var _win_replay: Button = %WinReplayBtn
+@onready var _win_menu: Button = %WinMenuBtn
 @onready var _shapes_row: HBoxContainer = %ShapesRow
 @onready var _fade: ColorRect = %Fade
 @onready var _fx: TransitionFX = %FX
@@ -56,6 +58,8 @@ var _anchor_flash := {
 var _last_timer_cs := -1
 var _ghost_chip: Label
 var _ghost_slot: Control
+# vs 幽灵兜底档的首键缓存:玩家位缺样时取首键,不再每帧 keys() 分配。
+var _ghost_first_key = null
 
 
 func _ready() -> void:
@@ -143,6 +147,34 @@ func _apply_styles() -> void:
 	Ui.style(%WinSub, 20, Ui.BODY, Color(Palette.I.paper, 0.9), HORIZONTAL_ALIGNMENT_CENTER)
 	Ui.style(_win_hint, 16, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
 
+	# WIN 结算实体钮(v0.70 缺失补全):右下关闭带网格 240×42×2,键鼠/
+	# 手柄/触屏三输入;语义与 main.gd WIN 键位一致(R=start_level(0)、
+	# Esc=return_to_menu,game_flow 既有公共 API 直调);双人落幕不渲染
+	# (竞速结算面板已有再战链路)。位置走 Ui.pin_close_band 单一真值。
+	for b: Button in [_win_replay, _win_menu]:
+		b.add_theme_font_override("font", Ui.HEAD)
+		b.add_theme_font_size_override("font_size", 18)
+		b.custom_minimum_size.y = Ui.nav_h()
+		Ui.pin_close_band(b, 0 if b == _win_menu else 1)
+		Ui.wire_button(b)
+	_win_replay.pressed.connect(func() -> void:
+		var m: Main = Main.I
+		if m != null and m._state == Main.State.WIN:
+			m.start_level(0))
+	_win_menu.pressed.connect(func() -> void:
+		var gf: GameFlow = Main.I.game_flow if Main.I != null else null
+		if gf != null and Main.I._state == Main.State.WIN:
+			gf.return_to_menu())
+	# 卡片内闭合焦点图:左右互达,上下自指——十字键不逃出结算页。
+	_win_replay.focus_neighbor_left = _win_replay.get_path_to(_win_menu)
+	_win_replay.focus_neighbor_right = _win_replay.get_path_to(_win_menu)
+	_win_replay.focus_neighbor_top = _win_replay.get_path_to(_win_replay)
+	_win_replay.focus_neighbor_bottom = _win_replay.get_path_to(_win_replay)
+	_win_menu.focus_neighbor_left = _win_menu.get_path_to(_win_replay)
+	_win_menu.focus_neighbor_right = _win_menu.get_path_to(_win_replay)
+	_win_menu.focus_neighbor_top = _win_menu.get_path_to(_win_menu)
+	_win_menu.focus_neighbor_bottom = _win_menu.get_path_to(_win_menu)
+
 
 func _touch_mode() -> bool:
 	return Adaptive.is_touch_mode()
@@ -176,6 +208,10 @@ func ui_touch_rects() -> Array[Rect2]:
 		out.append(_race_panel.get_global_rect())
 	if _intro.is_visible_in_tree():
 		out.append(_intro_skip.get_global_rect().grow(8.0))
+	if _win.is_visible_in_tree():
+		# WIN 结算实体钮(右半屏点按=跳跃会吞按钮命中,同「再战一局」病灶)。
+		out.append(_win_replay.get_global_rect())
+		out.append(_win_menu.get_global_rect())
 	if _tut != null:
 		var rects: Array = _tut.call("touch_rects")
 		out.append_array(rects)
@@ -279,7 +315,14 @@ func _update_ghost_chip(gf: GameFlow) -> void:
 	if p == null or p.dying:
 		_ghost_chip.visible = false
 		return
-	var arr: Array = samples.get(p.index, samples[samples.keys()[0]])
+	# 首键缓存(hotpath):本位无样时取兜底档,键只在换关/换档时重取一次。
+	var arr: Array
+	if samples.has(p.index):
+		arr = samples[p.index]
+	else:
+		if _ghost_first_key == null or not samples.has(_ghost_first_key):
+			_ghost_first_key = samples.keys()[0]
+		arr = samples[_ghost_first_key]
 	if arr.is_empty():
 		_ghost_chip.visible = false
 		return
@@ -324,10 +367,12 @@ func narration(text: String, color: Color, dur := 3.2) -> void:
 	_narration.modulate = Color(1, 1, 1, 0)
 	if _narr_tween != null:
 		_narr_tween.kill()
+	var page := Ui.MOTION_PAGE_MS / 1000.0
+	var scene := Ui.MOTION_SCENE_MS / 1000.0
 	_narr_tween = create_tween()
-	_narr_tween.tween_property(_narration, "modulate:a", 1.0, 0.35)
+	_narr_tween.tween_property(_narration, "modulate:a", 1.0, page)
 	_narr_tween.tween_interval(dur)
-	_narr_tween.tween_property(_narration, "modulate:a", 0.0, 0.8)
+	_narr_tween.tween_property(_narration, "modulate:a", 0.0, scene)
 
 
 func show_intro(kicker: String, def: Dictionary) -> void:
@@ -345,11 +390,12 @@ func show_intro(kicker: String, def: Dictionary) -> void:
 	_intro.visible = true
 	_intro_skip.visible = true
 	_layout_intro_skip.call_deferred()
+	var scene := Ui.MOTION_SCENE_MS / 1000.0
 	_intro_tween = create_tween()
-	_intro_tween.tween_property(_intro, "modulate:a", 1.0, 0.5)
+	_intro_tween.tween_property(_intro, "modulate:a", 1.0, scene)
 	# 停留 1.8s(v0.58.0 用户令:开场卡显示时间缩短一半,原 3.6s)
 	_intro_tween.tween_interval(1.8)
-	_intro_tween.tween_property(_intro, "modulate:a", 0.0, 0.7)
+	_intro_tween.tween_property(_intro, "modulate:a", 0.0, scene)
 	_intro_tween.tween_callback(func() -> void:
 		_intro.visible = false
 		_intro_skip.visible = false)
@@ -370,7 +416,8 @@ func _dismiss_intro() -> void:
 	if _intro_tween != null:
 		_intro_tween.kill()
 	var tw := create_tween()
-	tw.tween_property(_intro, "modulate:a", 0.0, 0.22)
+	# 跳过=退页快档(MICRO 收口,与面板 CLOSE_MS 同门)。
+	tw.tween_property(_intro, "modulate:a", 0.0, Ui.MOTION_MICRO_MS / 1000.0)
 	tw.tween_callback(func() -> void:
 		_intro.visible = false
 		_intro_skip.visible = false)
@@ -384,13 +431,15 @@ func show_complete(text := "归位。") -> void:
 	_complete.scale = Vector2.ONE * 1.12
 	if _complete_tween != null:
 		_complete_tween.kill()
+	var page := Ui.MOTION_PAGE_MS / 1000.0
+	var scene := Ui.MOTION_SCENE_MS / 1000.0
 	_complete_tween = create_tween()
 	_complete_tween.set_parallel(true)
-	_complete_tween.tween_property(_complete, "modulate:a", 1.0, 0.35)
-	_complete_tween.tween_property(_complete, "scale", Vector2.ONE, 0.5) \
+	_complete_tween.tween_property(_complete, "modulate:a", 1.0, page)
+	_complete_tween.tween_property(_complete, "scale", Vector2.ONE, scene) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_complete_tween.chain().tween_interval(1.3)
-	_complete_tween.chain().tween_property(_complete, "modulate:a", 0.0, 0.5)
+	_complete_tween.chain().tween_property(_complete, "modulate:a", 0.0, scene)
 
 
 func show_win(on: bool, summary := "") -> void:
@@ -404,6 +453,14 @@ func show_win(on: bool, summary := "") -> void:
 	%WinKicker.text = "GEOMETRIC CONSTRUCT · 四幕全演"
 	%WinSub.text = "三个几何体,各归其位。" if summary == "" \
 		else "三个几何体,各归其位。\n%s" % summary
+	# 双人落幕不渲染实体钮(WIN 只属单人落幕;竞速再战走结算面板)。
+	var dual: bool = Main.I != null and Main.I.dual_mode
+	_win_replay.visible = not dual
+	_win_menu.visible = not dual
+	# 键鼠/手柄:结算页开演即入「再走一遍」(纯触屏不抓焦点,守卫统一走
+	# 工厂;减动效硬切直显,不改变焦点交接)。
+	if not dual:
+		Ui.grab_focus_guarded(_win_replay)
 	if SettingsManager.reduced_motion:
 		# 减动效:硬切直显,状态终态一次到位。
 		_reset_win_stage()
@@ -433,9 +490,10 @@ func show_win(on: bool, summary := "") -> void:
 			.set_ease(Ui.EASE_ENTER)
 
 
-## WIN 结算各块(框线 WinRule 单独走横缩,不入此列)。
+## WIN 结算各块(框线 WinRule 单独走横缩,不入此列;实体钮随块淡入)。
 func _win_blocks() -> Array:
-	return [%WinKicker, %WinTitle, %WinSub, %ShapesRow, %WinHint]
+	return [%WinKicker, %WinTitle, %WinSub, %ShapesRow, %WinHint,
+		_win_replay, _win_menu]
 
 
 func _reset_win_stage() -> void:
@@ -453,10 +511,13 @@ func transition_sweep(dur: float, on_covered: Callable) -> void:
 	_queue_transition(TransitionFX.Style.SWEEP, dur, on_covered)
 
 
-## 布尔契约:供调用方区分「已入过渡」与「未入(hud 缺席 / 忙)」。
-## 忙时返回 false,由调用方兜底(game_flow.return_to_menu 直切菜单)。
+## 布尔契约(恒可遮):内部走 transition_fx.cover_then——忙期下一帧
+## 重试直至接管、cover 回调必达(重试在 transition_fx 内,本包零
+## create_tween 新增);返回恒 true = 已入遮面契约,调用方无需再兜底
+## 直切(game_flow 侧残留的 false 分支由 dual 包删死分支)。
 func transition_curtain(dur: float, on_covered: Callable) -> bool:
-	return _fx.transition(TransitionFX.Style.CURTAIN, dur, on_covered)
+	_fx.cover_then(TransitionFX.Style.CURTAIN, dur, on_covered)
+	return true
 
 
 ## 死包装器清退(v0.69):三个零产品调用的转场包装器(FADE 淡入自黑、
@@ -542,7 +603,7 @@ func race_countdown(n: int) -> void:
 		_race_tween.kill()
 	_race_tween = create_tween()
 	_race_tween.tween_property(_race_count, "scale",
-		Vector2(1.25, 1.25), 0.5).from(Vector2.ONE) \
+		Vector2(1.25, 1.25), Ui.MOTION_SCENE_MS / 1000.0).from(Vector2.ONE) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
@@ -552,7 +613,8 @@ func race_go() -> void:
 	if _race_tween != null:
 		_race_tween.kill()
 	_race_tween = create_tween()
-	_race_tween.tween_property(_race_count, "modulate:a", 0.0, 0.55)
+	_race_tween.tween_property(_race_count, "modulate:a", 0.0,
+		Ui.MOTION_SCENE_MS / 1000.0)
 	_race_tween.tween_callback(func() -> void:
 		_race_count.text = ""
 		_race_root.visible = _race_panel.visible)
@@ -580,7 +642,8 @@ func show_race_result(winner: int, t_win: String, t_other: String,
 	if _race_tween != null:
 		_race_tween.kill()
 	_race_tween = create_tween()
-	_race_tween.tween_property(_race_panel, "modulate:a", 1.0, 0.3)
+	_race_tween.tween_property(_race_panel, "modulate:a", 1.0,
+		Ui.MOTION_PAGE_MS / 1000.0)
 
 
 func race_hide() -> void:

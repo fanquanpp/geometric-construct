@@ -266,7 +266,19 @@ func _joybind(action: String, ev: InputEvent) -> void:
 func start_level_dual(index := 0, intro := true) -> void:
 	if NetSession.I != null and NetSession.I.is_net():
 		return
-	start_level(index, intro)
+	# 入口防御(audit ①):目标关没有 ≥2 体(如菜单旧入口固定进 0 号
+	# 单体关)直接拒启并 toast 明确提示——P2 无体可分,静默单飞比拒绝
+	# 更糟。目标关名册在建体前只能读 LevelData.scene_roster 真值。
+	var idx := clampi(index, 0, LevelData.count() - 1)
+	if (LevelData.scene_roster(idx) as Array).size() < 2:
+		_menu.toast("该场只有一个起点,双人竞速请选双体关卡")
+		return
+	# 触屏拒启(audit ⑪):触屏模式(--touch 强制或真机)下双人分键
+	# 无实体输入面,P2 只能静立无声——同样拒启并提示,不允许无声开局。
+	if Adaptive.is_touch_mode():
+		_menu.toast("触屏模式暂不支持双人分键,请接键鼠或手柄")
+		return
+	game_flow.start_level(idx, intro, "", true)
 	dual_mode = true
 
 	if roster.players.size() >= 2:
@@ -374,6 +386,13 @@ func _physics_process(_delta: float) -> void:
 		if dual_mode and race != null \
 				and race.phase == RaceController.Phase.COUNTDOWN:
 			_check_deaths()
+			# 倒计时死窗出口(audit ⑦):与 FINISHED 分支同语——pause/
+			# ui_cancel 退出竞速局,3 秒锁输入期不再只能干等 GO。
+			# 先 reset 竞速再退,防回菜单后倒计时走完补发一声 GO 音。
+			if Input.is_action_just_pressed("pause") \
+					or Input.is_action_just_pressed("ui_cancel"):
+				race.reset()
+				quit_to_menu()
 			return
 		_check_deaths()
 		if debug_solo:
@@ -445,6 +464,11 @@ func _restart_level() -> void:
 
 func _open_pause() -> void:
 	if _state != State.PLAYING:
+		return
+	# 联机拒暂停(audit ② main 层硬兜底):暂停树只在本机生效,联机期
+	# 主机暂停会把客机状态流悬空——联机一律不暂停,退路只有 quit_to_menu。
+	# pause_menu 按钮语义归 ui 包,此层先行硬拦。
+	if NetSession.I != null and NetSession.I.is_net():
 		return
 	_state = State.PAUSED
 	get_tree().paused = true
@@ -573,6 +597,9 @@ func recall_active() -> void:
 	if NetSession.I != null and NetSession.I.in_game():
 		NetSession.I.request_recall(roster.active_slot)
 		return
+	# 双人召回(audit ④):dual 下按 InputSource 分键各归各体不可行
+	# (recall 是全局共享键),取审计首选方案——作用于双体,各归各自
+	# 检查点(分派在 roster.recall_active);单人/联机语义不变。
 	roster.recall_active()
 
 

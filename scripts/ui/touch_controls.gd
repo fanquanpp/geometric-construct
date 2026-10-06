@@ -145,10 +145,6 @@ func wheel_mode() -> String:
 	return _wheel.wheel_mode if _wheel != null else SettingsManager.wheel_mode
 
 
-func set_switch_available(_on: bool) -> void:
-	pass
-
-
 func refresh_settings() -> void:
 	if _wheel != null:
 		_wheel.wheel_mode = SettingsManager.wheel_mode
@@ -218,7 +214,6 @@ func _wire_button(action: String, btn: Button, glyph: UiGlyph, label: Label,
 	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	btn.pivot_offset = btn.size / 2.0
 	btn.button_down.connect(func() -> void:
-		buzz(24)
 		Input.action_press(action)
 		_flash_icon(action, true)
 		_press_pop(btn, 0.92))
@@ -260,11 +255,6 @@ func _flash_icon(action: String, on: bool) -> void:
 	var g: UiGlyph = b.glyph
 	if g.glyph_key != key:
 		g.set_key(key)
-
-
-static func buzz(ms := 24) -> void:
-	if SettingsManager.vibration:
-		Input.vibrate_handheld(ms)
 
 
 func tap_burst_at(pos: Vector2) -> void:

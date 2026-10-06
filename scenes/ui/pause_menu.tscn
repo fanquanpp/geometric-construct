@@ -57,32 +57,32 @@ horizontal_alignment = 1
 
 [node name="ResumeBtn" type="Button" parent="Root/Center/Panel/VB/BodyWrap/Body"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 46)
+custom_minimum_size = Vector2(0, 42)
 text = "继 续"
 
 [node name="RestartBtn" type="Button" parent="Root/Center/Panel/VB/BodyWrap/Body"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 46)
+custom_minimum_size = Vector2(0, 42)
 text = "重 新 开 始"
 
 [node name="ArchiveBtn" type="Button" parent="Root/Center/Panel/VB/BodyWrap/Body"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 46)
+custom_minimum_size = Vector2(0, 42)
 text = "档 案 几 何"
 
 [node name="SettingsBtn" type="Button" parent="Root/Center/Panel/VB/BodyWrap/Body"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 46)
+custom_minimum_size = Vector2(0, 42)
 text = "设 置"
 
 [node name="LeaveBtn" type="Button" parent="Root/Center/Panel/VB/BodyWrap/Body"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 46)
+custom_minimum_size = Vector2(0, 42)
 text = "返 回 标 题"
 
 [node name="TouchBtn" type="Button" parent="Root/Center/Panel/VB/BodyWrap/Body"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 46)
+custom_minimum_size = Vector2(0, 42)
 text = "虚拟按键 · 关"
 
 [node name="Spacer" type="Control" parent="Root/Center/Panel/VB/BodyWrap/Body"]

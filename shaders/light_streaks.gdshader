@@ -4,7 +4,8 @@ render_mode unshaded;
 
 // 流光层(fx 包 v0.68 装饰重设计):五条横向纸光带,速度阈值以上随
 // TIME 横流(方向随 dir),硬边段 + 环面距离(接缝连续)。与
-// speed_lines.gdshader 同一模式:render_mode unshaded / TIME 驱动 /
+// speed_lines.gdshader 同一 res://shaders/ 模式(硬边、无柔边):
+// render_mode unshaded / TIME 驱动 /
 // 取色全经 uniform / anim=0 停帧;禁一切读屏路径(不采样屏幕纹理)。
 // strength=0 时全透明(阈下不出现),宿主平滑下发,停走切换无闪烁。
 

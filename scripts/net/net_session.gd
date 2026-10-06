@@ -38,6 +38,10 @@ var _client_active := 0
 var _connect_deadline := 0
 
 
+# 认领上限(audit ⑥ 语义澄清):单一方最多可认领的几何体数 = max(本值,
+# ceil(名册/2))。MAX_PICKS=3 是小名册保底(2 体关也允许多拿换位),
+# ceil(名册/2) 保证「双方各拿一半即可全覆盖」永远可达——任一方不会被
+# 上限卡到无法与对手合力覆盖名册(coverage 是 can_start 的必要条件)。
 const MAX_PICKS := 3
 
 var pick_level := -1
@@ -161,6 +165,8 @@ static func split_roster(roster: Array) -> Array:
 static func claim_ok(roster: Array, mine: Array, other: Array, index: int, on: bool) -> bool:
 	if not on:
 		return mine.has(index)
+	# 上限分账语义见 MAX_PICKS 注:ceil(名册/2) 保证半分覆盖可达,
+	# MAX_PICKS 兜小名册;对手已认领的形不可抢。
 	return roster.has(index) and not other.has(index) \
 		and mine.size() < maxi(MAX_PICKS, int(ceil(roster.size() / 2.0)))
 
@@ -198,6 +204,10 @@ func other_geo_arr() -> Array:
 
 func can_start() -> bool:
 	if not (is_host() and pick_level >= 0 and pick_level < LevelData.count()):
+		return false
+	# 认领护栏(audit ⑥):只看覆盖还不够——一方 0 体也能满足覆盖(对手
+	# 全包),开局即全程观战且无路可回;双方各认领至少一形才放行开演。
+	if _host_geo.is_empty() or _client_geo.is_empty():
 		return false
 	return claims_cover(LevelData.scene_roster(pick_level), _host_geo, _client_geo)
 
@@ -679,6 +689,39 @@ func run_self_test() -> void:
 		(not claims_cover(roster, [0, 1], [3, 4]))
 	print("NETTEST claims ", "PASS" if claims_ok else "FAIL")
 	if not claims_ok:
+		fails += 1
+
+	# 认领护栏(audit ⑥):can_start 对 host=[0]/client=[] 拒绝、双方
+	# 各≥1 放行(probe=16 名册 [0,1];自测无第二对端,直呼本端 rpc_claim
+	# 处理器等价客机认领入账,收尾清账还原 pick_level)。
+	host_pick_level(16)
+	host_toggle_claim(0, true)
+	var guard_none: bool = not can_start()
+	rpc_claim(1, true)
+	var guard_both: bool = can_start()
+	rpc_claim(1, false)
+	host_toggle_claim(0, false)
+	pick_level = -1
+	var guard_ok: bool = guard_none and guard_both
+	print("NETTEST can-start-guard ", "PASS" if guard_ok else "FAIL",
+		" none_rejected=", guard_none, " both_allowed=", guard_both)
+	if not guard_ok:
+		fails += 1
+
+	# 竞速回归(audit ② main 层硬兜底):联机期暂停与重开一律被拒——
+	# 状态借位到 PLAYING 后调用,暂停不落 PAUSED、重开不落 TRANSITION。
+	var st0: int = _m._state
+	_m._state = Main.State.PLAYING
+	_m._open_pause()
+	var pause_blocked: bool = _m._state != Main.State.PAUSED \
+		and not _m.get_tree().paused
+	_m.game_flow.restart_level()
+	var restart_blocked: bool = _m._state != Main.State.TRANSITION
+	_m._state = st0
+	var race_guard_ok: bool = pause_blocked and restart_blocked
+	print("NETTEST race-guards ", "PASS" if race_guard_ok else "FAIL",
+		" pause_blocked=", pause_blocked, " restart_blocked=", restart_blocked)
+	if not race_guard_ok:
 		fails += 1
 	leave("NETTEST done")
 	print("NETTEST ALL ", "PASS" if fails == 0 else "FAIL(%d)" % fails)

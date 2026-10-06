@@ -51,6 +51,19 @@ const DOOR_LAND_DY := -46.0  # 门高 92 底边贴地;与 addons/editor_kit/plac
 	set(value):
 		if value and Engine.is_editor_hint():
 			_audit_now()
+## 编辑器主题色预览(v0.70 tiles 波):开关式——拨 true 即按 theme_key()
+## 契约给 Solid/Decor 挂 tile_theme 掩膜材质(Decor 保红关不挂 Decor),
+## 拨 false 摘除。运行期不读本开关(_ready 无条件自动应用);材质经
+## NOTIFICATION_EDITOR_PRE/POST_SAVE_SCENE 在存盘窗口摘/复挂,永不落盘
+## 进 tscn(验收面:tscn 无 material 字段)。
+@export var theme_preview := false:
+	set(value):
+		theme_preview = value
+		if Engine.is_editor_hint():
+			if value:
+				_apply_theme_materials()
+			else:
+				_clear_theme_materials()
 ## —— 参考图叠加(仅编辑器分支,运行期零开销)——
 ## 指向 tools/level_refs/<关名>.png 等蓝图;叠加层不设 owner,是编辑器
 ## 会话内临时件,永不序列化进 tscn;原点自动对位 Solid 包围盒(与
@@ -70,6 +83,11 @@ const DOOR_LAND_DY := -46.0  # 门高 92 底边贴地;与 addons/editor_kit/plac
 
 const CAMERA_RIG_SCENE := preload("res://scenes/world/camera_rig.tscn")
 const FOCUS_SCENE := preload("res://scenes/art/focus_system.tscn")
+const THEME_SHADER := preload("res://shaders/tile_theme.gdshader")
+
+## 运行期/预览期在挂的掩膜材质(非 @export,不序列化)。
+var _theme_mat_solid: ShaderMaterial
+var _theme_mat_decor: ShaderMaterial
 
 
 func _ready() -> void:
@@ -78,6 +96,7 @@ func _ready() -> void:
 		# 程序化 _draw 接管层退役;画瓦片 / 摆机关 / 摆出生点即见成品。
 		_sync_ref_overlay()
 		return
+	_apply_theme_materials()
 	for idx in roster:
 		var gdef: GeometryDef = Geometries.ALL[idx]
 		var mask := 1 | (1 << (idx + 1))
@@ -105,6 +124,105 @@ func _marker(idx: int) -> Vector2:
 		return node.global_position
 	push_warning("NativeLevel %s: 缺出生点 %d,退回场景原点" % [level_name, idx])
 	return Vector2(300, 800)
+
+
+# ==================== 地块主题色契约(v0.70 tiles 波) ====================
+# 数据流唯一:LevelData.theme_of(idx)(SCENES 条目 "theme" 覆写 ->
+# ACTS[act].theme -> LevelData.THEMES 幕序,levels 工坊落盘);
+# 渲染层显式豁免:dev/probe.tscn 恒空串不染色(theme_of 对幕外关回落
+# "red",门禁探针场景不允许任何染色态)、tutorial.tscn 未登记 SCENES
+# 按契约取常量 "blue"。hex 解析唯一走 Palette.I 槽位(TileAtlas.
+# theme_slot_color),零硬编码色。
+
+## 主题键解析(契约链,详见类注释;空串 = 不染色)。
+func theme_key() -> String:
+	var p := scene_file_path
+	if p.ends_with("/dev/probe.tscn"):
+		return ""
+	if p.ends_with("/tutorial/tutorial.tscn"):
+		return "blue"
+	var idx := _scene_index_of(p)
+	if idx < 0:
+		return ""
+	return LevelData.theme_of(idx)
+
+
+## scene_file_path -> LevelData.SCENES 下标(未登记返回 -1)。
+func _scene_index_of(path: String) -> int:
+	for i in LevelData.SCENES.size():
+		if str(LevelData.SCENES[i]["path"]) == path:
+			return i
+	return -1
+
+
+## Decor 层保红开关(红刻语义盘点三联结论之二,登记在
+## TileAtlas.DECOR_KEEP_RED;true = 该关装饰层整体保红,Decor 不挂材质,
+## 机制与 Solid 层材质应用条件同源)。
+func decor_keep_red() -> bool:
+	return bool(TileAtlas.DECOR_KEEP_RED.get(scene_file_path, false))
+
+
+## 按 theme_key() 给 Solid/Decor 挂 tile_theme 掩膜材质(幂等:先摘后挂)。
+## probe 等空键关 / Decor 保红关自然跳过;palette 槽缺失时告警不挂。
+func _apply_theme_materials() -> void:
+	_clear_theme_materials()
+	var key := theme_key()
+	if key.is_empty():
+		return
+	var col: Color = TileAtlas.theme_slot_color(key)
+	if col.a <= 0.0:
+		push_warning("NativeLevel %s: theme 键 %s 无 Palette 槽位,不染色"
+			% [level_name, key])
+		return
+	var solid := get_node_or_null("Solid") as TileMapLayer
+	if solid != null:
+		_theme_mat_solid = _make_theme_material("solid", col)
+		solid.material = _theme_mat_solid
+	var decor := get_node_or_null("Decor") as TileMapLayer
+	if decor != null and not decor_keep_red():
+		_theme_mat_decor = _make_theme_material("decor", col)
+		decor.material = _theme_mat_decor
+
+
+## 摘除掩膜材质(PRE_SAVE 防落盘 / 关闭预览 / 重复应用前清底)。
+func _clear_theme_materials() -> void:
+	var solid := get_node_or_null("Solid") as TileMapLayer
+	if solid != null and solid.material == _theme_mat_solid:
+		solid.material = null
+	var decor := get_node_or_null("Decor") as TileMapLayer
+	if decor != null and decor.material == _theme_mat_decor:
+		decor.material = null
+	_theme_mat_solid = null
+	_theme_mat_decor = null
+
+
+## 单层掩膜材质:src/dt 色对由 TileAtlas.theme_mask_tables 按登记配方 ×
+## 主题色统一计算(shader 零颜色知识)。
+func _make_theme_material(layer: String, theme: Color) -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = THEME_SHADER
+	mat.set_shader_parameter("theme_color", theme)
+	var tables: Array = TileAtlas.theme_mask_tables(layer, theme)
+	var src: PackedColorArray = tables[0]
+	var dst: PackedColorArray = tables[1]
+	var n: int = tables[2]
+	mat.set_shader_parameter("map_src", src)
+	mat.set_shader_parameter("map_dst", dst)
+	mat.set_shader_parameter("map_n", n)
+	mat.set_shader_parameter("match_tol", TileAtlas.THEME_MATCH_TOL)
+	return mat
+
+
+func _notification(what: int) -> void:
+	if not Engine.is_editor_hint():
+		return
+	if what == NOTIFICATION_EDITOR_PRE_SAVE:
+		# 存盘窗口摘材质,保证 tscn 永无 material 字段(验收面);
+		# POST_SAVE 后按预览开关复挂,编辑器视觉无闪断。
+		_clear_theme_materials()
+	elif what == NOTIFICATION_EDITOR_POST_SAVE:
+		if theme_preview:
+			_apply_theme_materials()
 
 
 func _add_boundary_walls() -> void:

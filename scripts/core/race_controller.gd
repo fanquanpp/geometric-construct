@@ -13,8 +13,11 @@ const COUNTDOWN_S := 3.0
 var main: Main
 var phase: int = Phase.IDLE
 var _countdown_left := 0.0
+var _go_ms := 0
 var winner := -1
 var finish_t := {}
+# 局分按槽键存;3 体关扩体时 wins.get(slot, 0) 缺省兜底,二值字面量
+# 只做初始两槽种子(audit ⑫ 防御口径)。
 var wins := {0: 0, 1: 0}
 
 
@@ -22,6 +25,7 @@ func reset() -> void:
 	phase = Phase.IDLE
 	winner = -1
 	finish_t = {}
+	_go_ms = 0
 
 
 func begin() -> void:
@@ -45,6 +49,9 @@ func _physics_process(delta: float) -> void:
 		countdown.emit(now)
 	if _countdown_left <= 0.0:
 		phase = Phase.RACING
+		# 到点用时基准(audit ⑩):race_go 那一刻的 run_ms 起算——纯奔跑
+		# 用时,不含 3s 倒计时与载入(与 run_ms 的 FINISHED 冻结口径配套)。
+		_go_ms = main.game_flow.run_ms
 		race_go.emit()
 
 
@@ -52,10 +59,15 @@ func on_arrival(p: Player) -> void:
 	if phase != Phase.RACING or winner != -1:
 		return
 	var slot := _slot_of(p)
-	finish_t[slot] = Main.I.game_flow.run_ms
+	finish_t[slot] = main.game_flow.run_ms - _go_ms
 	winner = slot
 	phase = Phase.FINISHED
-	var other := 1 - slot
+	# 对手用时按已记录槽取(泛化:不再二值 1-slot,3 体关自然分账)。
+	var other := -1
+	for k: int in finish_t:
+		if k != slot:
+			other = k
+			break
 	var t_other: int = int(finish_t.get(other, -1))
 	wins[slot] = int(wins.get(slot, 0)) + 1
 	race_finished.emit(slot, int(finish_t[slot]), t_other)
@@ -66,7 +78,8 @@ func rematch() -> void:
 	main.start_level_dual(main.game_flow.current, false)
 
 
+## 槽位按 players 索引泛化(audit ⑫):不再对 players[0]/[1] 二值硬编,
+## 任一体按建体索引自然分账;查无此人(defensive)回落 0。
 func _slot_of(p: Player) -> int:
-	if main.players.size() < 2:
-		return 0
-	return 0 if p == main.players[0] else 1
+	var slot: int = main.players.find(p)
+	return slot if slot >= 0 else 0

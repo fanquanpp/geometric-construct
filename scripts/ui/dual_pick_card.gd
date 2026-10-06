@@ -38,7 +38,8 @@ func _ready() -> void:
 	Ui.style(%TitleLabel, 32, Ui.TITLE, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	Ui.style(%SubLabel, 13, Ui.LIGHT, Color(1, 1, 1, 0.72), HORIZONTAL_ALIGNMENT_CENTER)
 	for b: Button in [%SameBtn, %CrossBtn]:
-		b.custom_minimum_size.y = 86
+		# 页内主操作档(78;与联机 _big_btn 同族同档)。
+		b.custom_minimum_size.y = Ui.BTN_PRIMARY_H
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.add_theme_font_override("font", Ui.HEAD)
 		b.add_theme_font_size_override("font_size", 22)
@@ -49,8 +50,11 @@ func _ready() -> void:
 	Ui.style(%Hint, 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_CENTER)
 
 	var back: Button = %BackBtn
-	back.text = "返 回"
+	# 「« 返回XX」左下模板(与 act_panel_card.tscn 母版同位同尺寸 170×42):
+	# 旧居中「返 回」并入返回钮网格语言。
+	back.text = "«  返回菜单"
 	back.add_theme_font_size_override("font_size", 16)
+	back.custom_minimum_size = Vector2(Ui.BACK_SIZE.x, Ui.nav_h())
 	Ui.wire_button(back, "ui_back")
 	back.pressed.connect(func() -> void: back_pressed.emit())
 	_wire_focus()
@@ -88,23 +92,24 @@ func open_card(touch: bool) -> void:
 
 	_reanchor_full.call_deferred()
 	visible = true
-	(_cross if _same.disabled else _same).grab_focus()
+	# 触屏守卫抓焦点(纯触屏不抓)——统一走 Ui 工厂。
+	Ui.grab_focus_guarded(_cross if _same.disabled else _same)
 	_shade.modulate.a = 0.0
 	_card.modulate.a = 0.0
 	_card.pivot_offset = _card.size / 2.0
+	var page := Ui.MOTION_PAGE_MS / 1000.0
 	_tween = create_tween()
 	_tween.set_parallel(true)
-	_tween.tween_property(_shade, "modulate:a", 1.0, 0.16)
-	_tween.tween_property(_card, "modulate:a", 1.0, 0.18)
-	_tween.tween_property(_card, "scale", Vector2.ONE, 0.26) \
+	_tween.tween_property(_shade, "modulate:a", 1.0, page)
+	_tween.tween_property(_card, "modulate:a", 1.0, page)
+	_tween.tween_property(_card, "scale", Vector2.ONE, page) \
 		.from(Vector2(0.95, 0.95)).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
-func close_card() -> void:
-	close_animated()
-
-
 ## 页面退出(page_out,menu_layer.goto_page 消费):关闭淡出动画播完
+## 再隐藏;退出期整树禁用。动画 Tween 挂父层(禁用自身不暂停动画),
+## 减动效直切;on_done 兜底必达。(close_card() 零调用包装已删:关闭
+## 统一走 close_animated。)
 ## 再隐藏;退出期整树禁用。动画 Tween 挂父层(禁用自身不暂停动画),
 ## 减动效直切;on_done 兜底必达。
 func close_animated(on_done: Callable = Callable()) -> void:

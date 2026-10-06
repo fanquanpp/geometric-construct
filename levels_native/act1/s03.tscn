@@ -20,7 +20,7 @@ top_kill_y = -420
 
 [node name="Decor" type="TileMapLayer" parent="." unique_id=1407939438]
 tile_set = ExtResource("3_ts")
-tile_map_data = PackedByteArray("AAAJAAYAAgAAAAEAAAASAAwAAgABAAEAAAAYAAwAAgABAAEAAAA=")
+tile_map_data = PackedByteArray("AAASAAwAAgABAAEAAAAYAAwAAgABAAEAAAA=")
 [node name="Solid" type="TileMapLayer" parent="." unique_id=423284627]
 z_index = 1
 tile_set = ExtResource("3_ts")
@@ -38,7 +38,7 @@ on_time = 1.5
 off_time = 1.5
 
 [node name="SkiPatch0" parent="." unique_id=53641189 instance=ExtResource("8_sc")]
-position = Vector2(896, 1296)
+position = Vector2(896, 1275)
 size = Vector2(500, 40)
 
 [node name="SpeedGate0" parent="." unique_id=1870063121 instance=ExtResource("11_sc")]

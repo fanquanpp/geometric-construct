@@ -235,6 +235,16 @@ theme_override_constants/separation = 26
 unique_name_in_owner = true
 horizontal_alignment = 1
 
+[node name="WinReplayBtn" type="Button" parent="Root/Win"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 42)
+text = "再走一遍"
+
+[node name="WinMenuBtn" type="Button" parent="Root/Win"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 42)
+text = "回到标题"
+
 [node name="Fade" type="ColorRect" parent="Root"]
 unique_name_in_owner = true
 color = Color(0, 0, 0, 1)

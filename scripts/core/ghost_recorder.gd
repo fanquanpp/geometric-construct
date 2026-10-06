@@ -24,8 +24,10 @@ func on_level_started(level_index: int) -> void:
 	if _draw != null and is_instance_valid(_draw):
 		_draw.queue_free()
 		_draw = null
-	if NetSession.I != null and NetSession.I.is_net():
+	if (NetSession.I != null and NetSession.I.is_net()) or main.dual_mode:
 		# 联机整段禁用幽灵:不载回、不落盘、不绘制(差值签同步隐藏)。
+		# dual 同 gate(audit ⑤):双人竞速整段禁读/禁采/禁存——双体样本
+		# 与含倒计时的用时不再覆盖单人计时赛最佳幽灵,单人纯净恢复。
 		_best_by_level.erase(level_index)
 		return
 	# 跨会话最佳幽灵载回:曾改写纪录的路线立即作为本局实时参照。
@@ -39,7 +41,7 @@ func on_level_started(level_index: int) -> void:
 
 
 func on_death(p: Player) -> void:
-	if NetSession.I != null and NetSession.I.is_net():
+	if (NetSession.I != null and NetSession.I.is_net()) or main.dual_mode:
 		return
 	var li: int = main.game_flow.current
 	if not _marks.has(li):
@@ -57,11 +59,10 @@ func on_death(p: Player) -> void:
 func _physics_process(_delta: float) -> void:
 	if main == null or main._state != Main.State.PLAYING:
 		return
-	if NetSession.I != null and NetSession.I.is_net():
+	if (NetSession.I != null and NetSession.I.is_net()) or main.dual_mode:
 		return
 	var gf: GameFlow = main.game_flow
-	if gf == null or main.dual_mode and main.race != null \
-			and main.race.input_locked():
+	if gf == null:
 		return
 	var ms := gf.run_ms
 	if ms - _last_ms < SAMPLE_MS:
@@ -84,7 +85,9 @@ func _physics_process(_delta: float) -> void:
 
 
 func on_complete() -> void:
-	if NetSession.I != null and NetSession.I.is_net():
+	if (NetSession.I != null and NetSession.I.is_net()) or main.dual_mode:
+		# dual 竞速结束(main._on_race_finished 即调)整段不落:无死亡
+		# 回放、无最佳覆写、无存档写盘(键级门禁:lv%d_ghost 零变化)。
 		return
 	if not _replays.is_empty() and not SettingsManager.reduced_motion \
 			and main._level_root != null:

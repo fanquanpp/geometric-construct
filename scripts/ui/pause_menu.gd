@@ -81,19 +81,20 @@ func open() -> void:
 		_panel.scale = Vector2.ONE
 	_root.visible = true
 	Sfx.play("pause")
-	_resume.grab_focus()
+	# 触屏守卫抓焦点(纯触屏不抓,消灭无意义选中框)——统一走 Ui 工厂。
+	Ui.grab_focus_guarded(_resume)
 
 	if _open_tween != null:
 		_open_tween.kill()
 	_panel.pivot_offset = _panel.size / 2.0
 	_dim.modulate.a = 0.0
-	_panel.position.y += 0.0
 	_panel.modulate.a = 0.0
+	var page := Ui.MOTION_PAGE_MS / 1000.0
 	_open_tween = create_tween()
 	_open_tween.set_parallel(true)
-	_open_tween.tween_property(_dim, "modulate:a", 1.0, 0.20)
-	_open_tween.tween_property(_panel, "modulate:a", 1.0, 0.16)
-	_open_tween.tween_property(_panel, "scale", Vector2.ONE, 0.30) \
+	_open_tween.tween_property(_dim, "modulate:a", 1.0, page)
+	_open_tween.tween_property(_panel, "modulate:a", 1.0, page)
+	_open_tween.tween_property(_panel, "scale", Vector2.ONE, page) \
 		.from(Vector2(0.94, 0.94)).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
@@ -124,7 +125,8 @@ func close() -> void:
 
 func grab_resume() -> void:
 	# 面板(档案/设置)自暂停菜单打开又关闭后,焦点归还「继续」
-	_resume.grab_focus()
+	# (触屏守卫同工厂口径)。
+	Ui.grab_focus_guarded(_resume)
 
 
 func _input(ev: InputEvent) -> void:

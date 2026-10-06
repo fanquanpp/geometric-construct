@@ -51,6 +51,8 @@ func _ready() -> void:
 	Adaptive.register_card(_card)
 	Ui.style(_level_hint, 13, Ui.LIGHT, Palette.I.dim, HORIZONTAL_ALIGNMENT_LEFT, false, 4)
 	_back_btn.add_theme_font_size_override("font_size", 16)
+	# 返回钮触屏命中换算(42 档视觉 → 触屏 44 触点档)。
+	_back_btn.custom_minimum_size.y = Ui.nav_h()
 	Ui.wire_button(_back_btn, "ui_back")
 	_back_btn.pressed.connect(func() -> void: back_pressed.emit())
 	Ui.style(_keys_hint, 12, Ui.LIGHT, Color(Palette.I.dim, 0.9))
@@ -76,11 +78,12 @@ func open_act(idx: int, unlocked: int) -> void:
 		_tween.kill()
 	_shade.modulate.a = 0.0
 	_card.modulate.a = 0.0
+	var page := Ui.MOTION_PAGE_MS / 1000.0
 	_tween = create_tween()
 	_tween.set_parallel(true)
-	_tween.tween_property(_shade, "modulate:a", 1.0, 0.16)
-	_tween.tween_property(_card, "modulate:a", 1.0, 0.18)
-	_tween.tween_property(_card, "scale", Vector2.ONE, 0.26) \
+	_tween.tween_property(_shade, "modulate:a", 1.0, page)
+	_tween.tween_property(_card, "modulate:a", 1.0, page)
+	_tween.tween_property(_card, "scale", Vector2.ONE, page) \
 		.from(Vector2(0.95, 0.95)).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
@@ -95,14 +98,11 @@ func _reanchor_full() -> void:
 		$Center.queue_sort()
 
 
-func close_panel() -> void:
-	close_animated()
-
-
 ## 页面退出(page_out,menu_layer.goto_page 消费):关闭淡出动画播完
 ## 再隐藏(非立即 hide);退出期整树禁用,手柄/鼠标点不到半透明卡片。
 ## 动画 Tween 挂在父层(页面状态机所在层)——禁用自身不暂停动画。
 ## 减动效直切。on_done 兜底必达(状态先行,动画只是收尾)。
+## (close_panel() 零调用包装已删:关闭统一走 close_animated。)
 func close_animated(on_done: Callable = Callable()) -> void:
 	if not _open:
 		_notify_done(on_done)
@@ -169,6 +169,8 @@ func _populate_rows(idx: int) -> void:
 		var is_next := li == _unlocked
 
 		var b := Button.new()
+		# 高度语义豁免:场次行=页内行式主操作(glyph 行,54 档非三档钮——
+		# 列表行不入 42 导航/78 主操作/44 触点三档)。
 		b.custom_minimum_size = Vector2(700, 54)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.add_theme_font_override("font", Ui.HEAD)
@@ -252,19 +254,21 @@ func _row_stagger() -> void:
 		row.modulate.a = 0.0
 		var tw := create_tween()
 		tw.tween_interval(minf(i * 0.04, 0.3))
-		tw.tween_property(row, "modulate:a", 1.0, 0.12)
+		tw.tween_property(row, "modulate:a", 1.0,
+			Ui.MOTION_MICRO_MS / 1000.0)
 
 
 func _focus_next_row() -> void:
 	var next: Button = _row_by_li.get(_unlocked)
 	if next == null and not _row_list.is_empty():
 		next = _row_list[0]
-	if next != null:
-		next.grab_focus()
+	# 触屏守卫抓焦点(纯触屏不抓,消灭无意义选中框)——统一走 Ui 工厂。
+	Ui.grab_focus_guarded(next)
 
 
 func _add_wip_row(k: int) -> void:
 	var b := Button.new()
+	# 同场次行 54 档语义豁免(见 _populate_rows 注)。
 	b.custom_minimum_size = Vector2(700, 54)
 	b.modulate = Color(1, 1, 1, 0.28)
 	b.focus_mode = Control.FOCUS_NONE

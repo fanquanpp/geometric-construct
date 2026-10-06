@@ -369,6 +369,11 @@ func _recall_keypress() -> void:
 
 
 func run_dual_test() -> void:
+	# 幽灵零污染基线(audit ⑤ 键级断言):进局前快照存档 cfg stats 节
+	# lv%d_ghost 各键与内存 ghosts 表,收尾逐一对照(文件级 hash/mtime
+	# 禁用——同文件其他键合法变化会误伤)。
+	var ghosts_file_before := _ghost_file_keys()
+	var ghosts_mem_before: Dictionary = m._save.ghosts.duplicate(true)
 	m.start_level_dual(16)
 	await m.get_tree().create_timer(0.5).timeout
 	var ok_cd: bool = m.race.phase == RaceController.Phase.COUNTDOWN
@@ -442,8 +447,80 @@ func run_dual_test() -> void:
 	if not ok_rematch:
 		fails += 1
 
+	# 第 8 链:菜单真实入口——start_level_dual(LevelData.DUEL_SCENE_INDEX)
+	# (levels 包首步常量,并行窗口依赖红灯属预期),断言 players≥2 且
+	# 进入 COUNTDOWN,补 probe-16 单点与菜单入口的覆盖盲区。
+	m.start_level_dual(LevelData.DUEL_SCENE_INDEX)
+	await m.get_tree().create_timer(0.4).timeout
+	var ok_entry: bool = m.players.size() >= 2 \
+		and m.race.phase == RaceController.Phase.COUNTDOWN
+	print("DUALTEST entry ", "PASS" if ok_entry else "FAIL",
+		" players=", m.players.size(), " phase=", m.race.phase)
+	if not ok_entry:
+		fails += 1
+
+	# 第 8 链扩展:竞速重开双护栏(audit ②③)——dual 局内 restart_level
+	# 必须被拒:护栏缺失时此调用会落 TRANSITION(fade_to_black 重开),
+	# 局相保持 PLAYING 即为被拒实证(is_net 侧由 nettest 断言)。
+	var st0: int = m._state
+	m.game_flow.restart_level()
+	var ok_norestart: bool = m._state == st0
+	print("DUALTEST no-restart ", "PASS" if ok_norestart else "FAIL",
+		" state=", m._state)
+	if not ok_norestart:
+		fails += 1
+
+	# 幽灵零污染(键级):本局双人竞速前后,cfg stats 节 lv%d_ghost 各键
+	# 与内存 ghosts 表逐一对照零变化(局分/进度等其他键允许正常变化)。
+	var ok_ghost: bool = _ghost_file_equal(ghosts_file_before) \
+		and _ghost_mem_equal(ghosts_mem_before)
+	print("DUALTEST ghost-clean ", "PASS" if ok_ghost else "FAIL")
+	if not ok_ghost:
+		fails += 1
+
 	print("DUALTEST ALL ", "PASS" if fails == 0 else "FAIL(%d)" % fails)
 	m.get_tree().quit(0 if fails == 0 else 1)
+
+
+## 存档 cfg stats 节 lv%d_ghost 键级快照(键名与 save_manager.gd:73-74
+## 写面实证一致)。
+func _ghost_file_keys() -> Dictionary:
+	var out := {}
+	var cfg := ConfigFile.new()
+	if cfg.load(SaveManager.SAVE_PATH) != OK or not cfg.has_section("stats"):
+		return out
+	for key: String in cfg.get_section_keys("stats"):
+		if key.begins_with("lv") and key.ends_with("_ghost"):
+			out[key] = cfg.get_value("stats", key, PackedFloat32Array())
+	return out
+
+
+func _ghost_file_equal(before: Dictionary) -> bool:
+	var after := _ghost_file_keys()
+	if after.size() != before.size():
+		return false
+	for key: String in before:
+		if not after.has(key):
+			return false
+		var a: PackedFloat32Array = before[key]
+		var b: PackedFloat32Array = after[key]
+		if a != b:
+			return false
+	return true
+
+
+func _ghost_mem_equal(before: Dictionary) -> bool:
+	var g: Dictionary = m._save.ghosts
+	if g.size() != before.size():
+		return false
+	for key: int in before:
+		if not g.has(key):
+			return false
+		var a: PackedFloat32Array = before[key]
+		var b: PackedFloat32Array = g[key]
+		if a != b:
+			return false
+	return true
 
 
 func run_dual_shot() -> void:

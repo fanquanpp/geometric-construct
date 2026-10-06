@@ -7,13 +7,25 @@ extends SceneTree
 # 实心);逐名册成员从出生点 BFS(行走 / 跳跃包络 / 下落漂移 / 置换或
 # 界边倒挂),断言「每扇终点门可被其归属几何体到达」+ 门体不嵌墙 +
 # 下方有地;机关做地面 / 净空基础体检。
+# v0.70 扩容(堵三基线共同盲区):覆盖 SCENES 全部战役+双人竞速场景
+# (16 战役 + duel/race;教程不在 SCENES 内走 game_flow 独立路径;probe
+# 空脚手架见 PROBE_PATH 注),并增补四断言——①边界失配(谓词同
+# native_level.gd _bounds_warnings);②记录点触发区净空(x±36、
+# y[-80,+16] 无实心);③惩罚门存在性 + 感应区可达 + 绕行路;④幕主题色
+# 与 backdrop accent 一致性(backdrop/actN.tres accent == Palette[theme])。
 
 const CELL := 100.0
+const TUTORIAL_PATH := "res://levels_native/tutorial/tutorial.tscn"
+# probe 门禁探针是空脚手架(无 tile_map_data,机关门禁 tests/mech_resonance
+# 运行期自建场地几何):门可达/记录点/边界断言对其全为假阳性,排除出逐关
+# 审计面;其主题豁免(dev/probe 恒空串不染色)归渲染层,不经本审计。
+const PROBE_PATH := "res://levels_native/dev/probe.tscn"
 
 var _fails := 0
 var _warns := 0
 var _infos := 0
 var _pending: Array = []
+var _penalty_count := 0
 
 
 func _init() -> void:
@@ -23,11 +35,16 @@ func _init() -> void:
 
 func _run() -> void:
 	var fix := OS.get_cmdline_user_args().has("--fix")
-	var n := LevelData.campaign_last() + 1
-	for i in n:
+	for i in LevelData.SCENES.size():
+		if LevelData.scene_path(i) == TUTORIAL_PATH \
+				or LevelData.scene_path(i) == PROBE_PATH:
+			continue
 		_audit_level(i)
 		if fix:
 			_apply_fixes(i)
+	if _penalty_count == 0:
+		_fail("全战役无 penalty_mode=true SpeedGate(惩罚门机制零落地)")
+	_theme_assert()
 	# 口径 v0.69.0:警告不再放行(基线 7 条黄门误报已由弹跳包络清零,
 	# 分级后仅「动件路径盲区」以 INFO 存在,不计数不拦门)。
 	var tail := ""
@@ -156,10 +173,9 @@ func _audit_level(index: int) -> void:
 	# —— 可达性 BFS(逐名册成员 → 归属门)——
 	_collect_standable(solid, oneway, standable, ceilings)
 	var roster: Array = LevelData.scene_roster(index)
-	for d in doors:
-		var g: int = d.geo_index
-		if not roster.has(g):
-			continue
+	# 每名册成员一份可达集(门可达 / 惩罚门可达 / 绕行判定共用)
+	var seen_by := {}
+	for g in roster:
 		var mk := lvl.get_node_or_null(NodePath("Spawn%d" % g)) as Marker2D
 		if mk == null:
 			_fail("%s 缺 Spawn%d" % [tag, g])
@@ -168,6 +184,12 @@ func _audit_level(index: int) -> void:
 		var seen := {}
 		_bfs(Vector2i((mk.position / CELL).floor()), def, solid, oneway,
 			standable, ceilings, seen)
+		seen_by[g] = seen
+	for d in doors:
+		var g: int = d.geo_index
+		if not roster.has(g) or not seen_by.has(g):
+			continue
+		var seen: Dictionary = seen_by[g]
 		var dc := Vector2i((d.position / CELL).floor())
 		var ok := false
 		for dy in range(0, 3):
@@ -183,6 +205,65 @@ func _audit_level(index: int) -> void:
 			else:
 				_warn("%s g%d 的终点门纯地形静态不可达(门@%s;含跳跃/弹跳包络仍无路径)"
 					% [tag, g, dc])
+
+	# —— 断言①:边界失配(谓词同 native_level.gd:189-221 _bounds_warnings)——
+	_assert_bounds(lvl, solid, tag)
+	# —— 断言②:记录点触发区净空(x±36、y[-80,+16] 无实心,门体检同款)——
+	for c in lvl.get_children():
+		if c is CheckpointBeacon:
+			_assert_beacon_clear(c as CheckpointBeacon, solid, tag)
+	# —— 断言③:惩罚门存在性(逐门)+ 感应区可达 + 绕行路 ——
+	for c in lvl.get_children():
+		var sg := c as SpeedGate
+		if sg == null or not sg.penalty_mode:
+			continue
+		_penalty_count += 1
+		var zone: Vector2 = sg.zone_size
+		var zc := _rect_cells(sg.position - zone * 0.5, zone)
+		var reach := -1
+		for g2 in roster:
+			var s1: Dictionary = seen_by.get(g2, {})
+			for cell in zc:
+				if s1.has(cell):
+					reach = g2
+					break
+			if reach >= 0:
+				break
+		if reach < 0:
+			_fail("%s %s 惩罚门感应区不可达(BFS 静态模型无名册成员触及 %s)" % [tag, c.name, zc])
+		else:
+			print("AUDIT PENALTY: %s %s 感应区可达(g%d,格 %s)" % [tag, c.name, reach, zc])
+		# 绕行路:感应区格从站立面剔除后,∃ 名册成员仍达自己的归属门
+		var standable2 := {}
+		for k in standable:
+			standable2[k] = true
+		for cell in zc:
+			standable2.erase(cell)
+		var bypass := -1
+		for g3 in roster:
+			var mk3 := lvl.get_node_or_null(NodePath("Spawn%d" % g3)) as Marker2D
+			if mk3 == null:
+				continue
+			var seen3 := {}
+			_bfs(Vector2i((mk3.position / CELL).floor()), Geometries.get_def(g3),
+				solid, oneway, standable2, ceilings, seen3)
+			for d2 in doors:
+				if d2.geo_index != g3:
+					continue
+				var dc3 := Vector2i(((d2 as ExitDoor).position / CELL).floor())
+				for dy3 in range(0, 3):
+					for dx3 in range(-1, 2):
+						if seen3.has(dc3 + Vector2i(dx3, dy3)):
+							bypass = g3
+							break
+				if bypass >= 0:
+					break
+			if bypass >= 0:
+				break
+		if bypass < 0:
+			_fail("%s %s 惩罚门无绕行路(剔除感应区后无名册成员可达归属门)" % [tag, c.name])
+		else:
+			print("AUDIT PENALTY: %s %s 绕行路存在(g%d 避开感应区可达归属门)" % [tag, c.name, bypass])
 
 	if OS.get_cmdline_user_args().has("--fix"):
 		_collect_fixes(index, lvl, doors, roster, solid, oneway,
@@ -329,6 +410,85 @@ func _near_mechanism(dc: Vector2i, mech_cells: Dictionary) -> bool:
 			if mech_cells.has(dc + Vector2i(dx, dy)):
 				return true
 	return false
+
+
+## 断言①:level_size/kill_y/top_kill_y 与 Solid 包围盒失配即 FAIL。
+## 谓词与 native_level.gd:189-221 _bounds_warnings 同源(编辑器黄条的
+## 门禁化:黄条只提示,这里拦门)。
+func _assert_bounds(lvl: NativeLevel, solid: Dictionary, tag: String) -> void:
+	if solid.is_empty():
+		return
+	var lo := Vector2i(9999, 9999)
+	var hi := Vector2i(-9999, -9999)
+	for c in solid:
+		lo = _vmin(lo, c)
+		hi = _vmax(hi, c)
+	var top := float(lo.y) * CELL
+	var right := float(hi.x + 1) * CELL
+	var bottom := float(hi.y + 1) * CELL
+	var size := lvl.level_size
+	if size.x < right:
+		_fail("%s level_size.x(%d)小于 Solid 右缘(%d):地形越出可玩右界" % [tag, int(size.x), int(right)])
+	if size.y < bottom:
+		_fail("%s level_size.y(%d)小于 Solid 下缘(%d):地形越出可玩下界(谷底/坠点须纳入相机可视区)" % [tag, int(size.y), int(bottom)])
+	if lvl.kill_y <= size.y:
+		_fail("%s kill_y(%d)不高于 level_size.y(%d):死亡面切进可玩区(约定 kill_y = level_size.y + 200)" % [tag, int(lvl.kill_y), int(size.y)])
+	if lvl.top_kill_y >= top:
+		_fail("%s top_kill_y(%d)不低于 Solid 上缘(%d):顶部死亡面切进地形(约定 Solid 上缘 - 400)" % [tag, int(lvl.top_kill_y), int(top)])
+
+
+## 断言②:记录点触发区(x±36、y[-80,+16],checkpoint_beacon.tscn 72×96
+## 感应体悬于原点上段)全净空,任一实心格相交即 FAIL(旗杆 z=3 穿墙 /
+## 触发区嵌死的门禁化)。
+func _assert_beacon_clear(bc: CheckpointBeacon, solid: Dictionary, tag: String) -> void:
+	var p := bc.position
+	var x0 := p.x - 36.0
+	var x1 := p.x + 36.0
+	var y0 := p.y - 80.0
+	var y1 := p.y + 16.0
+	var c0 := int(floor(x0 / CELL))
+	var c1 := int(ceil(x1 / CELL)) - 1
+	var r0 := int(floor(y0 / CELL))
+	var r1 := int(ceil(y1 / CELL)) - 1
+	for cy in range(r0, r1 + 1):
+		for cx in range(c0, c1 + 1):
+			if solid.has(Vector2i(cx, cy)):
+				_fail("%s 记录点 %s 触发区格 %s 嵌实心(迁至站面上方 50 的全净空位)" % [tag, bc.name, Vector2i(cx, cy)])
+
+
+## 轴对齐矩形覆盖到的整格数组(左闭右开口径,边界 800.0 归左格)。
+func _rect_cells(origin: Vector2, size: Vector2) -> Array:
+	var out: Array = []
+	var c0 := int(floor(origin.x / CELL))
+	var c1 := int(ceil((origin.x + size.x) / CELL)) - 1
+	var r0 := int(floor(origin.y / CELL))
+	var r1 := int(ceil((origin.y + size.y) / CELL)) - 1
+	for cy in range(r0, r1 + 1):
+		for cx in range(c0, c1 + 1):
+			out.append(Vector2i(cx, cy))
+	return out
+
+
+## 断言④:主题色数据契约——ACTS 每幕 theme 槽名合法,且
+## data/backdrop/actN.tres 的 accent == Palette[ACTS[n-1].theme]
+## (N=1-based 文件名、ACTS 0-based 下标;槽名字符串,禁 hex)。
+func _theme_assert() -> void:
+	for a in LevelData.ACTS.size():
+		var theme := str(LevelData.ACTS[a].get("theme", ""))
+		if not LevelData.THEMES.has(theme):
+			_fail("ACTS[%d] theme「%s」不在 THEMES 槽名表内(值须为 palette 槽名字符串)" % [a, theme])
+			continue
+		var preset := load("res://data/backdrop/act%d.tres" % [a + 1]) as BackdropPreset
+		if preset == null:
+			_fail("data/backdrop/act%d.tres 缺失或非 BackdropPreset" % [a + 1])
+			continue
+		var expected: Color = Palette.I.get(theme) as Color
+		if not preset.accent.is_equal_approx(expected):
+			_fail("backdrop/act%d.tres accent %s ≠ Palette.%s %s(幕主题色契约失配)" % [a + 1, preset.accent, theme, expected])
+	for i in LevelData.SCENES.size():
+		var meta := LevelData.scene_meta(i)
+		if meta.has("theme") and not LevelData.THEMES.has(str(meta["theme"])):
+			_fail("SCENES[%d] theme 覆写「%s」不在 THEMES 槽名表内" % [i, str(meta["theme"])])
 
 
 func _has_ground(cc: Vector2i, solid: Dictionary, oneway: Dictionary) -> bool:

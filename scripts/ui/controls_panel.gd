@@ -37,6 +37,9 @@ func _ready() -> void:
 	_body_wrap.add_theme_stylebox_override("panel",
 		Ui.sb(Color(Palette.I.ink_2, 0.99), 0, null, 0, 18, 14, true))
 	_close_btn.add_theme_font_size_override("font_size", 15)
+	# 关闭带归格:右距 64/下距 24/高 42(触屏换算 44),Ui 工厂单一真值。
+	_close_btn.custom_minimum_size.y = Ui.nav_h()
+	Ui.pin_close_band(_close_btn)
 	Ui.wire_button(_close_btn)
 	_close_btn.pressed.connect(func() -> void: close())
 
@@ -107,8 +110,9 @@ func _keys_row(row: Dictionary) -> Control:
 
 func _keycap(text: String) -> Control:
 	var cap := PanelContainer.new()
+	# 键帽归零圆角(全库回到 sb() 零圆角单一基线,椭圆/圆角根除)。
 	cap.add_theme_stylebox_override("panel",
-		Ui.sb(Color(Palette.I.ink_3, 1.0), 3, Color(Palette.I.paper, 0.32), 1, 8, 3))
+		Ui.sb(Color(Palette.I.ink_3, 1.0), 0, Color(Palette.I.paper, 0.32), 1, 8, 3))
 	var lab := Ui.l(text, 12, Ui.HEAD, Palette.I.paper)
 	lab.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	cap.add_child(lab)
@@ -145,17 +149,17 @@ func open() -> void:
 	_fit_content()
 	_root.visible = true
 	# 手柄/键盘开面板即入面板(关闭钮),杜绝 A 键穿透到底层菜单;
-	# 纯触屏不抓焦点(无意义选中框)。
-	if not Adaptive.is_touch_mode():
-		_close_btn.grab_focus()
+	# 纯触屏不抓焦点(无意义选中框)——守卫统一走 Ui 工厂。
+	Ui.grab_focus_guarded(_close_btn)
 	if _tween != null:
 		_tween.kill()
 	_shade.modulate.a = 0.0
 	_content.modulate.a = 0.0
+	var page := Ui.MOTION_PAGE_MS / 1000.0
 	_tween = create_tween()
 	_tween.set_parallel(true)
-	_tween.tween_property(_shade, "modulate:a", 1.0, 0.20)
-	_tween.tween_property(_content, "modulate:a", 1.0, 0.24).set_delay(0.04)
+	_tween.tween_property(_shade, "modulate:a", 1.0, page)
+	_tween.tween_property(_content, "modulate:a", 1.0, page).set_delay(0.04)
 
 
 func close() -> void:

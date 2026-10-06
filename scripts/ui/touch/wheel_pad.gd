@@ -38,7 +38,9 @@ func setup(p_half_w: float, p_half_h: float, center: Vector2) -> void:
 	_home = center
 	if _finger == -1 and not _returning:
 		_center = center
-	_knob_r = clampf(half_h * 0.72, 18.0, 30.0)
+	# 触点纪律:菱形扳钮对角实宽 2×_knob_r,下限抬到 22(=实体 ≥44px,
+	# 与触屏命中 ≥44px 同口径);比例不足时由下限抬平。
+	_knob_r = clampf(half_h * 0.72, 22.0, 30.0)
 	_travel = half_w - _knob_r - 12.0
 	size = Vector2(half_w, half_h) * 2.0 + Vector2(12, 12)
 	position = _center - size / 2.0
@@ -65,7 +67,6 @@ func float_begin(finger: int, pos: Vector2) -> bool:
 			vis.y - ins.w - half_h * 2.0 - 10.0))
 	position = _center - size / 2.0
 	_follow(pos)
-	TouchControls.buzz(12)
 	return true
 
 
@@ -163,7 +164,9 @@ func force_release() -> void:
 
 func _process(_delta: float) -> void:
 
-	var idle_a := 0.18 if (wheel_mode == MODE_FLOAT and _finger == -1) else 1.0
+	# 空闲可见度(NN/g:新手看不见控件):float 空闲 0.18→0.30→0.55。
+	# 真机目检 0.30 仍近乎不可辨(强光下全灭),再抬半档;按住即回全亮。
+	var idle_a := 0.55 if (wheel_mode == MODE_FLOAT and _finger == -1) else 1.0
 	if idle_a != _idle_a:
 		_idle_a = idle_a
 		queue_redraw()
@@ -177,8 +180,11 @@ func _draw() -> void:
 	var cx := size.x / 2.0
 	var kx := (size.x - 12.0) / 240.0
 	var ky := (size.y - 12.0) / 72.0
+	# 结构线可见度(真机 3200×1440 目检:0.30/0.10/0.16 三档在强光实机
+	# 近乎全灭,轮盘读作「极暗虚线六边形」)——全体抬到可辨档,红仅出现在
+	# 冲刺/激活语义上不动。
 	var edge := Color(Palette.I.red if sprinting else Palette.I.paper,
-		(0.6 if sprinting else 0.30) * a)
+		(0.85 if sprinting else 0.55) * a)
 	var hex := PackedVector2Array([
 		Vector2(cx - 120.0 * kx, mid_y),
 		Vector2(cx - 55.0 * kx, mid_y - 36.0 * ky),
@@ -190,13 +196,13 @@ func _draw() -> void:
 	draw_polyline(hex, edge, 2.0, true)
 	draw_line(Vector2(cx - 84.0 * kx, mid_y - 1.0),
 		Vector2(cx + 84.0 * kx, mid_y - 1.0),
-		Color(Palette.I.paper, 0.10 * a), 2.0)
+		Color(Palette.I.paper, 0.22 * a), 2.0)
 	draw_rect(Rect2(cx - 2.5, mid_y - 2.5, 5, 5),
-		Color(Palette.I.paper, 0.45 * a))
+		Color(Palette.I.paper, 0.62 * a))
 	DrawKit.chevron(self, Vector2(cx + 103.0 * kx, mid_y), Vector2(1, 0),
-		17.0 * ky, Color(Palette.I.paper, 0.16 * a), 2.0)
+		17.0 * ky, Color(Palette.I.paper, 0.32 * a), 2.0)
 	DrawKit.chevron(self, Vector2(cx - 103.0 * kx, mid_y), Vector2(-1, 0),
-		17.0 * ky, Color(Palette.I.paper, 0.16 * a), 2.0)
+		17.0 * ky, Color(Palette.I.paper, 0.32 * a), 2.0)
 	if strength > 0.0:
 		DrawKit.chevron(self, Vector2(size.x - 20.0, mid_y), Vector2(1, 0),
 			18.0, Color(Palette.I.red if sprinting else Palette.I.paper,
@@ -205,8 +211,14 @@ func _draw() -> void:
 		DrawKit.chevron(self, Vector2(20.0, mid_y), Vector2(-1, 0),
 			18.0, Color(Palette.I.red if sprinting else Palette.I.paper,
 				0.85 * a), 3.0)
+	# 扳钮菱形化:16 边近似圆退役,4 边菱形 + 方点(ngon rot=PI/4,
+	# 与 TapRing/图鉴菱首同语汇)——触屏 HUD 唯一圆形实体根除。
 	var kc := Vector2(size.x / 2.0 + _knob_x, mid_y)
-	DrawKit.ngon_fill(self, kc, _knob_r, 16,
-		Color(Palette.I.red if sprinting else Palette.I.paper, 0.9 * a))
-	DrawKit.ngon_line(self, kc, _knob_r, 16, Color(Palette.I.ink, 0.45 * a), 2.0)
-	draw_circle(kc, _knob_r * 0.3, Color(Palette.I.ink, 0.55 * a))
+	DrawKit.ngon_fill(self, kc, _knob_r, 4,
+		Color(Palette.I.red if sprinting else Palette.I.paper, 0.9 * a),
+		PI / 4.0)
+	DrawKit.ngon_line(self, kc, _knob_r, 4, Color(Palette.I.ink, 0.45 * a),
+		2.0, PI / 4.0)
+	var dot := _knob_r * 0.5
+	draw_rect(Rect2(kc - Vector2(dot, dot) * 0.5, Vector2(dot, dot)),
+		Color(Palette.I.ink, 0.55 * a))

@@ -25,6 +25,7 @@ var _shade: ColorRect
 var _index_label: Label
 var _hints: Label
 var _btn_row: HBoxContainer
+var _nav_btns: Array = []
 var _tab_btns := {}
 var _pages := {}
 var builders := {}
@@ -120,6 +121,7 @@ func _tab_button(text: String) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.toggle_mode = true
+	# 页签芯片=触点档 44(三档之触点;86 宽为六签排布定宽)。
 	b.custom_minimum_size = Vector2(86, 44)
 	b.add_theme_font_size_override("font_size", 15)
 	b.add_theme_font_override("font", Ui.HEAD)
@@ -130,7 +132,7 @@ func _tab_button(text: String) -> Button:
 func _nav_button(text: String, on_click: Callable, click_sfx := "ui_click") -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(0, 42)
+	b.custom_minimum_size = Vector2(0, Ui.nav_h())
 	b.add_theme_font_size_override("font_size", 15)
 	Ui.wire_button(b, click_sfx)
 	b.pressed.connect(func() -> void: on_click.call())
@@ -154,14 +156,22 @@ func _build_footer() -> void:
 	_btn_row.anchor_right = 1.0
 	_btn_row.anchor_top = 1.0
 	_btn_row.anchor_bottom = 1.0
-	_btn_row.offset_left = -400
-	_btn_row.offset_right = -64
-	_btn_row.offset_top = -66
-	_btn_row.offset_bottom = -24
+	# 右下关闭带(Ui.BAND_RIGHT/BAND_BOTTOM/BTN_NAV_H 单一真值:
+	# 右距 64/下距 24/高 42,与 controls_panel 同带同位)。
+	_btn_row.offset_left = -400.0 - Ui.BAND_RIGHT
+	_btn_row.offset_right = -Ui.BAND_RIGHT
+	_btn_row.offset_top = -(Ui.BAND_BOTTOM + Ui.BTN_NAV_H)
+	_btn_row.offset_bottom = -Ui.BAND_BOTTOM
 	_btn_row.alignment = BoxContainer.ALIGNMENT_END
 	_content.add_child(_btn_row)
-	_btn_row.add_child(_nav_button("◀ 上一页", func() -> void: _switch(-1), ""))
-	_btn_row.add_child(_nav_button("下一页 ▶", func() -> void: _switch(1), ""))
+	# 翻页钮随 _is_paged 显隐;「关 闭」常显——奖牌/统计/攻略三签无翻页,
+	# 关闭路径(尤其触屏)必须可达,不再整行随页签消失。
+	_nav_btns = [
+		_nav_button("◀ 上一页", func() -> void: _switch(-1), ""),
+		_nav_button("下一页 ▶", func() -> void: _switch(1), ""),
+	]
+	for b: Button in _nav_btns:
+		_btn_row.add_child(b)
 	_btn_row.add_child(_nav_button("关 闭", func() -> void: close()))
 
 
@@ -201,12 +211,12 @@ func _apply_tab() -> void:
 	for btn in _tab_btns:
 		(_tab_btns[btn] as Button).set_pressed_no_signal(str(btn) == _tab)
 	var paged := _is_paged(_tab)
-	if paged:
-		_index_label.visible = true
-	else:
-		_index_label.visible = false
+	_index_label.visible = paged
 	_hints.visible = paged
-	_btn_row.visible = paged
+	# 翻页钮只属翻页签;「关 闭」恒在(关闭路径触屏必须可达)。
+	for b: Button in _nav_btns:
+		b.visible = paged
+	_btn_row.visible = true
 	# 六签 builder 全部暴露 refresh():翻页签重取数据/文案(奖牌/统计
 	# 读存档、攻略重过触屏口径),不再只在翻页型页签上刷。
 	builders[_tab].refresh()
@@ -230,12 +240,13 @@ func _switch(dir: int) -> void:
 	_content.modulate.a = 0.35
 	geo.portrait_zone.position.x = 60.0 - 26.0 * dir
 	geo.right_col.position.x = 486.0 - 26.0 * dir
+	var page := Ui.MOTION_PAGE_MS / 1000.0
 	_tween = create_tween()
 	_tween.set_parallel(true)
-	_tween.tween_property(_content, "modulate:a", 1.0, 0.18)
-	_tween.tween_property(geo.portrait_zone, "position:x", 60.0, 0.22) \
+	_tween.tween_property(_content, "modulate:a", 1.0, page)
+	_tween.tween_property(geo.portrait_zone, "position:x", 60.0, page) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_tween.tween_property(geo.right_col, "position:x", 486.0, 0.22) \
+	_tween.tween_property(geo.right_col, "position:x", 486.0, page) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
@@ -272,18 +283,18 @@ func open(index := 0, tab := "geo") -> void:
 	_root.visible = true
 	_apply_tab()
 	# 手柄/键盘开面板即入面板(当前页签),A 键不再穿透到底层菜单;
-	# 纯触屏不抓焦点(无意义选中框)。
-	if not Adaptive.is_touch_mode():
-		(_tab_btns[_tab] as Button).grab_focus()
+	# 纯触屏不抓焦点(无意义选中框)——守卫统一走 Ui 工厂。
+	Ui.grab_focus_guarded(_tab_btns[_tab] as Button)
 	if _tween != null:
 		_tween.kill()
 
 	_shade.modulate.a = 0.0
 	_content.modulate.a = 0.0
+	var page := Ui.MOTION_PAGE_MS / 1000.0
 	_tween = create_tween()
 	_tween.set_parallel(true)
-	_tween.tween_property(_shade, "modulate:a", 1.0, 0.20)
-	_tween.tween_property(_content, "modulate:a", 1.0, 0.26).set_delay(0.05)
+	_tween.tween_property(_shade, "modulate:a", 1.0, page)
+	_tween.tween_property(_content, "modulate:a", 1.0, page).set_delay(0.05)
 
 
 func close() -> void:

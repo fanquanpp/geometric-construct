@@ -196,7 +196,12 @@ func _gen_decor() -> int:
 	_draw_panel(img, ox + TILE * 2, oy, false, false, false)
 	_draw_gon_ring(img, ox + TILE * 2, oy)
 	_draw_panel(img, ox + TILE * 3, oy, false, false, true)
-	# 行 1:窗槽 / 红刻三件
+	# 行 1:窗槽 / 红刻三件(v0.70 tiles 波补伪空槽:(2,1) 原本 0% 不透明
+	# 而关卡实摆 3 格(act3/s01、act3/s05、act5/s03,tools/dump_tile_usage
+	# 实测)永远画空;(3,1) 仅 1.4% 孤点。补齐为有效装饰件,槽位与全部
+	# atlas 坐标逐格不变):
+	#   (2,1) 红括弧件:四角 RED@0.45 括弧 + 中心 RED@0.85 锚点(5.3% 不透明)
+	#   (3,1) 红刻锚点件:原 12x12 RED@0.85 红点保留,外包 RED@0.5 方框环(6.6%)
 	oy = TILE
 	for s in 3:   # _win 槽语言(bake 同源)
 		var wx := ox + 22 + s * 19
@@ -205,7 +210,12 @@ func _gen_decor() -> int:
 		_over(img, ox + 8, oy + 30 + k * 16, 84, 6, RED, 0.5)
 	_fill(img, ox + TILE + 2, oy + 2, 30, 30, Color(RED, 0.55))
 	_over(img, ox + TILE + 2, oy + 2, 30, 30, PAPER, 0.4)
+	_draw_red_brackets(img, ox + TILE * 2, oy)
 	_fill(img, ox + TILE * 3 + 44, oy + 44, 12, 12, Color(RED, 0.85))
+	_over(img, ox + TILE * 3 + 32, oy + 32, 36, 4, RED, 0.5)
+	_over(img, ox + TILE * 3 + 32, oy + 64, 36, 4, RED, 0.5)
+	_over(img, ox + TILE * 3 + 32, oy + 36, 4, 28, RED, 0.5)
+	_over(img, ox + TILE * 3 + 64, oy + 36, 4, 28, RED, 0.5)
 	# 行 3:刻度柱四色(_tick_columns 同款)
 	oy = TILE * 3
 	_draw_ticks(img, ox, oy, RED)
@@ -215,6 +225,24 @@ func _gen_decor() -> int:
 	var err := img.save_png(OUT_DECOR)
 	print("DECOR png err=%d" % err)
 	return 1 if err != OK else 0
+
+
+## decor (2,1) 红括弧件(v0.70 补槽):与 _draw_panel brackets 同语言,
+## 取色 RED@0.45 / RED@0.85 与 _gen_decor 红刻同源;色类已登记
+## TileAtlas.THEME_TINT_RECIPES(a=0.45 单笔与 0.45×0.45 角部叠笔)。
+func _draw_red_brackets(img: Image, ox: int, oy: int) -> void:
+	var g := 8
+	var arm := 24
+	for t in 2:
+		_over(img, ox + g, oy + g + t, arm, 1, RED, 0.45)
+		_over(img, ox + g + t, oy + g, 1, arm, RED, 0.45)
+		_over(img, ox + TILE - g - arm, oy + g + t, arm, 1, RED, 0.45)
+		_over(img, ox + TILE - g - t, oy + g, 1, arm, RED, 0.45)
+		_over(img, ox + g, oy + TILE - g - t, arm, 1, RED, 0.45)
+		_over(img, ox + g + t, oy + TILE - g - arm, 1, arm, RED, 0.45)
+		_over(img, ox + TILE - g - arm, oy + TILE - g - t, arm, 1, RED, 0.45)
+		_over(img, ox + TILE - g - t, oy + TILE - g - arm, 1, arm, RED, 0.45)
+	_fill(img, ox + 44, oy + 44, 12, 12, Color(RED, 0.85))
 
 
 func _draw_panel(img: Image, ox: int, oy: int, plain: bool, brackets: bool,

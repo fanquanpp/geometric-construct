@@ -114,13 +114,6 @@ func cycle_slot(dir: int) -> void:
 	switch_to(((active_slot + dir) % players.size() + players.size()) % players.size())
 
 
-func dual_binds() -> Array:
-	if players.size() < 2:
-		return []
-	return [{"slot": 0, "geo": players[0].index},
-		{"slot": 1, "geo": players[1].index}]
-
-
 func refresh_roster() -> void:
 	var mask := 0
 	for p in players:
@@ -136,10 +129,12 @@ func refresh_roster() -> void:
 	var active: int = players[active_slot].index \
 		if (active_slot >= 0 and active_slot < players.size()) else -1
 
+	# 芯片静默(audit ⑨):dual 不再下发可点双活芯片——dual_binds 展示
+	# 出的 P1/P2 描边芯片点上去 switch_to 直接 return,零反馈,展示与
+	# 行为歧义以「不下发」消解;hud 消费面零改动,芯片回落普通名签
+	# (几何体色块+名不变,退出勾选/活跃高亮语义不受影响)。
 	var binds: Array = []
-	if main.dual_mode:
-		binds = dual_binds()
-	elif NetSession.I != null and NetSession.I.in_game() \
+	if not main.dual_mode and NetSession.I != null and NetSession.I.in_game() \
 			and main._level_info != null:
 		var own: Array = NetSession.I.own_geo_arr()
 		var other: Array = NetSession.I.other_geo_arr()
@@ -239,6 +234,20 @@ func on_respawn_done() -> void:
 
 func recall_active() -> void:
 	if main._state != Main.State.PLAYING or players.is_empty():
+		return
+	# 双人召回(audit ④):dual 下作用于双体,各归各自检查点——此前只
+	# 召回 players[active_slot] 而 active_slot 恒 0,P2 永远唤不回自己。
+	# 单人路径仍只召回活跃体;联机走 game_flow.net_recall 语义不变。
+	if main.dual_mode:
+		var recalled := false
+		for p in players:
+			if p == null or not is_instance_valid(p) \
+					or p.in_exit or p.dying or p.arrived:
+				continue
+			p.recall_to(checkpoints.get(p.index, p.spawn_pos))
+			recalled = true
+		if recalled:
+			Sfx.play("switch")
 		return
 	if active_slot < 0 or active_slot >= players.size():
 		return

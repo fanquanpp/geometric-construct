@@ -249,7 +249,6 @@ func _physics_process(delta: float) -> void:
 		if Main.I != null and Main.I.backdrop != null:
 			Main.I.backdrop.pulse_land(impact)
 		if impact > 620.0:
-			SettingsManager.haptic(40)
 			if Main.I != null and Main.I.camera_rig != null:
 				Main.I.camera_rig.kick(minf(1.6 + impact / 420.0, 4.6))
 			if not SettingsManager.reduced_motion:
@@ -427,7 +426,6 @@ func die() -> void:
 		return
 	dying = true
 	Sfx.play("die", 0.0, _note_pitch())
-	SettingsManager.haptic(60)
 	PlayerCosmetics.death_burst(self)
 	if Main.I != null and Main.I.camera_rig != null:
 		Main.I.camera_rig.kick(7.0)
@@ -497,7 +495,6 @@ func arrive_at(door: ExitDoor) -> void:
 	arrived = true
 	arrived_door = door
 	Sfx.play("arrive")
-	SettingsManager.haptic(30)
 	var tw := create_tween()
 	tw.tween_property(self, "position:x", door.position.x, 0.22) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)

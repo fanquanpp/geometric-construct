@@ -3,7 +3,7 @@ shader_type canvas_item;
 render_mode unshaded;
 
 // 速度线(GPU 化,fx 包 v0.68 装饰重设计):单实例一段纸白细线,TIME 驱动
-// 硬边段横向流动,宿主零重绘。对照 assets/fx/backdrop_sky.gdshader 模式:
+// 硬边段横向流动,宿主零重绘。res://shaders/ 统一模式(硬边、无柔边):
 // render_mode unshaded / TIME 驱动 / 取色全经 uniform(shader 内无字面色)/
 // anim=0 停帧;禁一切读屏路径(不声明屏幕纹理采样类 uniform)。
 // 逐实例相位与长度倍率走 instance uniform(每线独立节奏,宿主经
