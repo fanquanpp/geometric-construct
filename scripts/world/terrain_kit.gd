@@ -51,6 +51,12 @@ static func _cols_of(layer: TileMapLayer) -> Dictionary:
 		_dirty.erase(key)
 		_fill_cols(layer, entry["cols"])
 		return entry["cols"]
+	if not entry.is_empty() and (entry["layer"] as WeakRef).get_ref() == null:
+		# 层体已释放的陈旧条目:编辑器长会话逐关开关场景会累积,顺手清。
+		_col_cache.erase(key)
+		_rebuilt_at.erase(key)
+		_dirty.erase(key)
+		entry = {}
 	_dirty.erase(key)
 	var cols := {}
 	_fill_cols(layer, cols)

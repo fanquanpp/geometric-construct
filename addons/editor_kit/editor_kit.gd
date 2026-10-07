@@ -16,6 +16,14 @@ const Placement := preload("res://addons/editor_kit/placement_table.gd")
 
 var _dock: Control
 var _drag := {}  # 拖拽中:{"node": Node, "kind": "travel"|"zone", "orig": Vector2}
+# 覆盖层手柄缓存:_forward_canvas_draw_over_viewport 每编辑器帧一调,
+# 逐帧全场景递归找 Mover/SpeedGate 是 O(场景)(大关卡+零机关也照扫)。
+# 改「树变更置脏 + 换场景置脏,绘制帧按需重建一次」:node_added/removed
+# 覆盖放置/撤销/删除,instance_id 比对覆盖打开别的场景。
+var _movers: Array = []
+var _gates: Array = []
+var _cache_root_id := 0
+var _cache_dirty := true
 
 
 func _enter_tree() -> void:
@@ -29,16 +37,25 @@ func _enter_tree() -> void:
 	var sel := EditorInterface.get_selection()
 	if sel != null:
 		sel.selection_changed.connect(update_overlays)
+	get_tree().node_added.connect(_on_tree_changed)
+	get_tree().node_removed.connect(_on_tree_changed)
 
 
 func _exit_tree() -> void:
 	var sel := EditorInterface.get_selection()
 	if sel != null and sel.selection_changed.is_connected(update_overlays):
 		sel.selection_changed.disconnect(update_overlays)
+	if is_inside_tree():
+		get_tree().node_added.disconnect(_on_tree_changed)
+		get_tree().node_removed.disconnect(_on_tree_changed)
 	if _dock != null:
 		remove_control_from_docks(_dock)
 		_dock.queue_free()
 		_dock = null
+
+
+func _on_tree_changed(_n: Node) -> void:
+	_cache_dirty = true
 
 
 # ---------------- 放置(机关件) ----------------
@@ -165,19 +182,29 @@ func _forward_canvas_draw_over_viewport(viewport_control: Control) -> void:
 		return
 	var xform := viewport_control.get_canvas_transform()
 	var selected := _selected_nodes()
-	var movers: Array = []
-	var gates: Array = []
-	_collect_handles(root, movers, gates)
-	if movers.is_empty() and gates.is_empty():
+	var rid := root.get_instance_id()
+	if _cache_dirty or _cache_root_id != rid:
+		_movers = []
+		_gates = []
+		_collect_handles(root, _movers, _gates)
+		_cache_root_id = rid
+		_cache_dirty = false
+	if _movers.is_empty() and _gates.is_empty():
 		return
 	var paper := Color(0.93, 0.92, 0.88, 0.5)
 	var accent := Color(0.88, 0.29, 0.18)
 	if Palette.I != null:
 		paper = Color(Palette.I.paper, 0.5)
 		accent = Palette.I.red
-	for m in movers:
+	for m in _movers:
+		if not is_instance_valid(m):
+			_cache_dirty = true
+			continue
 		_draw_travel(viewport_control, m as Mover, xform, selected, paper, accent)
-	for g in gates:
+	for g in _gates:
+		if not is_instance_valid(g):
+			_cache_dirty = true
+			continue
 		_draw_zone(viewport_control, g as SpeedGate, xform, selected, paper, accent)
 
 

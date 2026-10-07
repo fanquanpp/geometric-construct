@@ -15,7 +15,7 @@
 
 [node name="LevelRoot" type="Node2D"]
 script = ExtResource("1_nl")
-level_name = "第四幕·第五关"
+level_name = "双人专关"
 intro_text = "对影双生:红与黄各据一端,越过中央缺口——先触到对面之门的那一个,更快。"
 roster = Array[int]([0, 1])
 level_size = Vector2(5000, 1600)

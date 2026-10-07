@@ -77,9 +77,12 @@ func _audit(index: int) -> void:
 	if t_intro != str(meta.get("intro", "")):
 		_drift("A×B:%s intro_text 与 SCENES intro 不一致(tscn「%s…」/ SCENES「%s…」)"
 			% [path, t_intro.left(12), str(meta.get("intro", "")).left(12)])
-	# A × C:模板约定
+	# A × C:模板约定。幕次命名模板只约束战役关(ACTS 覆盖面);duel 专关
+	# 不入幕档,冠假幕次反成 HUD 关名与幕面板/存档语义歧义(v0.70.1 豁免,
+	# 名与 SCENES 一致性仍由 A×B 断言)。
 	var rx := RegEx.create_from_string(NAME_RX)
-	if rx.search(t_name) == null:
+	var is_duel: bool = index == LevelData.DUEL_SCENE_INDEX
+	if not is_duel and rx.search(t_name) == null:
 		_drift("A×C:%s level_name「%s」不符「第x幕·第x关」模板命名" % [path, t_name])
 	if not s_roster.has(t_focus):
 		_drift("A×C:%s focus=%d 不在名册 %s 内(模板约定 focus ∈ roster)"

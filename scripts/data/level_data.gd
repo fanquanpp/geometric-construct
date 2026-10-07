@@ -65,7 +65,8 @@ const SCENES: Array[Dictionary] = [
 	# 双人竞速专关(index 17,ui/dual 经 DUEL_SCENE_INDEX 直达;不入幕档、
 	# 不进存档进度,对称双生点红左黄右各奔对面之门)。主题覆写 red,
 	# 免去消费者按 act_index_of 推幕(本关不在 ACTS 内,act_index_of=-1)。
-	{"path": "res://levels_native/duel/race.tscn", "name": "第四幕·第五关",
+	# 名不冠幕次:HUD 关名与幕面板/存档进度对不上的语义歧义(v0.70 终审)。
+	{"path": "res://levels_native/duel/race.tscn", "name": "双人专关",
 		"roster": [0, 1], "focus": 0, "theme": "red",
 		"intro": "对影双生:红与黄各据一端,越过中央缺口——先触到对面之门的那一个,更快。"},
 ]
